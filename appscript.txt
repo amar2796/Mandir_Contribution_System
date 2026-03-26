@@ -1,0 +1,305 @@
+const SHEETS = {
+  USERS: "USERS",
+  TYPES: "TYPES",
+  OCCASIONS: "OCCASIONS", // ✅ ADDED
+  EXPENSE_TYPES: "EXPENSE_TYPES",
+  CONTRIBUTIONS: "CONTRIBUTIONS",
+  EXPENSES: "EXPENSES"
+};
+
+// FORMAT DATE
+function formatDate() {
+  let d = new Date();
+
+  let day = String(d.getDate()).padStart(2, '0');
+  let month = String(d.getMonth() + 1).padStart(2, '0');
+  let year = d.getFullYear();
+
+  let hh = String(d.getHours()).padStart(2, '0');
+  let mm = String(d.getMinutes()).padStart(2, '0');
+  let ss = String(d.getSeconds()).padStart(2, '0');
+
+  return `${day}-${month}-${year} ${hh}:${mm}:${ss}`;
+}
+
+// COMMON
+function getSheetData(name){
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  const data = sheet.getDataRange().getValues();
+  const headers = data.shift();
+
+  return data.map(r=>{
+    let o={};
+    headers.forEach((h,i)=>o[h]=r[i]);
+    return o;
+  });
+}
+
+// MAIN
+function doGet(e){
+
+
+  const action = e.parameter.action;
+  const callback = e.parameter.callback || "cb";
+
+  let result = {};
+
+  // LOGIN
+  if(action==="login"){
+    let users = getSheetData(SHEETS.USERS);
+
+    let user = users.find(u =>
+      String(u.Mobile) === String(e.parameter.mobile) &&
+      String(u.Password) === String(e.parameter.password)
+    );
+
+    result = user ? {status:"success", user} : {status:"fail"};
+  }
+
+  // ===== GET DATA =====
+  else if(action==="getUsers") result = getSheetData(SHEETS.USERS);
+  else if(action==="getTypes") result = getSheetData(SHEETS.TYPES);
+
+  // ✅ FIXED NAME (MATCH FRONTEND)
+  else if(action==="getExpenseTypes") result = getSheetData(SHEETS.EXPENSE_TYPES);
+
+  // ✅ NEW (IMPORTANT)
+  else if(action==="getOccasions") result = getSheetData(SHEETS.OCCASIONS);
+
+  else if(action==="getContributions") result = getSheetData(SHEETS.CONTRIBUTIONS);
+  else if(action==="getExpenses") result = getSheetData(SHEETS.EXPENSES);
+
+  else if(action==="getYearConfig") result = getSheetData("YEAR_CONFIG");
+
+  // ===== GET ALL DATA IN ONE REQUEST (THE FIX) =====
+  else if(action === "getAllData"){
+    result = {
+      users: getSheetData(SHEETS.USERS),
+      types: getSheetData(SHEETS.TYPES),
+      expenseTypes: getSheetData(SHEETS.EXPENSE_TYPES),
+      occasions: getSheetData(SHEETS.OCCASIONS),
+      contributions: getSheetData(SHEETS.CONTRIBUTIONS),
+      expenses: getSheetData(SHEETS.EXPENSES),
+      yearConfig: getSheetData("YEAR_CONFIG")
+    };
+  }
+
+  // ADD USER
+  else if(action==="addUser"){
+    let existingUsers = getSheetData("USERS");
+    let exists = existingUsers.some(u => String(u.Mobile) === String(e.parameter.Mobile));
+    
+    if(exists) {
+      result = {status:"error", message:"Mobile number already exists"};
+    } else {
+      addRow("USERS", [
+        e.parameter.UserId,
+        e.parameter.Name,
+        e.parameter.Mobile,
+        e.parameter.Role,
+        e.parameter.Password
+      ]);
+      result = {status:"success"};
+    }
+  }
+
+  // DELETE USER
+  else if(action==="deleteUser"){
+    result = deleteRow("USERS", e.parameter.UserId);
+  }
+
+  // UPDATE USER
+  else if(action==="updateUser"){
+    result = updateUser(e.parameter);
+  }
+
+  else if(action==="addType"){
+    addRow("TYPES", [Date.now(), e.parameter.TypeName]);
+    result = {status:"success"};
+  }
+
+  else if(action==="deleteType"){
+    result = deleteRow("TYPES", e.parameter.TypeId);
+  }
+
+  else if(action==="updateType"){
+    result = updateSingle("TYPES", e.parameter.TypeId, e.parameter.TypeName);
+  }
+
+  else if(action==="addOccasion"){
+    addRow("OCCASIONS", [Date.now(), e.parameter.OccasionName]);
+    result = {status:"success"};
+  }
+
+  else if(action==="deleteOccasion"){
+    result = deleteRow("OCCASIONS", e.parameter.OccasionId);
+  }
+
+  else if(action==="updateOccasion"){
+    result = updateSingle("OCCASIONS", e.parameter.OccasionId, e.parameter.OccasionName);
+  }
+
+  else if(action==="addExpenseType"){
+    addRow("EXPENSE_TYPES", [Date.now(), e.parameter.Name]);
+    result = {status:"success"};
+  }
+
+  else if(action==="deleteExpenseType"){
+    result = deleteRow("EXPENSE_TYPES", e.parameter.ExpenseTypeId);
+  }
+
+  else if(action==="updateExpenseType"){
+    result = updateSingle("EXPENSE_TYPES", e.parameter.ExpenseTypeId, e.parameter.Name);
+  }
+
+  // ===== ADD CONTRIBUTION =====
+  else if(action==="addContribution"){
+    addRow(SHEETS.CONTRIBUTIONS, [
+      e.parameter.Id,
+      e.parameter.UserId,
+      e.parameter.Amount,
+      formatDate(),
+      e.parameter.ForMonth,
+      e.parameter.Year || new Date().getFullYear(), 
+      e.parameter.TypeId,
+      e.parameter.OccasionId || "",   
+      e.parameter.Note || ""          
+    ]);
+    result = {status:"success"};
+  }
+
+  // ===== ADD EXPENSE =====
+  else if(action==="addExpense"){
+    addRow(SHEETS.EXPENSES, [
+      e.parameter.Id,
+      e.parameter.Title,
+      e.parameter.Amount,
+      formatDate(),
+      e.parameter.Year || new Date().getFullYear(),
+      e.parameter.ExpenseTypeId,
+      e.parameter.ForMonth || "" // Added Month tracking for expenses
+    ]);
+    result = {status:"success"};
+  }
+
+  // DELETE
+  else if(action==="deleteContribution"){
+    result = deleteRow(SHEETS.CONTRIBUTIONS, e.parameter.Id);
+  }
+
+  // DELETE EXPENSE 
+  else if(action==="deleteExpense"){
+    result = deleteRow(SHEETS.EXPENSES, e.parameter.Id);
+  }
+
+  // UPDATE CONTRIBUTION
+  else if(action==="updateContribution"){
+    result = updateRow(SHEETS.CONTRIBUTIONS, e.parameter);
+  }
+  
+  // UPDATE EXPENSE
+  else if(action==="updateExpense"){
+    result = updateExpenseRow(SHEETS.EXPENSES, e.parameter);
+  }
+
+  else result = {error:"Invalid"};
+
+  return ContentService
+    .createTextOutput(callback+"("+JSON.stringify(result)+")")
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+//update single line
+function updateSingle(sheetName, id, value){
+
+  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  let data = sheet.getDataRange().getValues();
+
+  for(let i=1;i<data.length;i++){
+
+    if(String(data[i][0]) === String(id)){
+      sheet.getRange(i+1,2).setValue(value);
+      return {status:"updated"};
+    }
+  }
+
+  return {status:"not found"};
+}
+
+//update user
+function updateUser(body){
+
+  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("USERS");
+  let data = sheet.getDataRange().getValues();
+
+  for(let i=1;i<data.length;i++){
+
+    if(String(data[i][0]) === String(body.UserId)){
+
+      sheet.getRange(i+1,2).setValue(body.Name);
+      sheet.getRange(i+1,3).setValue(body.Mobile);
+      sheet.getRange(i+1,4).setValue(body.Role);
+      sheet.getRange(i+1,5).setValue(body.Password);
+
+      return {status:"updated"};
+    }
+  }
+
+  return {status:"not found"};
+}
+
+// ADD
+function addRow(name,row){
+  SpreadsheetApp.getActiveSpreadsheet()
+    .getSheetByName(name)
+    .appendRow(row);
+}
+
+// DELETE
+function deleteRow(name,id){
+  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  let data = sheet.getDataRange().getValues();
+
+  for(let i=1;i<data.length;i++){
+    if(String(data[i][0])===String(id)){
+      sheet.deleteRow(i+1);
+      return {status:"deleted"};
+    }
+  }
+  return {status:"not found"};
+}
+
+// UPDATE CONTRIBUTION (Preserves Year, Occasion, Note)
+function updateRow(name,body){
+  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  let data = sheet.getDataRange().getValues();
+  for(let i=1;i<data.length;i++){
+    if(String(data[i][0])===String(body.Id)){
+      sheet.getRange(i+1,3).setValue(body.Amount);
+      sheet.getRange(i+1,5).setValue(body.ForMonth);
+      if(body.Year) sheet.getRange(i+1,6).setValue(body.Year);
+      sheet.getRange(i+1,7).setValue(body.TypeId);
+      if(body.OccasionId !== undefined) sheet.getRange(i+1,8).setValue(body.OccasionId);
+      if(body.Note !== undefined) sheet.getRange(i+1,9).setValue(body.Note);
+      return {status:"updated"};
+    }
+  }
+  return {status:"not found"};
+}
+
+// UPDATE EXPENSE
+function updateExpenseRow(name,body){
+  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  let data = sheet.getDataRange().getValues();
+  for(let i=1;i<data.length;i++){
+    if(String(data[i][0])===String(body.Id)){
+      sheet.getRange(i+1,2).setValue(body.Title);
+      sheet.getRange(i+1,3).setValue(body.Amount);
+      sheet.getRange(i+1,5).setValue(body.Year);
+      sheet.getRange(i+1,6).setValue(body.ExpenseTypeId);
+      sheet.getRange(i+1,7).setValue(body.ForMonth);
+      return {status:"updated"};
+    }
+  }
+  return {status:"not found"};
+}

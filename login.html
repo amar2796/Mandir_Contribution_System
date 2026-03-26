@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Mandir System</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    /* GLOBAL RESET & TYPOGRAPHY */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      /* Soft premium background matching index.html */
+      background: linear-gradient(135deg, #fdfbf7 0%, #f4f6f9 100%);
+    }
+
+    /* CENTER CONTAINER */
+    .container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* LOGIN CARD */
+    .card {
+      background: #fff;
+      padding: 40px 35px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      border-top: 5px solid #f7a01a;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* TITLE */
+    .card h2 {
+      margin-top: 0;
+      margin-bottom: 30px;
+      color: #946c44;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+    .card h2 i {
+      color: #f7a01a;
+      margin-right: 8px;
+    }
+
+    /* INPUT GROUPS */
+    .input-group {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .input-group i {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #aaa;
+      font-size: 1.1rem;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 14px 15px 14px 45px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      font-size: 15px;
+      font-family: 'Poppins', sans-serif;
+      transition: all 0.3s ease;
+      background: #fafafa;
+    }
+
+    .input-group input:focus {
+      border-color: #f7a01a;
+      background: #fff;
+      box-shadow: 0 0 8px rgba(247, 160, 26, 0.1);
+    }
+
+    /* FORGOT PASSWORD */
+    .forgot {
+      font-size: 0.85rem;
+      text-align: right;
+      color: #888;
+      cursor: pointer;
+      display: block;
+      margin-top: -10px;
+      margin-bottom: 25px;
+      transition: color 0.3s;
+    }
+    .forgot:hover {
+      color: #f7a01a;
+    }
+
+    /* LOGIN BUTTON */
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #f7a01a;
+      box-shadow: 0 4px 15px rgba(247, 160, 26, 0.3);
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+
+    button:hover {
+      background: #d35400;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(247, 160, 26, 0.4);
+    }
+
+    /* BACK TO HOME LINK */
+    .back-home {
+      display: inline-block;
+      font-size: 0.9rem;
+      color: #555;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+    
+    .back-home i {
+      margin-right: 5px;
+    }
+
+    .back-home:hover {
+      color: #f7a01a;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="card">
+
+    <h2><i class="fa-solid fa-om"></i> Mandir Login</h2>
+
+    <div class="input-group">
+      <i class="fa-solid fa-phone"></i>
+      <input type="text" id="mobile" placeholder="Mobile Number">
+    </div>
+
+    <div class="input-group">
+      <i class="fa-solid fa-lock"></i>
+      <input type="password" id="password" placeholder="Password">
+      <i class="fa-solid fa-eye" id="togglePassword" style="position: absolute; right: 15px; left: auto; cursor: pointer; color: #aaa;"></i>
+    </div>
+
+    <span class="forgot" onclick="alert('Forgot password feature is currently under development. Please contact the Admin.')">Forgot password?</span>
+
+    <button onclick="login()"><i class="fa-solid fa-right-to-bracket"></i> Secure Login</button>
+
+    <a href="index.html" class="back-home"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+
+  </div>
+</div>
+
+<script src="config.js"></script>
+
+<script>
+// ================= ORIGINAL LOGIN LOGIC =================
+function login(){
+
+  let mobile = document.getElementById("mobile").value;
+  let password = document.getElementById("password").value;
+
+  if(!mobile || !password) {
+    alert("Please enter both mobile number and password.");
+    return;
+  }
+
+  let cb = "handleLogin";
+
+  let s = document.createElement("script");
+  s.src = `${API_URL}?action=login&mobile=${mobile}&password=${password}&callback=${cb}`;
+
+  document.body.appendChild(s);
+}
+
+function handleLogin(res){
+
+  if(res.status === "success"){
+
+    let session = {
+      user: res.user,
+      expiry: Date.now() + (30 * 60 * 1000)
+    };
+
+    localStorage.setItem("session", JSON.stringify(session));
+
+    if(res.user.Role === "Admin"){
+      window.location.replace("admin.html");
+    } else {
+      window.location.replace("user.html");
+    }
+
+  } else {
+    alert("❌ Invalid Mobile Number or Password. Please try again.");
+  }
+}
+// Toggle password visibility feature
+document.getElementById("togglePassword").addEventListener("click", function() {
+  let p = document.getElementById("password");
+  if (p.type === "password") {
+    p.type = "text";
+    this.classList.replace("fa-eye", "fa-eye-slash");
+    this.style.color = "#f7a01a";
+  } else {
+    p.type = "password";
+    this.classList.replace("fa-eye-slash", "fa-eye");
+    this.style.color = "#aaa";
+  }
+});
+</script>
+
+</body>
+</html>
