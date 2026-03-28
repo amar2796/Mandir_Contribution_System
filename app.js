@@ -7,7 +7,7 @@ function escapeHtml(str) {
 
 function fmt(n) { return Number(n||0).toLocaleString("en-IN"); }
 
-/* ═══ ANIMATED BOTTOM-UP TOAST (FIX #6) ═══ */
+/* ═══ ANIMATED BOTTOM-UP TOAST ═══ */
 function toast(msg, type) {
   if (!document.getElementById("_toastCSS")) {
     let s = document.createElement("style"); s.id = "_toastCSS";
@@ -74,7 +74,7 @@ function updateLocalData(category,id,newData){
   render();if(typeof renderExpenses==="function")renderExpenses();loadSummary();
 }
 
-/* ═══ YEAR DROPDOWN (called AFTER data is loaded — FIX #4) ═══ */
+/* ═══ YEAR DROPDOWN ═══ */
 function loadYearDropdown(){
   const yearSelect=document.getElementById("yearSelect"); if(!yearSelect)return;
   let years=new Set();
@@ -112,6 +112,10 @@ function _ensureModalCSS(){
     ._mbtn{padding:9px 20px;border:none;border-radius:8px;cursor:pointer;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;color:#fff;transition:all .2s;}
     ._mbtn:hover{filter:brightness(1.1);transform:translateY(-1px);}
     @media(max-width:520px){#_uniModal{padding:8px;}._mbdy{padding:16px;}._mft{padding:12px 16px;}}
+    /* CROP MODAL */
+    #_cropWrap{position:relative;overflow:hidden;background:#111;width:100%;height:300px;cursor:crosshair;user-select:none;}
+    #_cropImg{position:absolute;top:0;left:0;transform-origin:top left;}
+    #_cropBox{position:absolute;border:2px solid #f7a01a;box-shadow:0 0 0 9999px rgba(0,0,0,0.5);pointer-events:none;}
   `;
   document.head.appendChild(st);
 }
@@ -129,8 +133,107 @@ function closeModal(){
   if(m){m.style.opacity="0";m.style.transition="opacity .2s";setTimeout(()=>{m.remove();document.body.style.overflow="";},200);}
 }
 
+/* ═══ PHOTO CROP SYSTEM ═══ */
+// Opens a square-crop + resize modal. Calls onDone(croppedBase64) when user confirms.
+function openCropModal(file, onDone) {
+  _ensureModalCSS();
+  let old=document.getElementById("_uniModal"); if(old)old.remove();
+  let overlay=document.createElement("div"); overlay.id="_uniModal";
+  overlay.innerHTML=`
+    <div class="_mbox" style="max-width:420px;">
+      <div class="_mhdr"><h3><i class="fa-solid fa-crop"></i> Crop Photo</h3></div>
+      <div class="_mbdy" style="padding:14px;">
+        <div id="_cropWrap">
+          <img id="_cropImg" src="" draggable="false"/>
+          <div id="_cropBox"></div>
+        </div>
+        <p style="font-size:11px;color:#999;margin:8px 0 0;text-align:center;">Drag to reposition · Square crop applied automatically</p>
+      </div>
+      <div class="_mft">
+        <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+        <button class="_mbtn" style="background:#f7a01a;" onclick="confirmCrop()"><i class="fa-solid fa-check"></i> Use Photo</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.body.style.overflow="hidden";
+
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const img=document.getElementById("_cropImg");
+    img.src=e.target.result;
+    img.onload=function(){
+      initCrop(img, e.target.result, onDone);
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
+function initCrop(imgEl, origSrc, onDone) {
+  const wrap=document.getElementById("_cropWrap");
+  const cropBox=document.getElementById("_cropBox");
+  const wW=wrap.clientWidth, wH=wrap.clientHeight;
+  const iW=imgEl.naturalWidth, iH=imgEl.naturalHeight;
+  const scale=Math.min(wW/iW, wH/iH);
+  const dW=iW*scale, dH=iH*scale;
+  const oX=(wW-dW)/2, oY=(wH-dH)/2;
+  imgEl.style.width=dW+"px"; imgEl.style.height=dH+"px";
+  imgEl.style.left=oX+"px"; imgEl.style.top=oY+"px";
+
+  const side=Math.min(dW,dH)*0.85;
+  let cx=(dW-side)/2+oX, cy=(dH-side)/2+oY;
+  let dragging=false, dragSX, dragSY, startCX, startCY;
+
+  function drawBox(){
+    cropBox.style.left=cx+"px"; cropBox.style.top=cy+"px";
+    cropBox.style.width=side+"px"; cropBox.style.height=side+"px";
+  }
+  drawBox();
+
+  wrap.addEventListener("mousedown",e=>{dragging=true;dragSX=e.clientX;dragSY=e.clientY;startCX=cx;startCY=cy;});
+  wrap.addEventListener("touchstart",e=>{dragging=true;dragSX=e.touches[0].clientX;dragSY=e.touches[0].clientY;startCX=cx;startCY=cy;},{passive:true});
+  function onMove(ex,ey){
+    if(!dragging)return;
+    cx=Math.max(oX,Math.min(oX+dW-side,startCX+(ex-dragSX)));
+    cy=Math.max(oY,Math.min(oY+dH-side,startCY+(ey-dragSY)));
+    drawBox();
+  }
+  wrap.addEventListener("mousemove",e=>onMove(e.clientX,e.clientY));
+  wrap.addEventListener("touchmove",e=>onMove(e.touches[0].clientX,e.touches[0].clientY),{passive:true});
+  window.addEventListener("mouseup",()=>{dragging=false;});
+  window.addEventListener("touchend",()=>{dragging=false;});
+
+  window._doCrop=function(){
+    const sx=(cx-oX)/scale, sy=(cy-oY)/scale, ss=side/scale;
+    const out=400;
+    const canvas=document.createElement("canvas"); canvas.width=out; canvas.height=out;
+    const ctx=canvas.getContext("2d");
+    const temp=new Image(); temp.src=origSrc;
+    temp.onload=function(){
+      ctx.drawImage(temp,sx,sy,ss,ss,0,0,out,out);
+      const b64=canvas.toDataURL("image/jpeg",0.75);
+      closeModal();
+      onDone(b64);
+    };
+  };
+}
+
+function confirmCrop(){
+  if(window._doCrop) window._doCrop();
+}
+
+/* ═══ RECEIPT DATA REGISTRY (FIX: avoids inline-JSON-in-onclick SyntaxError) ═══ */
+window._rcptStore = {};
+let _rcptIdx = 0;
+
+function _storeReceipt(c, userName, typeName, occasionName) {
+  const id = "r" + (++_rcptIdx);
+  window._rcptStore[id] = {c, userName, typeName, occasionName};
+  return id;
+}
+
 /* ═══ RECEIPT POPUP ═══ */
 function showReceipt(c, userName, typeName, occasionName){
+  const rid = _storeReceipt(c, userName, typeName, occasionName);
   let html=`
     <div class="_mhdr"><h3><i class="fa-solid fa-receipt"></i> Contribution Receipt</h3><button class="_mcls" onclick="closeModal()">×</button></div>
     <div class="_mbdy">
@@ -155,12 +258,15 @@ function showReceipt(c, userName, typeName, occasionName){
     </div>
     <div class="_mft">
       <button class="_mbtn" style="background:#999;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>
-      <button class="_mbtn" style="background:#27ae60;" onclick="exportReceiptPDF(${JSON.stringify({rid:c.ReceiptID,name:userName,amt:c.Amount,mon:c.ForMonth,yr:c.Year,typ:typeName,occ:occasionName,note:c.Note,dt:c.PaymentDate})})"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+      <button class="_mbtn" style="background:#27ae60;" onclick="exportReceiptPDF('${rid}')"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
     </div>`;
   openModal(html,"500px");
 }
 
-function exportReceiptPDF(d){
+function exportReceiptPDF(rid){
+  const stored = window._rcptStore[rid];
+  if(!stored){toast("Receipt data not found.","error");return;}
+  const {c,userName,typeName,occasionName} = stored;
   if(typeof window.jspdf==="undefined"){toast("PDF library not loaded.","error");return;}
   const {jsPDF}=window.jspdf;
   let doc=new jsPDF({format:"a5",unit:"mm"});
@@ -170,14 +276,14 @@ function exportReceiptPDF(d){
   doc.text("Shree Hanuman Mandir",w/2,12,{align:"center"});
   doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont(undefined,"normal");
   doc.text("Paliya, Sultanpur  |  Contribution Receipt",w/2,20,{align:"center"});
-  doc.text("✓ OFFICIAL RECEIPT",w/2,27,{align:"center"});
+  doc.text("OFFICIAL RECEIPT",w/2,27,{align:"center"});
   doc.autoTable({
     body:[
-      ["Receipt ID", d.rid||"—"],["Donor Name",d.name||"—"],
-      ["Amount (Rs.)", "Rs. "+Number(d.amt||0).toLocaleString("en-IN")],
-      ["For Month",d.mon||"—"],["Year",String(d.yr||"—")],
-      ["Type",d.typ||"—"],["Occasion",d.occ||"—"],
-      ["Note",d.note||"—"],["Date Recorded",d.dt||"—"]
+      ["Receipt ID", c.ReceiptID||"—"],["Donor Name",userName||"—"],
+      ["Amount (Rs.)", "Rs. "+Number(c.Amount||0).toLocaleString("en-IN")],
+      ["For Month",c.ForMonth||"—"],["Year",String(c.Year||"—")],
+      ["Type",typeName||"—"],["Occasion",occasionName||"—"],
+      ["Note",c.Note||"—"],["Date Recorded",c.PaymentDate||"—"]
     ],
     startY:36, theme:"grid",
     columnStyles:{0:{fontStyle:"bold",cellWidth:45,fillColor:[250,238,218],textColor:[99,56,6]},1:{cellWidth:w-73}},
@@ -186,7 +292,7 @@ function exportReceiptPDF(d){
   let fy=doc.lastAutoTable.finalY+8;
   doc.setFontSize(8);doc.setTextColor(160,160,160);
   doc.text("Thank you for your generous contribution. Generated: "+new Date().toLocaleDateString("en-IN"),w/2,fy,{align:"center"});
-  doc.save("Receipt_"+(d.rid||"Mandir")+".pdf");
+  doc.save("Receipt_"+(c.ReceiptID||"Mandir")+".pdf");
 }
 
 /* ═══ VIEW-ONLY DETAIL POPUP ═══ */

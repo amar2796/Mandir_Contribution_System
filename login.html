@@ -356,6 +356,16 @@
     <div id="_tw"></div>
     <script src="config.js"></script>
     <script>
+      // ── Redirect already-logged-in users away from login page
+      (function() {
+        try {
+          let s = JSON.parse(localStorage.getItem("session"));
+          if (s && Date.now() < s.expiry) {
+            location.replace(s.role === "Admin" ? "admin.html" : "user.html");
+          }
+        } catch(e) {}
+      })();
+
       // ── inline toast for login page (before app.js loads)
       function toast(msg, type) {
         let wrap = document.getElementById("_tw");

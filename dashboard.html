@@ -22,7 +22,7 @@
       }
       body {
         margin: 0;
-        padding: 16px;
+        padding: 10px 8px;
         font-family: "Poppins", sans-serif;
         background: #f4f6f9;
         color: #333;
@@ -308,6 +308,15 @@
       .cal-grid .cal-day.empty {
         cursor: default;
       }
+      /* Mobile: compress transaction log */
+      @media (max-width: 560px) {
+        body { padding: 6px 4px; }
+        .col-hide-mob { display: none !important; }
+        th, td { padding: 8px 7px; font-size: 11px; white-space: normal; }
+        table { min-width: 300px; }
+        .card { padding: 14px 10px; }
+        .grid-layout { gap: 10px; margin-bottom: 10px; }
+      }
     </style>
   </head>
   <body>
@@ -384,9 +393,13 @@
         <p>
           <span>Opening Balance:</span><b>₹ <span id="opening">0</span></b>
         </p>
+        <p style="background:#eafaf1;padding:6px 8px;border-radius:6px;border-bottom:none;">
+          <span style="font-weight:700;color:#27ae60;"><i class="fa-solid fa-circle-check" style="margin-right:4px;"></i>Full Year Collection:</span>
+          <b class="amount-col">₹ <span id="yearFullC">0</span></b>
+        </p>
         <p>
-          <span>Filtered Contributions:</span
-          ><b class="amount-col">+ ₹ <span id="yearTotalC">0</span></b>
+          <span style="color:#999;font-size:12px;" id="filteredCountLabel">↳ Filtered Contributions:</span>
+          <b class="amount-col" style="font-size:12px;">+ ₹ <span id="yearTotalC">0</span></b>
         </p>
         <p>
           <span>Filtered Expenses:</span
@@ -448,7 +461,7 @@
               <th>Name / Title</th>
               <th>Type</th>
               <th>Month</th>
-              <th>Occasion</th>
+              <th class="col-hide-mob">Occasion</th>
               <th>Amount</th>
               <th>Receipt</th>
             </tr>
@@ -471,17 +484,36 @@
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script>
-      // ── Session (FIX #2 — no pageshow loop)
+      // ── Session (security: back-button + copied URL protection)
       (function () {
         let s = JSON.parse(localStorage.getItem("session"));
         if (!s || Date.now() > s.expiry || s.role !== "Admin") {
           localStorage.clear();
+          history.replaceState(null, "", "login.html");
           location.replace("login.html");
           return;
         }
         s.expiry = Date.now() + 30 * 60 * 1000;
         localStorage.setItem("session", JSON.stringify(s));
       })();
+      window.addEventListener("pageshow", function() {
+        let s = JSON.parse(localStorage.getItem("session"));
+        if (!s || Date.now() > s.expiry || s.role !== "Admin") {
+          localStorage.clear();
+          history.replaceState(null, "", "login.html");
+          location.replace("login.html");
+        }
+      });
+      document.addEventListener("visibilitychange", function() {
+        if (!document.hidden) {
+          let s = JSON.parse(localStorage.getItem("session"));
+          if (!s || Date.now() > s.expiry || s.role !== "Admin") {
+            localStorage.clear();
+            history.replaceState(null, "", "login.html");
+            location.replace("login.html");
+          }
+        }
+      });
 
       // ── Globals
       let users = [],
@@ -717,11 +749,21 @@
           initO +
           contributions.reduce((s, c) => s + Number(c.Amount || 0), 0) -
           expenses.reduce((s, e) => s + Number(e.Amount || 0), 0);
+        // Full year collection (unfiltered, all contributions for the year)
+        let fullYearC = contributions.filter(c => Number(c.Year) === yr)
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
         document.getElementById("opening").innerText = fmt(opening);
+        document.getElementById("yearFullC").innerText = fmt(fullYearC);
         document.getElementById("yearTotalC").innerText = fmt(totalC);
         document.getElementById("yearTotalE").innerText = fmt(totalE);
         document.getElementById("closing").innerText = fmt(closing);
         document.getElementById("grandTotal").innerText = fmt(grandTotal);
+        // Update filtered count label
+        let filtLabel = document.getElementById("filteredCountLabel");
+        if (filtLabel) {
+          let countTxt = filteredC.length > 0 ? filteredC.length + " Filtered Contribution" + (filteredC.length !== 1 ? "s" : "") : "Filtered Contributions";
+          filtLabel.textContent = "↳ " + countTxt + ":";
+        }
       }
 
       function renderMonthWise() {
@@ -790,15 +832,10 @@
           let oName =
             occasions.find((x) => String(x.OccasionId) === String(c.OccasionId))
               ?.OccasionName || "—";
+          const _drid = _storeReceipt(c, uName, tName, oName);
           rows.push({
             date: c.PaymentDate || "0",
-            html: `<tr style="cursor:pointer;" onclick="showReceipt(${JSON.stringify(
-              c
-            )
-              .replace(/'/g, "&#39;")
-              .replace(/"/g, "&quot;")},'${escapeHtml(uName)}','${escapeHtml(
-              tName
-            )}','${escapeHtml(oName)}')">
+            html: `<tr style="cursor:pointer;" onclick="showReceiptById('${_drid}')">
       <td>${c.PaymentDate || "N/A"}</td>
       <td><i class="fa-solid fa-user" style="color:#aaa;margin-right:4px;font-size:11px;"></i>${escapeHtml(
         uName
@@ -806,15 +843,7 @@
       <td><span class="badge badge-green">${escapeHtml(tName)}</span></td>
       <td>${c.ForMonth || "—"}</td><td>${escapeHtml(oName)}</td>
       <td class="amount-col">+ ₹ ${fmt(c.Amount)}</td>
-      <td><button class="btn-blue" style="padding:3px 8px;font-size:11px;box-shadow:none;" onclick="event.stopPropagation();showReceipt(${JSON.stringify(
-        c
-      )
-        .replace(/'/g, "&#39;")
-        .replace(/"/g, "&quot;")},'${escapeHtml(uName)}','${escapeHtml(
-              tName
-            )}','${escapeHtml(
-              oName
-            )}')"><i class="fa-solid fa-receipt"></i></button></td>
+      <td><button class="btn-blue" style="padding:3px 8px;font-size:11px;box-shadow:none;" onclick="event.stopPropagation();showReceiptById('${_drid}')"><i class="fa-solid fa-receipt"></i></button></td>
     </tr>`,
           });
         });
@@ -897,6 +926,12 @@
           styles: { fontSize: 8 },
         });
         doc.save(`Mandir_Report_${selectedYear}_${Date.now()}.pdf`);
+      }
+
+      function showReceiptById(rid) {
+        const d = window._rcptStore[rid];
+        if (!d) return;
+        showReceipt(d.c, d.userName, d.typeName, d.occasionName);
       }
 
       init();

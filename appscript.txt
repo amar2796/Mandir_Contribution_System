@@ -116,6 +116,53 @@ function doGet(e) {
   else if (action === "getExpenses")     result = getSheetData(SHEETS.EXPENSES);
   else if (action === "getYearConfig")   result = getSheetData("YEAR_CONFIG");
 
+  // ── GOAL MANAGEMENT
+  else if (action === "addGoal") {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.GOALS);
+    if (!sheet) { result = { status: "error", message: "GOALS sheet not found" }; }
+    else {
+      const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+      const row = headers.map(h => {
+        if (h === "GoalId")     return sanitize(e.parameter.GoalId, 50) || generateId();
+        if (h === "GoalName")   return sanitize(e.parameter.GoalName, 200);
+        if (h === "TargetAmount") return Number(e.parameter.TargetAmount||0);
+        if (h === "CurrentAmount") return 0;
+        if (h === "Status")     return sanitize(e.parameter.Status, 20) || "Disabled";
+        if (h === "CreatedAt")  return formatDate();
+        return "";
+      });
+      sheet.appendRow(row);
+      logAction("Admin", "addGoal", sanitize(e.parameter.GoalName, 100));
+      result = { status: "success" };
+    }
+  }
+  else if (action === "updateGoal") {
+    const rows = getSheetData(SHEETS.GOALS);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.GOALS);
+    const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+    const rid = sanitize(e.parameter.GoalId, 50);
+    const idx = rows.findIndex(r => String(r.GoalId) === rid);
+    if (idx === -1) { result = { status: "error", message: "Goal not found" }; }
+    else {
+      const sheetRow = idx + 2;
+      headers.forEach((h,i) => {
+        if (h === "GoalName")     sheet.getRange(sheetRow,i+1).setValue(sanitize(e.parameter.GoalName,200));
+        if (h === "TargetAmount") sheet.getRange(sheetRow,i+1).setValue(Number(e.parameter.TargetAmount||0));
+        if (h === "Status")       sheet.getRange(sheetRow,i+1).setValue(sanitize(e.parameter.Status,20));
+      });
+      logAction("Admin", "updateGoal", rid);
+      result = { status: "updated" };
+    }
+  }
+  else if (action === "deleteGoal") {
+    const rows = getSheetData(SHEETS.GOALS);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.GOALS);
+    const rid = sanitize(e.parameter.GoalId, 50);
+    const idx = rows.findIndex(r => String(r.GoalId) === rid);
+    if (idx === -1) { result = { status: "error", message: "Goal not found" }; }
+    else { sheet.deleteRow(idx + 2); logAction("Admin", "deleteGoal", rid); result = { status: "deleted" }; }
+  }
+
   // ── GET ALL DATA IN ONE REQUEST
   else if (action === "getAllData") {
     result = {
@@ -472,6 +519,17 @@ function doPost(e) {
           .setMimeType(ContentService.MimeType.JSON);
       }
 
+      // Delete old photo from Drive if provided (FIX: remove old photo on update)
+      if (data.oldPhotoURL && String(data.oldPhotoURL).includes("lh3.googleusercontent.com/d/")) {
+        try {
+          const oldId = data.oldPhotoURL.split("/d/")[1].split("?")[0].trim();
+          if (oldId && oldId.length > 10) {
+            DriveApp.getFileById(oldId).setTrashed(true);
+          }
+        } catch(delErr) {
+          // Non-fatal: old photo delete failed, continue with upload
+        }
+      }
       const photoUrl = uploadUserPhoto(data.base64, sanitize(data.fileName, 100));
 
       const userUpdateRes = updateUser({

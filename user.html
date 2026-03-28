@@ -6,354 +6,184 @@
     <title>User Dashboard - Mandir System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        font-family: "Poppins", sans-serif;
-        background: #f4f6f9;
-        color: #333;
-      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: "Poppins", sans-serif; background: #f4f6f9; color: #333; }
+
+      /* ── HEADER ── */
       .header {
         background: white;
-        padding: 14px 20px;
+        padding: 10px 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        flex-wrap: wrap;
-        gap: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        position: sticky; top: 0; z-index: 100;
+        gap: 10px;
       }
-      .header h3 {
-        margin: 0;
-        color: #946c44;
-        font-weight: 600;
-        font-size: 1rem;
+      .header-left {
+        display: flex; align-items: center; gap: 10px; min-width: 0;
       }
-      .main {
-        padding: 16px;
-        max-width: 1100px;
-        margin: 0 auto;
+      .hdr-avatar {
+        width: 36px; height: 36px; border-radius: 50%;
+        border: 2px solid #f7a01a; object-fit: cover;
+        background: #faeeda; flex-shrink: 0; cursor: pointer;
       }
+      .hdr-info { min-width: 0; }
+      .hdr-name {
+        font-weight: 700; font-size: 0.9rem; color: #334155;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        max-width: 160px; display: block;
+      }
+      .hdr-edit {
+        font-size: 11px; color: #f7a01a; cursor: pointer;
+        font-weight: 600; text-decoration: none;
+      }
+      .hdr-edit:hover { color: #d35400; }
+      .header-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+      .main { padding: 10px 8px; max-width: 1100px; margin: 0 auto; }
+      @media (max-width: 520px) {
+        .main { padding: 8px 4px; }
+        .card { padding: 14px 10px; margin-bottom: 10px; }
+        .total-banner { padding: 16px 10px; }
+        .grid-layout { gap: 10px; margin-bottom: 10px; }
+      }
+
       button {
-        padding: 10px 18px;
-        background: #f7a01a;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-family: "Poppins", sans-serif;
-        font-weight: 600;
-        transition: all 0.3s;
-        box-shadow: 0 4px 10px rgba(247, 160, 26, 0.3);
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
+        padding: 10px 18px; background: #f7a01a; color: white; border: none;
+        border-radius: 8px; cursor: pointer; font-family: "Poppins", sans-serif;
+        font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 10px rgba(247,160,26,0.3);
+        display: inline-flex; align-items: center; gap: 7px;
       }
-      button:hover {
-        background: #d35400;
-        transform: translateY(-2px);
-      }
-      .btn-secondary {
-        background: #334155;
-        box-shadow: 0 4px 10px rgba(51, 65, 85, 0.3);
-      }
-      .btn-secondary:hover {
-        background: #1e293b;
-      }
-      .btn-danger {
-        background: #e74c3c;
-        box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
-      }
-      .btn-danger:hover {
-        background: #c0392b;
-      }
-      .btn-sm {
-        padding: 5px 10px;
-        font-size: 12px;
-        box-shadow: none;
-      }
-      .btn-blue {
-        background: #2980b9;
-        box-shadow: none;
-      }
-      .btn-blue:hover {
-        background: #1a6fa0;
-      }
+      button:hover { background: #d35400; transform: translateY(-2px); }
+      .btn-secondary { background: #334155; box-shadow: 0 4px 10px rgba(51,65,85,0.3); }
+      .btn-secondary:hover { background: #1e293b; }
+      .btn-danger { background: #e74c3c; box-shadow: 0 4px 10px rgba(231,76,60,0.3); }
+      .btn-danger:hover { background: #c0392b; }
+      .btn-sm { padding: 5px 10px; font-size: 12px; box-shadow: none; }
+      .btn-blue { background: #2980b9; box-shadow: none; }
+      .btn-blue:hover { background: #1a6fa0; }
+
       .grid-layout {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 16px;
-        margin-bottom: 16px;
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px; margin-bottom: 16px;
       }
-      @media (max-width: 600px) {
-        .grid-layout {
-          grid-template-columns: 1fr;
-        }
-      }
+      @media (max-width: 600px) { .grid-layout { grid-template-columns: 1fr; } }
+
       .card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-        border-top: 4px solid #f7a01a;
+        background: white; padding: 20px; border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-top: 4px solid #f7a01a;
         margin-bottom: 16px;
       }
       .card h3 {
-        margin-top: 0;
-        color: #333;
-        border-bottom: 2px solid #f4f6f9;
-        padding-bottom: 8px;
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 1rem;
+        margin-top: 0; color: #333; border-bottom: 2px solid #f4f6f9;
+        padding-bottom: 8px; margin-bottom: 16px; display: flex;
+        align-items: center; gap: 8px; font-size: 1rem;
       }
-      .card h3 i {
-        color: #f7a01a;
-      }
+      .card h3 i { color: #f7a01a; }
+
+      /* Total banner */
       .total-banner {
         background: linear-gradient(135deg, #27ae60, #2ecc71);
-        color: white;
-        padding: 22px;
-        border-radius: 12px;
-        text-align: center;
-        margin-bottom: 16px;
-        box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
+        color: white; padding: 22px; border-radius: 12px;
+        text-align: center; margin-bottom: 16px;
+        box-shadow: 0 8px 20px rgba(39,174,96,0.3);
       }
-      .total-banner h2 {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 400;
-        opacity: 0.9;
-      }
-      .total-banner h1 {
-        margin: 8px 0 0;
-        font-size: 2.4rem;
-        font-weight: 700;
-      }
+      .total-banner h2 { margin: 0; font-size: 1rem; font-weight: 400; opacity: 0.9; }
+      .total-banner h1 { margin: 8px 0 0; font-size: 2.4rem; font-weight: 700; }
+
+      /* Goal */
+      .goal-card { background: white; padding: 20px; border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-top: 4px solid #f7a01a;
+        margin-bottom: 16px; }
+      .goal-card h3 { margin-top: 0; font-size: 1rem; display:flex;align-items:center;gap:8px; }
+      .goal-card h3 i { color: #f7a01a; }
+
       .summary-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px dashed #eee;
-        font-size: 0.95rem;
+        display: flex; justify-content: space-between; padding: 8px 0;
+        border-bottom: 1px dashed #eee; font-size: 0.95rem;
       }
-      .summary-item:last-child {
-        border-bottom: none;
+      .summary-item:last-child { border-bottom: none; }
+      .summary-item b { color: #27ae60; }
+
+      input, select {
+        width: 100%; padding: 10px 14px; margin-bottom: 13px; border: 1px solid #ddd;
+        border-radius: 8px; font-family: "Poppins", sans-serif; outline: none;
+        transition: border-color 0.3s; font-size: 13px;
       }
-      .summary-item b {
-        color: #27ae60;
-      }
-      input,
-      select {
-        width: 100%;
-        padding: 10px 14px;
-        margin-bottom: 13px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-family: "Poppins", sans-serif;
-        outline: none;
-        transition: border-color 0.3s;
-        font-size: 13px;
-      }
-      input:focus,
-      select:focus {
-        border-color: #f7a01a;
-      }
-      label {
-        display: block;
-        font-size: 12px;
-        font-weight: 600;
-        color: #555;
-        margin-bottom: 4px;
-      }
+      input:focus, select:focus { border-color: #f7a01a; }
+      label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
+
       .filter-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 12px;
-        align-items: end;
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px; align-items: end;
       }
-      @media (max-width: 520px) {
-        .filter-row {
-          grid-template-columns: 1fr;
-        }
-      }
-      .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        width: 100%;
-      }
+      @media (max-width: 520px) { .filter-row { grid-template-columns: 1fr 1fr; } }
+
+      .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
       table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-        border-radius: 8px;
-        overflow: hidden;
-        margin-top: 8px;
-        min-width: 380px;
+        width: 100%; border-collapse: collapse; background: white;
+        border-radius: 8px; overflow: hidden; margin-top: 8px; min-width: 340px;
       }
-      thead {
-        background: #334155;
-        color: white;
+      thead { background: #334155; color: white; }
+      th, td {
+        padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee;
+        white-space: nowrap; font-size: 12.5px;
       }
-      th,
-      td {
-        padding: 10px 12px;
-        text-align: left;
-        border-bottom: 1px solid #eee;
-        white-space: nowrap;
-        font-size: 12.5px;
+      tbody tr:hover { background: #fdfbf7; cursor: pointer; }
+      .amount-col { font-weight: 700; color: #27ae60; }
+
+      /* Hide columns on mobile */
+      @media (max-width: 520px) {
+        .col-year, .col-receipt-th { display: none; }
+        th, td { padding: 8px 8px; font-size: 11.5px; }
       }
-      tbody tr:hover {
-        background: #fdfbf7;
-        cursor: pointer;
-      }
-      .amount-col {
-        font-weight: 700;
-        color: #27ae60;
-      }
-      /* Profile card */
-      .profile-card {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        flex-wrap: wrap;
-      }
-      .profile-photo {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        border: 3px solid #f7a01a;
-        object-fit: cover;
-        background: #faeeda;
-        flex-shrink: 0;
-      }
-      .profile-info h2 {
-        margin: 0 0 4px;
-        color: #334155;
-        font-size: 1.15rem;
-      }
-      .profile-info p {
-        margin: 0 0 8px;
-        color: #666;
-        font-size: 13px;
-      }
-      /* Edit profile photo preview */
+
       .photo-preview {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 3px solid #f7a01a;
-        background: #faeeda;
-        display: block;
+        width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+        border: 3px solid #f7a01a; background: #faeeda; display: block;
         margin: 0 auto 12px;
       }
     </style>
   </head>
   <body>
     <div class="header">
-      <h3 id="welcomeUser"><i class="fa-solid fa-user"></i> Loading...</h3>
-      <button
-        class="btn-danger"
-        onclick="logout()"
-        style="padding: 8px 14px; font-size: 13px"
-      >
-        <i class="fa-solid fa-power-off"></i> Logout
-      </button>
+      <div class="header-left">
+        <img id="hdr_photo" class="hdr-avatar" src=""
+          onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'36\' height=\'36\'><circle cx=\'18\' cy=\'18\' r=\'18\' fill=\'%23f7a01a\'/><text x=\'18\' y=\'23\' text-anchor=\'middle\' fill=\'white\' font-size=\'16\' font-family=\'Arial\'>&#128100;</text></svg>'"
+          onclick="openEditProfile()" title="Edit Profile"
+        />
+        <div class="hdr-info">
+          <span class="hdr-name" id="hdr_name">Loading...</span>
+          <a class="hdr-edit" onclick="openEditProfile()"><i class="fa-solid fa-pen" style="font-size:10px;"></i> Edit Profile</a>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn-danger" onclick="logout()" style="padding:8px 14px;font-size:13px;">
+          <i class="fa-solid fa-power-off"></i> <span class="hide-xs">Logout</span>
+        </button>
+      </div>
     </div>
 
     <div class="main">
-      <!-- Profile + Goal -->
-      <div class="grid-layout">
-        <div class="card">
-          <div class="profile-card">
-            <img
-              id="u_dash_photo"
-              class="profile-photo"
-              src=""
-              onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><circle cx=\'40\' cy=\'40\' r=\'40\' fill=\'%23f7a01a\'/><text x=\'40\' y=\'52\' text-anchor=\'middle\' fill=\'white\' font-size=\'32\' font-family=\'Arial\'>&#128100;</text></svg>'"
-            />
-            <div class="profile-info">
-              <h2 id="u_dash_name">Loading...</h2>
-              <p id="u_dash_mobile"></p>
-              <button
-                onclick="openEditProfile()"
-                style="padding: 7px 14px; font-size: 12px"
-              >
-                <i class="fa-solid fa-user-pen"></i> Edit Profile
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" id="goalSection" style="display: none">
-          <h3 id="goalTitle">
-            <i class="fa-solid fa-bullseye"></i> Goal Progress
-          </h3>
-          <div
-            style="
-              background: #eee;
-              border-radius: 15px;
-              height: 22px;
-              width: 100%;
-              overflow: hidden;
-            "
-          >
-            <div
-              id="goalBar"
-              style="
-                background: linear-gradient(90deg, #f7a01a, #d35400);
-                height: 100%;
-                width: 0%;
-                transition: width 1s ease;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: bold;
-                font-size: 11px;
-              "
-            >
-              0%
-            </div>
-          </div>
-          <p
-            id="goalAmount"
-            style="
-              margin: 8px 0 0;
-              font-weight: 600;
-              text-align: right;
-              font-size: 13px;
-            "
-          ></p>
-        </div>
+      <!-- Row 1: Total banner (always first) -->
+      <div class="total-banner">
+        <h2><i class="fa-solid fa-hand-holding-dollar"></i> Your Total Contributions</h2>
+        <h1>₹ <span id="totalAmount">0</span></h1>
       </div>
 
-      <!-- Total banner -->
-      <div class="total-banner">
-        <h2>
-          <i class="fa-solid fa-hand-holding-dollar"></i> Your Total
-          Contributions
-        </h2>
-        <h1>₹ <span id="totalAmount">0</span></h1>
+      <!-- Row 2: Goal (only if enabled) -->
+      <div class="goal-card" id="goalSection" style="display:none;">
+        <h3 id="goalTitle"><i class="fa-solid fa-bullseye"></i> Goal Progress</h3>
+        <div style="background:#eee;border-radius:15px;height:22px;width:100%;overflow:hidden;">
+          <div id="goalBar" style="background:linear-gradient(90deg,#f7a01a,#d35400);height:100%;width:0%;transition:width 1s ease;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:11px;">0%</div>
+        </div>
+        <p id="goalAmount" style="margin:8px 0 0;font-weight:600;text-align:right;font-size:13px;"></p>
       </div>
 
       <!-- Month + Type summaries -->
@@ -373,56 +203,26 @@
         <h3><i class="fa-solid fa-filter"></i> Search & Filters</h3>
         <div class="filter-row">
           <div>
-            <label>Year</label
-            ><select
-              id="filterYear"
-              style="margin: 0"
-              onchange="applyFilter()"
-            ></select>
+            <label>Year</label>
+            <select id="filterYear" style="margin:0;" onchange="applyFilter()"></select>
           </div>
           <div>
-            <label>Month</label
-            ><select id="filterMonth" style="margin: 0"></select>
+            <label>Month</label>
+            <select id="filterMonth" style="margin:0;"></select>
           </div>
           <div>
-            <label>Type</label
-            ><select id="filterType" style="margin: 0"></select>
+            <label>Type</label>
+            <select id="filterType" style="margin:0;"></select>
           </div>
           <div>
-            <label>Search</label
-            ><input
-              type="text"
-              id="searchInput"
-              placeholder="Amount, month..."
-              onkeyup="searchData()"
-              style="margin: 0"
-            />
+            <label>Search</label>
+            <input type="text" id="searchInput" placeholder="Amount, month..." onkeyup="searchData()" style="margin:0;" />
           </div>
         </div>
-        <div
-          style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap"
-        >
-          <button onclick="applyFilter()" style="flex: 1; min-width: 100px">
-            <i class="fa-solid fa-magnifying-glass"></i> Apply
-          </button>
-          <button
-            onclick="resetFilter()"
-            class="btn-secondary"
-            style="flex: 1; min-width: 100px"
-          >
-            <i class="fa-solid fa-rotate-right"></i> Reset
-          </button>
-          <button
-            onclick="exportPDF()"
-            style="
-              flex: 1;
-              min-width: 100px;
-              background: #27ae60;
-              box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
-            "
-          >
-            <i class="fa-solid fa-file-pdf"></i> Export PDF
-          </button>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+          <button onclick="applyFilter()" style="flex:1;min-width:80px;"><i class="fa-solid fa-magnifying-glass"></i> Apply</button>
+          <button onclick="resetFilter()" class="btn-secondary" style="flex:1;min-width:80px;"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+          <button onclick="exportPDF()" style="flex:1;min-width:80px;background:#27ae60;box-shadow:0 4px 10px rgba(39,174,96,0.3);"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
         </div>
       </div>
 
@@ -430,9 +230,7 @@
       <div class="card">
         <h3>
           <i class="fa-solid fa-list-ul"></i> Your Contributions
-          <span style="font-size: 11px; font-weight: 400; color: #999"
-            >(click row for receipt)</span
-          >
+          <span style="font-size:11px;font-weight:400;color:#999;">(click row for receipt)</span>
         </h3>
         <div class="table-responsive">
           <table>
@@ -441,10 +239,10 @@
                 <th>#</th>
                 <th>Amount (₹)</th>
                 <th>Month</th>
-                <th>Year</th>
+                <th class="col-year">Year</th>
                 <th>Type</th>
                 <th>Date</th>
-                <th>Receipt</th>
+                <th class="col-receipt-th">Receipt</th>
               </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -459,134 +257,96 @@
       // ── Session
       (function () {
         let s = JSON.parse(localStorage.getItem("session"));
-        if (!s || Date.now() > s.expiry) {
-          localStorage.clear();
-          location.replace("login.html");
-          return;
-        }
-        if (s.role !== "User") {
-          location.replace("admin.html");
-          return;
-        }
+        if (!s || Date.now() > s.expiry) { localStorage.clear(); history.replaceState(null,"","login.html"); location.replace("login.html"); return; }
+        if (s.role !== "User") { location.replace("admin.html"); return; }
         s.expiry = Date.now() + 30 * 60 * 1000;
         localStorage.setItem("session", JSON.stringify(s));
       })();
-      window.addEventListener("pageshow", () => {
-        if (!localStorage.getItem("session")) location.replace("login.html");
+      window.addEventListener("pageshow", (e) => {
+        let s = JSON.parse(localStorage.getItem("session"));
+        if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null,"","login.html"); location.replace("login.html"); }
       });
-      function logout() {
-        localStorage.clear();
-        location.replace("login.html");
-      }
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          let s = JSON.parse(localStorage.getItem("session"));
+          if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null,"","login.html"); location.replace("login.html"); }
+        }
+      });
+      function logout() { localStorage.clear(); history.replaceState(null,"","login.html"); location.replace("login.html"); }
 
       // ── Variables
-      let users = [],
-        types = [],
-        occasions = [],
-        data = [],
-        allContributions = [];
-      const months = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
+      let users = [], types = [], occasions = [], data = [], allContributions = [];
+      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-      function showUser() {
-        let s = JSON.parse(localStorage.getItem("session"));
-        document.getElementById(
-          "welcomeUser"
-        ).innerHTML = `<i class="fa-solid fa-user"></i> Welcome, ${s.name}`;
+      // ── Update header with user info
+      function updateHeader(myProfile, s) {
+        document.getElementById("hdr_name").innerText = myProfile?.Name || s.name;
+        if (myProfile?.PhotoURL) {
+          let url = myProfile.PhotoURL;
+          if (url.includes("drive.google.com/uc")) {
+            let m = url.match(/[?&]id=([^&]+)/);
+            if (m) url = "https://lh3.googleusercontent.com/d/" + m[1];
+          }
+          document.getElementById("hdr_photo").src = url;
+        }
       }
 
-      // ── EDIT PROFILE POPUP (FIX — name/email/photo only, mobile read-only)
+      // ── EDIT PROFILE POPUP with crop
       function openEditProfile() {
         let s = JSON.parse(localStorage.getItem("session"));
-        let myProfile = users.find(
-          (u) => String(u.UserId) === String(s.userId)
-        );
+        let myProfile = users.find(u => String(u.UserId) === String(s.userId));
         let currentPhoto = myProfile?.PhotoURL || "";
         let html = `
-      <div class="_mhdr"><h3><i class="fa-solid fa-user-pen"></i> Edit Profile</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-      <div class="_mbdy" style="text-align:center;">
-        <img id="photoPreview" class="photo-preview" src="${
-          currentPhoto ||
-          "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><circle cx='40' cy='40' r='40' fill='%23f7a01a'/></svg>"
-        }" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><circle cx=\'40\' cy=\'40\' r=\'40\' fill=\'%23f7a01a\'/></svg>'"/>
-        <button onclick="pickPhoto()" style="padding:6px 14px;font-size:12px;margin-bottom:16px;"><i class="fa-solid fa-camera"></i> Change Photo</button>
-        <input type="file" id="photoFile" accept="image/*" style="display:none;" onchange="previewPhoto(this)"/>
-        <div style="text-align:left;">
-          <label class="_fl">Full Name</label>
-          <input class="_fi" id="ep_name" value="${escapeHtml(
-            myProfile?.Name || s.name
-          )}" placeholder="Your name"/>
-          <label class="_fl">Email</label>
-          <input class="_fi" id="ep_email" type="email" value="${escapeHtml(
-            myProfile?.Email || s.email || ""
-          )}" placeholder="your@email.com"/>
-          <label class="_fl">Mobile <span style="color:#999;font-weight:400;">(cannot be changed here)</span></label>
-          <input class="_fi" value="${escapeHtml(
-            String(myProfile?.Mobile || "")
-          )}" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;margin-bottom:4px;"/>
-          <label class="_fl">Password <span style="color:#999;font-weight:400;">(cannot be changed here — use forgot password)</span></label>
-          <input class="_fi" value="••••••••" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;"/>
-        </div>
-      </div>
-      <div class="_mft">
-        <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
-        <button class="_mbtn" style="background:#f7a01a;" onclick="saveProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
-      </div>`;
+          <div class="_mhdr"><h3><i class="fa-solid fa-user-pen"></i> Edit Profile</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy" style="text-align:center;">
+            <img id="photoPreview" class="photo-preview" src="${escapeHtml(currentPhoto) || "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><circle cx='40' cy='40' r='40' fill='%23f7a01a'/></svg>"}"
+              onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><circle cx=\'40\' cy=\'40\' r=\'40\' fill=\'%23f7a01a\'/></svg>'"/>
+            <button onclick="pickPhoto()" style="padding:6px 14px;font-size:12px;margin-bottom:16px;"><i class="fa-solid fa-camera"></i> Change Photo</button>
+            <input type="file" id="photoFile" accept="image/*" style="display:none;" onchange="handlePhotoSelected(this)"/>
+            <input type="hidden" id="croppedBase64" value=""/>
+            <div style="text-align:left;">
+              <label class="_fl">Full Name</label>
+              <input class="_fi" id="ep_name" value="${escapeHtml(myProfile?.Name || s.name)}" placeholder="Your name"/>
+              <label class="_fl">Email</label>
+              <input class="_fi" id="ep_email" type="email" value="${escapeHtml(myProfile?.Email || s.email || "")}" placeholder="your@email.com"/>
+              <label class="_fl">Mobile <span style="color:#999;font-weight:400;">(cannot be changed here)</span></label>
+              <input class="_fi" value="${escapeHtml(String(myProfile?.Mobile || ""))}" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;margin-bottom:4px;"/>
+              <label class="_fl">Password <span style="color:#999;font-weight:400;">(use forgot password to change)</span></label>
+              <input class="_fi" value="••••••••" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;"/>
+            </div>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+            <button class="_mbtn" style="background:#f7a01a;" onclick="saveProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
+          </div>`;
         openModal(html, "480px");
       }
 
-      function pickPhoto() {
-        document.getElementById("photoFile").click();
-      }
-      function previewPhoto(input) {
+      function pickPhoto() { document.getElementById("photoFile").click(); }
+
+      function handlePhotoSelected(input) {
         let file = input.files[0];
         if (!file) return;
-        if (file.size > 2 * 1024 * 1024) {
-          toast("Photo must be under 2MB.", "error");
-          return;
-        }
-        let reader = new FileReader();
-        reader.onload = (e) => {
-          document.getElementById("photoPreview").src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+        if (file.size > 5 * 1024 * 1024) { toast("Photo must be under 5MB.", "error"); return; }
+        openCropModal(file, function(base64) {
+          document.getElementById("croppedBase64").value = base64;
+          let prev = document.getElementById("photoPreview");
+          if (prev) prev.src = base64;
+        });
       }
 
       async function saveProfile() {
         let s = JSON.parse(localStorage.getItem("session"));
-        let myProfile = users.find(
-          (u) => String(u.UserId) === String(s.userId)
-        );
+        let myProfile = users.find(u => String(u.UserId) === String(s.userId));
         let name = document.getElementById("ep_name").value.trim();
         let email = document.getElementById("ep_email").value.trim();
-        let fileInput = document.getElementById("photoFile");
-        if (!name) {
-          toast("Name cannot be empty.", "error");
-          return;
-        }
+        let croppedB64 = document.getElementById("croppedBase64").value;
+        if (!name) { toast("Name cannot be empty.", "error"); return; }
 
         let photoURL = myProfile?.PhotoURL || "";
+        let oldPhotoURL = myProfile?.PhotoURL || "";
 
-        // If new photo selected — upload first
-        if (fileInput.files.length > 0) {
-          let file = fileInput.files[0];
-          let reader = new FileReader();
-          let base64 = await new Promise((res) => {
-            reader.onload = (e) => res(e.target.result);
-            reader.readAsDataURL(file);
-          });
+        if (croppedB64) {
           toast("Uploading photo...", "warn");
           try {
             let response = await fetch(API_URL, {
@@ -601,8 +361,9 @@
                 Email: email,
                 Status: "Active",
                 AdminName: name,
-                base64: base64,
+                base64: croppedB64,
                 fileName: "User_" + s.userId + "_" + Date.now() + ".jpg",
+                oldPhotoURL: oldPhotoURL,
               }),
             });
             let res = await response.json();
@@ -610,17 +371,13 @@
               photoURL = res.photoUrl;
               toast("✅ Photo uploaded!");
             } else {
-              toast(
-                "Photo upload failed, but profile will still be updated.",
-                "warn"
-              );
+              toast("Photo upload failed, profile will still update.", "warn");
             }
           } catch (e) {
             toast("Photo upload failed: " + e.message, "warn");
           }
         }
 
-        // Save name + email (and new photo if any)
         try {
           let res = await postData({
             action: "updateUser",
@@ -635,14 +392,11 @@
             AdminName: name,
           });
           if (res.status === "updated") {
-            // Update session name
-            s.name = name;
-            s.email = email;
-            s.expiry = Date.now() + 30 * 60 * 1000;
+            s.name = name; s.email = email; s.expiry = Date.now() + 30 * 60 * 1000;
             localStorage.setItem("session", JSON.stringify(s));
             toast("✅ Profile updated!");
             closeModal();
-            init(); // refresh data
+            init();
           } else {
             toast("❌ Update failed.", "error");
           }
@@ -660,34 +414,10 @@
           types = allData.types || [];
           occasions = allData.occasions || [];
           allContributions = allData.contributions || [];
-          data = allContributions.filter(
-            (c) => String(c.UserId) === String(s.userId)
-          );
+          data = allContributions.filter(c => String(c.UserId) === String(s.userId));
 
-          let myProfile = users.find(
-            (u) => String(u.UserId) === String(s.userId)
-          );
-
-          // FIX — show name from profile
-          document.getElementById("u_dash_name").innerText =
-            myProfile?.Name || s.name;
-          document.getElementById("u_dash_mobile").innerHTML = myProfile
-            ? `<i class="fa-solid fa-phone" style="color:#f7a01a;margin-right:4px;"></i>${myProfile.Mobile}`
-            : "";
-
-          // FIX #3 — use lh3 URL for Drive photos (avoids OpaqueResponseBlocking)
-          if (myProfile?.PhotoURL) {
-            let photoURL = myProfile.PhotoURL;
-            // Convert drive.google.com/uc?... to lh3 format if needed
-            if (photoURL.includes("drive.google.com/uc")) {
-              let idMatch = photoURL.match(/[?&]id=([^&]+)/);
-              if (idMatch)
-                photoURL = "https://lh3.googleusercontent.com/d/" + idMatch[1];
-            }
-            document.getElementById("u_dash_photo").src = photoURL;
-          }
-
-          showUser();
+          let myProfile = users.find(u => String(u.UserId) === String(s.userId));
+          updateHeader(myProfile, s);
           loadFilters();
           renderTable(data);
           calculateTotal();
@@ -701,134 +431,83 @@
 
       function renderGoals(goals) {
         if (!goals) return;
-        let ag = goals.find((g) => g.Status === "Enabled");
+        let ag = goals.find(g => g.Status === "Enabled");
         if (ag) {
           document.getElementById("goalSection").style.display = "block";
-          document.getElementById(
-            "goalTitle"
-          ).innerHTML = `<i class="fa-solid fa-bullseye"></i> ${ag.GoalName}`;
+          document.getElementById("goalTitle").innerHTML = `<i class="fa-solid fa-bullseye"></i> ${escapeHtml(ag.GoalName)}`;
           let pct = (Number(ag.CurrentAmount) / Number(ag.TargetAmount)) * 100;
           let bar = document.getElementById("goalBar");
-          bar.style.width = Math.min(pct, 100) + "%";
-          bar.innerText = Math.round(pct) + "%";
-          document.getElementById("goalAmount").innerText = `₹${fmt(
-            ag.CurrentAmount
-          )} / ₹${fmt(ag.TargetAmount)}`;
+          setTimeout(()=>{ bar.style.width = Math.min(pct, 100) + "%"; bar.innerText = Math.round(pct) + "%"; }, 200);
+          document.getElementById("goalAmount").innerText = `₹${fmt(ag.CurrentAmount)} / ₹${fmt(ag.TargetAmount)}`;
         }
       }
 
       function loadFilters() {
         let years = new Set();
-        data.forEach((c) => {
-          let y = Number(c.Year);
-          if (!isNaN(y) && y > 2000) years.add(y);
-        });
+        data.forEach(c => { let y = Number(c.Year); if (!isNaN(y) && y > 2000) years.add(y); });
         years.add(new Date().getFullYear());
+        // Always include from 2023 minimum
+        for (let y = 2023; y <= new Date().getFullYear(); y++) years.add(y);
         document.getElementById("filterYear").innerHTML =
           `<option value="">All Years</option>` +
-          Array.from(years)
-            .sort((a, b) => b - a)
-            .map((y) => `<option value="${y}">${y}</option>`)
-            .join("");
+          Array.from(years).sort((a,b)=>b-a).map(y => `<option value="${y}">${y}</option>`).join("");
         document.getElementById("filterMonth").innerHTML =
           '<option value="">All Months</option>' +
-          months.map((m) => `<option value="${m}">${m}</option>`).join("");
+          months.map(m => `<option value="${m}">${m}</option>`).join("");
         document.getElementById("filterType").innerHTML =
           '<option value="">All Types</option>' +
-          types
-            .map((t) => `<option value="${t.TypeId}">${t.TypeName}</option>`)
-            .join("");
+          types.map(t => `<option value="${t.TypeId}">${t.TypeName}</option>`).join("");
       }
 
-      // ── RENDER TABLE — view-only rows, receipt on click
       function renderTable(list) {
         document.getElementById("tableBody").innerHTML =
           list.length === 0
             ? `<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No records found</td></tr>`
-            : list
-                .map((c, i) => {
-                  let type =
-                    types.find((t) => String(t.TypeId) === String(c.TypeId))
-                      ?.TypeName || "Contribution";
-                  let oName =
-                    occasions.find(
-                      (o) => String(o.OccasionId) === String(c.OccasionId)
-                    )?.OccasionName || "—";
-                  let uName =
-                    users.find((u) => String(u.UserId) === String(c.UserId))
-                      ?.Name || "Me";
-                  return `<tr onclick="showReceipt(${JSON.stringify(c)
-                    .replace(/'/g, "&#39;")
-                    .replace(/"/g, "&quot;")},'${escapeHtml(
-                    uName
-                  )}','${escapeHtml(type)}','${escapeHtml(
-                    oName
-                  )}')" title="Click for receipt">
-            <td>${i + 1}</td>
-            <td class="amount-col">₹ ${fmt(c.Amount)}</td>
-            <td><b>${c.ForMonth || "—"}</b></td>
-            <td>${c.Year || "—"}</td>
-            <td>
-              <span style="font-size:10px;color:#aaa;display:block;">${
-                c.ReceiptID || ""
-              }</span>
-              <span style="background:#eafaf1;color:#27ae60;padding:1px 6px;border-radius:4px;font-size:11px;">${type}</span>
-            </td>
-            <td style="font-size:11px;color:#888;">${
-              c.PaymentDate || "N/A"
-            }</td>
-            <td><button class="btn-blue btn-sm" onclick="event.stopPropagation();showReceipt(${JSON.stringify(
-              c
-            )
-              .replace(/'/g, "&#39;")
-              .replace(/"/g, "&quot;")},'${escapeHtml(uName)}','${escapeHtml(
-                    type
-                  )}','${escapeHtml(
-                    oName
-                  )}')"><i class="fa-solid fa-receipt"></i></button></td>
-          </tr>`;
-                })
-                .join("");
+            : list.map((c, i) => {
+                let type = types.find(t => String(t.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
+                let oName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
+                let uName = users.find(u => String(u.UserId) === String(c.UserId))?.Name || "Me";
+                // Store receipt data and use ID reference
+                const rid = _storeReceipt(c, uName, type, oName);
+                return `<tr onclick="showReceiptById('${rid}')" title="Click for receipt">
+                  <td>${i + 1}</td>
+                  <td class="amount-col">₹ ${fmt(c.Amount)}</td>
+                  <td><b>${escapeHtml(c.ForMonth || "—")}</b></td>
+                  <td class="col-year">${c.Year || "—"}</td>
+                  <td>
+                    <span style="font-size:10px;color:#aaa;display:block;">${escapeHtml(c.ReceiptID || "")}</span>
+                    <span style="background:#eafaf1;color:#27ae60;padding:1px 6px;border-radius:4px;font-size:11px;">${escapeHtml(type)}</span>
+                  </td>
+                  <td style="font-size:11px;color:#888;">${escapeHtml(c.PaymentDate || "N/A")}</td>
+                  <td class="col-receipt-th"><button class="btn-blue btn-sm" onclick="event.stopPropagation();showReceiptById('${rid}')"><i class="fa-solid fa-receipt"></i></button></td>
+                </tr>`;
+              }).join("");
+      }
+
+      function showReceiptById(rid) {
+        const d = window._rcptStore[rid];
+        if (!d) return;
+        showReceipt(d.c, d.userName, d.typeName, d.occasionName);
       }
 
       function calculateTotal() {
-        document.getElementById("totalAmount").innerText = fmt(
-          data.reduce((s, c) => s + Number(c.Amount || 0), 0)
-        );
+        document.getElementById("totalAmount").innerText = fmt(data.reduce((s,c) => s + Number(c.Amount||0), 0));
       }
       function renderMonthSummary() {
         let map = {};
-        data.forEach((c) => {
-          map[c.ForMonth] = (map[c.ForMonth] || 0) + Number(c.Amount || 0);
-        });
+        data.forEach(c => { map[c.ForMonth] = (map[c.ForMonth]||0) + Number(c.Amount||0); });
         document.getElementById("monthSummary").innerHTML =
-          Object.keys(map)
-            .map(
-              (m) =>
-                `<div class="summary-item"><span>${m}</span><b>₹ ${fmt(
-                  map[m]
-                )}</b></div>`
-            )
-            .join("") ||
+          Object.keys(map).map(m => `<div class="summary-item"><span>${m}</span><b>₹ ${fmt(map[m])}</b></div>`).join("") ||
           "<div style='text-align:center;color:#aaa;'>No data yet</div>";
       }
       function renderTypeSummary() {
         let map = {};
-        data.forEach((c) => {
-          let t =
-            types.find((x) => String(x.TypeId) === String(c.TypeId))
-              ?.TypeName || "Other";
-          map[t] = (map[t] || 0) + Number(c.Amount || 0);
+        data.forEach(c => {
+          let t = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Other";
+          map[t] = (map[t]||0) + Number(c.Amount||0);
         });
         document.getElementById("typeSummary").innerHTML =
-          Object.keys(map)
-            .map(
-              (t) =>
-                `<div class="summary-item"><span>${t}</span><b>₹ ${fmt(
-                  map[t]
-                )}</b></div>`
-            )
-            .join("") ||
+          Object.keys(map).map(t => `<div class="summary-item"><span>${t}</span><b>₹ ${fmt(map[t])}</b></div>`).join("") ||
           "<div style='text-align:center;color:#aaa;'>No data yet</div>";
       }
 
@@ -836,77 +515,52 @@
         let y = document.getElementById("filterYear").value;
         let m = document.getElementById("filterMonth").value;
         let t = document.getElementById("filterType").value;
-        renderTable(
-          data.filter(
-            (c) =>
-              (!y || String(c.Year) === y) &&
-              (!m || c.ForMonth === m) &&
-              (!t || String(c.TypeId) === String(t))
-          )
-        );
+        renderTable(data.filter(c =>
+          (!y || String(c.Year) === y) &&
+          (!m || c.ForMonth === m) &&
+          (!t || String(c.TypeId) === String(t))
+        ));
       }
       function resetFilter() {
-        ["filterYear", "filterMonth", "filterType"].forEach(
-          (id) => (document.getElementById(id).value = "")
-        );
+        ["filterYear","filterMonth","filterType"].forEach(id => (document.getElementById(id).value = ""));
         document.getElementById("searchInput").value = "";
         renderTable(data);
       }
       function searchData() {
         let txt = document.getElementById("searchInput").value.toLowerCase();
-        renderTable(
-          data.filter((c) => {
-            let t =
-              types.find((x) => String(x.TypeId) === String(c.TypeId))
-                ?.TypeName || "";
-            return (
-              t.toLowerCase().includes(txt) ||
-              (c.ForMonth || "").toLowerCase().includes(txt) ||
-              String(c.Amount).includes(txt) ||
-              (c.PaymentDate || "").toLowerCase().includes(txt) ||
-              String(c.Year || "").includes(txt)
-            );
-          })
-        );
+        renderTable(data.filter(c => {
+          let t = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "";
+          return t.toLowerCase().includes(txt) ||
+            (c.ForMonth||"").toLowerCase().includes(txt) ||
+            String(c.Amount).includes(txt) ||
+            (c.PaymentDate||"").toLowerCase().includes(txt) ||
+            String(c.Year||"").includes(txt);
+        }));
       }
 
       function exportPDF() {
         const { jsPDF } = window.jspdf;
         let doc = new jsPDF();
         let s = JSON.parse(localStorage.getItem("session"));
-        doc.setFontSize(15);
-        doc.setTextColor(148, 108, 68);
+        doc.setFontSize(15); doc.setTextColor(148,108,68);
         doc.text("Mandir Contribution Report", 14, 15);
-        doc.setFontSize(11);
-        doc.setTextColor(50, 50, 50);
+        doc.setFontSize(11); doc.setTextColor(50,50,50);
         doc.text(`Member: ${s.name}`, 14, 23);
-        let total = 0,
-          rows = [];
-        document.querySelectorAll("#tableBody tr").forEach((tr) => {
+        let total = 0, rows = [];
+        document.querySelectorAll("#tableBody tr").forEach(tr => {
           let tds = tr.querySelectorAll("td");
           if (tds.length < 5) return;
           let r = [];
           tds.forEach((td, i) => {
             let txt = td.innerText.trim();
-            if (i === 1) {
-              let a = Number(txt.replace(/[₹,]/g, "").trim());
-              if (!isNaN(a)) total += a;
-              txt = txt.replace("₹", "Rs.");
-            }
-            if (i !== 6) r.push(txt);
+            if (i === 1) { let a = Number(txt.replace(/[₹,]/g,"").trim()); if (!isNaN(a)) total += a; txt = txt.replace("₹","Rs."); }
+            if (i < 6 && i !== 6) r.push(txt);
           });
-          rows.push(r);
+          if (r.length >= 5) rows.push(r.slice(0,6));
         });
         doc.text(`Total: Rs. ${total.toLocaleString("en-IN")}`, 14, 30);
         if (rows.length > 0)
-          doc.autoTable({
-            head: [["#", "Amount", "Month", "Year", "Type", "Date"]],
-            body: rows,
-            startY: 35,
-            theme: "grid",
-            headStyles: { fillColor: [51, 65, 85] },
-            styles: { fontSize: 9 },
-          });
+          doc.autoTable({ head:[["#","Amount","Month","Year","Type","Date"]], body:rows, startY:35, theme:"grid", headStyles:{fillColor:[51,65,85]}, styles:{fontSize:9} });
         else doc.text("No records.", 14, 40);
         doc.save(`My_Mandir_${Date.now()}.pdf`);
       }

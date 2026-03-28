@@ -354,10 +354,25 @@
           left: 0;
         }
         .page {
-          padding: 14px;
+          padding: 8px 6px;
         }
         .card {
-          padding: 16px;
+          padding: 12px 10px;
+          margin-bottom: 12px;
+          border-radius: 10px;
+        }
+        .header {
+          padding: 8px 10px;
+        }
+        .grid-layout {
+          gap: 10px;
+          margin-bottom: 12px;
+        }
+        .card-box {
+          padding: 14px 10px;
+        }
+        .form-row {
+          gap: 10px;
         }
       }
       .badge {
@@ -444,6 +459,9 @@
           </li>
           <li onclick="showPage('masterPage',this)">
             <i class="fa-solid fa-database"></i> Master Data
+          </li>
+          <li onclick="showPage('goalsPage',this)">
+            <i class="fa-solid fa-bullseye"></i> Manage Goals
           </li>
           <li onclick="logout()">
             <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
@@ -750,6 +768,36 @@
           </div>
         </div>
 
+        <!-- GOALS -->
+        <div id="goalsPage" class="page">
+          <div class="card">
+            <h3><i class="fa-solid fa-bullseye"></i> Add / Edit Goal</h3>
+            <div class="form-row">
+              <div><label>Goal Name</label><input id="g_name" placeholder="e.g. Temple Renovation"/></div>
+              <div><label>Target Amount (₹)</label><input id="g_target" type="number" min="1" placeholder="500000"/></div>
+            </div>
+            <div class="form-row">
+              <div>
+                <label>Status</label>
+                <select id="g_status">
+                  <option value="Enabled">Enabled</option>
+                  <option value="Disabled">Disabled</option>
+                </select>
+              </div>
+            </div>
+            <button onclick="addGoal()"><i class="fa-solid fa-plus"></i> Save Goal</button>
+          </div>
+          <div class="card">
+            <h3><i class="fa-solid fa-list-ul"></i> Goals List</h3>
+            <div class="table-responsive">
+              <table>
+                <thead><tr><th>#</th><th>Goal Name</th><th>Target (₹)</th><th>Collected (₹)</th><th>Progress</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody id="goalTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- MASTER -->
         <div id="masterPage" class="page">
           <div
@@ -824,24 +872,35 @@
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script>
-      /* ── SESSION (FIX #2 — removed pageshow loop) ── */
-      (function () {
+      /* ── SESSION — security: prevents back-button bypass + URL copy ── */
+      function _checkAdminSession() {
         let s = JSON.parse(localStorage.getItem("session"));
         if (!s || Date.now() > s.expiry || s.role !== "Admin") {
           localStorage.clear();
+          history.replaceState(null, "", "login.html");
           location.replace("login.html");
-          return;
+          return false;
         }
         s.expiry = Date.now() + 30 * 60 * 1000;
         localStorage.setItem("session", JSON.stringify(s));
-      })();
+        return true;
+      }
+      if (!_checkAdminSession()) { /* stop */ }
+      // Block back-button re-entry after logout
+      window.addEventListener("pageshow", function(e) {
+        _checkAdminSession();
+      });
+      // Block tab re-use with copied URL after session expires
+      document.addEventListener("visibilitychange", function() {
+        if (!document.hidden) _checkAdminSession();
+      });
 
       function showUser() {
         let s = JSON.parse(localStorage.getItem("session"));
         if (s)
           document.getElementById(
             "welcomeUser"
-          ).innerHTML = `<i class="fa-solid fa-user-shield"></i> Welcome, ${s.name}`;
+          ).innerHTML = `<i class="fa-solid fa-user-shield"></i> ${s.name}`;
       }
       function logout() {
         localStorage.clear();
@@ -931,6 +990,7 @@
           occasions = allData.occasions || [];
           data = allData.contributions || [];
           expenses = allData.expenses || [];
+          goals = allData.goals || [];
           showUser();
           loadMonths();
           loadYears();
@@ -944,6 +1004,7 @@
           renderOccasions();
           renderExpenseTypes();
           renderExpenses();
+          renderGoals();
           loadSummary();
         } catch (err) {
           toast("Failed to load data: " + err.message, "error");
@@ -974,8 +1035,8 @@
           if (!isNaN(y) && y > 2000) years.add(y);
         });
         let cur = new Date().getFullYear();
-        years.add(cur);
-        years.add(cur + 1);
+        // Always include from 2023 (collection start year) to next year
+        for (let y = 2023; y <= cur + 1; y++) years.add(y);
         let opts = Array.from(years)
           .sort((a, b) => b - a)
           .map((y) => `<option value="${y}">${y}</option>`)
@@ -1032,6 +1093,8 @@
               occasions.find(
                 (o) => String(o.OccasionId) === String(c.OccasionId)
               )?.OccasionName || "";
+            // Store receipt data safely using registry
+            const _rid = _storeReceipt(c, name, tName, oName);
             return `<tr onclick="viewContribution('${
               c.Id
             }')" title="Click to view details">
@@ -1044,13 +1107,7 @@
         <td style="font-size:12px;color:#888;">${c.PaymentDate || "—"}</td>
         <td onclick="event.stopPropagation()">
           <div class="action-btns">
-            <button class="btn-sm btn-info" onclick="showReceipt(${JSON.stringify(
-              c
-            ).replace(/"/g, "&quot;")},'${escapeHtml(name)}','${escapeHtml(
-              tName
-            )}','${escapeHtml(
-              oName
-            )}')" title="Receipt"><i class="fa-solid fa-receipt"></i></button>
+            <button class="btn-sm btn-info" onclick="showReceiptById('${_rid}')" title="Receipt"><i class="fa-solid fa-receipt"></i></button>
             <button class="btn-sm" onclick="openEditContrib('${
               c.Id
             }')" title="Edit"><i class="fa-solid fa-pen"></i></button>
@@ -1343,9 +1400,9 @@
           .map(
             (u) => `
       <tr onclick="viewUser('${u.UserId}')" title="Click to view details">
-        <td><img src="${
+        <td onclick="event.stopPropagation();openEditUser('${u.UserId}')" title="Click to edit user" style="cursor:pointer;"><img src="${
           u.PhotoURL ? escapeHtml(u.PhotoURL) : ""
-        }" onerror="this.style.display='none'" width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;"/></td>
+        }" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23f7a01a\'/></svg>'" width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;"/></td>
         <td><b>${escapeHtml(u.Name)}</b></td>
         <td>${escapeHtml(String(u.Mobile || ""))}</td>
         <td><span class="badge ${
@@ -1407,9 +1464,18 @@
       function openEditUser(id) {
         let u = users.find((x) => String(x.UserId) === String(id));
         if (!u) return;
+        let currentPhoto = u.PhotoURL || "";
         let html = `
       <div class="_mhdr"><h3><i class="fa-solid fa-user-pen"></i> Edit User</h3><button class="_mcls" onclick="closeModal()">×</button></div>
       <div class="_mbdy">
+        <div style="text-align:center;margin-bottom:14px;">
+          <img id="eu_photoPreview" src="${escapeHtml(currentPhoto)}"
+            onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'72\' height=\\'72\\'><circle cx=\\'36\\' cy=\\'36\\' r=\\'36\\' fill=\\'%23f7a01a\\'/></svg>'"
+            style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#faeeda;display:block;margin:0 auto 8px;"/>
+          <button class="_mbtn" style="background:#334155;padding:5px 12px;font-size:12px;" onclick="document.getElementById('eu_photoFile').click()"><i class="fa-solid fa-camera"></i> Change Photo</button>
+          <input type="file" id="eu_photoFile" accept="image/*" style="display:none;" onchange="handleAdminPhotoSelected(this,'${id}')"/>
+          <input type="hidden" id="eu_croppedB64" value=""/>
+        </div>
         <label class="_fl">Full Name</label><input class="_fi" id="eu_name" value="${escapeHtml(
           u.Name
         )}"/>
@@ -1439,9 +1505,57 @@
       </div>`;
         openModal(html, "460px");
       }
+      /* Admin: photo crop handler */
+      function handleAdminPhotoSelected(input, userId) {
+        let file = input.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { toast("Photo must be under 5MB.", "error"); return; }
+        openCropModal(file, function(base64) {
+          document.getElementById("eu_croppedB64").value = base64;
+          let prev = document.getElementById("eu_photoPreview");
+          if (prev) prev.src = base64;
+        });
+      }
+
       async function saveEditUser(id) {
         let s = JSON.parse(localStorage.getItem("session"));
         let u = users.find((x) => String(x.UserId) === id);
+        let croppedB64 = document.getElementById("eu_croppedB64")?.value || "";
+        let photoURL = u?.PhotoURL || "";
+
+        // Upload photo if new one was selected
+        if (croppedB64) {
+          toast("Uploading photo...", "warn");
+          try {
+            let response = await fetch(API_URL, {
+              method: "POST",
+              body: JSON.stringify({
+                action: "uploadAndSaveProfile",
+                UserId: id,
+                Name: document.getElementById("eu_name").value,
+                Mobile: u?.Mobile || "",
+                Role: document.getElementById("eu_role").value,
+                Password: "",
+                Email: document.getElementById("eu_email").value,
+                Status: document.getElementById("eu_status").value,
+                AdminName: s.name,
+                base64: croppedB64,
+                fileName: "User_" + id + "_" + Date.now() + ".jpg",
+                oldPhotoURL: u?.PhotoURL || "",
+              }),
+            });
+            let res = await response.json();
+            if (res.status === "success") {
+              photoURL = res.photoUrl;
+              toast("✅ Photo uploaded!");
+            } else {
+              toast("Photo upload failed, profile still updating.", "warn");
+            }
+          } catch (e) {
+            toast("Photo upload error: " + e.message, "warn");
+          }
+        }
+
         try {
           let res = await postData({
             action: "updateUser",
@@ -1452,7 +1566,7 @@
             Status: document.getElementById("eu_status").value,
             Email: document.getElementById("eu_email").value,
             Password: "",
-            PhotoURL: u?.PhotoURL || "",
+            PhotoURL: photoURL,
             AdminName: s.name,
           });
           toast(
@@ -1618,6 +1732,8 @@
             toast("✅ Contribution added! Receipt: " + res.receiptId);
             document.getElementById("amount").value = "";
             document.getElementById("note").value = "";
+            // Keep user selected for bulk entry — only reset amount/note
+            // User can click Reset User to clear user selection
             init();
           } else toast("❌ Failed to add.", "error");
         } catch (err) {
@@ -1813,6 +1929,109 @@
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
+      }
+
+
+      /* ── GOALS MANAGEMENT ── */
+      let goals = [];
+
+      function renderGoals() {
+        let allC = data;
+        document.getElementById("goalTableBody").innerHTML = goals.length === 0
+          ? `<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No goals yet</td></tr>`
+          : goals.map((g, i) => {
+              // Auto-calculate collected from contributions tagged with this goal
+              let collected = allC
+                .filter(c => String(c.GoalId) === String(g.GoalId) || String(c.OccasionId) === String(g.GoalId))
+                .reduce((s, c) => s + Number(c.Amount || 0), 0);
+              let pct = g.TargetAmount > 0 ? Math.min(100, Math.round((collected / Number(g.TargetAmount)) * 100)) : 0;
+              let barColor = pct >= 100 ? "#27ae60" : pct >= 50 ? "#f7a01a" : "#e74c3c";
+              return `<tr>
+                <td>${i+1}</td>
+                <td><b>${escapeHtml(g.GoalName||"—")}</b></td>
+                <td>₹ ${fmt(g.TargetAmount)}</td>
+                <td class="amt-green">₹ ${fmt(collected)}</td>
+                <td style="min-width:120px;">
+                  <div style="background:#eee;border-radius:10px;height:14px;overflow:hidden;">
+                    <div style="background:${barColor};width:${pct}%;height:100%;border-radius:10px;"></div>
+                  </div>
+                  <span style="font-size:10px;color:#888;">${pct}%</span>
+                </td>
+                <td><span class="badge ${g.Status==='Enabled'?'badge-green':'badge-red'}">${g.Status||"Disabled"}</span></td>
+                <td onclick="event.stopPropagation()">
+                  <div class="action-btns">
+                    <button class="btn-sm" onclick="openEditGoal('${g.GoalId}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-sm btn-danger" onclick="deleteGoal('${g.GoalId}')"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join("");
+      }
+
+      async function addGoal() {
+        let name = document.getElementById("g_name").value.trim();
+        let target = document.getElementById("g_target").value;
+        let status = document.getElementById("g_status").value;
+        if (!name || !target || target <= 0) return toast("Please enter goal name and target amount.", "error");
+        try {
+          let res = await postData({ action: "addGoal", GoalId: Date.now(), GoalName: name, TargetAmount: target, Status: status });
+          if (res.status === "success") {
+            toast("✅ Goal saved!");
+            document.getElementById("g_name").value = "";
+            document.getElementById("g_target").value = "";
+            init();
+          } else toast("❌ Failed: " + (res.message||""), "error");
+        } catch(e) { toast("❌ " + e.message, "error"); }
+      }
+
+      function openEditGoal(id) {
+        let g = goals.find(x => String(x.GoalId) === String(id));
+        if (!g) return;
+        let html = `
+          <div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Goal</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy">
+            <label class="_fl">Goal Name</label><input class="_fi" id="eg_name" value="${escapeHtml(g.GoalName||'')}"/>
+            <label class="_fl">Target Amount (₹)</label><input class="_fi" type="number" id="eg_target" value="${g.TargetAmount||0}"/>
+            <label class="_fl">Status</label>
+            <select class="_fi" id="eg_status">
+              <option ${g.Status==='Enabled'?'selected':''}>Enabled</option>
+              <option ${g.Status==='Disabled'?'selected':''}>Disabled</option>
+            </select>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+            <button class="_mbtn" style="background:#f7a01a;" onclick="saveEditGoal('${id}')"><i class="fa-solid fa-check"></i> Save</button>
+          </div>`;
+        openModal(html, "420px");
+      }
+
+      async function saveEditGoal(id) {
+        let g = goals.find(x => String(x.GoalId) === String(id));
+        try {
+          let res = await postData({
+            action: "updateGoal", GoalId: id,
+            GoalName: document.getElementById("eg_name").value,
+            TargetAmount: document.getElementById("eg_target").value,
+            Status: document.getElementById("eg_status").value,
+          });
+          toast(res.status === "updated" ? "✅ Goal updated." : "❌ Failed.", res.status === "updated" ? "" : "error");
+          if (res.status === "updated") { closeModal(); init(); }
+        } catch(e) { toast("❌ " + e.message, "error"); }
+      }
+
+      async function deleteGoal(id) {
+        if (!confirm("Delete this goal?")) return;
+        try {
+          let res = await postData({ action: "deleteGoal", GoalId: id });
+          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          init();
+        } catch(e) { toast("❌ " + e.message, "error"); }
+      }
+
+      function showReceiptById(rid) {
+        const d = window._rcptStore[rid];
+        if (!d) return;
+        showReceipt(d.c, d.userName, d.typeName, d.occasionName);
       }
 
       init();
