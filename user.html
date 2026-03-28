@@ -12,142 +12,197 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
       * { box-sizing: border-box; }
-      body { margin: 0; font-family: "Poppins", sans-serif; background: #f4f6f9; color: #333; }
+      body { margin: 0; font-family: "Poppins", sans-serif; background: #f0f2f5; color: #333; }
 
-      /* ── HEADER ── */
+      /* ══ HEADER ══ */
       .header {
-        background: white;
-        padding: 10px 16px;
+        background: #fff;
+        padding: 9px 14px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
         position: sticky; top: 0; z-index: 100;
-        gap: 10px;
+        gap: 8px;
+        border-bottom: 2px solid #f7a01a;
       }
-      .header-left {
-        display: flex; align-items: center; gap: 10px; min-width: 0;
-      }
+      .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
       .hdr-avatar {
-        width: 36px; height: 36px; border-radius: 50%;
-        border: 2px solid #f7a01a; object-fit: cover;
+        width: 40px; height: 40px; border-radius: 50%;
+        border: 2.5px solid #f7a01a; object-fit: cover;
         background: #faeeda; flex-shrink: 0; cursor: pointer;
+        box-shadow: 0 2px 8px rgba(247,160,26,0.3);
+        transition: transform 0.2s;
       }
+      .hdr-avatar:hover { transform: scale(1.08); }
       .hdr-info { min-width: 0; }
       .hdr-name {
-        font-weight: 700; font-size: 0.9rem; color: #334155;
+        font-weight: 700; font-size: 0.92rem; color: #334155;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        max-width: 160px; display: block;
+        max-width: 180px; display: block; line-height: 1.3;
       }
       .hdr-edit {
         font-size: 11px; color: #f7a01a; cursor: pointer;
-        font-weight: 600; text-decoration: none;
+        font-weight: 600; text-decoration: none; display: inline-flex;
+        align-items: center; gap: 3px;
       }
       .hdr-edit:hover { color: #d35400; }
-      .header-right { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+      .header-right { display: flex; gap: 7px; align-items: center; flex-shrink: 0; }
 
-      .main { padding: 10px 8px; max-width: 1100px; margin: 0 auto; }
-      @media (max-width: 520px) {
-        .main { padding: 8px 4px; }
-        .card { padding: 14px 10px; margin-bottom: 10px; }
-        .total-banner { padding: 16px 10px; }
-        .grid-layout { gap: 10px; margin-bottom: 10px; }
-      }
+      /* ══ MAIN CONTENT ══ */
+      .main { padding: 12px 10px; max-width: 960px; margin: 0 auto; }
 
+      /* ══ BUTTONS ══ */
       button {
-        padding: 10px 18px; background: #f7a01a; color: white; border: none;
+        padding: 9px 16px; background: #f7a01a; color: white; border: none;
         border-radius: 8px; cursor: pointer; font-family: "Poppins", sans-serif;
-        font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 10px rgba(247,160,26,0.3);
-        display: inline-flex; align-items: center; gap: 7px;
+        font-weight: 600; font-size: 13px; transition: all 0.25s;
+        box-shadow: 0 3px 10px rgba(247,160,26,0.28);
+        display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
       }
-      button:hover { background: #d35400; transform: translateY(-2px); }
-      .btn-secondary { background: #334155; box-shadow: 0 4px 10px rgba(51,65,85,0.3); }
+      button:active { transform: scale(0.97); }
+      button:hover { background: #d35400; box-shadow: 0 4px 14px rgba(211,84,0,0.3); }
+      .btn-secondary { background: #334155; box-shadow: 0 3px 10px rgba(51,65,85,0.25); }
       .btn-secondary:hover { background: #1e293b; }
-      .btn-danger { background: #e74c3c; box-shadow: 0 4px 10px rgba(231,76,60,0.3); }
+      .btn-danger { background: #e74c3c; box-shadow: 0 3px 10px rgba(231,76,60,0.25); }
       .btn-danger:hover { background: #c0392b; }
-      .btn-sm { padding: 5px 10px; font-size: 12px; box-shadow: none; }
+      .btn-green { background: #27ae60; box-shadow: 0 3px 10px rgba(39,174,96,0.25); }
+      .btn-green:hover { background: #1e8449; }
+      .btn-sm { padding: 5px 10px; font-size: 11.5px; box-shadow: none; border-radius: 6px; }
       .btn-blue { background: #2980b9; box-shadow: none; }
       .btn-blue:hover { background: #1a6fa0; }
 
+      /* ══ GRID ══ */
       .grid-layout {
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 16px; margin-bottom: 16px;
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px; margin-bottom: 12px;
       }
-      @media (max-width: 600px) { .grid-layout { grid-template-columns: 1fr; } }
 
+      /* ══ CARDS ══ */
       .card {
-        background: white; padding: 20px; border-radius: 12px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-top: 4px solid #f7a01a;
-        margin-bottom: 16px;
+        background: white; padding: 16px 14px; border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06); border-top: 3px solid #f7a01a;
+        margin-bottom: 12px;
       }
       .card h3 {
-        margin-top: 0; color: #333; border-bottom: 2px solid #f4f6f9;
-        padding-bottom: 8px; margin-bottom: 16px; display: flex;
-        align-items: center; gap: 8px; font-size: 1rem;
+        margin: 0 0 12px; color: #334155; border-bottom: 1.5px solid #f0f2f5;
+        padding-bottom: 8px; display: flex; align-items: center;
+        gap: 8px; font-size: 0.95rem; font-weight: 700;
       }
-      .card h3 i { color: #f7a01a; }
+      .card h3 i { color: #f7a01a; font-size: 0.9rem; }
 
-      /* Total banner */
+      /* ══ TOTAL BANNER ══ */
       .total-banner {
-        background: linear-gradient(135deg, #27ae60, #2ecc71);
-        color: white; padding: 22px; border-radius: 12px;
-        text-align: center; margin-bottom: 16px;
-        box-shadow: 0 8px 20px rgba(39,174,96,0.3);
+        background: linear-gradient(135deg, #1a9e55 0%, #27ae60 50%, #2ecc71 100%);
+        color: white; padding: 20px 16px; border-radius: 14px;
+        text-align: center; margin-bottom: 12px;
+        box-shadow: 0 6px 20px rgba(39,174,96,0.32);
+        position: relative; overflow: hidden;
       }
-      .total-banner h2 { margin: 0; font-size: 1rem; font-weight: 400; opacity: 0.9; }
-      .total-banner h1 { margin: 8px 0 0; font-size: 2.4rem; font-weight: 700; }
+      .total-banner::before {
+        content: "🕉️";
+        position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+        font-size: 2.5rem; opacity: 0.12;
+      }
+      .total-banner h2 { margin: 0; font-size: 0.85rem; font-weight: 500; opacity: 0.88; letter-spacing: 0.3px; }
+      .total-banner h1 { margin: 6px 0 0; font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; }
 
-      /* Goal */
-      .goal-card { background: white; padding: 20px; border-radius: 12px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-top: 4px solid #f7a01a;
-        margin-bottom: 16px; }
-      .goal-card h3 { margin-top: 0; font-size: 1rem; display:flex;align-items:center;gap:8px; }
+      /* ══ GOAL ══ */
+      .goal-card {
+        background: white; padding: 16px 14px; border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06); border-top: 3px solid #f7a01a;
+        margin-bottom: 12px;
+      }
+      .goal-card h3 { margin: 0 0 10px; font-size: 0.95rem; display:flex;align-items:center;gap:8px;font-weight:700;color:#334155; }
       .goal-card h3 i { color: #f7a01a; }
 
+      /* ══ SUMMARY ITEMS ══ */
       .summary-item {
-        display: flex; justify-content: space-between; padding: 8px 0;
-        border-bottom: 1px dashed #eee; font-size: 0.95rem;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 9px 0; border-bottom: 1px dashed #eee; font-size: 0.88rem;
       }
       .summary-item:last-child { border-bottom: none; }
-      .summary-item b { color: #27ae60; }
+      .summary-item b { color: #27ae60; font-size: 0.93rem; }
 
+      /* ══ FORM ELEMENTS ══ */
       input, select {
-        width: 100%; padding: 10px 14px; margin-bottom: 13px; border: 1px solid #ddd;
+        width: 100%; padding: 9px 12px; margin-bottom: 10px; border: 1.5px solid #e8e8e8;
         border-radius: 8px; font-family: "Poppins", sans-serif; outline: none;
-        transition: border-color 0.3s; font-size: 13px;
+        transition: border-color 0.2s, box-shadow 0.2s; font-size: 13px; background: #fafafa;
       }
-      input:focus, select:focus { border-color: #f7a01a; }
-      label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
+      input:focus, select:focus {
+        border-color: #f7a01a; background: #fff;
+        box-shadow: 0 0 0 3px rgba(247,160,26,0.1);
+      }
+      label { display: block; font-size: 11.5px; font-weight: 600; color: #666; margin-bottom: 3px; }
 
+      /* ══ FILTER ROW ══ */
       .filter-row {
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 12px; align-items: end;
+        display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 10px; align-items: end;
       }
-      @media (max-width: 520px) { .filter-row { grid-template-columns: 1fr 1fr; } }
+      .filter-actions {
+        display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+      }
+      .filter-actions button { flex: 1; min-width: 80px; justify-content: center; }
 
-      .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+      /* ══ TABLE ══ */
+      .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border-radius: 10px; }
       table {
         width: 100%; border-collapse: collapse; background: white;
-        border-radius: 8px; overflow: hidden; margin-top: 8px; min-width: 340px;
+        border-radius: 10px; overflow: hidden; margin-top: 6px; min-width: 320px;
       }
       thead { background: #334155; color: white; }
-      th, td {
-        padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee;
-        white-space: nowrap; font-size: 12.5px;
+      th {
+        padding: 10px 11px; text-align: left; font-size: 12px;
+        font-weight: 600; white-space: nowrap; letter-spacing: 0.2px;
       }
-      tbody tr:hover { background: #fdfbf7; cursor: pointer; }
+      td {
+        padding: 9px 11px; text-align: left; border-bottom: 1px solid #f0f0f0;
+        font-size: 12.5px; white-space: nowrap;
+      }
+      tbody tr:last-child td { border-bottom: none; }
+      tbody tr:hover { background: #fffbf2; cursor: pointer; }
       .amount-col { font-weight: 700; color: #27ae60; }
 
-      /* Hide columns on mobile */
-      @media (max-width: 520px) {
-        .col-year, .col-receipt-th { display: none; }
-        th, td { padding: 8px 8px; font-size: 11.5px; }
+      /* ══ PHOTO PREVIEW ══ */
+      .photo-preview {
+        width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
+        border: 3px solid #f7a01a; background: #faeeda; display: block;
+        margin: 0 auto 12px; box-shadow: 0 4px 14px rgba(247,160,26,0.25);
       }
 
-      .photo-preview {
-        width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
-        border: 3px solid #f7a01a; background: #faeeda; display: block;
-        margin: 0 auto 12px;
+      /* ══ MOBILE RESPONSIVE ══ */
+      @media (max-width: 600px) {
+        .grid-layout { grid-template-columns: 1fr; gap: 10px; }
+      }
+
+      @media (max-width: 480px) {
+        .main { padding: 8px 6px; }
+        .card, .goal-card { padding: 13px 10px; border-radius: 12px; margin-bottom: 10px; }
+        .card h3 { font-size: 0.88rem; margin-bottom: 10px; padding-bottom: 7px; }
+        .total-banner { padding: 16px 12px; border-radius: 12px; margin-bottom: 10px; }
+        .total-banner h1 { font-size: 1.85rem; }
+        .total-banner h2 { font-size: 0.78rem; }
+        .summary-item { font-size: 0.82rem; padding: 7px 0; }
+        .hdr-name { max-width: 120px; font-size: 0.84rem; }
+        /* Filter: 2 cols on mobile */
+        .filter-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+        input, select { padding: 8px 10px; font-size: 12px; margin-bottom: 8px; }
+        /* Table: hide less important columns */
+        .col-year { display: none; }
+        .col-receipt-th { display: none; }
+        th, td { padding: 8px 7px; font-size: 11.5px; }
+        /* Buttons smaller on mobile */
+        button { padding: 8px 12px; font-size: 12px; gap: 5px; }
+        .btn-danger { padding: 7px 10px; font-size: 12px; }
+      }
+
+      @media (max-width: 360px) {
+        .main { padding: 6px 4px; }
+        .total-banner h1 { font-size: 1.6rem; }
+        .hdr-name { max-width: 90px; }
+        .filter-row { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -208,21 +263,21 @@
           </div>
           <div>
             <label>Month</label>
-            <select id="filterMonth" style="margin:0;"></select>
+            <select id="filterMonth" style="margin:0;" onchange="applyFilter()"></select>
           </div>
           <div>
             <label>Type</label>
-            <select id="filterType" style="margin:0;"></select>
+            <select id="filterType" style="margin:0;" onchange="applyFilter()"></select>
           </div>
           <div>
             <label>Search</label>
             <input type="text" id="searchInput" placeholder="Amount, month..." onkeyup="searchData()" style="margin:0;" />
           </div>
         </div>
-        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-          <button onclick="applyFilter()" style="flex:1;min-width:80px;"><i class="fa-solid fa-magnifying-glass"></i> Apply</button>
-          <button onclick="resetFilter()" class="btn-secondary" style="flex:1;min-width:80px;"><i class="fa-solid fa-rotate-right"></i> Reset</button>
-          <button onclick="exportPDF()" style="flex:1;min-width:80px;background:#27ae60;box-shadow:0 4px 10px rgba(39,174,96,0.3);"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+        <div class="filter-actions">
+          <button onclick="applyFilter()" style="background:#334155;box-shadow:none;"><i class="fa-solid fa-magnifying-glass"></i> Apply</button>
+          <button onclick="resetFilter()" class="btn-secondary" style="background:#64748b;box-shadow:none;"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+          <button onclick="exportPDF()" class="btn-green"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
         </div>
       </div>
 
@@ -292,76 +347,90 @@
       }
 
       // ── EDIT PROFILE POPUP with crop
-      function openEditProfile() {
+      // _pendingCroppedB64 holds crop result in memory (profile modal is destroyed by crop modal)
+      let _pendingCroppedB64 = "";
+
+      function openEditProfile(previewB64, prefillName, prefillEmail) {
         let s = JSON.parse(localStorage.getItem("session"));
         let myProfile = users.find(u => String(u.UserId) === String(s.userId));
-        let currentPhoto = myProfile?.PhotoURL || "";
+        // Use prefilled values if coming back from crop, else use current profile
+        let displayName  = prefillName  !== undefined ? prefillName  : (myProfile?.Name  || s.name || "");
+        let displayEmail = prefillEmail !== undefined ? prefillEmail : (myProfile?.Email || s.email || "");
+        // Photo: prefer new crop preview, else existing URL
+        let photoSrc = previewB64 || myProfile?.PhotoURL || "";
+        let fallbackSvg = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
+
         let html = `
           <div class="_mhdr"><h3><i class="fa-solid fa-user-pen"></i> Edit Profile</h3><button class="_mcls" onclick="closeModal()">×</button></div>
           <div class="_mbdy" style="text-align:center;">
-            <img id="photoPreview" class="photo-preview" src="${escapeHtml(currentPhoto) || "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><circle cx='40' cy='40' r='40' fill='%23f7a01a'/></svg>"}"
-              onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><circle cx=\'40\' cy=\'40\' r=\'40\' fill=\'%23f7a01a\'/></svg>'"/>
-            <button onclick="pickPhoto()" style="padding:6px 14px;font-size:12px;margin-bottom:16px;"><i class="fa-solid fa-camera"></i> Change Photo</button>
+            <div style="position:relative;width:88px;margin:0 auto 10px;">
+              <img id="photoPreview" class="photo-preview" src="${escapeHtml(photoSrc)}"
+                onerror="this.src='${fallbackSvg}'" style="margin-bottom:0;"/>
+              <div onclick="pickPhoto()" style="position:absolute;bottom:2px;right:2px;width:26px;height:26px;background:#f7a01a;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.2);border:2px solid white;" title="Change Photo">
+                <i class="fa-solid fa-camera" style="color:white;font-size:11px;"></i>
+              </div>
+            </div>
+            <p style="font-size:11px;color:#aaa;margin:0 0 14px;">Tap the camera icon to change photo</p>
             <input type="file" id="photoFile" accept="image/*" style="display:none;" onchange="handlePhotoSelected(this)"/>
-            <input type="hidden" id="croppedBase64" value=""/>
             <div style="text-align:left;">
               <label class="_fl">Full Name</label>
-              <input class="_fi" id="ep_name" value="${escapeHtml(myProfile?.Name || s.name)}" placeholder="Your name"/>
+              <input class="_fi" id="ep_name" value="${escapeHtml(displayName)}" placeholder="Your name"/>
               <label class="_fl">Email</label>
-              <input class="_fi" id="ep_email" type="email" value="${escapeHtml(myProfile?.Email || s.email || "")}" placeholder="your@email.com"/>
-              <label class="_fl">Mobile <span style="color:#999;font-weight:400;">(cannot be changed here)</span></label>
-              <input class="_fi" value="${escapeHtml(String(myProfile?.Mobile || ""))}" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;margin-bottom:4px;"/>
-              <label class="_fl">Password <span style="color:#999;font-weight:400;">(use forgot password to change)</span></label>
-              <input class="_fi" value="••••••••" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;"/>
+              <input class="_fi" id="ep_email" type="email" value="${escapeHtml(displayEmail)}" placeholder="your@email.com"/>
+              <label class="_fl">Mobile <span style="color:#bbb;font-weight:400;font-size:10px;">(read-only)</span></label>
+              <input class="_fi" value="${escapeHtml(String(myProfile?.Mobile || ""))}" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;margin-bottom:4px;"/>
+              <label class="_fl">Password <span style="color:#bbb;font-weight:400;font-size:10px;">(use Forgot Password to change)</span></label>
+              <input class="_fi" value="••••••••" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;"/>
             </div>
           </div>
           <div class="_mft">
-            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+            <button class="_mbtn" style="background:#999;" onclick="closeModal(); _pendingCroppedB64='';">Cancel</button>
             <button class="_mbtn" style="background:#f7a01a;" onclick="saveProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
           </div>`;
-        openModal(html, "480px");
+        openModal(html, "460px");
       }
 
-      function pickPhoto() { document.getElementById("photoFile").click(); }
+      function pickPhoto() {
+        let f = document.getElementById("photoFile");
+        if (f) f.click();
+      }
 
       function handlePhotoSelected(input) {
         let file = input.files[0];
         if (!file) return;
         if (file.size > 5 * 1024 * 1024) { toast("Photo must be under 5MB.", "error"); return; }
+        // Save current form values before the crop modal destroys the profile modal
+        let savedName  = document.getElementById("ep_name")?.value  || "";
+        let savedEmail = document.getElementById("ep_email")?.value || "";
         openCropModal(file, function(base64) {
-          document.getElementById("croppedBase64").value = base64;
-          let prev = document.getElementById("photoPreview");
-          if (prev) prev.src = base64;
+          // Crop done — store in memory variable, then reopen profile modal with preview
+          _pendingCroppedB64 = base64;
+          openEditProfile(base64, savedName, savedEmail);
         });
       }
 
       async function saveProfile() {
         let s = JSON.parse(localStorage.getItem("session"));
         let myProfile = users.find(u => String(u.UserId) === String(s.userId));
-        let name = document.getElementById("ep_name").value.trim();
+        let name  = document.getElementById("ep_name").value.trim();
         let email = document.getElementById("ep_email").value.trim();
-        let croppedB64 = document.getElementById("croppedBase64").value;
         if (!name) { toast("Name cannot be empty.", "error"); return; }
 
-        let photoURL = myProfile?.PhotoURL || "";
+        let photoURL    = myProfile?.PhotoURL || "";
         let oldPhotoURL = myProfile?.PhotoURL || "";
 
-        if (croppedB64) {
+        if (_pendingCroppedB64) {
           toast("Uploading photo...", "warn");
           try {
             let response = await fetch(API_URL, {
               method: "POST",
               body: JSON.stringify({
                 action: "uploadAndSaveProfile",
-                UserId: s.userId,
-                Name: name,
-                Mobile: myProfile?.Mobile || "",
-                Role: s.role,
-                Password: "",
-                Email: email,
-                Status: "Active",
+                UserId: s.userId, Name: name,
+                Mobile: myProfile?.Mobile || "", Role: s.role,
+                Password: "", Email: email, Status: "Active",
                 AdminName: name,
-                base64: croppedB64,
+                base64: _pendingCroppedB64,
                 fileName: "User_" + s.userId + "_" + Date.now() + ".jpg",
                 oldPhotoURL: oldPhotoURL,
               }),
@@ -371,29 +440,24 @@
               photoURL = res.photoUrl;
               toast("✅ Photo uploaded!");
             } else {
-              toast("Photo upload failed, profile will still update.", "warn");
+              toast("Photo upload failed, profile still updating.", "warn");
             }
           } catch (e) {
-            toast("Photo upload failed: " + e.message, "warn");
+            toast("Photo upload error: " + e.message, "warn");
           }
         }
 
         try {
           let res = await postData({
-            action: "updateUser",
-            UserId: s.userId,
-            Name: name,
-            Mobile: myProfile?.Mobile || "",
-            Role: s.role,
-            Status: myProfile?.Status || "Active",
-            Email: email,
-            Password: "",
-            PhotoURL: photoURL,
-            AdminName: name,
+            action: "updateUser", UserId: s.userId, Name: name,
+            Mobile: myProfile?.Mobile || "", Role: s.role,
+            Status: myProfile?.Status || "Active", Email: email,
+            Password: "", PhotoURL: photoURL, AdminName: name,
           });
           if (res.status === "updated") {
-            s.name = name; s.email = email; s.expiry = Date.now() + 30 * 60 * 1000;
+            s.name = name; s.email = email; s.expiry = Date.now() + 30*60*1000;
             localStorage.setItem("session", JSON.stringify(s));
+            _pendingCroppedB64 = ""; // clear after successful save
             toast("✅ Profile updated!");
             closeModal();
             init();

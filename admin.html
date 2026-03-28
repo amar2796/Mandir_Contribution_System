@@ -1462,69 +1462,80 @@
       }
 
       function openEditUser(id) {
-        let u = users.find((x) => String(x.UserId) === String(id));
-        if (!u) return;
-        let currentPhoto = u.PhotoURL || "";
-        let html = `
-      <div class="_mhdr"><h3><i class="fa-solid fa-user-pen"></i> Edit User</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-      <div class="_mbdy">
-        <div style="text-align:center;margin-bottom:14px;">
-          <img id="eu_photoPreview" src="${escapeHtml(currentPhoto)}"
-            onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'72\' height=\\'72\\'><circle cx=\\'36\\' cy=\\'36\\' r=\\'36\\' fill=\\'%23f7a01a\\'/></svg>'"
-            style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#faeeda;display:block;margin:0 auto 8px;"/>
-          <button class="_mbtn" style="background:#334155;padding:5px 12px;font-size:12px;" onclick="document.getElementById('eu_photoFile').click()"><i class="fa-solid fa-camera"></i> Change Photo</button>
-          <input type="file" id="eu_photoFile" accept="image/*" style="display:none;" onchange="handleAdminPhotoSelected(this,'${id}')"/>
-          <input type="hidden" id="eu_croppedB64" value=""/>
-        </div>
-        <label class="_fl">Full Name</label><input class="_fi" id="eu_name" value="${escapeHtml(
-          u.Name
-        )}"/>
-        <label class="_fl">Mobile <span style="color:#999;font-weight:400;">(read-only)</span></label>
-        <input class="_fi" value="${escapeHtml(
-          String(u.Mobile || "")
-        )}" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;"/>
-        <label class="_fl">Email</label><input class="_fi" id="eu_email" value="${escapeHtml(
-          u.Email || ""
-        )}"/>
-        <label class="_fl">Role</label>
-        <select class="_fi" id="eu_role"><option ${
-          u.Role === "User" ? "selected" : ""
-        }>User</option><option ${
-          u.Role === "Admin" ? "selected" : ""
-        }>Admin</option></select>
-        <label class="_fl">Status</label>
-        <select class="_fi" id="eu_status"><option ${
-          u.Status === "Active" ? "selected" : ""
-        }>Active</option><option ${
-          u.Status === "Inactive" ? "selected" : ""
-        }>Inactive</option></select>
-      </div>
-      <div class="_mft">
-        <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
-        <button class="_mbtn" style="background:#f7a01a;" onclick="saveEditUser('${id}')"><i class="fa-solid fa-check"></i> Save Changes</button>
-      </div>`;
-        openModal(html, "460px");
+        _adminPendingCroppedB64 = ""; // clear any pending crop on fresh open
+        openEditUserWithPreview(id, "", undefined, undefined, undefined, undefined);
       }
-      /* Admin: photo crop handler */
+      }
+      /* Admin: photo crop handler — uses JS variable (not DOM) to survive modal swap */
+      let _adminPendingCroppedB64 = "";
+      let _adminPendingUserId = "";
+
       function handleAdminPhotoSelected(input, userId) {
         let file = input.files[0];
         if (!file) return;
         if (file.size > 5 * 1024 * 1024) { toast("Photo must be under 5MB.", "error"); return; }
+        // Save current form values before crop modal replaces the edit modal
+        let savedName   = document.getElementById("eu_name")?.value   || "";
+        let savedEmail  = document.getElementById("eu_email")?.value  || "";
+        let savedRole   = document.getElementById("eu_role")?.value   || "";
+        let savedStatus = document.getElementById("eu_status")?.value || "";
+        _adminPendingUserId = userId;
         openCropModal(file, function(base64) {
-          document.getElementById("eu_croppedB64").value = base64;
-          let prev = document.getElementById("eu_photoPreview");
-          if (prev) prev.src = base64;
+          _adminPendingCroppedB64 = base64;
+          // Re-open edit user modal with cropped preview and preserved values
+          let u = users.find(x => String(x.UserId) === String(userId));
+          if (!u) return;
+          openEditUserWithPreview(userId, base64, savedName, savedEmail, savedRole, savedStatus);
         });
+      }
+
+      function openEditUserWithPreview(id, previewB64, prefName, prefEmail, prefRole, prefStatus) {
+        let u = users.find(x => String(x.UserId) === String(id));
+        if (!u) return;
+        let photoSrc = previewB64 || u.PhotoURL || "";
+        let html = `
+      <div class="_mhdr"><h3><i class="fa-solid fa-user-pen"></i> Edit User</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+      <div class="_mbdy">
+        <div style="text-align:center;margin-bottom:14px;">
+          <div style="position:relative;width:72px;margin:0 auto 8px;">
+            <img id="eu_photoPreview" src="${escapeHtml(photoSrc)}"
+              onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'72\' height=\\'72\\'><circle cx=\\'36\\' cy=\\'36\\' r=\\'36\\' fill=\\'%23f7a01a\\'/></svg>'"
+              style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#faeeda;display:block;margin-bottom:0;"/>
+            <div onclick="document.getElementById('eu_photoFile').click()" style="position:absolute;bottom:1px;right:1px;width:22px;height:22px;background:#f7a01a;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);" title="Change Photo">
+              <i class="fa-solid fa-camera" style="color:white;font-size:9px;"></i>
+            </div>
+          </div>
+          <input type="file" id="eu_photoFile" accept="image/*" style="display:none;" onchange="handleAdminPhotoSelected(this,'${id}')"/>
+        </div>
+        <label class="_fl">Full Name</label><input class="_fi" id="eu_name" value="${escapeHtml(prefName !== undefined ? prefName : u.Name)}"/>
+        <label class="_fl">Mobile <span style="color:#999;font-weight:400;">(read-only)</span></label>
+        <input class="_fi" value="${escapeHtml(String(u.Mobile||""))}" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;"/>
+        <label class="_fl">Email</label><input class="_fi" id="eu_email" value="${escapeHtml(prefEmail !== undefined ? prefEmail : (u.Email||""))}"/>
+        <label class="_fl">Role</label>
+        <select class="_fi" id="eu_role">
+          <option ${(prefRole||u.Role)==="User"?"selected":""}>User</option>
+          <option ${(prefRole||u.Role)==="Admin"?"selected":""}>Admin</option>
+        </select>
+        <label class="_fl">Status</label>
+        <select class="_fi" id="eu_status">
+          <option ${(prefStatus||u.Status)==="Active"?"selected":""}>Active</option>
+          <option ${(prefStatus||u.Status)==="Inactive"?"selected":""}>Inactive</option>
+        </select>
+      </div>
+      <div class="_mft">
+        <button class="_mbtn" style="background:#999;" onclick="closeModal();_adminPendingCroppedB64='';">Cancel</button>
+        <button class="_mbtn" style="background:#f7a01a;" onclick="saveEditUser('${id}')"><i class="fa-solid fa-check"></i> Save Changes</button>
+      </div>`;
+        openModal(html, "460px");
       }
 
       async function saveEditUser(id) {
         let s = JSON.parse(localStorage.getItem("session"));
-        let u = users.find((x) => String(x.UserId) === id);
-        let croppedB64 = document.getElementById("eu_croppedB64")?.value || "";
+        let u = users.find((x) => String(x.UserId) === String(id));
         let photoURL = u?.PhotoURL || "";
 
-        // Upload photo if new one was selected
-        if (croppedB64) {
+        // Use memory variable (DOM is gone after crop modal swap)
+        if (_adminPendingCroppedB64) {
           toast("Uploading photo...", "warn");
           try {
             let response = await fetch(API_URL, {
@@ -1539,7 +1550,7 @@
                 Email: document.getElementById("eu_email").value,
                 Status: document.getElementById("eu_status").value,
                 AdminName: s.name,
-                base64: croppedB64,
+                base64: _adminPendingCroppedB64,
                 fileName: "User_" + id + "_" + Date.now() + ".jpg",
                 oldPhotoURL: u?.PhotoURL || "",
               }),
@@ -1574,6 +1585,7 @@
             res.status === "updated" ? "" : "error"
           );
           if (res.status === "updated") {
+            _adminPendingCroppedB64 = ""; // clear after success
             closeModal();
             init();
           }
