@@ -7,478 +7,211 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: "Poppins", sans-serif; background: #f4f6f9; color: #333; }
 
-/* 🔥 FINAL MOBILE RESPONSIVE FIX */
-@media (max-width: 768px) {
+      /* LAYOUT */
+      .layout { display: flex; min-height: 100vh; }
 
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -260px;   /* ✅ SAME as width */
-  width: 260px;   /* ✅ SAME */
-  height: 100%;
-  z-index: 1000;
-  background: #334155;
-  transition: left 0.3s ease;
-}
-
-.sidebar.active {
-  left: 0;
-}
-
-}
-
-      /* GLOBAL RESET & TYPOGRAPHY */
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        font-family: "Poppins", sans-serif;
-        background: #f4f6f9;
-        color: #333;
-      }
-
-      .layout {
-  display: flex;
-  min-height: 100vh;   /* ✅ instead of height */
-}
-
-      /* SIDEBAR (Dark Slate Theme) */
+      /* SIDEBAR */
       .sidebar {
-  width: 260px;
-  background: #334155;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  transition: left 0.3s ease;
-}
-
-      .sidebar h2 {
-        text-align: center;
-        color: #f7a01a;
-        margin: 25px 0;
-        font-weight: 700;
-        font-size: 1.5rem;
+        width: 260px; background: #334155; color: white;
+        display: flex; flex-direction: column;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.1); z-index: 1000;
+        transition: left 0.3s ease;
       }
-
-      .sidebar ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
+      .sidebar h2 { text-align: center; color: #f7a01a; margin: 25px 0; font-weight: 700; font-size: 1.5rem; }
+      .sidebar ul { list-style: none; padding: 0; margin: 0; }
       .sidebar li {
-        padding: 15px 25px;
-        cursor: pointer;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 400;
+        padding: 15px 25px; cursor: pointer;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        transition: all 0.3s ease; display: flex; align-items: center; gap: 12px; font-weight: 400;
       }
+      .sidebar li:hover, .sidebar li.active-nav { background: #f7a01a; color: white; padding-left: 30px; }
 
-      .sidebar li:hover,
-      .sidebar li.active-nav {
-        background: #f7a01a;
-        color: white;
-        padding-left: 30px;
-      }
-
-      /* MAIN CONTENT AREA */
-      .main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        overflow-y: auto;
-      }
+      /* MAIN */
+      .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
 
       /* HEADER */
-      .header {
-  background: white;
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-      .header h3 {
-        margin: 0;
-        color: #946c44;
-        font-weight: 600;
-      }
+      .header { background: white; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+      .header h3 { margin: 0; color: #946c44; font-weight: 600; }
 
       /* BUTTONS */
       button {
-        padding: 10px 20px;
-        background: #f7a01a;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-family: "Poppins", sans-serif;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 10px rgba(247, 160, 26, 0.3);
+        padding: 10px 20px; background: #f7a01a; color: white; border: none;
+        border-radius: 8px; cursor: pointer; font-family: "Poppins", sans-serif;
+        font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(247,160,26,0.3);
       }
-      button:hover {
-        background: #d35400;
-        transform: translateY(-2px);
-      }
-
-      .btn-small {
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        margin-right: 5px;
-        box-shadow: none;
-      }
-      .btn-danger {
-        background: #e74c3c;
-        box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
-      }
-      .btn-danger:hover {
-        background: #c0392b;
-      }
+      button:hover { background: #d35400; transform: translateY(-2px); }
+      button:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+      .btn-small { padding: 6px 12px; font-size: 0.85rem; margin-right: 5px; box-shadow: none; }
+      .btn-danger { background: #e74c3c; box-shadow: 0 4px 10px rgba(231,76,60,0.3); }
+      .btn-danger:hover { background: #c0392b; }
+      .btn-secondary { background: #334155; }
+      .btn-secondary:hover { background: #1e293b; }
 
       /* PAGES */
-      .page {
-        display: none;
-        padding: 30px;
-      }
-      .page.active {
-        display: block;
-        animation: fadeIn 0.4s ease;
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
+      .page { display: none; padding: 30px; }
+      .page.active { display: block; animation: fadeIn 0.4s ease; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
       /* CARDS & GRIDS */
-      .grid-layout {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 20px;
-      }
+      .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+      #masterPage .grid-layout { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
 
-      #masterPage .grid-layout {
-        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-      }
-
-      .card {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-        border-top: 4px solid #f7a01a;
-        margin-bottom: 25px;
-      }
-
-      .card h3 {
-        margin-top: 0;
-        color: #333;
-        border-bottom: 2px solid #f4f6f9;
-        padding-bottom: 10px;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .card h3 i {
-        color: #f7a01a;
-      }
+      .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-top: 4px solid #f7a01a; margin-bottom: 25px; }
+      .card h3 { margin-top: 0; color: #333; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+      .card h3 i { color: #f7a01a; }
 
       /* DASHBOARD SUMMARY CARDS */
-      .card-box {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-        border-left: 5px solid #f7a01a;
-        text-align: center;
-        transition: transform 0.3s ease;
-      }
-      .card-box:hover {
-        transform: translateY(-5px);
-      }
-      .card-box h4 {
-        margin: 0;
-        color: #666;
-        font-size: 1rem;
-        font-weight: 600;
-      }
-      .card-box h2 {
-        margin: 10px 0 0;
-        color: #333;
-        font-size: 2.2rem;
-        font-weight: 700;
-      }
+      .card-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-left: 5px solid #f7a01a; text-align: center; transition: transform 0.3s ease; }
+      .card-box:hover { transform: translateY(-5px); }
+      .card-box h4 { margin: 0; color: #666; font-size: 1rem; font-weight: 600; }
+      .card-box h2 { margin: 10px 0 0; color: #333; font-size: 2.2rem; font-weight: 700; }
 
-      .overlay {
-  position: fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background: rgba(0,0,0,0.4);
-  display:none;
-  z-index: 900; /* ✅ below sidebar */
-}
-
-.overlay.active {
-  display:block;
-}
-
-.overlay.active {
-  display:block;
-}
+      /* OVERLAY */
+      .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; z-index: 900; }
+      .overlay.active { display: block; }
 
       /* FORMS & INPUTS */
-      input,
-      select {
-        width: 100%;
-        padding: 10px 15px;
-        margin-bottom: 15px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-family: "Poppins", sans-serif;
-        outline: none;
-        transition: border-color 0.3s;
+      input, select {
+        width: 100%; padding: 10px 15px; margin-bottom: 15px;
+        border: 1px solid #ddd; border-radius: 8px; font-family: "Poppins", sans-serif;
+        outline: none; transition: border-color 0.3s;
       }
-      input:focus,
-      select:focus {
-        border-color: #f7a01a;
-      }
-
-      .form-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-      }
+      input:focus, select:focus { border-color: #f7a01a; }
+      .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
 
       /* TABLES */
-      .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        width: 100%;
+      .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+      table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-top: 10px; }
+      thead { background: #334155; color: white; }
+      th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; white-space: nowrap; }
+      tbody tr:hover { background: #fdfbf7; }
+      table input, table select { margin-bottom: 0; padding: 6px 10px; min-width: 140px; box-sizing: border-box; }
+
+      .action-btns { display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-end; }
+      .action-btns button { margin: 0 !important; flex-shrink: 0; }
+
+      /* LOADING OVERLAY */
+      #loadingOverlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255,255,255,0.8); z-index: 9999;
+        justify-content: center; align-items: center; flex-direction: column; gap: 15px;
+      }
+      #loadingOverlay.show { display: flex; }
+      .spinner { width: 42px; height: 42px; border: 4px solid #f7a01a; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* MOBILE MENU */
+      #menuBtn { display: none; background: #f7a01a; color: white; border-radius: 8px; padding: 8px 12px; }
+      @media (max-width: 768px) {
+        #menuBtn { display: block; }
+        .sidebar { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; z-index: 1000; background: #334155; transition: left 0.3s ease; }
+        .sidebar.active { left: 0; }
       }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-        border-radius: 8px;
-        overflow: hidden;
-        margin-top: 10px;
-      }
-
-      thead {
-        background: #334155;
-        color: white;
-      }
-
-      th,
-      td {
-        padding: 12px 15px;
-        text-align: left;
-        border-bottom: 1px solid #eee;
-        white-space: nowrap;
-      }
-
-      tbody tr:hover {
-        background: #fdfbf7;
-      }
-
-      table input,
-      table select {
-        margin-bottom: 0;
-        padding: 6px 10px;
-        min-width: 140px;
-        box-sizing: border-box;
-      }
-
-      .action-btns {
-        display: flex;
-        gap: 8px;
-        flex-wrap: nowrap;
-        align-items: center;
-        justify-content: flex-end;
-      }
-      .action-btns button {
-        margin: 0 !important;
-        flex-shrink: 0;
-      }
-
-      #menuBtn {
-  display: none;
-  background: #f7a01a;
-  color: white;
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin-left: 0;   /* ✅ FIX */
-}
-
-@media (max-width:768px){
-  #menuBtn {
-    display: block;
-  }
-}
+      /* BADGE */
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+      .badge-green { background: #eafaf1; color: #27ae60; }
+      .badge-red { background: #fdedec; color: #e74c3c; }
+      .badge-blue { background: #ebf5fb; color: #2980b9; }
     </style>
   </head>
 
   <body>
+
+    <!-- Loading overlay -->
+    <div id="loadingOverlay">
+      <div class="spinner"></div>
+      <div style="font-family:Poppins,sans-serif; color:#334155; font-weight:600;">Loading data...</div>
+    </div>
+
     <div class="layout">
       <div class="sidebar">
         <h2><i class="fa-solid fa-om"></i> Admin Panel</h2>
         <ul id="navList">
-          <li onclick="showPage('home', this)" class="active-nav">
-            <i class="fa-solid fa-house"></i> Home
-          </li>
-          <li onclick="openDashboard(this)">
-            <i class="fa-solid fa-chart-pie"></i> Dashboard
-          </li>
-          <li onclick="showPage('contributionPage', this)">
-            <i class="fa-solid fa-hand-holding-dollar"></i> Contribution
-          </li>
-          <li onclick="showPage('expensePage', this)">
-            <i class="fa-solid fa-money-bill-wave"></i> Expense
-          </li>
-          <li onclick="showPage('usersPage', this)">
-            <i class="fa-solid fa-users"></i> Manage Users
-          </li>
-          <li onclick="showPage('masterPage', this)">
-            <i class="fa-solid fa-database"></i> Master Data
-          </li>
-          <li onclick="logout()">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
-          </li>
+          <li onclick="showPage('home', this)" class="active-nav"><i class="fa-solid fa-house"></i> Home</li>
+          <li onclick="openDashboard(this)"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
+          <li onclick="showPage('contributionPage', this)"><i class="fa-solid fa-hand-holding-dollar"></i> Contribution</li>
+          <li onclick="showPage('expensePage', this)"><i class="fa-solid fa-money-bill-wave"></i> Expense</li>
+          <li onclick="showPage('usersPage', this)"><i class="fa-solid fa-users"></i> Manage Users</li>
+          <li onclick="showPage('masterPage', this)"><i class="fa-solid fa-database"></i> Master Data</li>
+          <li onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</li>
         </ul>
       </div>
       <div class="overlay" onclick="toggleSidebar()"></div>
 
       <div class="main">
         <div class="header">
-
-          <div style="display:flex; align-items:center; gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
             <button id="menuBtn" onclick="toggleSidebar()">☰</button>
-          
-            <h3 id="welcomeUser">
-              <i class="fa-solid fa-user-shield"></i> Welcome, Amarjeet
-            </h3>
+            <h3 id="welcomeUser"><i class="fa-solid fa-user-shield"></i> Welcome, Admin</h3>
           </div>
-          
-          <button class="btn-danger" onclick="logout()">
-            <i class="fa-solid fa-power-off"></i> Logout
-          </button>
-        
+          <button class="btn-danger" onclick="logout()"><i class="fa-solid fa-power-off"></i> Logout</button>
         </div>
 
+        <!-- HOME PAGE -->
         <div id="home" class="page active">
           <div class="grid-layout">
             <div class="card-box">
-              <h4>Total Users</h4>
-              <h2 id="totalUsers">0</h2>
+              <h4>Total Members</h4>
+              <h2 id="totalUsers" style="color:#334155;">0</h2>
             </div>
             <div class="card-box">
-              <h4>Total Contribution (₹)</h4>
-              <h2 id="totalContribution" style="color: #27ae60">0</h2>
+              <h4>Total Contributions (₹)</h4>
+              <h2 id="totalContribution" style="color:#27ae60;">0</h2>
             </div>
             <div class="card-box">
               <h4>Total Expenses (₹)</h4>
-              <h2 id="totalExpense" style="color: #e74c3c">0</h2>
+              <h2 id="totalExpense" style="color:#e74c3c;">0</h2>
+            </div>
+            <div class="card-box">
+              <h4>Net Balance (₹)</h4>
+              <h2 id="netBalance" style="color:#f7a01a;">0</h2>
             </div>
           </div>
         </div>
 
+        <!-- DASHBOARD (iframe) -->
         <div id="dashboardPage" class="page">
-          <iframe
-            id="dashboardFrame"
-            src="dashboard.html"
-            style="width: 100%; height: 100vh; border: none"
-          >
-          </iframe>
+          <iframe id="dashboardFrame" src="" style="width:100%;height:100vh;border:none;"></iframe>
         </div>
 
+        <!-- CONTRIBUTIONS PAGE -->
         <div id="contributionPage" class="page">
           <div class="card">
             <h3><i class="fa-solid fa-plus-circle"></i> Add Contribution</h3>
             <div class="form-row">
-              <div>
-                <label>User</label
-                ><select id="user"></select>
-              </div>
-              <div>
-                <label>Amount (₹)</label
-                ><input
-                  id="amount"
-                  placeholder="Enter Amount"
-                  type="number"
-                  min="1"
-                />
-              </div>
-              <div>
-                <label>Month</label
-                ><select id="month"></select>
-              </div>
+              <div><label>User</label><select id="user"></select></div>
+              <div><label>Amount (₹)</label><input id="amount" placeholder="Enter Amount" type="number" min="1" /></div>
+              <div><label>Month</label><select id="month"></select></div>
             </div>
             <div class="form-row">
-              <div>
-                <label>Year</label
-                ><select id="contribYear"></select>
-              </div>
-              <div>
-                <label>Contribution Type</label
-                ><select id="type"></select>
-              </div>
-              <div>
-                <label>Occasion</label
-                ><select id="occasion"></select>
-              </div>
+              <div><label>Year</label><select id="contribYear"></select></div>
+              <div><label>Contribution Type</label><select id="type"></select></div>
+              <div><label>Occasion</label><select id="occasion"></select></div>
             </div>
             <div class="form-row">
-              <div>
-                <label>Note / Remarks</label
-                ><input id="note" placeholder="Optional Note" />
-              </div>
+              <div><label>Note / Remarks</label><input id="note" placeholder="Optional Note" /></div>
             </div>
-            <button onclick="addContribution()">
-              <i class="fa-solid fa-check"></i> Save Contribution
-            </button>
+            <button onclick="addContribution()"><i class="fa-solid fa-check"></i> Save Contribution</button>
           </div>
 
           <div class="card">
             <h3><i class="fa-solid fa-list-ul"></i> Contribution Records</h3>
-            <div class="form-row" style="margin-bottom: 15px">
+            <div class="form-row" style="margin-bottom:15px;">
+              <div><input id="searchContrib" placeholder="🔍 Name or Mobile..." onkeyup="filterContributions()" /></div>
               <div>
-                <input id="searchContrib" placeholder="🔍 Name or Mobile..." onkeyup="filterContributions()" />
-              </div>
-              <div>
-                <label style="font-size: 11px; font-weight: bold;">From Date</label>
+                <label style="font-size:11px;font-weight:bold;">From Date</label>
                 <input type="date" id="contribStart" onchange="filterContributions()" />
               </div>
               <div>
-                <label style="font-size: 11px; font-weight: bold;">To Date</label>
+                <label style="font-size:11px;font-weight:bold;">To Date</label>
                 <input type="date" id="contribEnd" onchange="filterContributions()" />
               </div>
             </div>
@@ -489,7 +222,9 @@
                     <th>Name</th>
                     <th>Amount (₹)</th>
                     <th>Month</th>
+                    <th>Year</th>
                     <th>Type</th>
+                    <th>Date</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -499,43 +234,20 @@
           </div>
         </div>
 
+        <!-- EXPENSES PAGE -->
         <div id="expensePage" class="page">
           <div class="card">
             <h3><i class="fa-solid fa-file-invoice-dollar"></i> Add Expense</h3>
             <div class="form-row">
-              <div>
-                <label>Expense Title</label
-                ><input id="title" placeholder="e.g. Electricity Bill" />
-              </div>
-              <div>
-                <label>Amount (₹)</label
-                ><input
-                  id="expAmount"
-                  placeholder="Enter Amount"
-                  type="number"
-                  min="1"
-                />
-              </div>
-              <div>
-                <label>Expense Type</label
-                ><select id="expenseType"></select>
-              </div>
+              <div><label>Expense Title</label><input id="title" placeholder="e.g. Electricity Bill" /></div>
+              <div><label>Amount (₹)</label><input id="expAmount" placeholder="Enter Amount" type="number" min="1" /></div>
+              <div><label>Expense Type</label><select id="expenseType"></select></div>
             </div>
             <div class="form-row">
-              <div>
-                <label>Year</label
-                ><select id="expYear"></select>
-              </div>
-              <div>
-                <label>Month</label
-                ><select id="expMonth">
-                  <option value="">None</option>
-                </select>
-              </div>
+              <div><label>Year</label><select id="expYear"></select></div>
+              <div><label>Month</label><select id="expMonth"><option value="">None</option></select></div>
             </div>
-            <button onclick="addExpense()">
-              <i class="fa-solid fa-check"></i> Save Expense
-            </button>
+            <button onclick="addExpense()"><i class="fa-solid fa-check"></i> Save Expense</button>
           </div>
 
           <div class="card">
@@ -543,13 +255,7 @@
             <div class="table-responsive">
               <table>
                 <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Type</th>
-                    <th>Month</th>
-                    <th>Amount (₹)</th>
-                    <th>Action</th>
-                  </tr>
+                  <tr><th>Title</th><th>Type</th><th>Month</th><th>Amount (₹)</th><th>Action</th></tr>
                 </thead>
                 <tbody id="expenseRecordsBody"></tbody>
               </table>
@@ -557,36 +263,17 @@
           </div>
         </div>
 
+        <!-- USERS PAGE -->
         <div id="usersPage" class="page">
           <div class="card">
             <h3><i class="fa-solid fa-user-plus"></i> Add New User</h3>
             <div class="form-row">
-              <div>
-                <label>Full Name</label><input id="u_name" placeholder="Name" />
-              </div>
-              <div>
-                <label>Mobile Number</label
-                ><input
-                  id="u_mobile"
-                  type="tel"
-                  pattern="[0-9]{10}"
-                  maxlength="10"
-                />
-              </div>
+              <div><label>Full Name</label><input id="u_name" placeholder="Name" /></div>
+              <div><label>Mobile Number</label><input id="u_mobile" type="tel" pattern="[0-9]{10}" maxlength="10" /></div>
             </div>
             <div class="form-row">
-              <div>
-                <label>Email ID</label
-                ><input
-                  id="u_email"
-                  placeholder="email@example.com"
-                  type="email"
-                />
-              </div>
-              <div>
-                <label>Password</label
-                ><input id="u_password" placeholder="Password" />
-              </div>
+              <div><label>Email ID</label><input id="u_email" placeholder="email@example.com" type="email" /></div>
+              <div><label>Password</label><input id="u_password" type="password" placeholder="Password (min 6 chars)" /></div>
             </div>
             <div class="form-row">
               <div>
@@ -597,29 +284,16 @@
                 </select>
               </div>
             </div>
-            <button onclick="addUser()">
-              <i class="fa-solid fa-user-check"></i> Add User
-            </button>
+            <button onclick="addUser()"><i class="fa-solid fa-user-check"></i> Add User</button>
           </div>
 
           <div class="card">
             <h3><i class="fa-solid fa-users-gear"></i> Manage Users</h3>
-            <input
-              type="text"
-              id="userSearchInput"
-              placeholder="🔍 Search by Name or Mobile..."
-              onkeyup="renderUsers()"
-              style="margin-bottom: 15px"
-            />
+            <input type="text" id="userSearchInput" placeholder="🔍 Search by Name or Mobile..." onkeyup="renderUsers()" style="margin-bottom:15px;" />
             <div class="table-responsive">
               <table>
                 <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Mobile</th>
-                    <th>Role</th>
-                    <th>Action</th>
-                  </tr>
+                  <tr><th>Photo</th><th>Name</th><th>Mobile</th><th>Role</th><th>Status</th><th>Action</th></tr>
                 </thead>
                 <tbody id="userTable"></tbody>
               </table>
@@ -627,776 +301,614 @@
           </div>
         </div>
 
+        <!-- MASTER DATA PAGE -->
         <div id="masterPage" class="page">
           <div class="grid-layout">
             <div class="card">
               <h3><i class="fa-solid fa-tags"></i> Contribution Types</h3>
-              <div style="display: flex; gap: 10px">
+              <div style="display:flex;gap:10px;">
                 <input id="t_name" placeholder="New Type Name" />
-                <button onclick="addType()" style="width: 100px">Add</button>
+                <button onclick="addType()" style="width:100px;">Add</button>
               </div>
-              <div class="table-responsive">
-                <table>
-                  <tbody id="typeTable"></tbody>
-                </table>
-              </div>
+              <div class="table-responsive"><table><tbody id="typeTable"></tbody></table></div>
             </div>
-
             <div class="card">
               <h3><i class="fa-solid fa-calendar-star"></i> Occasions</h3>
-              <div style="display: flex; gap: 10px">
+              <div style="display:flex;gap:10px;">
                 <input id="o_name" placeholder="New Occasion" />
-                <button onclick="addOccasion()" style="width: 100px">
-                  Add
-                </button>
+                <button onclick="addOccasion()" style="width:100px;">Add</button>
               </div>
-              <div class="table-responsive">
-                <table>
-                  <tbody id="occasionTable"></tbody>
-                </table>
-              </div>
+              <div class="table-responsive"><table><tbody id="occasionTable"></tbody></table></div>
             </div>
-
             <div class="card">
               <h3><i class="fa-solid fa-receipt"></i> Expense Types</h3>
-              <div style="display: flex; gap: 10px">
+              <div style="display:flex;gap:10px;">
                 <input id="e_name" placeholder="New Expense Type" />
-                <button onclick="addExpenseType()" style="width: 100px">
-                  Add
-                </button>
+                <button onclick="addExpenseType()" style="width:100px;">Add</button>
               </div>
-              <div class="table-responsive">
-                <table>
-                  <tbody id="expenseTable"></tbody>
-                </table>
-              </div>
+              <div class="table-responsive"><table><tbody id="expenseTable"></tbody></table></div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+
+      </div><!-- end .main -->
+    </div><!-- end .layout -->
 
     <script src="config.js"></script>
     <script src="app.js"></script>
 
     <script>
-      /* ================= UI CONTROL ================= */
-
-      function escapeHtml(str) {
-        return String(str)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      }
-      function toggleSidebar() {
-  const sidebar = document.querySelector(".sidebar");
-  const overlay = document.querySelector(".overlay");
-
-  sidebar.classList.toggle("active");
-  overlay.classList.toggle("active");
-
-  document.body.style.overflow =
-    sidebar.classList.contains("active") ? "hidden" : "auto";
-}
-function showPage(id, element) {
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-
-  if (element) {
-    document.querySelectorAll(".sidebar li").forEach(li => li.classList.remove("active-nav"));
-    element.classList.add("active-nav");
-  }
-
-  // 🔥 mobile auto close
-  if (window.innerWidth < 768) {
-  document.querySelector(".sidebar").classList.remove("active");
-  document.querySelector(".overlay").classList.remove("active");
-  document.body.style.overflow = "auto";
-}
-}
-
-      function loadSummary() {
-        document.getElementById("totalUsers").innerText = users.length;
-        let totalC = data.reduce((a, b) => a + Number(b.Amount || 0), 0);
-        document.getElementById("totalContribution").innerText = totalC;
-        let totalE = expenses.reduce((a, b) => a + Number(b.Amount || 0), 0);
-        document.getElementById("totalExpense").innerText = totalE;
-      }
-
-      /* ================= SESSION & AUTH ================= */
-
+      /* ═══════════════════════════════════════════
+         SESSION & AUTH (FIX #3 — role verified)
+      ═══════════════════════════════════════════ */
       function checkAdminSession() {
         let s = JSON.parse(localStorage.getItem("session"));
-
         if (!s || Date.now() > s.expiry || s.role !== "Admin") {
           localStorage.clear();
           location.replace("login.html");
-        } else {
-          s.expiry = Date.now() + 30 * 60 * 1000;
-          localStorage.setItem("session", JSON.stringify(s));
+          return false;
         }
+        s.expiry = Date.now() + 30 * 60 * 1000;
+        localStorage.setItem("session", JSON.stringify(s));
+        return true;
       }
-      checkAdminSession();
+      if (!checkAdminSession()) throw new Error("Not authorized");
       window.addEventListener("pageshow", checkAdminSession);
 
       function showUser() {
         let s = JSON.parse(localStorage.getItem("session"));
-        if (s) {
-          document.getElementById(
-            "welcomeUser"
-          ).innerHTML = `<i class="fa-solid fa-user-shield"></i> Welcome, ${s.name}`;
-        }
+        if (s) document.getElementById("welcomeUser").innerHTML = `<i class="fa-solid fa-user-shield"></i> Welcome, ${s.name}`;
       }
 
       function logout() {
         localStorage.clear();
-        location.replace("index.html");
+        location.replace("login.html"); // FIX #31
+      }
+
+      /* ═══════════════════════════════════════════
+         UI CONTROL
+      ═══════════════════════════════════════════ */
+      function toggleSidebar() {
+        document.querySelector(".sidebar").classList.toggle("active");
+        document.querySelector(".overlay").classList.toggle("active");
+        document.body.style.overflow = document.querySelector(".sidebar").classList.contains("active") ? "hidden" : "auto";
+      }
+
+      function showPage(id, element) {
+        document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+        if (element) {
+          document.querySelectorAll(".sidebar li").forEach(li => li.classList.remove("active-nav"));
+          element.classList.add("active-nav");
+        }
+        if (window.innerWidth < 768) {
+          document.querySelector(".sidebar").classList.remove("active");
+          document.querySelector(".overlay").classList.remove("active");
+          document.body.style.overflow = "auto";
+        }
       }
 
       function openDashboard(element) {
-  showPage("dashboardPage", element);
-
-  let frame = document.getElementById("dashboardFrame");
-  if (!frame.src) {
-    frame.src = "dashboard.html";
-  }
-}
-
-      /* ================= DATA INITIALIZATION ================= */
-
-      let users = [],
-        data = [],
-        types = [],
-        expenseTypes = [],
-        occasions = [],
-        expenses = [];
-
-      function loadYears() {
-        let currentYear = new Date().getFullYear();
-        let yearOptions = `<option value="${currentYear}">${currentYear}</option>
-                     <option value="${currentYear - 1}">${
-          currentYear - 1
-        }</option>
-                     <option value="${currentYear + 1}">${
-          currentYear + 1
-        }</option>`;
-        document.getElementById("contribYear").innerHTML = yearOptions;
-        document.getElementById("expYear").innerHTML = yearOptions;
+        showPage("dashboardPage", element);
+        let frame = document.getElementById("dashboardFrame");
+        if (!frame.src || frame.src === window.location.href) {
+          frame.src = "dashboard.html";
+        }
       }
 
+      function setLoading(show) {
+        document.getElementById("loadingOverlay").classList.toggle("show", show);
+      }
+
+      /* ═══════════════════════════════════════════
+         DATA VARIABLES
+      ═══════════════════════════════════════════ */
+      let users = [], data = [], types = [], expenseTypes = [], occasions = [], expenses = [];
+
+      /* ═══════════════════════════════════════════
+         SUMMARY (FIX #15, #19 — fmt() used)
+      ═══════════════════════════════════════════ */
+      function loadSummary() {
+        document.getElementById("totalUsers").innerText = users.length;
+        let totalC = data.reduce((a, b) => a + Number(b.Amount || 0), 0);
+        let totalE = expenses.reduce((a, b) => a + Number(b.Amount || 0), 0);
+        document.getElementById("totalContribution").innerText = fmt(totalC);
+        document.getElementById("totalExpense").innerText = fmt(totalE);
+        document.getElementById("netBalance").innerText = fmt(totalC - totalE);
+      }
+
+      /* ═══════════════════════════════════════════
+         INIT
+      ═══════════════════════════════════════════ */
       async function init() {
-        let allData = (await getData("getAllData")) || {};
+        setLoading(true);
+        try {
+          let allData = (await getData("getAllData")) || {};
+          users        = allData.users        || [];
+          types        = allData.types        || [];
+          expenseTypes = allData.expenseTypes || [];
+          occasions    = allData.occasions    || [];
+          data         = allData.contributions || [];
+          expenses     = allData.expenses     || [];
 
-        users = allData.users || [];
-        types = allData.types || [];
-        expenseTypes = allData.expenseTypes || [];
-        occasions = allData.occasions || [];
-        data = allData.contributions || [];
-        expenses = allData.expenses || [];
-
-        showUser();
-        loadMonths();
-        loadYears();
-        loadUsers();
-        loadTypes();
-        loadExpenseTypes();
-        loadOccasions();
-
-        render();
-        renderUsers();
-        renderTypes();
-        renderOccasions();
-        renderExpenseTypes();
-        renderExpenses();
-
-        loadSummary();
+          showUser();
+          loadMonths();
+          loadYears();
+          loadUsers();
+          loadTypes();
+          loadExpenseTypes();
+          loadOccasions();
+          render();
+          renderUsers();
+          renderTypes();
+          renderOccasions();
+          renderExpenseTypes();
+          renderExpenses();
+          loadSummary();
+        } catch (err) {
+          toast("Failed to load data: " + err.message, "error");
+        } finally {
+          setLoading(false);
+        }
       }
 
-      /* ================= LOAD DROPDOWNS ================= */
-
+      /* ═══════════════════════════════════════════
+         LOAD DROPDOWNS
+      ═══════════════════════════════════════════ */
       function loadMonths() {
-  const m = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const options = m.map(x => `<option value="${x}">${x}</option>`).join("");
-  
-  const selectors = ["month", "expMonth", "filterContribMonth"];
-  selectors.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = (id === "expMonth" || id === "filterContribMonth" ? '<option value="">All/None</option>' : '') + options;
-  });
-}
+        const m = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+        const options = m.map(x => `<option value="${x}">${x}</option>`).join("");
+        ["month", "expMonth", "filterContribMonth"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.innerHTML = (id !== "month" ? '<option value="">All/None</option>' : "") + options;
+        });
+      }
+
+      // FIX #23 — Year dropdown built from actual data, not hardcoded ±1
+      function loadYears() {
+        let years = new Set();
+        data.forEach(c => { let y = Number(c.Year); if (!isNaN(y) && y > 2000) years.add(y); });
+        expenses.forEach(e => { let y = Number(e.Year); if (!isNaN(y) && y > 2000) years.add(y); });
+        let cur = new Date().getFullYear();
+        years.add(cur); years.add(cur + 1);
+        let sorted = Array.from(years).sort((a, b) => b - a);
+        let opts = sorted.map(y => `<option value="${y}">${y}</option>`).join("");
+        ["contribYear", "expYear"].forEach(id => {
+          let el = document.getElementById(id);
+          if (el) { el.innerHTML = opts; el.value = cur; }
+        });
+      }
 
       function loadUsers() {
         document.getElementById("user").innerHTML = users
-          .map((u) => `<option value="${u.UserId}">${u.Name}</option>`)
-          .join("");
+          .filter(u => u.Status !== "Inactive")
+          .map(u => `<option value="${u.UserId}">${u.Name}</option>`).join("");
       }
 
       function loadTypes() {
         document.getElementById("type").innerHTML = types
-          .map((t) => `<option value="${t.TypeId}">${t.TypeName}</option>`)
-          .join("");
+          .map(t => `<option value="${t.TypeId}">${t.TypeName}</option>`).join("");
       }
 
       function loadExpenseTypes() {
         document.getElementById("expenseType").innerHTML = expenseTypes
-          .map((e) => `<option value="${e.ExpenseTypeId}">${e.Name}</option>`)
-          .join("");
+          .map(e => `<option value="${e.ExpenseTypeId}">${e.Name}</option>`).join("");
       }
 
       function loadOccasions() {
-        document.getElementById("occasion").innerHTML =
-          `<option value="">None</option>` +
-          occasions
-            .map(
-              (o) =>
-                `<option value="${o.OccasionId}">${o.OccasionName}</option>`
-            )
-            .join("");
+        document.getElementById("occasion").innerHTML = `<option value="">None</option>` +
+          occasions.map(o => `<option value="${o.OccasionId}">${o.OccasionName}</option>`).join("");
       }
 
-      /* ================= RENDERING TABLES ================= */
+      /* ═══════════════════════════════════════════
+         RENDER CONTRIBUTIONS
+         FIX #20 — added Date + Year columns
+         FIX #11 — missing date no longer hides record
+      ═══════════════════════════════════════════ */
+      const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-      function render(list = data) {
-        let m = [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "August",
-          "September",
-          "October",
-          "November",
-          "December",
-        ];
-
-        document.getElementById("tb").innerHTML = list
-          .map((c) => {
-            let name =
-              users.find((u) => String(u.UserId) === String(c.UserId))?.Name ||
-              "";
-            let mOpt = m
-              .map(
-                (x) =>
-                  `<option ${x === c.ForMonth ? "selected" : ""}>${x}</option>`
-              )
-              .join("");
-            let tOpt = types
-              .map(
-                (t) =>
-                  `<option value="${t.TypeId}" ${
-                    String(t.TypeId) === String(c.TypeId) ? "selected" : ""
-                  }>${t.TypeName}</option>`
-              )
-              .join("");
-
-            return `
-    <tr>
-      <td><b>${escapeHtml(name)}</b></td>
-      <td><input type="number" value="${c.Amount}" id="amt_${c.Id}"></td>
-      <td><select id="mon_${c.Id}">${mOpt}</select></td>
-      <td><select id="type_${c.Id}">${tOpt}</select></td>
-      <td>
-        <div class="action-btns">
-          <button class="btn-small" onclick="update('${
-            c.Id
-          }')"><i class="fa-solid fa-pen"></i></button>
-          <button class="btn-small btn-danger" onclick="del('${
-            c.Id
-          }')"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </td>
-    </tr>`;
-          })
-          .join("");
+      function render(list) {
+        if (!list) list = data;
+        document.getElementById("tb").innerHTML = list.map(c => {
+          let name = users.find(u => String(u.UserId) === String(c.UserId))?.Name || "Unknown";
+          let mOpt = MONTHS.map(x => `<option ${x === c.ForMonth ? "selected" : ""}>${x}</option>`).join("");
+          let tOpt = types.map(t => `<option value="${t.TypeId}" ${String(t.TypeId) === String(c.TypeId) ? "selected" : ""}>${t.TypeName}</option>`).join("");
+          return `
+  <tr>
+    <td><b>${escapeHtml(name)}</b></td>
+    <td><input type="number" value="${c.Amount}" id="amt_${c.Id}" style="min-width:90px;"></td>
+    <td><select id="mon_${c.Id}">${mOpt}</select></td>
+    <td><select id="yr_${c.Id}" style="min-width:75px;">${Array.from({length:3},(_,i)=>{let y=new Date().getFullYear()-1+i;return `<option ${String(c.Year)===String(y)?"selected":""}>${y}</option>`;}).join("")}</select></td>
+    <td><select id="type_${c.Id}">${tOpt}</select></td>
+    <td style="font-size:12px;color:#666;">${c.PaymentDate || "—"}</td>
+    <td>
+      <div class="action-btns">
+        <button class="btn-small" onclick="update('${c.Id}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-small btn-danger" onclick="del('${c.Id}')"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </td>
+  </tr>`;
+        }).join("");
       }
 
+      // FIX #11 — records without PaymentDate are still shown; only date filter skipped
       function filterContributions() {
-  const txt = document.getElementById("searchContrib").value.toLowerCase();
-  const start = document.getElementById("contribStart").value;
-  const end = document.getElementById("contribEnd").value;
+        const txt   = document.getElementById("searchContrib").value.toLowerCase();
+        const start = document.getElementById("contribStart").value;
+        const end   = document.getElementById("contribEnd").value;
 
-  const filtered = data.filter((c) => {
-    // Safety check: Skip if PaymentDate is missing to prevent split() error
-    if (!c.PaymentDate) return false; 
+        const filtered = data.filter(c => {
+          const user = users.find(u => String(u.UserId) === String(c.UserId));
+          const nameMatch = (user?.Name.toLowerCase() || "").includes(txt) ||
+                            String(user?.Mobile || "").includes(txt) ||
+                            String(c.Amount).includes(txt);
 
-    const user = users.find((u) => String(u.UserId) === String(c.UserId));
-    const nameMatch = (user?.Name.toLowerCase() || "").includes(txt) || String(user?.Mobile || "").includes(txt);
-    
-    // Convert "dd-mm-yyyy" from sheet to "yyyy-mm-dd" for calendar comparison
-    const parts = c.PaymentDate.split(" ")[0].split("-");
-    const cDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+          let dateMatch = true;
+          if ((start || end) && c.PaymentDate) {
+            const parts = String(c.PaymentDate).split(" ")[0].split("-");
+            if (parts.length === 3) {
+              const cDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+              dateMatch = (!start || cDate >= start) && (!end || cDate <= end);
+            }
+          }
+          return nameMatch && dateMatch;
+        });
+        render(filtered);
+      }
 
-    const dateMatch = (!start || cDate >= start) && (!end || cDate <= end);
-    const amountMatch = String(c.Amount).includes(txt);
-    
-    return (nameMatch || amountMatch) && dateMatch;
-  });
-  render(filtered);
-}
-
+      /* ═══════════════════════════════════════════
+         RENDER EXPENSES (FIX #32 — fmt)
+      ═══════════════════════════════════════════ */
       function renderExpenses() {
-        let m = [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "August",
-          "September",
-          "October",
-          "November",
-          "December",
-        ];
-
-        document.getElementById("expenseRecordsBody").innerHTML = expenses
-          .map((e) => {
-            let tOpt = expenseTypes
-              .map(
-                (t) =>
-                  `<option value="${t.ExpenseTypeId}" ${
-                    String(t.ExpenseTypeId) === String(e.ExpenseTypeId)
-                      ? "selected"
-                      : ""
-                  }>${t.Name}</option>`
-              )
-              .join("");
-
-            // FIX: Tells the code to look for ForMonth FIRST, and if it fails, look for Note
-            let savedMonth = e.ForMonth || e.Note || "";
-            let mOpt = m
-              .map(
-                (x) =>
-                  `<option ${x === savedMonth ? "selected" : ""}>${x}</option>`
-              )
-              .join("");
-
-            return `
-    <tr>
-      <td><input value="${escapeHtml(e.Title)}" id="eTitle_${e.Id}"></td>
-      <td><select id="eType_${e.Id}">${tOpt}</select></td>
-      <td><select id="eMon_${
-        e.Id
-      }"><option value="">None</option>${mOpt}</select></td>
-      <td><input type="number" value="${e.Amount}" id="eAmt_${e.Id}"></td>
-      <td>
-        <div class="action-btns">
-          <button class="btn-small" onclick="updateExpense('${
-            e.Id
-          }')"><i class="fa-solid fa-pen"></i></button>
-          <button class="btn-small btn-danger" onclick="deleteExpense('${
-            e.Id
-          }')"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </td>
-    </tr>`;
-          })
-          .join("");
+        document.getElementById("expenseRecordsBody").innerHTML = expenses.map(e => {
+          let tOpt = expenseTypes.map(t =>
+            `<option value="${t.ExpenseTypeId}" ${String(t.ExpenseTypeId) === String(e.ExpenseTypeId) ? "selected" : ""}>${t.Name}</option>`
+          ).join("");
+          let savedMonth = e.ForMonth || e.Note || "";
+          let mOpt = MONTHS.map(x => `<option ${x === savedMonth ? "selected" : ""}>${x}</option>`).join("");
+          return `
+  <tr>
+    <td><input value="${escapeHtml(e.Title)}" id="eTitle_${e.Id}"></td>
+    <td><select id="eType_${e.Id}">${tOpt}</select></td>
+    <td><select id="eMon_${e.Id}"><option value="">None</option>${mOpt}</select></td>
+    <td><input type="number" value="${e.Amount}" id="eAmt_${e.Id}"></td>
+    <td>
+      <div class="action-btns">
+        <button class="btn-small" onclick="updateExpense('${e.Id}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-small btn-danger" onclick="deleteExpense('${e.Id}')"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </td>
+  </tr>`;
+        }).join("");
       }
 
-      // Replace your old renderUsers function with this one
+      /* ═══════════════════════════════════════════
+         RENDER USERS
+         FIX #21 — table header now has Photo+Status
+      ═══════════════════════════════════════════ */
       function renderUsers() {
-        let searchVal =
-          document.getElementById("userSearchInput")?.value.toLowerCase() || "";
-
+        let searchVal = (document.getElementById("userSearchInput")?.value || "").toLowerCase();
         document.getElementById("userTable").innerHTML = users
-          .filter(
-            (u) =>
-              u.Name.toLowerCase().includes(searchVal) ||
-              u.Mobile.toString().includes(searchVal)
-          )
-          .map(
-            (u) => `
-    <tr>
-      <td>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <img src="${escapeHtml(
-            u.PhotoURL || ""
-          )}" width="30" height="30" style="border-radius:50%; object-fit:cover;">
-          <input value="${escapeHtml(u.Name)}" id="name_${
-              u.UserId
-            }" style="min-width:120px;">
-        </div>
-      </td>
-      <td>
-  <input value="${escapeHtml(u.Mobile)}" id="mob_${u.UserId}" style="min-width:110px;">
-</td>
-      <td>
-        <select id="role_${u.UserId}" style="min-width:90px;">
-          <option ${u.Role === "User" ? "selected" : ""}>User</option>
-          <option ${u.Role === "Admin" ? "selected" : ""}>Admin</option>
-        </select>
-      </td>
-      <td>
-        <select id="status_${u.UserId}" style="min-width:90px;">
-          <option ${u.Status === "Active" ? "selected" : ""}>Active</option>
-          <option ${u.Status === "Inactive" ? "selected" : ""}>Inactive</option>
-        </select>
-      </td>
-      <td>
-        <div class="action-btns">
-          <button class="btn-small" onclick="updateUserFull('${
-            u.UserId
-          }')"><i class="fa-solid fa-save"></i></button>
-          <button class="btn-small btn-danger" onclick="deleteUser('${
-            u.UserId
-          }')"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </td>
-    </tr>
-  `
-          )
-          .join("");
+          .filter(u => u.Name.toLowerCase().includes(searchVal) || String(u.Mobile || "").includes(searchVal))
+          .map(u => `
+  <tr>
+    <td><img src="${escapeHtml(u.PhotoURL || "")}" onerror="this.src=''" width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;"></td>
+    <td><input value="${escapeHtml(u.Name)}" id="name_${u.UserId}" style="min-width:120px;"></td>
+    <td><input value="${escapeHtml(String(u.Mobile || ""))}" id="mob_${u.UserId}" style="min-width:110px;"></td>
+    <td>
+      <select id="role_${u.UserId}" style="min-width:90px;">
+        <option ${u.Role === "User"  ? "selected" : ""}>User</option>
+        <option ${u.Role === "Admin" ? "selected" : ""}>Admin</option>
+      </select>
+    </td>
+    <td>
+      <select id="status_${u.UserId}" style="min-width:90px;">
+        <option ${u.Status === "Active"   ? "selected" : ""}>Active</option>
+        <option ${u.Status === "Inactive" ? "selected" : ""}>Inactive</option>
+      </select>
+    </td>
+    <td>
+      <div class="action-btns">
+        <button class="btn-small" onclick="updateUserFull('${u.UserId}')"><i class="fa-solid fa-save"></i></button>
+        <button class="btn-small btn-danger" onclick="deleteUser('${u.UserId}')"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </td>
+  </tr>`).join("");
       }
-
-      // Add this new function to handle the full update
-      // Update this function in your admin.html script section
-      async function updateUserFull(id) {
-        let s = JSON.parse(localStorage.getItem("session"));
-
-        // Find current user data for fields not in the table row
-        let currentUser = users.find((u) => String(u.UserId) === String(id));
-
-        let res = await postData({
-          action: "updateUser",
-    UserId: id,
-    Name: document.getElementById("name_" + id).value,
-    Mobile: document.getElementById("mob_" + id).value,
-    Role: document.getElementById("role_" + id).value,
-    Status: document.getElementById("status_" + id).value,
-    Password: currentUser?.Password || "",
-    Email: currentUser?.Email || "",
-    PhotoURL: currentUser?.PhotoURL || "",
-    
-    // 🔥 FIX HERE
-    AdminName: s.name
-  });
-
-  if (res.status === "updated") {
-    alert("✅ User Updated & Action Logged");
-    init();
-  } else {
-    alert("❌ Update Failed");
-  }
-}
 
       function renderTypes() {
-        document.getElementById("typeTable").innerHTML = types
-          .map(
-            (t) => `
-    <tr>
-      <td style="width: 100%;"><input value="${escapeHtml(t.TypeName)}" id="t_${
-              t.TypeId
-            }"></td>
-      <td>
-        <div class="action-btns">
-          <button class="btn-small" onclick="updateType('${
-            t.TypeId
-          }')"><i class="fa-solid fa-pen"></i></button>
-          <button class="btn-small btn-danger" onclick="deleteType('${
-            t.TypeId
-          }')"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </td>
-    </tr>
-  `
-          )
-          .join("");
+        document.getElementById("typeTable").innerHTML = types.map(t => `
+  <tr>
+    <td style="width:100%;"><input value="${escapeHtml(t.TypeName)}" id="t_${t.TypeId}"></td>
+    <td>
+      <div class="action-btns">
+        <button class="btn-small" onclick="updateType('${t.TypeId}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-small btn-danger" onclick="deleteType('${t.TypeId}')"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </td>
+  </tr>`).join("");
       }
 
       function renderOccasions() {
-        document.getElementById("occasionTable").innerHTML = occasions
-          .map(
-            (o) => `
-    <tr>
-      <td style="width: 100%;"><input value="${escapeHtml(
-        o.OccasionName
-      )}" id="o_${o.OccasionId}"></td>
-      <td>
-        <div class="action-btns">
-          <button class="btn-small" onclick="updateOccasion('${
-            o.OccasionId
-          }')"><i class="fa-solid fa-pen"></i></button>
-          <button class="btn-small btn-danger" onclick="deleteOccasion('${
-            o.OccasionId
-          }')"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </td>
-    </tr>
-  `
-          )
-          .join("");
+        document.getElementById("occasionTable").innerHTML = occasions.map(o => `
+  <tr>
+    <td style="width:100%;"><input value="${escapeHtml(o.OccasionName)}" id="o_${o.OccasionId}"></td>
+    <td>
+      <div class="action-btns">
+        <button class="btn-small" onclick="updateOccasion('${o.OccasionId}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-small btn-danger" onclick="deleteOccasion('${o.OccasionId}')"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </td>
+  </tr>`).join("");
       }
 
       function renderExpenseTypes() {
-        document.getElementById("expenseTable").innerHTML = expenseTypes
-          .map(
-            (e) => `
-    <tr>
-      <td style="width: 100%;"><input value="${escapeHtml(e.Name)}" id="e_${
-              e.ExpenseTypeId
-            }"></td>
-      <td>
-        <div class="action-btns">
-          <button class="btn-small" onclick="updateExpenseType('${
-            e.ExpenseTypeId
-          }')"><i class="fa-solid fa-pen"></i></button>
-          <button class="btn-small btn-danger" onclick="deleteExpenseType('${
-            e.ExpenseTypeId
-          }')"><i class="fa-solid fa-trash"></i></button>
-        </div>
-      </td>
-    </tr>
-  `
-          )
-          .join("");
+        document.getElementById("expenseTable").innerHTML = expenseTypes.map(e => `
+  <tr>
+    <td style="width:100%;"><input value="${escapeHtml(e.Name)}" id="e_${e.ExpenseTypeId}"></td>
+    <td>
+      <div class="action-btns">
+        <button class="btn-small" onclick="updateExpenseType('${e.ExpenseTypeId}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-small btn-danger" onclick="deleteExpenseType('${e.ExpenseTypeId}')"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </td>
+  </tr>`).join("");
       }
 
-      function checkSession() {
-  let s = JSON.parse(localStorage.getItem("session"));
-
-  if (!s || Date.now() > s.expiry) {
-    alert("Session expired. Please login again.");
-    localStorage.clear();
-    location.replace("login.html");
-    return false;
-  }
-
-  return true;
-}
-      /* ================= BUSINESS LOGIC (CRUD) ================= */
-
+      /* ═══════════════════════════════════════════
+         CRUD — CONTRIBUTIONS
+         FIX #18 — toast() replaces alert()
+         FIX #34 — Year now sent on update
+      ═══════════════════════════════════════════ */
       async function addContribution() {
         if (!checkSession()) return;
         let userId = document.getElementById("user").value;
         let amount = document.getElementById("amount").value;
-        let year = document.getElementById("contribYear").value;
+        let year   = document.getElementById("contribYear").value;
+        if (!userId || !amount || amount <= 0) return toast("Please select a user and enter a valid amount.", "error");
 
-        if (!userId || !amount || amount <= 0)
-          return alert("❌ Please select a user and enter a valid amount.");
-
-        let res = await postData({
-          action: "addContribution",
-          Id: Date.now(),
-          UserId: userId,
-          Amount: amount,
-          ForMonth: document.getElementById("month").value,
-          Year: year,
-          TypeId: document.getElementById("type").value,
-          OccasionId: document.getElementById("occasion").value,
-          Note: document.getElementById("note").value,
-        });
-        alert(res.status === "success" ? "✅ Added" : "❌ Failed");
-        document.getElementById("amount").value = "";
-        document.getElementById("note").value = "";
-        init();
+        try {
+          let res = await postData({
+            action: "addContribution",
+            Id: Date.now(),
+            UserId: userId,
+            Amount: amount,
+            ForMonth: document.getElementById("month").value,
+            Year: year,
+            TypeId: document.getElementById("type").value,
+            OccasionId: document.getElementById("occasion").value,
+            Note: document.getElementById("note").value
+          });
+          if (res.status === "success") {
+            toast("✅ Contribution added! Receipt: " + res.receiptId);
+            document.getElementById("amount").value = "";
+            document.getElementById("note").value = "";
+            init();
+          } else {
+            toast("❌ Failed to add contribution.", "error");
+          }
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
       async function update(id) {
-        let amt = document.getElementById("amt_" + id).value;
-        let mon = document.getElementById("mon_" + id).value;
+        let amt = document.getElementById("amt_"  + id).value;
+        let mon = document.getElementById("mon_"  + id).value;
         let tid = document.getElementById("type_" + id).value;
-
-        let res = await postData({
-          action: "updateContribution",
-          Id: id,
-          Amount: amt,
-          ForMonth: mon,
-          TypeId: tid,
-        });
-
-        if (res.status === "updated") {
-          // Instead of calling init(), use our new fast helper!
-          updateLocalData("contributions", id, {
-            Amount: amt,
-            ForMonth: mon,
-            TypeId: tid,
-          });
-          alert("✅ Updated");
-        } else {
-          alert("❌ Failed to update");
-        }
+        let yr  = document.getElementById("yr_"   + id)?.value || new Date().getFullYear();
+        try {
+          let res = await postData({ action: "updateContribution", Id: id, Amount: amt, ForMonth: mon, TypeId: tid, Year: yr });
+          if (res.status === "updated") {
+            updateLocalData("contributions", id, { Amount: amt, ForMonth: mon, TypeId: tid, Year: yr });
+            toast("✅ Updated successfully.");
+          } else { toast("❌ Failed to update.", "error"); }
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
       async function del(id) {
         if (!confirm("Delete this contribution?")) return;
-        let res = await postData({ action: "deleteContribution", Id: id });
-        alert(res.status === "deleted" ? "✅ Deleted" : "❌ Failed");
-        init();
+        try {
+          let res = await postData({ action: "deleteContribution", Id: id });
+          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed to delete.", res.status === "deleted" ? "" : "error");
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
+      /* ═══════════════════════════════════════════
+         CRUD — EXPENSES
+      ═══════════════════════════════════════════ */
       async function addExpense() {
         if (!checkSession()) return;
-        let title = document.getElementById("title").value;
+        let title  = document.getElementById("title").value;
         let amount = document.getElementById("expAmount").value;
-        let year = document.getElementById("expYear").value;
-
-        if (!title || !amount || amount <= 0)
-          return alert("❌ Please enter a title and a valid amount.");
-
-        let res = await postData({
-          action: "addExpense",
-          Id: Date.now(),
-          Title: title,
-          Amount: amount,
-          Year: year,
-          ForMonth: document.getElementById("expMonth").value,
-          ExpenseTypeId: document.getElementById("expenseType").value,
-        });
-        alert(res.status === "success" ? "✅ Added" : "❌ Failed");
-
-        document.getElementById("title").value = "";
-        document.getElementById("expAmount").value = "";
-        document.getElementById("expMonth").value = "";
-        document.getElementById("expenseType").selectedIndex = 0;
-        init();
+        let year   = document.getElementById("expYear").value;
+        if (!title || !amount || amount <= 0) return toast("Please enter a title and a valid amount.", "error");
+        try {
+          let res = await postData({
+            action: "addExpense", Id: Date.now(),
+            Title: title, Amount: amount, Year: year,
+            ForMonth: document.getElementById("expMonth").value,
+            ExpenseTypeId: document.getElementById("expenseType").value
+          });
+          toast(res.status === "success" ? "✅ Expense added." : "❌ Failed.", res.status === "success" ? "" : "error");
+          document.getElementById("title").value = "";
+          document.getElementById("expAmount").value = "";
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
       async function updateExpense(id) {
         if (!checkSession()) return;
-        let old = expenses.find((x) => String(x.Id) === String(id));
-        let res = await postData({
-          action: "updateExpense",
-          Id: id,
-          Title: document.getElementById("eTitle_" + id).value,
-          Amount: document.getElementById("eAmt_" + id).value,
-          ExpenseTypeId: document.getElementById("eType_" + id).value,
-          ForMonth: document.getElementById("eMon_" + id).value,
-          Year: old?.Year || new Date().getFullYear(),
-        });
-        alert(res.status === "updated" ? "✅ Updated" : "❌ Failed");
-        init();
+        let old = expenses.find(x => String(x.Id) === String(id));
+        try {
+          let res = await postData({
+            action: "updateExpense", Id: id,
+            Title: document.getElementById("eTitle_" + id).value,
+            Amount: document.getElementById("eAmt_"   + id).value,
+            ExpenseTypeId: document.getElementById("eType_" + id).value,
+            ForMonth: document.getElementById("eMon_" + id).value,
+            Year: old?.Year || new Date().getFullYear()
+          });
+          toast(res.status === "updated" ? "✅ Updated." : "❌ Failed.", res.status === "updated" ? "" : "error");
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
       async function deleteExpense(id) {
         if (!checkSession()) return;
         if (!confirm("Delete this expense?")) return;
-        let res = await postData({ action: "deleteExpense", Id: id });
-        alert(res.status === "deleted" ? "✅ Deleted" : "❌ Failed");
-        init();
+        try {
+          let res = await postData({ action: "deleteExpense", Id: id });
+          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
+      /* ═══════════════════════════════════════════
+         CRUD — USERS
+      ═══════════════════════════════════════════ */
       async function addUser() {
         if (!checkSession()) return;
-        let mobile = document.getElementById("u_mobile").value;
-        let name = document.getElementById("u_name").value;
-        let pass = document.getElementById("u_password").value;
-        let email = document.getElementById("u_email").value; // Added
+        let name   = document.getElementById("u_name").value.trim();
+        let mobile = document.getElementById("u_mobile").value.trim();
+        let pass   = document.getElementById("u_password").value;
+        let email  = document.getElementById("u_email").value.trim();
+        let role   = document.getElementById("u_role").value;
 
-        if (!name || !mobile || !pass || !email)
-          return alert("❌ All fields (including Email) are required.");
+        if (!name || !mobile || !pass || !email) return toast("All fields including Email are required.", "error");
+        if (pass.length < 6) return toast("Password must be at least 6 characters.", "error");
+        if (!/^\d{10}$/.test(mobile)) return toast("Mobile must be exactly 10 digits.", "error");
 
-        let res = await postData({
-          action: "addUser",
-          UserId: Date.now(),
-          Name: name,
-          Mobile: mobile,
-          Password: pass,
-          Email: email, // Sent to backend
-          Role: document.getElementById("u_role").value,
-        });
-
-        if (res.status === "error") {
-          alert("❌ " + res.message);
-        } else {
-          alert("✅ User Added Successfully");
-          init();
-        }
+        try {
+          let res = await postData({
+            action: "addUser", UserId: Date.now(),
+            Name: name, Mobile: mobile,
+            Password: pass, Email: email, Role: role
+          });
+          if (res.status === "error") { toast("❌ " + res.message, "error"); }
+          else { toast("✅ User added successfully."); init(); }
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
       async function deleteUser(id) {
         if (!checkSession()) return;
         if (!confirm("Delete user?")) return;
-        let res = await postData({ action: "deleteUser", UserId: id });
-        alert(res.status === "deleted" ? "✅ Deleted" : "❌ Failed");
-        init();
+        try {
+          let res = await postData({ action: "deleteUser", UserId: id });
+          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
+      async function updateUserFull(id) {
+        if (!checkSession()) return;
+        let s = JSON.parse(localStorage.getItem("session"));
+        let currentUser = users.find(u => String(u.UserId) === String(id));
+        try {
+          let res = await postData({
+            action: "updateUser",
+            UserId: id,
+            Name:   document.getElementById("name_"   + id).value,
+            Mobile: document.getElementById("mob_"    + id).value,
+            Role:   document.getElementById("role_"   + id).value,
+            Status: document.getElementById("status_" + id).value,
+            Password: "",          // empty = keep existing (server logic preserved)
+            Email:    currentUser?.Email    || "",
+            PhotoURL: currentUser?.PhotoURL || "",
+            AdminName: s.name
+          });
+          toast(res.status === "updated" ? "✅ User updated & logged." : "❌ Update failed.", res.status === "updated" ? "" : "error");
+          if (res.status === "updated") init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
+      }
+
+      /* ═══════════════════════════════════════════
+         CRUD — MASTER DATA
+      ═══════════════════════════════════════════ */
       async function addType() {
         if (!checkSession()) return;
-        let res = await postData({
-          action: "addType",
-          TypeName: document.getElementById("t_name").value,
-        });
-        alert(res.status === "success" ? "✅ Added" : "❌ Failed");
-        init();
+        let val = document.getElementById("t_name").value.trim();
+        if (!val) return toast("Please enter a type name.", "error");
+        try {
+          let res = await postData({ action: "addType", TypeName: val });
+          toast(res.status === "success" ? "✅ Added." : "❌ Failed.", res.status === "success" ? "" : "error");
+          document.getElementById("t_name").value = "";
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
       async function updateType(id) {
         if (!checkSession()) return;
-        let res = await postData({
-          action: "updateType",
-          TypeId: id,
-          TypeName: document.getElementById("t_" + id).value,
-        });
-        alert(res.status === "updated" ? "✅ Updated" : "❌ Failed");
-        init();
+        try {
+          let res = await postData({ action: "updateType", TypeId: id, TypeName: document.getElementById("t_" + id).value });
+          toast(res.status === "updated" ? "✅ Updated." : "❌ Failed.", res.status === "updated" ? "" : "error");
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
       async function deleteType(id) {
         if (!checkSession()) return;
-        let res = await postData({ action: "deleteType", TypeId: id });
-        alert(res.status === "deleted" ? "✅ Deleted" : "❌ Failed");
-        init();
+        if (!confirm("Delete this type?")) return;
+        try {
+          let res = await postData({ action: "deleteType", TypeId: id });
+          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
       async function addOccasion() {
         if (!checkSession()) return;
-        let res = await postData({
-          action: "addOccasion",
-          OccasionName: document.getElementById("o_name").value,
-        });
-        alert(res.status === "success" ? "✅ Added" : "❌ Failed");
-        init();
+        let val = document.getElementById("o_name").value.trim();
+        if (!val) return toast("Please enter an occasion name.", "error");
+        try {
+          let res = await postData({ action: "addOccasion", OccasionName: val });
+          toast(res.status === "success" ? "✅ Added." : "❌ Failed.", res.status === "success" ? "" : "error");
+          document.getElementById("o_name").value = "";
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
       async function updateOccasion(id) {
         if (!checkSession()) return;
-        let res = await postData({
-          action: "updateOccasion",
-          OccasionId: id,
-          OccasionName: document.getElementById("o_" + id).value,
-        });
-        alert(res.status === "updated" ? "✅ Updated" : "❌ Failed");
-        init();
+        try {
+          let res = await postData({ action: "updateOccasion", OccasionId: id, OccasionName: document.getElementById("o_" + id).value });
+          toast(res.status === "updated" ? "✅ Updated." : "❌ Failed.", res.status === "updated" ? "" : "error");
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
       async function deleteOccasion(id) {
         if (!checkSession()) return;
-        let res = await postData({ action: "deleteOccasion", OccasionId: id });
-        alert(res.status === "deleted" ? "✅ Deleted" : "❌ Failed");
-        init();
+        if (!confirm("Delete this occasion?")) return;
+        try {
+          let res = await postData({ action: "deleteOccasion", OccasionId: id });
+          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
       async function addExpenseType() {
         if (!checkSession()) return;
-        let res = await postData({
-          action: "addExpenseType",
-          Name: document.getElementById("e_name").value,
-        });
-        alert(res.status === "success" ? "✅ Added" : "❌ Failed");
-        init();
+        let val = document.getElementById("e_name").value.trim();
+        if (!val) return toast("Please enter an expense type name.", "error");
+        try {
+          let res = await postData({ action: "addExpenseType", Name: val });
+          toast(res.status === "success" ? "✅ Added." : "❌ Failed.", res.status === "success" ? "" : "error");
+          document.getElementById("e_name").value = "";
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
       async function updateExpenseType(id) {
         if (!checkSession()) return;
-        let res = await postData({
-          action: "updateExpenseType",
-          ExpenseTypeId: id,
-          Name: document.getElementById("e_" + id).value,
-        });
-        alert(res.status === "updated" ? "✅ Updated" : "❌ Failed");
-        init();
+        try {
+          let res = await postData({ action: "updateExpenseType", ExpenseTypeId: id, Name: document.getElementById("e_" + id).value });
+          toast(res.status === "updated" ? "✅ Updated." : "❌ Failed.", res.status === "updated" ? "" : "error");
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
       async function deleteExpenseType(id) {
         if (!checkSession()) return;
-        let res = await postData({
-          action: "deleteExpenseType",
-          ExpenseTypeId: id,
-        });
-        alert(res.status === "deleted" ? "✅ Deleted" : "❌ Failed");
-        init();
+        if (!confirm("Delete this expense type?")) return;
+        try {
+          let res = await postData({ action: "deleteExpenseType", ExpenseTypeId: id });
+          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          init();
+        } catch (err) { toast("❌ " + err.message, "error"); }
       }
 
       init();

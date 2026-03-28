@@ -1,6 +1,7 @@
 let selectedYear;
-let _cbId = 0; // Global counter to prevent name collisions
+let _cbId = 0;
 
+// ── Utility: HTML escape
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -10,15 +11,66 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-// Fixed getData with unique JSONP callbacks
+// ── Utility: Indian-locale number formatting
+function fmt(n) {
+  return Number(n || 0).toLocaleString("en-IN");
+}
+
+// ── Toast notification (replaces all alert() calls)
+function toast(msg, type) {
+  // Remove any existing toast
+  let old = document.getElementById("_toast");
+  if (old) old.remove();
+
+  let t = document.createElement("div");
+  t.id = "_toast";
+  let bg = type === "error" ? "#e74c3c" : type === "warn" ? "#f39c12" : "#27ae60";
+  t.style.cssText = [
+    "position:fixed",
+    "top:20px",
+    "right:20px",
+    "background:" + bg,
+    "color:#fff",
+    "padding:12px 20px",
+    "border-radius:8px",
+    "font-family:Poppins,sans-serif",
+    "font-size:14px",
+    "font-weight:600",
+    "z-index:99999",
+    "box-shadow:0 4px 15px rgba(0,0,0,0.2)",
+    "animation:_toastIn 0.3s ease",
+    "max-width:320px",
+    "line-height:1.4"
+  ].join(";");
+  t.innerText = msg;
+
+  // Inject keyframe once
+  if (!document.getElementById("_toastStyle")) {
+    let s = document.createElement("style");
+    s.id = "_toastStyle";
+    s.textContent = "@keyframes _toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}";
+    document.head.appendChild(s);
+  }
+
+  document.body.appendChild(t);
+  setTimeout(() => { if (t.parentNode) t.remove(); }, 3500);
+}
+
+// ── Client-side SHA-256 (matches Apps Script hashPassword)
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// ── JSONP GET (for read operations)
 function getData(action) {
   return new Promise((resolve, reject) => {
     _cbId++;
-    const cb = "cb_" + _cbId + "_" + Date.now(); 
+    const cb = "cb_" + _cbId + "_" + Date.now();
     const script = document.createElement("script");
     let done = false;
 
-    window[cb] = function(data) {
+    window[cb] = function (data) {
       if (done) return;
       done = true;
       clearTimeout(timer);
@@ -32,109 +84,103 @@ function getData(action) {
       done = true;
       delete window[cb];
       script.remove();
-      reject(new Error("Request timed out."));
-    }, 15000);
+      reject(new Error("Request timed out. Please check your connection."));
+    }, 20000);
 
-    script.onerror = function() {
+    script.onerror = function () {
       if (done) return;
       done = true;
       clearTimeout(timer);
       delete window[cb];
       script.remove();
-      reject(new Error("Network error."));
+      reject(new Error("Network error. Please try again."));
     };
 
-    script.src = `${API_URL}?action=${action}&callback=${cb}`;
+    script.src = API_URL + "?action=" + action + "&callback=" + cb;
     document.body.appendChild(script);
   });
 }
 
-function fmt(n) {
-  return Number(n || 0).toLocaleString("en-IN");
-}
-
-function toast(msg) {
-  let t = document.createElement("div");
-  t.innerText = msg;
-  t.style = "position:fixed;top:20px;right:20px;background:#333;color:#fff;padding:10px;border-radius:5px;";
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(),3000);
-}
-
-function checkSession() {
-  let s = JSON.parse(localStorage.getItem("session"));
-  if (!s || Date.now() > s.expiry) {
-    localStorage.clear();
-    alert("Session expired");
-    location.replace("login.html");
-    return false;
-  }
-  return true;
-}
-
-// POST — with timeout, error handling, and script cleanup
-// REPLACED: Optimized POST function with better cleanup
+// ── JSONP POST (for write operations) — with full timeout & cleanup
 function postData(data) {
   return new Promise((resolve, reject) => {
     _cbId++;
     const cb = "cb_post_" + _cbId + "_" + Date.now();
     const script = document.createElement("script");
-    
-    window[cb] = (res) => {
-      script.remove();
+    let done = false;
+
+    window[cb] = function (res) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
       delete window[cb];
+      script.remove();
       resolve(res);
     };
 
-    script.src = `${API_URL}?${new URLSearchParams(data).toString()}&callback=${cb}`;
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true;
+      delete window[cb];
+      script.remove();
+      reject(new Error("Request timed out. Please try again."));
+    }, 20000);
+
+    script.onerror = function () {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      delete window[cb];
+      script.remove();
+      reject(new Error("Network error. Please try again."));
+    };
+
+    script.src = API_URL + "?" + new URLSearchParams(data).toString() + "&callback=" + cb;
     document.body.appendChild(script);
   });
 }
 
-
-
-// NEW: Add this at the end of app.js
-// This updates the screen instantly without needing to download everything again
-function updateLocalData(category, id, newData) {
-  if (category === 'contributions') {
-    // Find the item in our local 'data' array
-    let index = data.findIndex(x => String(x.Id) === String(id));
-    if (index !== -1) {
-      // Merge the new changes into the existing item
-      data[index] = { ...data[index], ...newData };
-    }
-  } else if (category === 'expenses') {
-    // Find the item in our local 'expenses' array
-    let index = expenses.findIndex(x => String(x.Id) === String(id));
-    if (index !== -1) {
-      expenses[index] = { ...expenses[index], ...newData };
-    }
+// ── Session check (used by all pages)
+function checkSession() {
+  let s = JSON.parse(localStorage.getItem("session"));
+  if (!s || Date.now() > s.expiry) {
+    localStorage.clear();
+    toast("Session expired. Please login again.", "error");
+    setTimeout(() => location.replace("login.html"), 1500);
+    return false;
   }
-  
-  // Refresh the tables and the top boxes (Total Users, etc.)
-  render(); 
+  return true;
+}
+
+// ── Local data update (avoids full reload after edit)
+function updateLocalData(category, id, newData) {
+  if (category === "contributions") {
+    let index = data.findIndex(x => String(x.Id) === String(id));
+    if (index !== -1) data[index] = { ...data[index], ...newData };
+  } else if (category === "expenses") {
+    let index = expenses.findIndex(x => String(x.Id) === String(id));
+    if (index !== -1) expenses[index] = { ...expenses[index], ...newData };
+  }
+  render();
   if (typeof renderExpenses === "function") renderExpenses();
   loadSummary();
 }
 
-// Year dropdown (used by dashboard.html)
-function loadYearDropdown(){
+// ── Year dropdown builder (used by dashboard.html)
+function loadYearDropdown() {
   const yearSelect = document.getElementById("yearSelect");
-  if(!yearSelect) return;
+  if (!yearSelect) return;
 
   let years = new Set();
-  contributions.forEach(c => years.add(Number(c.Year)));
-  expenses.forEach(e => years.add(Number(e.Year)));
-  
-  // Ensure current year is always an option
+  if (typeof contributions !== "undefined") contributions.forEach(c => years.add(Number(c.Year)));
+  if (typeof expenses !== "undefined") expenses.forEach(e => years.add(Number(e.Year)));
   years.add(new Date().getFullYear());
 
-  let sorted = Array.from(years).sort((a,b) => b - a);
+  let sorted = Array.from(years).filter(y => !isNaN(y)).sort((a, b) => b - a);
   yearSelect.innerHTML = sorted.map(y => `<option value="${y}">${y}</option>`).join("");
-
   selectedYear = Number(yearSelect.value);
 
-  yearSelect.onchange = function(){
+  yearSelect.onchange = function () {
     selectedYear = Number(this.value);
     if (typeof applyFilter === "function") applyFilter();
   };

@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - Mandir System</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -13,168 +14,65 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    /* GLOBAL STYLES */
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: 'Poppins', sans-serif;
-      background: #f4f6f9;
-      color: #333;
-    }
+    body { margin: 0; padding: 20px; font-family: 'Poppins', sans-serif; background: #f4f6f9; color: #333; }
 
-    h2 {
-      text-align: center;
-      color: #946c44;
-      font-weight: 700;
-      margin-bottom: 20px;
-    }
+    h2 { text-align: center; color: #946c44; font-weight: 700; margin-bottom: 20px; }
 
     button {
-      padding: 10px 20px;
-      background: #f7a01a;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: 'Poppins', sans-serif;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 10px rgba(247, 160, 26, 0.3);
+      padding: 10px 20px; background: #f7a01a; color: white; border: none; border-radius: 8px;
+      cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600;
+      transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(247,160,26,0.3);
     }
-
-    button:hover {
-      background: #d35400;
-      transform: translateY(-2px);
-    }
-
-    .btn-secondary {
-      background: #27ae60;
-      box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
-    }
+    button:hover { background: #d35400; transform: translateY(-2px); }
+    .btn-secondary { background: #27ae60; box-shadow: 0 4px 10px rgba(39,174,96,0.3); }
     .btn-secondary:hover { background: #2ecc71; }
 
+    .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
 
-    /* LAYOUT & CARDS */
-    .grid-layout {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-
-    .card {
-      background: white;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-      border-top: 4px solid #f7a01a;
-    }
-
-    .card h3 {
-      margin-top: 0;
-      color: #333;
-      border-bottom: 2px solid #f4f6f9;
-      padding-bottom: 10px;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-top: 4px solid #f7a01a; }
+    .card h3 { margin-top: 0; color: #333; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
     .card h3 i { color: #f7a01a; }
 
-    /* SUMMARY TEXT */
-    .summary-text p {
-      display: flex;
-      justify-content: space-between;
-      font-size: 1.05rem;
-      margin: 10px 0;
-      padding: 8px 0;
-      border-bottom: 1px dashed #eee;
-    }
+    .summary-text p { display: flex; justify-content: space-between; font-size: 1.05rem; margin: 10px 0; padding: 8px 0; border-bottom: 1px dashed #eee; }
     .summary-text p:last-child { border-bottom: none; }
-    
-    .grand-total {
-      font-size: 1.2rem;
-      color: #27ae60;
-      background: #eafaf1;
-      padding: 15px;
-      border-radius: 8px;
-      text-align: center;
-      margin-top: 15px;
-    }
 
-    /* FORMS & INPUTS */
+    .grand-total { font-size: 1.2rem; color: #27ae60; background: #eafaf1; padding: 15px; border-radius: 8px; text-align: center; margin-top: 15px; }
+
     select, input {
-      width: 100%;
-      padding: 12px;
-      margin-top: 5px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-family: 'Poppins', sans-serif;
-      outline: none;
-      transition: border-color 0.3s;
+      width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd;
+      border-radius: 8px; font-family: 'Poppins', sans-serif; outline: none; transition: border-color 0.3s;
     }
     select:focus, input:focus { border-color: #f7a01a; }
 
-    .filter-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 15px;
-    }
+    .filter-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+    .actions { display: flex; gap: 10px; margin-top: 15px; }
 
-    .actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    /* TABLES */
-    .table-container {
-      overflow-x: auto;
-      margin-top: 10px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    thead {
-      background: #334155;
-      color: white;
-    }
-
-    th, td {
-      padding: 12px 15px;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
-
+    .table-container { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+    thead { background: #334155; color: white; }
+    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
     tbody tr:hover { background: #fdfbf7; }
 
-    .amount-col { font-weight: 600; color: #27ae60; }
+    .amount-col  { font-weight: 600; color: #27ae60; }
     .expense-col { font-weight: 600; color: #e74c3c; }
 
+    #loadingMsg { text-align:center; padding:40px; font-size:1.1rem; color:#666; display:none; }
   </style>
 </head>
 <body>
 
 <h2><i class="fa-solid fa-chart-line"></i> Mandir Financial Dashboard</h2>
 
+<div id="loadingMsg"><i class="fa-solid fa-spinner fa-spin"></i> Loading data...</div>
+
 <div class="grid-layout">
-  
   <div class="card">
     <h3><i class="fa-solid fa-filter"></i> Advanced Data Filters</h3>
-    
+
     <label><b>Select Year</b></label>
     <select id="yearSelect"></select>
 
-    <div class="filter-group" style="margin-top: 15px;">
+    <div class="filter-group" style="margin-top:15px;">
       <div>
         <label><b>User Search</b></label>
         <input type="text" id="dashUserSearch" placeholder="Name or Mobile" onkeyup="applyFilter()">
@@ -188,10 +86,10 @@
         <input type="date" id="dashEnd" onchange="applyFilter()">
       </div>
     </div>
-    
+
     <div class="actions">
-      <button style="flex: 1;" onclick="applyFilter()"><i class="fa-solid fa-magnifying-glass"></i> Apply Filters</button>
-      <button style="flex: 1;" class="btn-secondary" onclick="exportDashboardPDF()"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+      <button style="flex:1;" onclick="applyFilter()"><i class="fa-solid fa-magnifying-glass"></i> Apply Filters</button>
+      <button style="flex:1;" class="btn-secondary" onclick="exportDashboardPDF()"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
     </div>
   </div>
 
@@ -199,49 +97,33 @@
     <h3 id="yearTitle"><i class="fa-solid fa-wallet"></i> Year Summary</h3>
     <p><span>Opening Balance:</span> <b>₹ <span id="opening">0</span></b></p>
     <p><span>Filtered Contribution:</span> <b class="amount-col">+ ₹ <span id="yearTotalC">0</span></b></p>
-    <p><span>Filtered Expense:</span> <b class="expense-col">- ₹ <span id="yearTotalE">0</span></b></p>
-    <p><span>Closing Balance:</span> <b>₹ <span id="closing">0</span></b></p>
-  
+    <p><span>Filtered Expense:</span>      <b class="expense-col">- ₹ <span id="yearTotalE">0</span></b></p>
+    <p><span>Closing Balance:</span>       <b>₹ <span id="closing">0</span></b></p>
     <div class="grand-total">
       <b>💰 Overall Balance Till Now: ₹ <span id="grandTotal">0</span></b>
     </div>
   </div>
-
 </div>
 
 <div class="grid-layout">
-
   <div class="card">
     <h3><i class="fa-solid fa-calendar-days"></i> Month-wise Tracking</h3>
     <div class="table-container">
       <table id="monthWiseTable">
-        <thead>
-          <tr>
-            <th>Month</th>
-            <th>Contributions</th>
-            <th>Expenses</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Month</th><th>Contributions (₹)</th><th>Expenses (₹)</th></tr></thead>
         <tbody id="monthWiseBody"></tbody>
       </table>
     </div>
   </div>
-
   <div class="card">
     <h3><i class="fa-solid fa-users"></i> User-wise Tracking</h3>
     <div class="table-container">
       <table id="userWiseTable">
-        <thead>
-          <tr>
-            <th>User Name</th>
-            <th>Total Contributed</th>
-          </tr>
-        </thead>
+        <thead><tr><th>User Name</th><th>Total Contributed (₹)</th></tr></thead>
         <tbody id="userWiseBody"></tbody>
       </table>
     </div>
   </div>
-
 </div>
 
 <div class="card">
@@ -267,297 +149,269 @@
 <script src="app.js"></script>
 
 <script>
-// 🔐 SESSION CHECK
-window.addEventListener("pageshow", function(e){
-  if(e.persisted){
-    let s = localStorage.getItem("session");
-    if(!s) location.replace("login.html");
-  }
-});
-
+// ── Session check (FIX #3)
 (function(){
   let s = JSON.parse(localStorage.getItem("session"));
-
-if (!s || Date.now() > s.expiry || s.role !== "Admin") {
-  localStorage.clear();
-  location.replace("login.html");
-}
-  s.expiry = Date.now() + (30 * 60 * 1000);
+  if (!s || Date.now() > s.expiry || s.role !== "Admin") {
+    localStorage.clear();
+    location.replace("login.html");
+    return;
+  }
+  s.expiry = Date.now() + 30 * 60 * 1000;
   localStorage.setItem("session", JSON.stringify(s));
 })();
 
-// GLOBAL VARIABLES
-// dashboard.html - Fixed Recursion and Data Mapping
-let users=[], contributions=[], expenses=[], types=[], expenseTypes=[], occasions=[];
-let filteredC = [], filteredE = [];
-let months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+window.addEventListener("pageshow", function(e) {
+  if (e.persisted) {
+    let s = localStorage.getItem("session");
+    if (!s) location.replace("login.html");
+  }
+});
 
-// Fixed Opening Balance with a Hard Stop at 2024
-function getOpeningBalance(year, yearConfig, contributions, expenses) {
-  if (year < 2024 || !yearConfig || yearConfig.length === 0) return 0;
+// ── Globals
+let users = [], contributions = [], expenses = [], types = [], expenseTypes = [], occasions = [];
+let filteredC = [], filteredE = [];
+const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+// ── Opening balance calculator
+// FIX #17 — hard-coded 2024 year replaced with dynamic earliest year
+function getOpeningBalance(year, yearConfig, contribs, exps) {
+  if (!yearConfig || yearConfig.length === 0) return 0;
 
   let found = yearConfig.find(y => Number(y.Year) === Number(year));
   if (found && found.OpeningBalance !== "" && found.OpeningBalance !== undefined) {
     return Number(found.OpeningBalance);
   }
 
+  // Get the earliest year in config — stop recursion there
+  let minYear = Math.min(...yearConfig.map(y => Number(y.Year)));
+  if (year <= minYear) return 0;
+
   let prevYear = year - 1;
-  let prevOpening = getOpeningBalance(prevYear, yearConfig, contributions, expenses);
-
-  let prevContri = contributions.filter(c => Number(c.Year) === prevYear)
-    .reduce((s, c) => s + Number(c.Amount || 0), 0);
-
-  let prevExpense = expenses.filter(e => Number(e.Year) === prevYear)
-    .reduce((s, e) => s + Number(e.Amount || 0), 0);
-
-  return prevOpening + prevContri - prevExpense;
+  let prevOpening = getOpeningBalance(prevYear, yearConfig, contribs, exps);
+  let prevC = contribs.filter(c => Number(c.Year) === prevYear).reduce((s,c) => s + Number(c.Amount || 0), 0);
+  let prevE = exps.filter(e => Number(e.Year) === prevYear).reduce((s,e) => s + Number(e.Amount || 0), 0);
+  return prevOpening + prevC - prevE;
 }
 
-// INIT
-// NEW, FAST INIT
-async function init(){
-  let allData = await getData("getAllData");
-  if(!allData) return;
+// ── INIT
+async function init() {
+  document.getElementById("loadingMsg").style.display = "block";
+  try {
+    let allData = await getData("getAllData");
+    if (!allData) return;
 
-  users = allData.users || [];
-  contributions = allData.contributions || [];
-  expenses = allData.expenses || [];
-  types = allData.types || [];
-  expenseTypes = allData.expenseTypes || [];
-  occasions = allData.occasions || [];
-  window.yearConfig = allData.yearConfig || [];
+    users        = allData.users        || [];
+    contributions = allData.contributions || [];
+    expenses     = allData.expenses     || [];
+    types        = allData.types        || [];
+    expenseTypes = allData.expenseTypes || [];
+    occasions    = allData.occasions    || [];
+    window.yearConfig = allData.yearConfig || [];
 
-  loadYearDropdown();   
-  loadFilters();
-  applyFilter();     
-}
-
-// LOAD FILTERS
-function loadFilters(){
-  const filterMonth = document.getElementById("filterMonth");
-  if(filterMonth) {
-    filterMonth.innerHTML = `<option value="">All Months</option>` + 
-      months.map(m => `<option value="${m}">${m}</option>`).join("");
-  }
-
-  const filterUser = document.getElementById("filterUser");
-  if(filterUser) {
-    filterUser.innerHTML = `<option value="">All Users</option>` + 
-      users.map(u => `<option value="${u.UserId}">${u.Name}</option>`).join("");
-  }
-  
-  const filterType = document.getElementById("filterType");
-  if(filterType) {
-    filterType.innerHTML = `<option value="">All Types</option>` + 
-      types.map(t => `<option value="${t.TypeId}">${t.TypeName}</option>`).join("");
-  }
-
-  const filterOccasion = document.getElementById("filterOccasion");
-  if(filterOccasion) {
-    filterOccasion.innerHTML = `<option value="">All Occasions</option>` + 
-      occasions.map(o => `<option value="${o.OccasionId}">${o.OccasionName}</option>`).join("");
+    loadYearDropdown();
+    applyFilter();
+  } catch (err) {
+    document.getElementById("loadingMsg").innerText = "Failed to load: " + err.message;
+  } finally {
+    document.getElementById("loadingMsg").style.display = "none";
   }
 }
 
-// APPLY FILTERS
+// ── APPLY FILTERS
+// FIX #8/#9 — uses PaymentDate (correct column name), not c.Date
 function applyFilter() {
-  const txt = (document.getElementById("dashUserSearch")?.value || "").toLowerCase();
-  const start = document.getElementById("dashStart")?.value;
-  const end = document.getElementById("dashEnd")?.value;
+  const txt      = (document.getElementById("dashUserSearch")?.value || "").toLowerCase();
+  const start    = document.getElementById("dashStart")?.value;
+  const end      = document.getElementById("dashEnd")?.value;
   const targetYear = Number(selectedYear);
 
   filteredC = contributions.filter(c => {
-    // FIX: Using 'Date' column from your sheet
-    if (!c.Date) return false; 
+    if (Number(c.Year) !== targetYear) return false;
 
     const user = users.find(u => String(u.UserId) === String(c.UserId));
     const uMatch = !txt || (user?.Name.toLowerCase() || "").includes(txt) || String(user?.Mobile || "").includes(txt);
-    
-    const parts = String(c.Date).split(" ")[0].split("-");
-    const cDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-    const dMatch = (!start || cDate >= start) && (!end || cDate <= end);
-    
-    return uMatch && dMatch && (Number(c.Year) === targetYear);
+
+    let dMatch = true;
+    if ((start || end) && c.PaymentDate) {
+      const parts = String(c.PaymentDate).split(" ")[0].split("-");
+      if (parts.length === 3) {
+        const cDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        dMatch = (!start || cDate >= start) && (!end || cDate <= end);
+      }
+    }
+
+    return uMatch && dMatch;
   });
 
   filteredE = expenses.filter(e => {
-    // FIX: Using 'Date' column from your sheet
-    if (!e.Date) return false;
+    if (Number(e.Year) !== targetYear) return false;
 
-    const parts = String(e.Date).split(" ")[0].split("-");
-    const eDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-    const dMatch = (!start || eDate >= start) && (!end || eDate <= end);
-    
-    return dMatch && (Number(e.Year) === targetYear);
+    let dMatch = true;
+    if ((start || end) && e.PaymentDate) {
+      const parts = String(e.PaymentDate).split(" ")[0].split("-");
+      if (parts.length === 3) {
+        const eDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        dMatch = (!start || eDate >= start) && (!end || eDate <= end);
+      }
+    }
+    return dMatch;
   });
 
   renderAll();
 }
 
-// SUMMARY
-function summary(){
+// ── SUMMARY (FIX #32 — fmt() used)
+function summary() {
   let currentYear = selectedYear;
   document.getElementById("yearTitle").innerHTML = `<i class="fa-solid fa-wallet"></i> Year Summary (${currentYear})`;
 
-  let totalC = filteredC.reduce((s,c)=>s+Number(c.Amount||0),0);
-  let totalE = filteredE.reduce((s,e)=>s+Number(e.Amount||0),0);
+  let totalC = filteredC.reduce((s,c) => s + Number(c.Amount || 0), 0);
+  let totalE = filteredE.reduce((s,e) => s + Number(e.Amount || 0), 0);
 
   let opening = getOpeningBalance(currentYear, window.yearConfig, contributions, expenses);
-  
-  let yearTotalAllC = contributions.filter(c => Number(c.Year) === currentYear).reduce((s,c)=>s+Number(c.Amount||0),0);
-  let yearTotalAllE = expenses.filter(e => Number(e.Year) === currentYear).reduce((s,e)=>s+Number(e.Amount||0),0);
-  let closing = opening + yearTotalAllC - yearTotalAllE;
+  let yearAllC = contributions.filter(c => Number(c.Year) === currentYear).reduce((s,c) => s + Number(c.Amount||0), 0);
+  let yearAllE = expenses.filter(e => Number(e.Year) === currentYear).reduce((s,e) => s + Number(e.Amount||0), 0);
+  let closing  = opening + yearAllC - yearAllE;
 
-  let oldestYearConfig = [...window.yearConfig].sort((a, b) => Number(a.Year) - Number(b.Year))[0];
+  let oldestYearConfig = [...window.yearConfig].sort((a,b) => Number(a.Year) - Number(b.Year))[0];
   let initialOpening = oldestYearConfig ? Number(oldestYearConfig.OpeningBalance) : 0;
-
-  let allC = contributions.reduce((s,c)=>s+Number(c.Amount||0),0);
-  let allE = expenses.reduce((s,e)=>s+Number(e.Amount||0),0);
+  let allC = contributions.reduce((s,c) => s + Number(c.Amount||0), 0);
+  let allE = expenses.reduce((s,e) => s + Number(e.Amount||0), 0);
   let grandTotal = initialOpening + allC - allE;
 
-  document.getElementById("opening").innerText = opening;
-  document.getElementById("yearTotalC").innerText = totalC; 
-  document.getElementById("yearTotalE").innerText = totalE; 
-  document.getElementById("closing").innerText = closing;
-  document.getElementById("grandTotal").innerText = grandTotal;
+  document.getElementById("opening").innerText   = fmt(opening);
+  document.getElementById("yearTotalC").innerText = fmt(totalC);
+  document.getElementById("yearTotalE").innerText = fmt(totalE);
+  document.getElementById("closing").innerText    = fmt(closing);
+  document.getElementById("grandTotal").innerText = fmt(grandTotal);
 }
 
-// RENDER MONTH-WISE
-function renderMonthWise(){
+// ── MONTH-WISE (FIX #32 — fmt)
+function renderMonthWise() {
   let mapC = {}, mapE = {};
-  filteredC.forEach(c => { mapC[c.ForMonth] = (mapC[c.ForMonth]||0) + Number(c.Amount||0); });
-  
+  filteredC.forEach(c => { mapC[c.ForMonth] = (mapC[c.ForMonth] || 0) + Number(c.Amount || 0); });
   filteredE.forEach(e => {
-    // FIX: Look for both property names
-    let monthName = e.ForMonth || e.Note;
-    if(!monthName && e.PaymentDate) {
-      let parts = String(e.PaymentDate).split(" ")[0].split("-");
-      if(parts.length >= 2) {
-        let mIndex = parseInt(parts[1]) - 1;
-        if(months[mIndex]) monthName = months[mIndex];
-      }
+    let mn = e.ForMonth || e.Note;
+    if (!mn && e.PaymentDate) {
+      let p = String(e.PaymentDate).split(" ")[0].split("-");
+      if (p.length >= 2) { let mi = parseInt(p[1]) - 1; if (months[mi]) mn = months[mi]; }
     }
-    monthName = monthName || "Unknown";
-    mapE[monthName] = (mapE[monthName]||0) + Number(e.Amount||0);
+    mn = mn || "Unknown";
+    mapE[mn] = (mapE[mn] || 0) + Number(e.Amount || 0);
   });
 
   let html = months.map(m => {
-    let cAmt = mapC[m] || 0;
-    let eAmt = mapE[m] || 0;
-    if(cAmt === 0 && eAmt === 0) return ""; 
-    
-    return `<tr>
-      <td><b>${m}</b></td>
-      <td class="amount-col">₹ ${cAmt}</td>
-      <td class="expense-col">₹ ${eAmt}</td>
-    </tr>`;
+    let cAmt = mapC[m] || 0, eAmt = mapE[m] || 0;
+    if (cAmt === 0 && eAmt === 0) return "";
+    return `<tr><td><b>${m}</b></td><td class="amount-col">₹ ${fmt(cAmt)}</td><td class="expense-col">₹ ${fmt(eAmt)}</td></tr>`;
   }).join("");
-
   document.getElementById("monthWiseBody").innerHTML = html || `<tr><td colspan="3" style="text-align:center;">No data found</td></tr>`;
 }
 
-// RENDER USER-WISE
-function renderUserWise(){
+// ── USER-WISE (FIX #32 — fmt)
+function renderUserWise() {
   let map = {};
-  filteredC.forEach(c => { map[c.UserId] = (map[c.UserId]||0) + Number(c.Amount||0); });
+  filteredC.forEach(c => { map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0); });
   let sortedUsers = Object.keys(map).sort((a,b) => map[b] - map[a]);
-
   let html = sortedUsers.map(uid => {
     let uName = users.find(x => String(x.UserId) === String(uid))?.Name || "Unknown";
-    return `<tr>
-      <td>${uName}</td>
-      <td class="amount-col">₹ ${map[uid]}</td>
-    </tr>`;
+    return `<tr><td>${uName}</td><td class="amount-col">₹ ${fmt(map[uid])}</td></tr>`;
   }).join("");
-
   document.getElementById("userWiseBody").innerHTML = html || `<tr><td colspan="2" style="text-align:center;">No contributions found</td></tr>`;
 }
 
-// RENDER DETAILS
-function renderDetails(){
-  let html = "";
+// ── DETAIL TABLE
+// FIX #33 — sorted by date descending
+// FIX #32 — fmt() on amounts
+function renderDetails() {
+  // Combine contributions + expenses into one array for sorting
+  let rows = [];
+
   filteredC.forEach(c => {
     let uName = users.find(x => String(x.UserId) === String(c.UserId))?.Name || "Unknown";
     let tName = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
     let oName = occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "-";
-    
-    html += `<tr>
-      <td>${c.PaymentDate || "N/A"}</td>
-      <td><i class="fa-solid fa-user" style="color:#aaa; margin-right:5px;"></i> ${uName}</td>
-      <td><span style="background:#eafaf1; color:#27ae60; padding:3px 8px; border-radius:4px; font-size:0.85rem;">${tName}</span></td>
-      <td>${c.ForMonth}</td>
-      <td>${oName}</td>
-      <td class="amount-col">+ ₹ ${c.Amount}</td>
-    </tr>`;
+    rows.push({
+      dateRaw: c.PaymentDate || "0",
+      html: `<tr>
+        <td>${c.PaymentDate || "N/A"}</td>
+        <td><i class="fa-solid fa-user" style="color:#aaa;margin-right:5px;"></i>${uName}</td>
+        <td><span style="background:#eafaf1;color:#27ae60;padding:3px 8px;border-radius:4px;font-size:0.85rem;">${tName}</span></td>
+        <td>${c.ForMonth || "—"}</td>
+        <td>${oName}</td>
+        <td class="amount-col">+ ₹ ${fmt(c.Amount)}</td>
+      </tr>`
+    });
   });
 
   filteredE.forEach(e => {
     let tName = expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
-    html += `<tr>
-      <td>${e.PaymentDate || "N/A"}</td>
-      <td><i class="fa-solid fa-file-invoice-dollar" style="color:#aaa; margin-right:5px;"></i> ${e.Title}</td>
-      <td><span style="background:#fdedec; color:#e74c3c; padding:3px 8px; border-radius:4px; font-size:0.85rem;">${tName}</span></td>
-      <td>N/A</td>
-      <td>-</td>
-      <td class="expense-col">- ₹ ${e.Amount}</td>
-    </tr>`;
+    rows.push({
+      dateRaw: e.PaymentDate || "0",
+      html: `<tr>
+        <td>${e.PaymentDate || "N/A"}</td>
+        <td><i class="fa-solid fa-file-invoice-dollar" style="color:#aaa;margin-right:5px;"></i>${e.Title}</td>
+        <td><span style="background:#fdedec;color:#e74c3c;padding:3px 8px;border-radius:4px;font-size:0.85rem;">${tName}</span></td>
+        <td>${e.ForMonth || "—"}</td>
+        <td>-</td>
+        <td class="expense-col">- ₹ ${fmt(e.Amount)}</td>
+      </tr>`
+    });
   });
 
-  document.getElementById("detailBody").innerHTML = html || `<tr><td colspan="6" style="text-align:center;">No records match your filters</td></tr>`;
+  // Sort by date descending (dd-mm-yyyy format)
+  rows.sort((a,b) => {
+    let toSort = d => {
+      let p = String(d).split(" ")[0].split("-");
+      return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : "0";
+    };
+    return toSort(b.dateRaw).localeCompare(toSort(a.dateRaw));
+  });
+
+  document.getElementById("detailBody").innerHTML = rows.map(r => r.html).join("") ||
+    `<tr><td colspan="6" style="text-align:center;">No records match your filters</td></tr>`;
 }
 
-function renderAll(){
+function renderAll() {
   summary();
   renderMonthWise();
   renderUserWise();
   renderDetails();
 }
 
-// EXPORT TO PDF
+// ── PDF EXPORT
+// FIX #16 — removed references to non-existent filter elements
 function exportDashboardPDF() {
   const { jsPDF } = window.jspdf;
   let doc = new jsPDF('p', 'mm', 'a4');
 
   let title = `Mandir Dashboard Report - ${selectedYear}`;
   doc.setFontSize(18);
-  doc.setTextColor(148, 108, 68); // Brown Mandir Theme Color
+  doc.setTextColor(148, 108, 68);
   doc.text(title, 14, 20);
 
   doc.setFontSize(11);
   doc.setTextColor(50, 50, 50);
-  
-  // Get active filters for subtitle
-  let m = document.getElementById("filterMonth").value || "All";
-  let t = document.getElementById("filterType").options[document.getElementById("filterType").selectedIndex].text;
-  let o = document.getElementById("filterOccasion").options[document.getElementById("filterOccasion").selectedIndex].text;
-  
-  doc.text(`Filters: Month (${m}) | Type (${t}) | Occasion (${o})`, 14, 28);
-
-  // Summary Block
   let totalC = document.getElementById("yearTotalC").innerText;
   let totalE = document.getElementById("yearTotalE").innerText;
-  doc.text(`Filtered Contributions: Rs. ${totalC}`, 14, 38);
-  doc.text(`Filtered Expenses: Rs. ${totalE}`, 14, 44);
+  doc.text(`Filtered Contributions: Rs. ${totalC}`, 14, 30);
+  doc.text(`Filtered Expenses: Rs. ${totalE}`, 14, 36);
 
-  let startY = 55;
+  let startY = 46;
 
-  // Extract Detailed Table
   let rows = [];
   document.querySelectorAll("#detailTable tbody tr").forEach(tr => {
     let r = [];
     tr.querySelectorAll("td").forEach(td => {
-      let txt = td.innerText.replace("₹", "Rs.").trim();
-      r.push(txt);
+      r.push(td.innerText.replace("₹","Rs.").trim());
     });
-    // Skip empty filler rows
-    if (r[0] !== "No records match your filters") {
-      rows.push(r);
-    }
+    if (r.length > 1) rows.push(r);
   });
 
-  if(rows.length > 0){
+  if (rows.length > 0) {
     doc.autoTable({
-      head: [["Date", "Name / Title", "Type", "Month", "Occasion", "Amount"]],
+      head: [["Date","Name / Title","Type","Month","Occasion","Amount"]],
       body: rows,
       startY: startY,
       theme: 'grid',
@@ -567,11 +421,8 @@ function exportDashboardPDF() {
     doc.text("No transactions found for the selected filters.", 14, startY);
   }
 
-  // Save PDF
   doc.save(`Mandir_Report_${selectedYear}_${Date.now()}.pdf`);
 }
-
-function goAdmin(){ window.location.href="admin.html"; }
 
 init();
 </script>

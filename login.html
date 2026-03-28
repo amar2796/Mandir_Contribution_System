@@ -2,24 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login - Mandir System</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
-      /* GLOBAL RESET & TYPOGRAPHY */
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
 
       body {
         margin: 0;
@@ -46,47 +38,22 @@
         width: 100%;
         max-width: 400px;
         text-align: center;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         border-top: 5px solid #f7a01a;
         animation: slideUp 0.5s ease-out;
         position: relative;
       }
 
       @keyframes slideUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
       }
 
-      .card h2 {
-        margin-top: 0;
-        margin-bottom: 30px;
-        color: #946c44;
-        font-size: 1.8rem;
-        font-weight: 700;
-      }
-      .card h2 i {
-        color: #f7a01a;
-        margin-right: 8px;
-      }
+      .card h2 { margin-top: 0; margin-bottom: 30px; color: #946c44; font-size: 1.8rem; font-weight: 700; }
+      .card h2 i { color: #f7a01a; margin-right: 8px; }
 
-      .input-group {
-        position: relative;
-        margin-bottom: 20px;
-      }
-      .input-group i {
-        position: absolute;
-        left: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #aaa;
-        font-size: 1.1rem;
-      }
+      .input-group { position: relative; margin-bottom: 20px; }
+      .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 1.1rem; }
 
       .input-group input {
         width: 100%;
@@ -100,95 +67,37 @@
         background: #fafafa;
       }
 
-      .input-group input:focus {
-        border-color: #f7a01a;
-        background: #fff;
-        box-shadow: 0 0 8px rgba(247, 160, 26, 0.1);
-      }
+      .input-group input:focus { border-color: #f7a01a; background: #fff; box-shadow: 0 0 8px rgba(247,160,26,0.1); }
 
-      .forgot {
-        font-size: 0.85rem;
-        text-align: right;
-        color: #888;
-        cursor: pointer;
-        display: block;
-        margin-top: -10px;
-        margin-bottom: 25px;
-        transition: color 0.3s;
-      }
-      .forgot:hover {
-        color: #f7a01a;
-      }
+      .forgot { font-size: 0.85rem; text-align: right; color: #888; cursor: pointer; display: block; margin-top: -10px; margin-bottom: 25px; transition: color 0.3s; }
+      .forgot:hover { color: #f7a01a; }
 
       button {
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 8px;
-        color: white;
-        font-family: "Poppins", sans-serif;
-        font-size: 1.05rem;
-        font-weight: 600;
-        cursor: pointer;
-        background: #f7a01a;
-        box-shadow: 0 4px 15px rgba(247, 160, 26, 0.3);
-        transition: all 0.3s ease;
-        margin-bottom: 20px;
+        width: 100%; padding: 14px; border: none; border-radius: 8px; color: white;
+        font-family: "Poppins", sans-serif; font-size: 1.05rem; font-weight: 600;
+        cursor: pointer; background: #f7a01a; box-shadow: 0 4px 15px rgba(247,160,26,0.3);
+        transition: all 0.3s ease; margin-bottom: 20px;
       }
+      button:hover { background: #d35400; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(247,160,26,0.4); }
+      button:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
 
-      button:hover {
-        background: #d35400;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(247, 160, 26, 0.4);
-      }
+      .back-home { display: inline-block; font-size: 0.9rem; color: #555; text-decoration: none; font-weight: 600; transition: color 0.3s; }
+      .back-home i { margin-right: 5px; }
+      .back-home:hover { color: #f7a01a; }
 
-      .back-home {
-        display: inline-block;
-        font-size: 0.9rem;
-        color: #555;
-        text-decoration: none;
-        font-weight: 600;
-        transition: color 0.3s;
-      }
-      .back-home i {
-        margin-right: 5px;
-      }
-      .back-home:hover {
-        color: #f7a01a;
-      }
-
-      /* MODAL STYLES */
       .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000;
+        justify-content: center; align-items: center;
       }
+      .modal-card { width: 90%; max-width: 400px; margin: auto; }
 
-      .modal-card {
-        width: 90%;
-        max-width: 400px;
-        margin: auto;
-      }
+      .close-btn { position: absolute; right: 20px; top: 15px; font-size: 24px; color: #aaa; cursor: pointer; }
+      .close-btn:hover { color: #333; }
 
-      .close-btn {
-        position: absolute;
-        right: 20px;
-        top: 15px;
-        font-size: 24px;
-        color: #aaa;
-        cursor: pointer;
-      }
-      .close-btn:hover {
-        color: #333;
-      }
+      #loginMsg { font-size: 0.85rem; margin-bottom: 15px; min-height: 20px; }
+      #loginMsg.error { color: #e74c3c; }
+      #loginMsg.success { color: #27ae60; }
     </style>
   </head>
 
@@ -197,84 +106,56 @@
       <div class="card">
         <h2><i class="fa-solid fa-om"></i> Mandir Login</h2>
 
+        <div id="loginMsg"></div>
+
         <div class="input-group">
           <i class="fa-solid fa-phone"></i>
-          <input type="text" id="mobile" placeholder="Mobile Number" />
+          <input type="text" id="mobile" placeholder="Mobile Number" maxlength="10" />
         </div>
 
         <div class="input-group">
           <i class="fa-solid fa-lock"></i>
           <input type="password" id="password" placeholder="Password" />
-          <i
-            class="fa-solid fa-eye"
-            id="togglePassword"
-            style="
-              position: absolute;
-              right: 15px;
-              left: auto;
-              cursor: pointer;
-              color: #aaa;
-            "
-          ></i>
+          <i class="fa-solid fa-eye" id="togglePassword" style="position:absolute;right:15px;left:auto;cursor:pointer;color:#aaa;"></i>
         </div>
 
         <span class="forgot" onclick="openForgotModal()">Forgot password?</span>
 
-        <button onclick="login()">
+        <button id="loginBtn" onclick="login()">
           <i class="fa-solid fa-right-to-bracket"></i> Secure Login
         </button>
 
-        <a href="index.html" class="back-home"
-          ><i class="fa-solid fa-arrow-left"></i> Back to Home</a
-        >
+        <a href="index.html" class="back-home"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
       </div>
     </div>
 
+    <!-- FORGOT PASSWORD MODAL -->
     <div id="forgotModal" class="modal-overlay">
       <div class="card modal-card">
         <span class="close-btn" onclick="closeForgotModal()">&times;</span>
 
         <div id="resetStep1">
-          <h2>
-            <i class="fa-solid fa-envelope-circle-check"></i> Verify Account
-          </h2>
-          <p
-            id="resetMsg"
-            style="font-size: 0.85rem; color: #666; margin-bottom: 20px"
-          ></p>
+          <h2><i class="fa-solid fa-envelope-circle-check"></i> Verify Account</h2>
+          <p id="resetMsg" style="font-size:0.85rem;color:#666;margin-bottom:20px;"></p>
           <div class="input-group">
             <i class="fa-solid fa-at"></i>
-            <input
-              type="email"
-              id="resetEmail"
-              placeholder="Registered Email ID"
-            />
+            <input type="email" id="resetEmail" placeholder="Registered Email ID" />
           </div>
-          <button onclick="sendOTP()">
-            <i class="fa-solid fa-paper-plane"></i> Verify & Send OTP
-          </button>
+          <button onclick="sendOTP()"><i class="fa-solid fa-paper-plane"></i> Verify & Send OTP</button>
         </div>
 
-        <div id="resetStep2" style="display: none">
+        <div id="resetStep2" style="display:none;">
           <h2><i class="fa-solid fa-key"></i> New Password</h2>
-          <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px">
-            Enter the 6-digit OTP sent to your email.
-          </p>
+          <p style="font-size:0.85rem;color:#666;margin-bottom:20px;">Enter the 6-digit OTP sent to your email.</p>
           <div class="input-group">
             <i class="fa-solid fa-shield-halved"></i>
             <input type="number" id="inputOTP" placeholder="Enter OTP" />
           </div>
           <div class="input-group">
             <i class="fa-solid fa-lock"></i>
-            <input
-              type="password"
-              id="newPassword"
-              placeholder="New Password"
-            />
+            <input type="password" id="newPassword" placeholder="New Password (min 6 chars)" />
           </div>
-          <button onclick="verifyAndReset()">
-            <i class="fa-solid fa-check-circle"></i> Update & Re-login
-          </button>
+          <button onclick="verifyAndReset()"><i class="fa-solid fa-check-circle"></i> Update & Re-login</button>
         </div>
       </div>
     </div>
@@ -282,63 +163,119 @@
     <script src="config.js"></script>
 
     <script>
-      // ================= LOGIN LOGIC =================
-      function login() {
-        let mobile = document.getElementById("mobile").value;
+      // ── SHA-256 (client-side hash matching server hashPassword)
+      async function sha256(str) {
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+      }
+
+      function setMsg(text, type) {
+        let el = document.getElementById("loginMsg");
+        el.textContent = text;
+        el.className = type || "";
+      }
+
+      // ── LOGIN (password hashed before sending — FIX #1)
+      async function login() {
+        let mobile = document.getElementById("mobile").value.trim();
         let password = document.getElementById("password").value;
+
         if (!mobile || !password) {
-          alert("Please enter both mobile number and password.");
+          setMsg("Please enter both mobile number and password.", "error");
           return;
         }
-        let cb = "handleLogin";
-        let s = document.createElement("script");
-        s.src = `${API_URL}?action=login&mobile=${mobile}&password=${password}&callback=${cb}`;
-        document.body.appendChild(s);
-      }
 
-      function handleLogin(res) {
-        if (res.status === "success") {
-          let user = res.user; // ✅ FIX (IMPORTANT)
+        let btn = document.getElementById("loginBtn");
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
+        setMsg("", "");
 
-          delete user.Password;
+        try {
+          // Hash password client-side before sending (never send plain text)
+          let hashedPwd = await sha256(password);
 
-          localStorage.setItem(
-            "session",
-            JSON.stringify({
-              userId: user.UserId,
-              name: user.Name,
-              role: user.Role,
-              expiry: Date.now() + 30 * 60 * 1000,
-            })
-          );
+          await new Promise((resolve, reject) => {
+            let cbName = "handleLogin_" + Date.now();
+            let script = document.createElement("script");
+            let done = false;
 
-          // redirect
-          if (user.Role === "Admin") {
-            location.href = "admin.html";
-          } else {
-            location.href = "user.html";
-          }
-        } else {
-          alert("❌ Invalid login");
+            window[cbName] = function(res) {
+              if (done) return;
+              done = true;
+              clearTimeout(timer);
+              delete window[cbName];
+              script.remove();
+              resolve(res);
+            };
+
+            let timer = setTimeout(() => {
+              if (done) return;
+              done = true;
+              delete window[cbName];
+              script.remove();
+              reject(new Error("Request timed out."));
+            }, 15000);
+
+            script.onerror = function() {
+              if (done) return;
+              done = true;
+              clearTimeout(timer);
+              delete window[cbName];
+              script.remove();
+              reject(new Error("Network error."));
+            };
+
+            // Send hashed password, not plain text
+            script.src = API_URL + "?action=login&mobile=" + encodeURIComponent(mobile) + "&password=" + hashedPwd + "&callback=" + cbName;
+            document.body.appendChild(script);
+          }).then(res => {
+            if (res.status === "success") {
+              let user = res.user;
+              delete user.Password;
+
+              localStorage.setItem("session", JSON.stringify({
+                userId: user.UserId,
+                name: user.Name,
+                role: user.Role,
+                email: user.Email || "",
+                expiry: Date.now() + 30 * 60 * 1000
+              }));
+
+              setMsg("✓ Login successful! Redirecting...", "success");
+              setTimeout(() => {
+                location.href = user.Role === "Admin" ? "admin.html" : "user.html";
+              }, 600);
+
+            } else if (res.status === "error") {
+              setMsg("❌ " + (res.message || "Account issue."), "error");
+            } else {
+              setMsg("❌ Invalid mobile number or password.", "error");
+            }
+          });
+
+        } catch (err) {
+          setMsg("❌ " + err.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Secure Login';
         }
       }
 
-      // ================= FORGOT PASSWORD MODAL LOGIC =================
-      let generatedOTP, targetUserId, currentMobile;
+      // Allow Enter key to submit
+      document.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") login();
+      });
+
+      // ── FORGOT PASSWORD MODAL
+      let targetUserId, currentMobile;
 
       function openForgotModal() {
-        // 1. First ensure Mobile is typed in the main login field
-        currentMobile = document.getElementById("mobile").value;
+        currentMobile = document.getElementById("mobile").value.trim();
         if (!currentMobile) {
-          alert(
-            "⚠️ Please enter your Mobile Number first so we can find your account."
-          );
+          setMsg("Please enter your Mobile Number first.", "error");
           return;
         }
-
-        document.getElementById(
-          "resetMsg"
-        ).innerText = `Verifying account for: ${currentMobile}`;
+        document.getElementById("resetMsg").innerText = "Verifying account for: " + currentMobile;
         document.getElementById("forgotModal").style.display = "flex";
         document.getElementById("resetStep1").style.display = "block";
         document.getElementById("resetStep2").style.display = "none";
@@ -349,16 +286,14 @@
       }
 
       function sendOTP() {
-        let email = document.getElementById("resetEmail").value;
+        let email = document.getElementById("resetEmail").value.trim();
         if (!email) return alert("Please enter your registered email address.");
 
-        // Verification uses both email and currentMobile
         let s = document.createElement("script");
-        s.src = `${API_URL}?action=sendEmailOTP&email=${email}&mobile=${currentMobile}&callback=handleOTPSent`;
+        s.src = API_URL + "?action=sendEmailOTP&email=" + encodeURIComponent(email) + "&mobile=" + encodeURIComponent(currentMobile) + "&callback=handleOTPSent";
         document.body.appendChild(s);
       }
 
-      // Update this function inside login.html
       function handleOTPSent(res) {
         if (res.status === "success") {
           targetUserId = res.userId;
@@ -370,44 +305,45 @@
         }
       }
 
-      // Update this function to send the OTP to the server
-      function verifyAndReset() {
-        let userOTP = document.getElementById("inputOTP").value;
-        let newPass = document.getElementById("newPassword").value;
+      // ── RESET PASSWORD — hashes new password before sending (FIX #4)
+      async function verifyAndReset() {
+        let userOTP = document.getElementById("inputOTP").value.trim();
+        let newPass  = document.getElementById("newPassword").value;
 
         if (!userOTP) return alert("Please enter the OTP sent to your email.");
+        if (!newPass || newPass.length < 6) return alert("Password must be at least 6 characters.");
+
+        // Hash the new password client-side before sending
+        let hashedNew = await sha256(newPass);
 
         let s = document.createElement("script");
-        // We send the OTP back to the server for verification
-        s.src = `${API_URL}?action=resetPassword&UserId=${targetUserId}&otp=${userOTP}&NewPassword=${newPass}&callback=handleResetDone`;
+        s.src = API_URL + "?action=resetPassword&UserId=" + encodeURIComponent(targetUserId) + "&otp=" + encodeURIComponent(userOTP) + "&NewPassword=" + hashedNew + "&callback=handleResetDone";
         document.body.appendChild(s);
       }
 
       function handleResetDone(res) {
         if (res.status === "success") {
-          alert("✅ Password changed successfully! Redirecting to login...");
+          alert("✅ Password changed successfully! Please login again.");
           closeForgotModal();
-          location.reload(); // Refresh to ensure fresh login [cite: 33]
+          location.reload();
         } else {
-          alert("❌ Error updating password. Please contact Admin.");
+          alert("❌ " + (res.message || "Error updating password. Please contact Admin."));
         }
       }
 
-      // Toggle password visibility
-      document
-        .getElementById("togglePassword")
-        .addEventListener("click", function () {
-          let p = document.getElementById("password");
-          if (p.type === "password") {
-            p.type = "text";
-            this.classList.replace("fa-eye", "fa-eye-slash");
-            this.style.color = "#f7a01a";
-          } else {
-            p.type = "password";
-            this.classList.replace("fa-eye-slash", "fa-eye");
-            this.style.color = "#aaa";
-          }
-        });
+      // ── Toggle password visibility
+      document.getElementById("togglePassword").addEventListener("click", function () {
+        let p = document.getElementById("password");
+        if (p.type === "password") {
+          p.type = "text";
+          this.classList.replace("fa-eye", "fa-eye-slash");
+          this.style.color = "#f7a01a";
+        } else {
+          p.type = "password";
+          this.classList.replace("fa-eye-slash", "fa-eye");
+          this.style.color = "#aaa";
+        }
+      });
     </script>
   </body>
 </html>
