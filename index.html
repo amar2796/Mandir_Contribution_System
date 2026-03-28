@@ -1,15 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mandir System</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <link rel="stylesheet" href="style.css" />
 
     <style>
@@ -25,10 +31,10 @@
       body {
         margin: 0;
         padding: 0;
-        font-family: 'Poppins', sans-serif; 
-        background: linear-gradient(135deg, #fdfbf7 0%, #f4f6f9 100%); 
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #fdfbf7 0%, #f4f6f9 100%);
         color: #333;
-        overflow-x: hidden; 
+        overflow-x: hidden;
       }
 
       /* CUSTOM PREMIUM SCROLLBAR */
@@ -53,8 +59,13 @@
         left: 0;
         width: 100%;
         height: 100vh;
-        background: radial-gradient(circle at center, #f39c12 0%, #d35400 45%, #8e1900 100%);
-        z-index: 9999; 
+        background: radial-gradient(
+          circle at center,
+          #f39c12 0%,
+          #d35400 45%,
+          #8e1900 100%
+        );
+        z-index: 9999;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -62,11 +73,12 @@
       }
 
       .splash-text {
-        color: #fff2c8; 
+        color: #fff2c8;
         font-size: 5rem;
         font-weight: 700;
         text-align: center;
-        text-shadow: 0 0 30px rgba(255, 242, 200, 0.8), 0 0 60px rgba(243, 156, 18, 0.6);
+        text-shadow: 0 0 30px rgba(255, 242, 200, 0.8),
+          0 0 60px rgba(243, 156, 18, 0.6);
         animation: pulseGlow 1.5s infinite alternate;
       }
 
@@ -76,19 +88,36 @@
       }
 
       @keyframes pulseGlow {
-        from { transform: scale(0.95); text-shadow: 0 0 20px rgba(255, 242, 200, 0.6); }
-        to { transform: scale(1.05); text-shadow: 0 0 50px rgba(255, 242, 200, 1), 0 0 80px rgba(243, 156, 18, 0.8); }
+        from {
+          transform: scale(0.95);
+          text-shadow: 0 0 20px rgba(255, 242, 200, 0.6);
+        }
+        to {
+          transform: scale(1.05);
+          text-shadow: 0 0 50px rgba(255, 242, 200, 1),
+            0 0 80px rgba(243, 156, 18, 0.8);
+        }
       }
 
       /* ANIMATIONS */
       @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       @keyframes slideUp {
-        from { opacity: 0; transform: translateY(40px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+          opacity: 0;
+          transform: translateY(40px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
       /* SCROLL REVEAL CLASSES */
@@ -108,20 +137,20 @@
         position: sticky;
         top: 0;
         z-index: 1000;
-        background: rgba(148, 108, 68, 0.85); 
-        backdrop-filter: blur(12px); 
-        -webkit-backdrop-filter: blur(12px); 
+        background: rgba(148, 108, 68, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        
+
         color: white;
         padding: 15px 30px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-wrap: wrap; 
+        flex-wrap: wrap;
         width: 100%;
-        animation: fadeIn 1s ease-out 1.7s both; 
+        animation: fadeIn 1s ease-out 1.7s both;
       }
 
       .header h2 {
@@ -131,9 +160,9 @@
       }
 
       .header h2 i {
-        color: #f7a01a; 
+        color: #f7a01a;
         margin-right: 8px;
-        filter: drop-shadow(0 0 5px rgba(247,160,26,0.5)); 
+        filter: drop-shadow(0 0 5px rgba(247, 160, 26, 0.5));
       }
 
       .nav-links {
@@ -153,11 +182,11 @@
       /* --- UPDATE HERE: Added :active for mobile tap feedback --- */
       .header a:hover,
       .header a:active {
-        color: #f7a01a; 
+        color: #f7a01a;
       }
 
       .header a::after {
-        content: '';
+        content: "";
         position: absolute;
         width: 0;
         height: 2px;
@@ -170,25 +199,25 @@
       /* --- UPDATE HERE: Added :active for mobile tap feedback --- */
       .header a:hover::after,
       .header a:active::after {
-        width: 100%; 
+        width: 100%;
       }
 
       /* HERO */
       .hero {
         background-image: url("Image/Background_pic.jpg");
-        background-color: #f7a01a; 
-        height: 70vh; 
+        background-color: #f7a01a;
+        height: 70vh;
         width: 100%;
         color: white;
         background-repeat: no-repeat;
         background-position: center;
         background-size: cover;
         margin: 0;
-        
+
         display: flex;
-        align-items: center; 
-        animation: fadeIn 1.2s ease-out 1.7s both; 
-        
+        align-items: center;
+        animation: fadeIn 1.2s ease-out 1.7s both;
+
         position: relative;
         overflow: hidden;
       }
@@ -196,30 +225,41 @@
       /* Floating 'राम' Text Animation Classes */
       .floating-ram {
         position: absolute;
-        bottom: -50px; 
-        color: #ffecd2; 
+        bottom: -50px;
+        color: #ffecd2;
         font-weight: 700;
-        text-shadow: 0 0 10px rgba(247, 160, 26, 0.8), 0 0 20px rgba(247, 160, 26, 0.5);
-        pointer-events: none; 
-        z-index: 1; 
+        text-shadow: 0 0 10px rgba(247, 160, 26, 0.8),
+          0 0 20px rgba(247, 160, 26, 0.5);
+        pointer-events: none;
+        z-index: 1;
         animation: floatUp linear forwards;
         opacity: 0;
       }
 
       @keyframes floatUp {
-        0% { transform: translateY(0) scale(0.6); opacity: 0; }
-        15% { opacity: 0.8; } 
-        85% { opacity: 0.8; } 
-        100% { transform: translateY(var(--travel, -800px)) scale(1.3); opacity: 0; } 
+        0% {
+          transform: translateY(0) scale(0.6);
+          opacity: 0;
+        }
+        15% {
+          opacity: 0.8;
+        }
+        85% {
+          opacity: 0.8;
+        }
+        100% {
+          transform: translateY(var(--travel, -800px)) scale(1.3);
+          opacity: 0;
+        }
       }
 
       /* DESKTOP ALIGNMENT */
       .hero-box {
-        width: 100%; 
-        padding-left: 15%; 
-        margin-top: 8%; 
-        position: relative; 
-        z-index: 2; 
+        width: 100%;
+        padding-left: 15%;
+        margin-top: 8%;
+        position: relative;
+        z-index: 2;
       }
 
       .hero-box h1 {
@@ -227,10 +267,10 @@
         margin: 0;
         font-weight: 700;
         line-height: 1.2;
-        text-shadow: 2px 4px 8px rgba(0,0,0,0.5); 
+        text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.5);
         text-align: left;
         width: fit-content;
-        animation: slideUp 1s ease-out 2.0s both; 
+        animation: slideUp 1s ease-out 2s both;
       }
 
       .hero-box h1 span {
@@ -239,7 +279,7 @@
         font-weight: 400;
         margin-top: 5px;
         color: #fffdf8;
-        padding-left: 9.2em; 
+        padding-left: 9.2em;
       }
 
       /* SECTION */
@@ -275,16 +315,16 @@
         background: rgba(255, 255, 255, 0.9);
         padding: 30px 20px;
         width: 100%;
-        max-width: 250px; 
-        border-radius: 16px; 
-        border: 1px solid rgba(247, 160, 26, 0.1); 
-        box-shadow: 0 8px 20px rgba(0,0,0,0.05); 
+        max-width: 250px;
+        border-radius: 16px;
+        border: 1px solid rgba(247, 160, 26, 0.1);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
         transition: all 0.4s ease;
       }
 
       .card:hover {
-        transform: translateY(-8px); 
-        box-shadow: 0 15px 30px rgba(247, 160, 26, 0.2); 
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(247, 160, 26, 0.2);
         border-color: rgba(247, 160, 26, 0.5);
       }
 
@@ -295,7 +335,7 @@
       }
 
       .card h3 i {
-        color: #f7a01a; 
+        color: #f7a01a;
         margin-right: 8px;
         font-size: 1.5rem;
         display: block;
@@ -304,7 +344,7 @@
       }
 
       .card:hover h3 i {
-        transform: scale(1.1); 
+        transform: scale(1.1);
       }
 
       /* FOOTER */
@@ -334,7 +374,7 @@
         font-size: 20px;
         cursor: pointer;
         box-shadow: 0 8px 20px rgba(247, 160, 26, 0.4);
-        z-index: 1000; 
+        z-index: 1000;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -342,15 +382,14 @@
       }
 
       .audio-btn:hover {
-        transform: scale(1.1) translateY(-3px); 
+        transform: scale(1.1) translateY(-3px);
         box-shadow: 0 12px 25px rgba(247, 160, 26, 0.6);
       }
 
       /* RESPONSIVE DESIGN (Tablets & Mobile) */
       @media (max-width: 768px) {
-        
         .splash-text {
-          font-size: 12vw; 
+          font-size: 12vw;
         }
 
         .header {
@@ -361,7 +400,7 @@
         }
 
         .header h2 {
-          font-size: 4.5vw; 
+          font-size: 4.5vw;
           line-height: 1.3;
         }
 
@@ -370,23 +409,23 @@
         }
 
         .hero {
-          background-size: 100% 100%; 
-          height: 44vw; 
-          min-height: auto; 
-          align-items: flex-end; 
-          padding-bottom: 9vw; 
+          background-size: 100% 100%;
+          height: 44vw;
+          min-height: auto;
+          align-items: flex-end;
+          padding-bottom: 9vw;
         }
 
         .hero-box {
-          width: 55%; 
+          width: 55%;
           margin-top: 0;
-          padding-left: 0; 
+          padding-left: 0;
           display: flex;
-          justify-content: center; 
+          justify-content: center;
         }
 
         .hero-box h1 {
-          font-size: 4vw; 
+          font-size: 4vw;
           text-align: left;
           width: fit-content;
         }
@@ -395,29 +434,34 @@
           font-size: 2.2vw;
           margin-top: 1vw;
         }
-        
+
         .section {
           padding: 40px 15px;
         }
       }
-
     </style>
   </head>
 
   <body>
-
     <div id="splash-screen">
       <h1 class="splash-text">॥ जय श्री राम ॥</h1>
     </div>
 
     <audio id="bgMusic" src="jai-shree-ram.mp3"></audio>
 
-    <button id="audioControl" class="audio-btn" aria-label="Toggle Background Music">
+    <button
+      id="audioControl"
+      class="audio-btn"
+      aria-label="Toggle Background Music"
+    >
       <i class="fa-solid fa-volume-high"></i>
     </button>
 
     <div class="header">
-      <h2><i class="fa-solid fa-place-of-worship"></i> Shree Hanuman Mandir, Paliya, Sultanpur</h2>
+      <h2>
+        <i class="fa-solid fa-place-of-worship"></i> Shree Hanuman Mandir,
+        Paliya, Sultanpur
+      </h2>
       <div class="nav-links">
         <a href="#index">Home</a>
         <a href="#about">About</a>
@@ -438,7 +482,9 @@
     <div class="section reveal" id="about">
       <h2>About The Mandir</h2>
       <p>
-        This digital portal helps manage temple contributions, track daily expenses, and maintain the yearly financial balance in a highly secure and transparent manner.
+        This digital portal helps manage temple contributions, track daily
+        expenses, and maintain the yearly financial balance in a highly secure
+        and transparent manner.
       </p>
     </div>
 
@@ -463,7 +509,10 @@
 
         <div class="card">
           <h3><i class="fa-solid fa-users"></i> User Panel</h3>
-          <p>Allow members to log in and securely view their personal contributions.</p>
+          <p>
+            Allow members to log in and securely view their personal
+            contributions.
+          </p>
         </div>
       </div>
     </div>
@@ -489,7 +538,10 @@
 
         <div class="card">
           <h3><i class="fa-solid fa-users"></i> User Panel</h3>
-          <p>Allow members to log in and securely view their personal contributions.</p>
+          <p>
+            Allow members to log in and securely view their personal
+            contributions.
+          </p>
         </div>
       </div>
     </div>
@@ -498,15 +550,15 @@
 
     <script>
       /* --- Splash Screen Logic --- */
-      window.addEventListener('load', () => {
+      window.addEventListener("load", () => {
         setTimeout(() => {
-          const splash = document.getElementById('splash-screen');
-          splash.classList.add('splash-hidden');
-          
+          const splash = document.getElementById("splash-screen");
+          splash.classList.add("splash-hidden");
+
           setTimeout(() => {
-            splash.style.display = 'none';
+            splash.style.display = "none";
           }, 800);
-        }, 1500); 
+        }, 1500);
       });
 
       /* --- Audio Control Script --- */
@@ -539,15 +591,18 @@
       document.addEventListener("click", initialPlay);
 
       window.onload = () => {
-        music.play().then(() => {
-          isPlaying = true;
-          audioBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-        }).catch(() => {});
+        music
+          .play()
+          .then(() => {
+            isPlaying = true;
+            audioBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+          })
+          .catch(() => {});
       };
 
       setTimeout(() => {
         if (isPlaying) toggleAudio();
-      }, 12000); 
+      }, 12000);
 
       /* --- Scroll Reveal Animation Script --- */
       function reveal() {
@@ -568,25 +623,25 @@
 
       /* --- Floating "राम" Effect Script --- */
       function createFloatingRam() {
-        const heroSection = document.querySelector('.hero');
+        const heroSection = document.querySelector(".hero");
         if (!heroSection) return;
 
-        const ramElement = document.createElement('div');
-        ramElement.classList.add('floating-ram');
-        ramElement.innerText = 'राम';
+        const ramElement = document.createElement("div");
+        ramElement.classList.add("floating-ram");
+        ramElement.innerText = "राम";
 
         const randomLeft = Math.random() * 100;
-        const randomSize = Math.random() * 1.5 + 1; 
+        const randomSize = Math.random() * 1.5 + 1;
 
-        const heroHeight = heroSection.offsetHeight; 
-        const travelDistance = heroHeight + 100; 
-        const randomSpeed = Math.random() * 20 + 30; 
-        const duration = travelDistance / randomSpeed; 
+        const heroHeight = heroSection.offsetHeight;
+        const travelDistance = heroHeight + 100;
+        const randomSpeed = Math.random() * 20 + 30;
+        const duration = travelDistance / randomSpeed;
 
-        ramElement.style.left = randomLeft + '%';
-        ramElement.style.setProperty('--travel', `-${travelDistance}px`);
-        ramElement.style.animationDuration = duration + 's';
-        ramElement.style.fontSize = randomSize + 'rem';
+        ramElement.style.left = randomLeft + "%";
+        ramElement.style.setProperty("--travel", `-${travelDistance}px`);
+        ramElement.style.animationDuration = duration + "s";
+        ramElement.style.fontSize = randomSize + "rem";
 
         heroSection.appendChild(ramElement);
 
@@ -598,7 +653,6 @@
       setTimeout(() => {
         setInterval(createFloatingRam, 900);
       }, 2000);
-
     </script>
   </body>
 </html>

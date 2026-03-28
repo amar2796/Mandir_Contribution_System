@@ -1,431 +1,905 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Mandir System</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
-  <style>
-    body { margin: 0; padding: 20px; font-family: 'Poppins', sans-serif; background: #f4f6f9; color: #333; }
-
-    h2 { text-align: center; color: #946c44; font-weight: 700; margin-bottom: 20px; }
-
-    button {
-      padding: 10px 20px; background: #f7a01a; color: white; border: none; border-radius: 8px;
-      cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600;
-      transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(247,160,26,0.3);
-    }
-    button:hover { background: #d35400; transform: translateY(-2px); }
-    .btn-secondary { background: #27ae60; box-shadow: 0 4px 10px rgba(39,174,96,0.3); }
-    .btn-secondary:hover { background: #2ecc71; }
-
-    .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
-
-    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-top: 4px solid #f7a01a; }
-    .card h3 { margin-top: 0; color: #333; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-    .card h3 i { color: #f7a01a; }
-
-    .summary-text p { display: flex; justify-content: space-between; font-size: 1.05rem; margin: 10px 0; padding: 8px 0; border-bottom: 1px dashed #eee; }
-    .summary-text p:last-child { border-bottom: none; }
-
-    .grand-total { font-size: 1.2rem; color: #27ae60; background: #eafaf1; padding: 15px; border-radius: 8px; text-align: center; margin-top: 15px; }
-
-    select, input {
-      width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd;
-      border-radius: 8px; font-family: 'Poppins', sans-serif; outline: none; transition: border-color 0.3s;
-    }
-    select:focus, input:focus { border-color: #f7a01a; }
-
-    .filter-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-    .actions { display: flex; gap: 10px; margin-top: 15px; }
-
-    .table-container { overflow-x: auto; margin-top: 10px; }
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
-    thead { background: #334155; color: white; }
-    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
-    tbody tr:hover { background: #fdfbf7; }
-
-    .amount-col  { font-weight: 600; color: #27ae60; }
-    .expense-col { font-weight: 600; color: #e74c3c; }
-
-    #loadingMsg { text-align:center; padding:40px; font-size:1.1rem; color:#666; display:none; }
-  </style>
-</head>
-<body>
-
-<h2><i class="fa-solid fa-chart-line"></i> Mandir Financial Dashboard</h2>
-
-<div id="loadingMsg"><i class="fa-solid fa-spinner fa-spin"></i> Loading data...</div>
-
-<div class="grid-layout">
-  <div class="card">
-    <h3><i class="fa-solid fa-filter"></i> Advanced Data Filters</h3>
-
-    <label><b>Select Year</b></label>
-    <select id="yearSelect"></select>
-
-    <div class="filter-group" style="margin-top:15px;">
-      <div>
-        <label><b>User Search</b></label>
-        <input type="text" id="dashUserSearch" placeholder="Name or Mobile" onkeyup="applyFilter()">
-      </div>
-      <div>
-        <label><b>Start Date</b></label>
-        <input type="date" id="dashStart" onchange="applyFilter()">
-      </div>
-      <div>
-        <label><b>End Date</b></label>
-        <input type="date" id="dashEnd" onchange="applyFilter()">
-      </div>
-    </div>
-
-    <div class="actions">
-      <button style="flex:1;" onclick="applyFilter()"><i class="fa-solid fa-magnifying-glass"></i> Apply Filters</button>
-      <button style="flex:1;" class="btn-secondary" onclick="exportDashboardPDF()"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
-    </div>
-  </div>
-
-  <div class="card summary-text">
-    <h3 id="yearTitle"><i class="fa-solid fa-wallet"></i> Year Summary</h3>
-    <p><span>Opening Balance:</span> <b>₹ <span id="opening">0</span></b></p>
-    <p><span>Filtered Contribution:</span> <b class="amount-col">+ ₹ <span id="yearTotalC">0</span></b></p>
-    <p><span>Filtered Expense:</span>      <b class="expense-col">- ₹ <span id="yearTotalE">0</span></b></p>
-    <p><span>Closing Balance:</span>       <b>₹ <span id="closing">0</span></b></p>
-    <div class="grand-total">
-      <b>💰 Overall Balance Till Now: ₹ <span id="grandTotal">0</span></b>
-    </div>
-  </div>
-</div>
-
-<div class="grid-layout">
-  <div class="card">
-    <h3><i class="fa-solid fa-calendar-days"></i> Month-wise Tracking</h3>
-    <div class="table-container">
-      <table id="monthWiseTable">
-        <thead><tr><th>Month</th><th>Contributions (₹)</th><th>Expenses (₹)</th></tr></thead>
-        <tbody id="monthWiseBody"></tbody>
-      </table>
-    </div>
-  </div>
-  <div class="card">
-    <h3><i class="fa-solid fa-users"></i> User-wise Tracking</h3>
-    <div class="table-container">
-      <table id="userWiseTable">
-        <thead><tr><th>User Name</th><th>Total Contributed (₹)</th></tr></thead>
-        <tbody id="userWiseBody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<div class="card">
-  <h3><i class="fa-solid fa-list-check"></i> Detailed Transaction Log</h3>
-  <div class="table-container">
-    <table id="detailTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Name / Title</th>
-          <th>Type</th>
-          <th>Month</th>
-          <th>Occasion</th>
-          <th>Amount</th>
-        </tr>
-      </thead>
-      <tbody id="detailBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<script src="config.js"></script>
-<script src="app.js"></script>
-
-<script>
-// ── Session check (FIX #3)
-(function(){
-  let s = JSON.parse(localStorage.getItem("session"));
-  if (!s || Date.now() > s.expiry || s.role !== "Admin") {
-    localStorage.clear();
-    location.replace("login.html");
-    return;
-  }
-  s.expiry = Date.now() + 30 * 60 * 1000;
-  localStorage.setItem("session", JSON.stringify(s));
-})();
-
-window.addEventListener("pageshow", function(e) {
-  if (e.persisted) {
-    let s = localStorage.getItem("session");
-    if (!s) location.replace("login.html");
-  }
-});
-
-// ── Globals
-let users = [], contributions = [], expenses = [], types = [], expenseTypes = [], occasions = [];
-let filteredC = [], filteredE = [];
-const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
-// ── Opening balance calculator
-// FIX #17 — hard-coded 2024 year replaced with dynamic earliest year
-function getOpeningBalance(year, yearConfig, contribs, exps) {
-  if (!yearConfig || yearConfig.length === 0) return 0;
-
-  let found = yearConfig.find(y => Number(y.Year) === Number(year));
-  if (found && found.OpeningBalance !== "" && found.OpeningBalance !== undefined) {
-    return Number(found.OpeningBalance);
-  }
-
-  // Get the earliest year in config — stop recursion there
-  let minYear = Math.min(...yearConfig.map(y => Number(y.Year)));
-  if (year <= minYear) return 0;
-
-  let prevYear = year - 1;
-  let prevOpening = getOpeningBalance(prevYear, yearConfig, contribs, exps);
-  let prevC = contribs.filter(c => Number(c.Year) === prevYear).reduce((s,c) => s + Number(c.Amount || 0), 0);
-  let prevE = exps.filter(e => Number(e.Year) === prevYear).reduce((s,e) => s + Number(e.Amount || 0), 0);
-  return prevOpening + prevC - prevE;
-}
-
-// ── INIT
-async function init() {
-  document.getElementById("loadingMsg").style.display = "block";
-  try {
-    let allData = await getData("getAllData");
-    if (!allData) return;
-
-    users        = allData.users        || [];
-    contributions = allData.contributions || [];
-    expenses     = allData.expenses     || [];
-    types        = allData.types        || [];
-    expenseTypes = allData.expenseTypes || [];
-    occasions    = allData.occasions    || [];
-    window.yearConfig = allData.yearConfig || [];
-
-    loadYearDropdown();
-    applyFilter();
-  } catch (err) {
-    document.getElementById("loadingMsg").innerText = "Failed to load: " + err.message;
-  } finally {
-    document.getElementById("loadingMsg").style.display = "none";
-  }
-}
-
-// ── APPLY FILTERS
-// FIX #8/#9 — uses PaymentDate (correct column name), not c.Date
-function applyFilter() {
-  const txt      = (document.getElementById("dashUserSearch")?.value || "").toLowerCase();
-  const start    = document.getElementById("dashStart")?.value;
-  const end      = document.getElementById("dashEnd")?.value;
-  const targetYear = Number(selectedYear);
-
-  filteredC = contributions.filter(c => {
-    if (Number(c.Year) !== targetYear) return false;
-
-    const user = users.find(u => String(u.UserId) === String(c.UserId));
-    const uMatch = !txt || (user?.Name.toLowerCase() || "").includes(txt) || String(user?.Mobile || "").includes(txt);
-
-    let dMatch = true;
-    if ((start || end) && c.PaymentDate) {
-      const parts = String(c.PaymentDate).split(" ")[0].split("-");
-      if (parts.length === 3) {
-        const cDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-        dMatch = (!start || cDate >= start) && (!end || cDate <= end);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Mandir System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
       }
-    }
-
-    return uMatch && dMatch;
-  });
-
-  filteredE = expenses.filter(e => {
-    if (Number(e.Year) !== targetYear) return false;
-
-    let dMatch = true;
-    if ((start || end) && e.PaymentDate) {
-      const parts = String(e.PaymentDate).split(" ")[0].split("-");
-      if (parts.length === 3) {
-        const eDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-        dMatch = (!start || eDate >= start) && (!end || eDate <= end);
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: "Poppins", sans-serif;
+        background: #f4f6f9;
+        color: #333;
       }
-    }
-    return dMatch;
-  });
+      h2 {
+        text-align: center;
+        color: #946c44;
+        font-weight: 700;
+        margin-bottom: 16px;
+        font-size: 1.4rem;
+      }
+      button {
+        padding: 10px 18px;
+        background: #f7a01a;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: "Poppins", sans-serif;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(247, 160, 26, 0.3);
+      }
+      button:hover {
+        background: #d35400;
+        transform: translateY(-2px);
+      }
+      .btn-green {
+        background: #27ae60;
+        box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
+      }
+      .btn-green:hover {
+        background: #1e8449;
+      }
+      .btn-blue {
+        background: #2980b9;
+        box-shadow: none;
+      }
+      .btn-blue:hover {
+        background: #1a6fa0;
+      }
+      .grid-layout {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+      @media (max-width: 640px) {
+        .grid-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        border-top: 4px solid #f7a01a;
+      }
+      .card h3 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #f4f6f9;
+        padding-bottom: 8px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1rem;
+      }
+      .card h3 i {
+        color: #f7a01a;
+      }
+      .summary-text p {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1rem;
+        margin: 8px 0;
+        padding: 7px 0;
+        border-bottom: 1px dashed #eee;
+      }
+      .summary-text p:last-child {
+        border-bottom: none;
+      }
+      .grand-total {
+        font-size: 1.1rem;
+        color: #27ae60;
+        background: #eafaf1;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+        margin-top: 12px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 4px;
+        margin-top: 10px;
+      }
+      select,
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: "Poppins", sans-serif;
+        outline: none;
+        transition: border-color 0.3s;
+        font-size: 13px;
+        background: #fff;
+      }
+      select:focus,
+      input:focus {
+        border-color: #f7a01a;
+      }
+      input[readonly] {
+        background: #f8f8f8;
+        cursor: default;
+        color: #555;
+      }
+      .date-wrap {
+        position: relative;
+      }
+      .date-wrap .cal-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #f7a01a;
+        pointer-events: none;
+        font-size: 14px;
+      }
+      .filter-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 8px;
+      }
+      @media (max-width: 480px) {
+        .filter-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+      }
+      .actions button {
+        flex: 1;
+        min-width: 120px;
+      }
+      .table-container {
+        overflow-x: auto;
+        margin-top: 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        min-width: 480px;
+      }
+      thead {
+        background: #334155;
+        color: white;
+      }
+      th,
+      td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        font-size: 12.5px;
+        white-space: nowrap;
+      }
+      tbody tr:hover {
+        background: #fdfbf7;
+      }
+      .amount-col {
+        font-weight: 600;
+        color: #27ae60;
+      }
+      .expense-col {
+        font-weight: 600;
+        color: #e74c3c;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .badge-green {
+        background: #eafaf1;
+        color: #27ae60;
+      }
+      .badge-red {
+        background: #fdedec;
+        color: #e74c3c;
+      }
+      #loadingMsg {
+        text-align: center;
+        padding: 30px;
+        font-size: 1rem;
+        color: #666;
+        display: none;
+      }
+      /* Custom date picker popup */
+      #calPop {
+        display: none;
+        position: fixed;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+        z-index: 77777;
+        padding: 16px;
+        min-width: 260px;
+        font-family: Poppins, sans-serif;
+      }
+      .cal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .cal-header button {
+        background: none;
+        border: none;
+        color: #334155;
+        font-size: 18px;
+        cursor: pointer;
+        box-shadow: none;
+        padding: 4px 8px;
+        transform: none !important;
+      }
+      .cal-header span {
+        font-weight: 700;
+        font-size: 14px;
+        color: #334155;
+      }
+      .cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+      }
+      .cal-grid .day-hdr {
+        text-align: center;
+        font-size: 10px;
+        color: #aaa;
+        font-weight: 600;
+        padding: 4px 0;
+      }
+      .cal-grid .cal-day {
+        text-align: center;
+        font-size: 12px;
+        padding: 5px 2px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .cal-grid .cal-day:hover {
+        background: #faeeda;
+        color: #854f0b;
+      }
+      .cal-grid .cal-day.today {
+        background: #f7a01a;
+        color: #fff;
+        font-weight: 700;
+      }
+      .cal-grid .cal-day.selected {
+        background: #334155;
+        color: #fff;
+        font-weight: 700;
+      }
+      .cal-grid .cal-day.other-month {
+        color: #ccc;
+      }
+      .cal-grid .cal-day.empty {
+        cursor: default;
+      }
+    </style>
+  </head>
+  <body>
+    <h2><i class="fa-solid fa-chart-line"></i> Mandir Financial Dashboard</h2>
+    <div id="loadingMsg">
+      <i class="fa-solid fa-spinner fa-spin"></i> Loading data...
+    </div>
 
-  renderAll();
-}
+    <div class="grid-layout">
+      <div class="card">
+        <h3><i class="fa-solid fa-filter"></i> Advanced Data Filters</h3>
+        <label>Select Year</label>
+        <select id="yearSelect"></select>
+        <div class="filter-grid">
+          <div>
+            <label>User Search</label>
+            <input
+              type="text"
+              id="dashUserSearch"
+              placeholder="Name or Mobile"
+              onkeyup="applyFilter()"
+            />
+          </div>
+          <div>
+            <label>Start Date</label>
+            <!-- FIX #7 — readonly, calendar only -->
+            <div class="date-wrap">
+              <input
+                type="text"
+                id="dashStart"
+                placeholder="Select date"
+                readonly
+                onclick="openCal('start')"
+                style="cursor: pointer; padding-right: 32px"
+              />
+              <i class="fa-solid fa-calendar-days cal-icon"></i>
+            </div>
+          </div>
+          <div>
+            <label>End Date</label>
+            <div class="date-wrap">
+              <input
+                type="text"
+                id="dashEnd"
+                placeholder="Select date"
+                readonly
+                onclick="openCal('end')"
+                style="cursor: pointer; padding-right: 32px"
+              />
+              <i class="fa-solid fa-calendar-days cal-icon"></i>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-end">
+            <button
+              style="width: 100%; padding: 10px; font-size: 12px"
+              onclick="clearDates()"
+            >
+              <i class="fa-solid fa-xmark"></i> Clear Dates
+            </button>
+          </div>
+        </div>
+        <div class="actions">
+          <button onclick="applyFilter()">
+            <i class="fa-solid fa-magnifying-glass"></i> Apply
+          </button>
+          <button class="btn-green" onclick="exportDashboardPDF()">
+            <i class="fa-solid fa-file-pdf"></i> Export PDF
+          </button>
+        </div>
+      </div>
 
-// ── SUMMARY (FIX #32 — fmt() used)
-function summary() {
-  let currentYear = selectedYear;
-  document.getElementById("yearTitle").innerHTML = `<i class="fa-solid fa-wallet"></i> Year Summary (${currentYear})`;
+      <div class="card summary-text">
+        <h3 id="yearTitle"><i class="fa-solid fa-wallet"></i> Year Summary</h3>
+        <p>
+          <span>Opening Balance:</span><b>₹ <span id="opening">0</span></b>
+        </p>
+        <p>
+          <span>Filtered Contributions:</span
+          ><b class="amount-col">+ ₹ <span id="yearTotalC">0</span></b>
+        </p>
+        <p>
+          <span>Filtered Expenses:</span
+          ><b class="expense-col">- ₹ <span id="yearTotalE">0</span></b>
+        </p>
+        <p>
+          <span>Closing Balance:</span><b>₹ <span id="closing">0</span></b>
+        </p>
+        <div class="grand-total">
+          <b>💰 Overall Balance: ₹ <span id="grandTotal">0</span></b>
+        </div>
+      </div>
+    </div>
 
-  let totalC = filteredC.reduce((s,c) => s + Number(c.Amount || 0), 0);
-  let totalE = filteredE.reduce((s,e) => s + Number(e.Amount || 0), 0);
+    <div class="grid-layout">
+      <div class="card">
+        <h3><i class="fa-solid fa-calendar-days"></i> Month-wise Tracking</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Contributions (₹)</th>
+                <th>Expenses (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="monthWiseBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h3><i class="fa-solid fa-users"></i> User-wise Tracking</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>User Name</th>
+                <th>Total Contributed (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="userWiseBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-  let opening = getOpeningBalance(currentYear, window.yearConfig, contributions, expenses);
-  let yearAllC = contributions.filter(c => Number(c.Year) === currentYear).reduce((s,c) => s + Number(c.Amount||0), 0);
-  let yearAllE = expenses.filter(e => Number(e.Year) === currentYear).reduce((s,e) => s + Number(e.Amount||0), 0);
-  let closing  = opening + yearAllC - yearAllE;
+    <div class="card">
+      <h3>
+        <i class="fa-solid fa-list-check"></i> Transaction Log
+        <span style="font-size: 11px; font-weight: 400; color: #999"
+          >— click contribution row for receipt</span
+        >
+      </h3>
+      <div class="table-container">
+        <table id="detailTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Name / Title</th>
+              <th>Type</th>
+              <th>Month</th>
+              <th>Occasion</th>
+              <th>Amount</th>
+              <th>Receipt</th>
+            </tr>
+          </thead>
+          <tbody id="detailBody"></tbody>
+        </table>
+      </div>
+    </div>
 
-  let oldestYearConfig = [...window.yearConfig].sort((a,b) => Number(a.Year) - Number(b.Year))[0];
-  let initialOpening = oldestYearConfig ? Number(oldestYearConfig.OpeningBalance) : 0;
-  let allC = contributions.reduce((s,c) => s + Number(c.Amount||0), 0);
-  let allE = expenses.reduce((s,e) => s + Number(e.Amount||0), 0);
-  let grandTotal = initialOpening + allC - allE;
+    <!-- Custom Calendar Popup -->
+    <div id="calPop">
+      <div class="cal-header">
+        <button onclick="calNav(-1)">&#8592;</button>
+        <span id="calTitle"></span>
+        <button onclick="calNav(1)">&#8594;</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
 
-  document.getElementById("opening").innerText   = fmt(opening);
-  document.getElementById("yearTotalC").innerText = fmt(totalC);
-  document.getElementById("yearTotalE").innerText = fmt(totalE);
-  document.getElementById("closing").innerText    = fmt(closing);
-  document.getElementById("grandTotal").innerText = fmt(grandTotal);
-}
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+    <script>
+      // ── Session (FIX #2 — no pageshow loop)
+      (function () {
+        let s = JSON.parse(localStorage.getItem("session"));
+        if (!s || Date.now() > s.expiry || s.role !== "Admin") {
+          localStorage.clear();
+          location.replace("login.html");
+          return;
+        }
+        s.expiry = Date.now() + 30 * 60 * 1000;
+        localStorage.setItem("session", JSON.stringify(s));
+      })();
 
-// ── MONTH-WISE (FIX #32 — fmt)
-function renderMonthWise() {
-  let mapC = {}, mapE = {};
-  filteredC.forEach(c => { mapC[c.ForMonth] = (mapC[c.ForMonth] || 0) + Number(c.Amount || 0); });
-  filteredE.forEach(e => {
-    let mn = e.ForMonth || e.Note;
-    if (!mn && e.PaymentDate) {
-      let p = String(e.PaymentDate).split(" ")[0].split("-");
-      if (p.length >= 2) { let mi = parseInt(p[1]) - 1; if (months[mi]) mn = months[mi]; }
-    }
-    mn = mn || "Unknown";
-    mapE[mn] = (mapE[mn] || 0) + Number(e.Amount || 0);
-  });
+      // ── Globals
+      let users = [],
+        contributions = [],
+        expenses = [],
+        types = [],
+        expenseTypes = [],
+        occasions = [];
+      let filteredC = [],
+        filteredE = [];
+      const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
 
-  let html = months.map(m => {
-    let cAmt = mapC[m] || 0, eAmt = mapE[m] || 0;
-    if (cAmt === 0 && eAmt === 0) return "";
-    return `<tr><td><b>${m}</b></td><td class="amount-col">₹ ${fmt(cAmt)}</td><td class="expense-col">₹ ${fmt(eAmt)}</td></tr>`;
-  }).join("");
-  document.getElementById("monthWiseBody").innerHTML = html || `<tr><td colspan="3" style="text-align:center;">No data found</td></tr>`;
-}
+      // ── Calendar Picker (FIX #7 — no manual typing)
+      let _calTarget = "start",
+        _calYear = new Date().getFullYear(),
+        _calMonth = new Date().getMonth();
+      function openCal(target) {
+        _calTarget = target;
+        let pop = document.getElementById("calPop");
+        let inp = document.getElementById(
+          target === "start" ? "dashStart" : "dashEnd"
+        );
+        let rect = inp.getBoundingClientRect();
+        pop.style.display = "block";
+        let top = rect.bottom + window.scrollY + 4;
+        let left = rect.left + window.scrollX;
+        if (left + 270 > window.innerWidth) left = window.innerWidth - 276;
+        pop.style.top = top + "px";
+        pop.style.left = left + "px";
+        renderCal();
+        setTimeout(
+          () => document.addEventListener("click", closeCal, { once: true }),
+          10
+        );
+      }
+      function closeCal(e) {
+        if (!document.getElementById("calPop").contains(e.target))
+          document.getElementById("calPop").style.display = "none";
+      }
+      function calNav(dir) {
+        _calMonth += dir;
+        if (_calMonth > 11) {
+          _calMonth = 0;
+          _calYear++;
+        }
+        if (_calMonth < 0) {
+          _calMonth = 11;
+          _calYear--;
+        }
+        renderCal();
+      }
+      function renderCal() {
+        document.getElementById("calTitle").textContent =
+          months[_calMonth].substring(0, 3) + " " + _calYear;
+        const today = new Date();
+        const firstDay = new Date(_calYear, _calMonth, 1).getDay();
+        const daysInMonth = new Date(_calYear, _calMonth + 1, 0).getDate();
+        const startVal = document.getElementById("dashStart").dataset.val || "";
+        const endVal = document.getElementById("dashEnd").dataset.val || "";
+        let g = document.getElementById("calGrid");
+        g.innerHTML = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+          .map((d) => `<div class="day-hdr">${d}</div>`)
+          .join("");
+        for (let i = 0; i < firstDay; i++)
+          g.innerHTML += `<div class="cal-day empty"></div>`;
+        for (let d = 1; d <= daysInMonth; d++) {
+          let dateStr =
+            _calYear +
+            "-" +
+            String(_calMonth + 1).padStart(2, "0") +
+            "-" +
+            String(d).padStart(2, "0");
+          let isToday =
+            d === today.getDate() &&
+            _calMonth === today.getMonth() &&
+            _calYear === today.getFullYear();
+          let isSel = dateStr === startVal || dateStr === endVal;
+          g.innerHTML += `<div class="cal-day${isToday ? " today" : ""}${
+            isSel ? " selected" : ""
+          }" onclick="pickDate('${dateStr}')">${d}</div>`;
+        }
+      }
+      function pickDate(dateStr) {
+        const parts = dateStr.split("-");
+        const display = parts[2] + "-" + parts[1] + "-" + parts[0];
+        let el = document.getElementById(
+          _calTarget === "start" ? "dashStart" : "dashEnd"
+        );
+        el.value = display;
+        el.dataset.val = dateStr;
+        document.getElementById("calPop").style.display = "none";
+        applyFilter();
+      }
+      function clearDates() {
+        let s = document.getElementById("dashStart"),
+          e = document.getElementById("dashEnd");
+        s.value = "";
+        s.dataset.val = "";
+        e.value = "";
+        e.dataset.val = "";
+        applyFilter();
+      }
 
-// ── USER-WISE (FIX #32 — fmt)
-function renderUserWise() {
-  let map = {};
-  filteredC.forEach(c => { map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0); });
-  let sortedUsers = Object.keys(map).sort((a,b) => map[b] - map[a]);
-  let html = sortedUsers.map(uid => {
-    let uName = users.find(x => String(x.UserId) === String(uid))?.Name || "Unknown";
-    return `<tr><td>${uName}</td><td class="amount-col">₹ ${fmt(map[uid])}</td></tr>`;
-  }).join("");
-  document.getElementById("userWiseBody").innerHTML = html || `<tr><td colspan="2" style="text-align:center;">No contributions found</td></tr>`;
-}
+      // ── Opening balance
+      function getOpeningBalance(year, yearConfig, contribs, exps) {
+        if (!yearConfig || yearConfig.length === 0) return 0;
+        let found = yearConfig.find((y) => Number(y.Year) === Number(year));
+        if (
+          found &&
+          found.OpeningBalance !== "" &&
+          found.OpeningBalance !== undefined
+        )
+          return Number(found.OpeningBalance);
+        let minYear = Math.min(...yearConfig.map((y) => Number(y.Year)));
+        if (year <= minYear) return 0;
+        let prevY = year - 1;
+        let prevO = getOpeningBalance(prevY, yearConfig, contribs, exps);
+        let prevC = contribs
+          .filter((c) => Number(c.Year) === prevY)
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        let prevE = exps
+          .filter((e) => Number(e.Year) === prevY)
+          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+        return prevO + prevC - prevE;
+      }
 
-// ── DETAIL TABLE
-// FIX #33 — sorted by date descending
-// FIX #32 — fmt() on amounts
-function renderDetails() {
-  // Combine contributions + expenses into one array for sorting
-  let rows = [];
+      // ── INIT — loadYearDropdown called AFTER data (FIX #4)
+      async function init() {
+        document.getElementById("loadingMsg").style.display = "block";
+        try {
+          let allData = await getData("getAllData");
+          if (!allData) return;
+          users = allData.users || [];
+          contributions = allData.contributions || [];
+          expenses = allData.expenses || [];
+          types = allData.types || [];
+          expenseTypes = allData.expenseTypes || [];
+          occasions = allData.occasions || [];
+          window.yearConfig = allData.yearConfig || [];
+          loadYearDropdown(); // ← called after data is ready
+          applyFilter();
+        } catch (err) {
+          document.getElementById("loadingMsg").innerText =
+            "Failed to load: " + err.message;
+        } finally {
+          document.getElementById("loadingMsg").style.display = "none";
+        }
+      }
 
-  filteredC.forEach(c => {
-    let uName = users.find(x => String(x.UserId) === String(c.UserId))?.Name || "Unknown";
-    let tName = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
-    let oName = occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "-";
-    rows.push({
-      dateRaw: c.PaymentDate || "0",
-      html: `<tr>
-        <td>${c.PaymentDate || "N/A"}</td>
-        <td><i class="fa-solid fa-user" style="color:#aaa;margin-right:5px;"></i>${uName}</td>
-        <td><span style="background:#eafaf1;color:#27ae60;padding:3px 8px;border-radius:4px;font-size:0.85rem;">${tName}</span></td>
-        <td>${c.ForMonth || "—"}</td>
-        <td>${oName}</td>
-        <td class="amount-col">+ ₹ ${fmt(c.Amount)}</td>
-      </tr>`
-    });
-  });
+      // ── APPLY FILTERS (FIX #8/#9 — uses PaymentDate correctly)
+      function applyFilter() {
+        const txt = (
+          document.getElementById("dashUserSearch")?.value || ""
+        ).toLowerCase();
+        const startRaw =
+          document.getElementById("dashStart")?.dataset.val || "";
+        const endRaw = document.getElementById("dashEnd")?.dataset.val || "";
+        const targetYear = Number(selectedYear);
 
-  filteredE.forEach(e => {
-    let tName = expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
-    rows.push({
-      dateRaw: e.PaymentDate || "0",
-      html: `<tr>
-        <td>${e.PaymentDate || "N/A"}</td>
-        <td><i class="fa-solid fa-file-invoice-dollar" style="color:#aaa;margin-right:5px;"></i>${e.Title}</td>
-        <td><span style="background:#fdedec;color:#e74c3c;padding:3px 8px;border-radius:4px;font-size:0.85rem;">${tName}</span></td>
-        <td>${e.ForMonth || "—"}</td>
-        <td>-</td>
-        <td class="expense-col">- ₹ ${fmt(e.Amount)}</td>
-      </tr>`
-    });
-  });
+        filteredC = contributions.filter((c) => {
+          if (Number(c.Year) !== targetYear) return false;
+          const user = users.find((u) => String(u.UserId) === String(c.UserId));
+          const uMatch =
+            !txt ||
+            (user?.Name.toLowerCase() || "").includes(txt) ||
+            String(user?.Mobile || "").includes(txt);
+          let dMatch = true;
+          if ((startRaw || endRaw) && c.PaymentDate) {
+            const parts = String(c.PaymentDate).split(" ")[0].split("-");
+            if (parts.length === 3) {
+              const cd = `${parts[2]}-${parts[1]}-${parts[0]}`;
+              dMatch =
+                (!startRaw || cd >= startRaw) && (!endRaw || cd <= endRaw);
+            }
+          }
+          return uMatch && dMatch;
+        });
 
-  // Sort by date descending (dd-mm-yyyy format)
-  rows.sort((a,b) => {
-    let toSort = d => {
-      let p = String(d).split(" ")[0].split("-");
-      return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : "0";
-    };
-    return toSort(b.dateRaw).localeCompare(toSort(a.dateRaw));
-  });
+        filteredE = expenses.filter((e) => {
+          if (Number(e.Year) !== targetYear) return false;
+          let dMatch = true;
+          if ((startRaw || endRaw) && e.PaymentDate) {
+            const parts = String(e.PaymentDate).split(" ")[0].split("-");
+            if (parts.length === 3) {
+              const ed = `${parts[2]}-${parts[1]}-${parts[0]}`;
+              dMatch =
+                (!startRaw || ed >= startRaw) && (!endRaw || ed <= endRaw);
+            }
+          }
+          return dMatch;
+        });
+        renderAll();
+      }
 
-  document.getElementById("detailBody").innerHTML = rows.map(r => r.html).join("") ||
-    `<tr><td colspan="6" style="text-align:center;">No records match your filters</td></tr>`;
-}
+      function summary() {
+        let yr = selectedYear;
+        document.getElementById(
+          "yearTitle"
+        ).innerHTML = `<i class="fa-solid fa-wallet"></i> Year Summary (${yr})`;
+        let totalC = filteredC.reduce((s, c) => s + Number(c.Amount || 0), 0);
+        let totalE = filteredE.reduce((s, e) => s + Number(e.Amount || 0), 0);
+        let opening = getOpeningBalance(
+          yr,
+          window.yearConfig,
+          contributions,
+          expenses
+        );
+        let yrAllC = contributions
+          .filter((c) => Number(c.Year) === yr)
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        let yrAllE = expenses
+          .filter((e) => Number(e.Year) === yr)
+          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+        let closing = opening + yrAllC - yrAllE;
+        let oldest = [...window.yearConfig].sort(
+          (a, b) => Number(a.Year) - Number(b.Year)
+        )[0];
+        let initO = oldest ? Number(oldest.OpeningBalance) : 0;
+        let grandTotal =
+          initO +
+          contributions.reduce((s, c) => s + Number(c.Amount || 0), 0) -
+          expenses.reduce((s, e) => s + Number(e.Amount || 0), 0);
+        document.getElementById("opening").innerText = fmt(opening);
+        document.getElementById("yearTotalC").innerText = fmt(totalC);
+        document.getElementById("yearTotalE").innerText = fmt(totalE);
+        document.getElementById("closing").innerText = fmt(closing);
+        document.getElementById("grandTotal").innerText = fmt(grandTotal);
+      }
 
-function renderAll() {
-  summary();
-  renderMonthWise();
-  renderUserWise();
-  renderDetails();
-}
+      function renderMonthWise() {
+        let mapC = {},
+          mapE = {};
+        filteredC.forEach((c) => {
+          mapC[c.ForMonth] = (mapC[c.ForMonth] || 0) + Number(c.Amount || 0);
+        });
+        filteredE.forEach((e) => {
+          let mn = e.ForMonth || e.Note;
+          if (!mn && e.PaymentDate) {
+            let p = String(e.PaymentDate).split(" ")[0].split("-");
+            if (p.length >= 2) {
+              let mi = parseInt(p[1]) - 1;
+              if (months[mi]) mn = months[mi];
+            }
+          }
+          mn = mn || "Unknown";
+          mapE[mn] = (mapE[mn] || 0) + Number(e.Amount || 0);
+        });
+        let html = months
+          .map((m) => {
+            let cA = mapC[m] || 0,
+              eA = mapE[m] || 0;
+            if (cA === 0 && eA === 0) return "";
+            return `<tr><td><b>${m}</b></td><td class="amount-col">₹ ${fmt(
+              cA
+            )}</td><td class="expense-col">₹ ${fmt(eA)}</td></tr>`;
+          })
+          .join("");
+        document.getElementById("monthWiseBody").innerHTML =
+          html ||
+          `<tr><td colspan="3" style="text-align:center;color:#aaa;">No data</td></tr>`;
+      }
 
-// ── PDF EXPORT
-// FIX #16 — removed references to non-existent filter elements
-function exportDashboardPDF() {
-  const { jsPDF } = window.jspdf;
-  let doc = new jsPDF('p', 'mm', 'a4');
+      function renderUserWise() {
+        let map = {};
+        filteredC.forEach((c) => {
+          map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
+        });
+        let sortedU = Object.keys(map).sort((a, b) => map[b] - map[a]);
+        let html = sortedU
+          .map((uid) => {
+            let uName =
+              users.find((x) => String(x.UserId) === String(uid))?.Name ||
+              "Unknown";
+            return `<tr><td>${uName}</td><td class="amount-col">₹ ${fmt(
+              map[uid]
+            )}</td></tr>`;
+          })
+          .join("");
+        document.getElementById("userWiseBody").innerHTML =
+          html ||
+          `<tr><td colspan="2" style="text-align:center;color:#aaa;">No data</td></tr>`;
+      }
 
-  let title = `Mandir Dashboard Report - ${selectedYear}`;
-  doc.setFontSize(18);
-  doc.setTextColor(148, 108, 68);
-  doc.text(title, 14, 20);
+      function renderDetails() {
+        let rows = [];
+        filteredC.forEach((c) => {
+          let uName =
+            users.find((x) => String(x.UserId) === String(c.UserId))?.Name ||
+            "Unknown";
+          let tName =
+            types.find((x) => String(x.TypeId) === String(c.TypeId))
+              ?.TypeName || "Contribution";
+          let oName =
+            occasions.find((x) => String(x.OccasionId) === String(c.OccasionId))
+              ?.OccasionName || "—";
+          rows.push({
+            date: c.PaymentDate || "0",
+            html: `<tr style="cursor:pointer;" onclick="showReceipt(${JSON.stringify(
+              c
+            )
+              .replace(/'/g, "&#39;")
+              .replace(/"/g, "&quot;")},'${escapeHtml(uName)}','${escapeHtml(
+              tName
+            )}','${escapeHtml(oName)}')">
+      <td>${c.PaymentDate || "N/A"}</td>
+      <td><i class="fa-solid fa-user" style="color:#aaa;margin-right:4px;font-size:11px;"></i>${escapeHtml(
+        uName
+      )}</td>
+      <td><span class="badge badge-green">${escapeHtml(tName)}</span></td>
+      <td>${c.ForMonth || "—"}</td><td>${escapeHtml(oName)}</td>
+      <td class="amount-col">+ ₹ ${fmt(c.Amount)}</td>
+      <td><button class="btn-blue" style="padding:3px 8px;font-size:11px;box-shadow:none;" onclick="event.stopPropagation();showReceipt(${JSON.stringify(
+        c
+      )
+        .replace(/'/g, "&#39;")
+        .replace(/"/g, "&quot;")},'${escapeHtml(uName)}','${escapeHtml(
+              tName
+            )}','${escapeHtml(
+              oName
+            )}')"><i class="fa-solid fa-receipt"></i></button></td>
+    </tr>`,
+          });
+        });
+        filteredE.forEach((e) => {
+          let tName =
+            expenseTypes.find(
+              (x) => String(x.ExpenseTypeId) === String(e.ExpenseTypeId)
+            )?.Name || "Expense";
+          rows.push({
+            date: e.PaymentDate || "0",
+            html: `<tr>
+      <td>${e.PaymentDate || "N/A"}</td>
+      <td><i class="fa-solid fa-file-invoice-dollar" style="color:#aaa;margin-right:4px;font-size:11px;"></i>${escapeHtml(
+        e.Title || ""
+      )}</td>
+      <td><span class="badge badge-red">${escapeHtml(tName)}</span></td>
+      <td>${e.ForMonth || "—"}</td><td>—</td>
+      <td class="expense-col">- ₹ ${fmt(e.Amount)}</td>
+      <td>—</td>
+    </tr>`,
+          });
+        });
+        rows.sort((a, b) => {
+          let p1 = String(a.date).split(" ")[0].split("-");
+          let p2 = String(b.date).split(" ")[0].split("-");
+          let d1 = p1.length === 3 ? `${p1[2]}-${p1[1]}-${p1[0]}` : "0";
+          let d2 = p2.length === 3 ? `${p2[2]}-${p2[1]}-${p2[0]}` : "0";
+          return d2.localeCompare(d1);
+        });
+        document.getElementById("detailBody").innerHTML =
+          rows.map((r) => r.html).join("") ||
+          `<tr><td colspan="7" style="text-align:center;color:#aaa;">No records</td></tr>`;
+      }
 
-  doc.setFontSize(11);
-  doc.setTextColor(50, 50, 50);
-  let totalC = document.getElementById("yearTotalC").innerText;
-  let totalE = document.getElementById("yearTotalE").innerText;
-  doc.text(`Filtered Contributions: Rs. ${totalC}`, 14, 30);
-  doc.text(`Filtered Expenses: Rs. ${totalE}`, 14, 36);
+      function renderAll() {
+        summary();
+        renderMonthWise();
+        renderUserWise();
+        renderDetails();
+      }
 
-  let startY = 46;
+      function exportDashboardPDF() {
+        const { jsPDF } = window.jspdf;
+        let doc = new jsPDF("p", "mm", "a4");
+        let w = doc.internal.pageSize.getWidth();
+        doc.setFillColor(51, 65, 85);
+        doc.rect(0, 0, w, 20, "F");
+        doc.setTextColor(247, 160, 26);
+        doc.setFontSize(14);
+        doc.setFont(undefined, "bold");
+        doc.text("Mandir Financial Dashboard — " + selectedYear, w / 2, 13, {
+          align: "center",
+        });
+        let totalC = document.getElementById("yearTotalC").innerText;
+        let totalE = document.getElementById("yearTotalE").innerText;
+        doc.setFontSize(9);
+        doc.setTextColor(50, 50, 50);
+        doc.setFont(undefined, "normal");
+        doc.text(
+          `Contributions: Rs. ${totalC}   |   Expenses: Rs. ${totalE}`,
+          14,
+          28
+        );
+        let rows = [];
+        document.querySelectorAll("#detailTable tbody tr").forEach((tr) => {
+          let r = [];
+          tr.querySelectorAll("td").forEach((td, i) => {
+            if (i < 6) r.push(td.innerText.replace("₹", "Rs.").trim());
+          });
+          if (r.length > 0 && r[0] !== "No records") rows.push(r);
+        });
+        doc.autoTable({
+          head: [
+            ["Date", "Name / Title", "Type", "Month", "Occasion", "Amount"],
+          ],
+          body: rows,
+          startY: 34,
+          theme: "grid",
+          headStyles: { fillColor: [51, 65, 85] },
+          styles: { fontSize: 8 },
+        });
+        doc.save(`Mandir_Report_${selectedYear}_${Date.now()}.pdf`);
+      }
 
-  let rows = [];
-  document.querySelectorAll("#detailTable tbody tr").forEach(tr => {
-    let r = [];
-    tr.querySelectorAll("td").forEach(td => {
-      r.push(td.innerText.replace("₹","Rs.").trim());
-    });
-    if (r.length > 1) rows.push(r);
-  });
-
-  if (rows.length > 0) {
-    doc.autoTable({
-      head: [["Date","Name / Title","Type","Month","Occasion","Amount"]],
-      body: rows,
-      startY: startY,
-      theme: 'grid',
-      headStyles: { fillColor: [51, 65, 85] }
-    });
-  } else {
-    doc.text("No transactions found for the selected filters.", 14, startY);
-  }
-
-  doc.save(`Mandir_Report_${selectedYear}_${Date.now()}.pdf`);
-}
-
-init();
-</script>
-
-</body>
+      init();
+    </script>
+  </body>
 </html>

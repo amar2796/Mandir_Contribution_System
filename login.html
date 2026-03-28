@@ -4,15 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login - Mandir System</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <style>
-      * { box-sizing: border-box; }
-
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         font-family: "Poppins", sans-serif;
@@ -22,7 +27,6 @@
         align-items: center;
         background: linear-gradient(135deg, #fdfbf7 0%, #f4f6f9 100%);
       }
-
       .container {
         width: 100%;
         display: flex;
@@ -30,7 +34,6 @@
         align-items: center;
         padding: 20px;
       }
-
       .card {
         background: #fff;
         padding: 40px 35px;
@@ -38,23 +41,44 @@
         width: 100%;
         max-width: 400px;
         text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         border-top: 5px solid #f7a01a;
         animation: slideUp 0.5s ease-out;
         position: relative;
       }
-
       @keyframes slideUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
-
-      .card h2 { margin-top: 0; margin-bottom: 30px; color: #946c44; font-size: 1.8rem; font-weight: 700; }
-      .card h2 i { color: #f7a01a; margin-right: 8px; }
-
-      .input-group { position: relative; margin-bottom: 20px; }
-      .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 1.1rem; }
-
+      .card h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #946c44;
+        font-size: 1.8rem;
+        font-weight: 700;
+      }
+      .card h2 i {
+        color: #f7a01a;
+        margin-right: 8px;
+      }
+      .input-group {
+        position: relative;
+        margin-bottom: 18px;
+      }
+      .input-group i.icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #aaa;
+        font-size: 1.1rem;
+      }
       .input-group input {
         width: 100%;
         padding: 14px 15px 14px 45px;
@@ -66,140 +90,333 @@
         transition: all 0.3s ease;
         background: #fafafa;
       }
-
-      .input-group input:focus { border-color: #f7a01a; background: #fff; box-shadow: 0 0 8px rgba(247,160,26,0.1); }
-
-      .forgot { font-size: 0.85rem; text-align: right; color: #888; cursor: pointer; display: block; margin-top: -10px; margin-bottom: 25px; transition: color 0.3s; }
-      .forgot:hover { color: #f7a01a; }
-
-      button {
-        width: 100%; padding: 14px; border: none; border-radius: 8px; color: white;
-        font-family: "Poppins", sans-serif; font-size: 1.05rem; font-weight: 600;
-        cursor: pointer; background: #f7a01a; box-shadow: 0 4px 15px rgba(247,160,26,0.3);
-        transition: all 0.3s ease; margin-bottom: 20px;
+      .input-group input:focus {
+        border-color: #f7a01a;
+        background: #fff;
+        box-shadow: 0 0 8px rgba(247, 160, 26, 0.1);
       }
-      button:hover { background: #d35400; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(247,160,26,0.4); }
-      button:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
-
-      .back-home { display: inline-block; font-size: 0.9rem; color: #555; text-decoration: none; font-weight: 600; transition: color 0.3s; }
-      .back-home i { margin-right: 5px; }
-      .back-home:hover { color: #f7a01a; }
-
+      .forgot {
+        font-size: 0.85rem;
+        text-align: right;
+        color: #888;
+        cursor: pointer;
+        display: block;
+        margin-top: -10px;
+        margin-bottom: 20px;
+        transition: color 0.3s;
+      }
+      .forgot:hover {
+        color: #f7a01a;
+      }
+      .msg-box {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 14px;
+        display: none;
+      }
+      .msg-box.error {
+        background: #fdedec;
+        color: #c0392b;
+        display: block;
+      }
+      .msg-box.success {
+        background: #eafaf1;
+        color: #1e8449;
+        display: block;
+      }
+      button.main-btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-family: "Poppins", sans-serif;
+        font-size: 1.05rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: #f7a01a;
+        box-shadow: 0 4px 15px rgba(247, 160, 26, 0.3);
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+      }
+      button.main-btn:hover {
+        background: #d35400;
+        transform: translateY(-2px);
+      }
+      button.main-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .back-home {
+        display: inline-block;
+        font-size: 0.9rem;
+        color: #555;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.3s;
+      }
+      .back-home i {
+        margin-right: 5px;
+      }
+      .back-home:hover {
+        color: #f7a01a;
+      }
       .modal-overlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000;
-        justify-content: center; align-items: center;
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
       }
-      .modal-card { width: 90%; max-width: 400px; margin: auto; }
-
-      .close-btn { position: absolute; right: 20px; top: 15px; font-size: 24px; color: #aaa; cursor: pointer; }
-      .close-btn:hover { color: #333; }
-
-      #loginMsg { font-size: 0.85rem; margin-bottom: 15px; min-height: 20px; }
-      #loginMsg.error { color: #e74c3c; }
-      #loginMsg.success { color: #27ae60; }
+      .modal-card {
+        width: 90%;
+        max-width: 400px;
+        margin: auto;
+      }
+      .close-btn {
+        position: absolute;
+        right: 20px;
+        top: 15px;
+        font-size: 24px;
+        color: #aaa;
+        cursor: pointer;
+        background: none;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        width: auto;
+      }
+      .close-btn:hover {
+        color: #333;
+      }
+      /* Toast */
+      #_tw {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 999999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+        max-width: 340px;
+      }
+      .ti {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 13px 18px;
+        border-radius: 10px;
+        font-family: Poppins, sans-serif;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #fff;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+        min-width: 220px;
+        pointer-events: all;
+        animation: tUp 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+        position: relative;
+        overflow: hidden;
+        line-height: 1.4;
+      }
+      .tb {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.4);
+        animation: tBar 3.5s linear forwards;
+      }
+      @keyframes tUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes tBar {
+        from {
+          width: 100%;
+        }
+        to {
+          width: 0%;
+        }
+      }
+      .to_ {
+        animation: tDn 0.3s ease forwards !important;
+      }
+      @keyframes tDn {
+        to {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+      }
     </style>
   </head>
-
   <body>
     <div class="container">
       <div class="card">
         <h2><i class="fa-solid fa-om"></i> Mandir Login</h2>
-
-        <div id="loginMsg"></div>
-
+        <div class="msg-box" id="loginMsg"></div>
         <div class="input-group">
-          <i class="fa-solid fa-phone"></i>
-          <input type="text" id="mobile" placeholder="Mobile Number" maxlength="10" />
+          <i class="icon fa-solid fa-phone"></i>
+          <input
+            type="text"
+            id="mobile"
+            placeholder="Mobile Number"
+            maxlength="10"
+          />
         </div>
-
         <div class="input-group">
-          <i class="fa-solid fa-lock"></i>
+          <i class="icon fa-solid fa-lock"></i>
           <input type="password" id="password" placeholder="Password" />
-          <i class="fa-solid fa-eye" id="togglePassword" style="position:absolute;right:15px;left:auto;cursor:pointer;color:#aaa;"></i>
+          <i
+            class="fa-solid fa-eye"
+            id="togglePassword"
+            style="
+              position: absolute;
+              right: 15px;
+              left: auto;
+              cursor: pointer;
+              color: #aaa;
+              top: 50%;
+              transform: translateY(-50%);
+            "
+          ></i>
         </div>
-
         <span class="forgot" onclick="openForgotModal()">Forgot password?</span>
-
-        <button id="loginBtn" onclick="login()">
+        <button class="main-btn" id="loginBtn" onclick="login()">
           <i class="fa-solid fa-right-to-bracket"></i> Secure Login
         </button>
-
-        <a href="index.html" class="back-home"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+        <a href="index.html" class="back-home"
+          ><i class="fa-solid fa-arrow-left"></i> Back to Home</a
+        >
       </div>
     </div>
 
     <!-- FORGOT PASSWORD MODAL -->
     <div id="forgotModal" class="modal-overlay">
       <div class="card modal-card">
-        <span class="close-btn" onclick="closeForgotModal()">&times;</span>
-
+        <button class="close-btn" onclick="closeForgotModal()">×</button>
         <div id="resetStep1">
-          <h2><i class="fa-solid fa-envelope-circle-check"></i> Verify Account</h2>
-          <p id="resetMsg" style="font-size:0.85rem;color:#666;margin-bottom:20px;"></p>
+          <h2>
+            <i class="fa-solid fa-envelope-circle-check"></i> Verify Account
+          </h2>
+          <div class="msg-box" id="resetMsg1"></div>
           <div class="input-group">
-            <i class="fa-solid fa-at"></i>
-            <input type="email" id="resetEmail" placeholder="Registered Email ID" />
+            <i class="icon fa-solid fa-at"></i>
+            <input
+              type="email"
+              id="resetEmail"
+              placeholder="Registered Email ID"
+            />
           </div>
-          <button onclick="sendOTP()"><i class="fa-solid fa-paper-plane"></i> Verify & Send OTP</button>
+          <button class="main-btn" onclick="sendOTP()">
+            <i class="fa-solid fa-paper-plane"></i> Verify & Send OTP
+          </button>
         </div>
-
-        <div id="resetStep2" style="display:none;">
+        <div id="resetStep2" style="display: none">
           <h2><i class="fa-solid fa-key"></i> New Password</h2>
-          <p style="font-size:0.85rem;color:#666;margin-bottom:20px;">Enter the 6-digit OTP sent to your email.</p>
+          <p style="font-size: 0.85rem; color: #666; margin-bottom: 16px">
+            Enter the 6-digit OTP sent to your email.
+          </p>
+          <div class="msg-box" id="resetMsg2"></div>
           <div class="input-group">
-            <i class="fa-solid fa-shield-halved"></i>
+            <i class="icon fa-solid fa-shield-halved"></i>
             <input type="number" id="inputOTP" placeholder="Enter OTP" />
           </div>
           <div class="input-group">
-            <i class="fa-solid fa-lock"></i>
-            <input type="password" id="newPassword" placeholder="New Password (min 6 chars)" />
+            <i class="icon fa-solid fa-lock"></i>
+            <input
+              type="password"
+              id="newPassword"
+              placeholder="New Password (min 6 chars)"
+            />
           </div>
-          <button onclick="verifyAndReset()"><i class="fa-solid fa-check-circle"></i> Update & Re-login</button>
+          <button class="main-btn" onclick="verifyAndReset()">
+            <i class="fa-solid fa-check-circle"></i> Update Password
+          </button>
         </div>
       </div>
     </div>
 
+    <div id="_tw"></div>
     <script src="config.js"></script>
-
     <script>
-      // ── SHA-256 (client-side hash matching server hashPassword)
-      async function sha256(str) {
-        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+      // ── inline toast for login page (before app.js loads)
+      function toast(msg, type) {
+        let wrap = document.getElementById("_tw");
+        const bg =
+          type === "error"
+            ? "#e74c3c"
+            : type === "warn"
+            ? "#e67e22"
+            : "#27ae60";
+        const icon = type === "error" ? "✕" : type === "warn" ? "⚠" : "✓";
+        let item = document.createElement("div");
+        item.className = "ti";
+        item.style.background = bg;
+        item.innerHTML = `<span style="font-size:16px;">${icon}</span><span style="flex:1;">${msg}</span><div class="tb"></div>`;
+        wrap.appendChild(item);
+        setTimeout(() => {
+          item.classList.add("to_");
+          setTimeout(() => item.remove(), 320);
+        }, 3500);
       }
-
-      function setMsg(text, type) {
-        let el = document.getElementById("loginMsg");
+      function setMsg(id, text, type) {
+        let el = document.getElementById(id);
         el.textContent = text;
-        el.className = type || "";
+        el.className = "msg-box " + (type || "");
+        if (!text) el.className = "msg-box";
       }
 
-      // ── LOGIN (password hashed before sending — FIX #1)
+      async function sha256(str) {
+        const buf = await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(str)
+        );
+        return Array.from(new Uint8Array(buf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
+
+      // ── LOGIN (FIX #1 — password hashed, no alert)
       async function login() {
         let mobile = document.getElementById("mobile").value.trim();
         let password = document.getElementById("password").value;
-
         if (!mobile || !password) {
-          setMsg("Please enter both mobile number and password.", "error");
+          setMsg(
+            "loginMsg",
+            "Please enter both mobile number and password.",
+            "error"
+          );
           return;
         }
-
         let btn = document.getElementById("loginBtn");
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
-        setMsg("", "");
-
+        btn.innerHTML =
+          '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
+        setMsg("loginMsg", "", "");
         try {
-          // Hash password client-side before sending (never send plain text)
           let hashedPwd = await sha256(password);
-
           await new Promise((resolve, reject) => {
             let cbName = "handleLogin_" + Date.now();
             let script = document.createElement("script");
             let done = false;
-
-            window[cbName] = function(res) {
+            window[cbName] = function (res) {
               if (done) return;
               done = true;
               clearTimeout(timer);
@@ -207,7 +424,6 @@
               script.remove();
               resolve(res);
             };
-
             let timer = setTimeout(() => {
               if (done) return;
               done = true;
@@ -215,8 +431,7 @@
               script.remove();
               reject(new Error("Request timed out."));
             }, 15000);
-
-            script.onerror = function() {
+            script.onerror = function () {
               if (done) return;
               done = true;
               clearTimeout(timer);
@@ -224,126 +439,171 @@
               script.remove();
               reject(new Error("Network error."));
             };
-
-            // Send hashed password, not plain text
-            script.src = API_URL + "?action=login&mobile=" + encodeURIComponent(mobile) + "&password=" + hashedPwd + "&callback=" + cbName;
+            script.src =
+              API_URL +
+              "?action=login&mobile=" +
+              encodeURIComponent(mobile) +
+              "&password=" +
+              hashedPwd +
+              "&callback=" +
+              cbName;
             document.body.appendChild(script);
-          }).then(res => {
+          }).then((res) => {
             if (res.status === "success") {
               let user = res.user;
               delete user.Password;
-
-              localStorage.setItem("session", JSON.stringify({
-                userId: user.UserId,
-                name: user.Name,
-                role: user.Role,
-                email: user.Email || "",
-                expiry: Date.now() + 30 * 60 * 1000
-              }));
-
-              setMsg("✓ Login successful! Redirecting...", "success");
+              localStorage.setItem(
+                "session",
+                JSON.stringify({
+                  userId: user.UserId,
+                  name: user.Name,
+                  role: user.Role,
+                  email: user.Email || "",
+                  expiry: Date.now() + 30 * 60 * 1000,
+                })
+              );
+              setMsg(
+                "loginMsg",
+                "✓ Login successful! Redirecting...",
+                "success"
+              );
               setTimeout(() => {
-                location.href = user.Role === "Admin" ? "admin.html" : "user.html";
+                location.href =
+                  user.Role === "Admin" ? "admin.html" : "user.html";
               }, 600);
-
             } else if (res.status === "error") {
-              setMsg("❌ " + (res.message || "Account issue."), "error");
+              setMsg(
+                "loginMsg",
+                "❌ " + (res.message || "Account issue."),
+                "error"
+              );
             } else {
-              setMsg("❌ Invalid mobile number or password.", "error");
+              setMsg(
+                "loginMsg",
+                "❌ Invalid mobile number or password.",
+                "error"
+              );
             }
           });
-
         } catch (err) {
-          setMsg("❌ " + err.message, "error");
+          setMsg("loginMsg", "❌ " + err.message, "error");
         } finally {
           btn.disabled = false;
-          btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Secure Login';
+          btn.innerHTML =
+            '<i class="fa-solid fa-right-to-bracket"></i> Secure Login';
         }
       }
 
-      // Allow Enter key to submit
-      document.addEventListener("keydown", function(e) {
+      document.addEventListener("keydown", (e) => {
         if (e.key === "Enter") login();
       });
 
-      // ── FORGOT PASSWORD MODAL
+      // ── FORGOT PASSWORD
       let targetUserId, currentMobile;
-
       function openForgotModal() {
         currentMobile = document.getElementById("mobile").value.trim();
         if (!currentMobile) {
-          setMsg("Please enter your Mobile Number first.", "error");
+          setMsg("loginMsg", "Please enter your Mobile Number first.", "error");
           return;
         }
-        document.getElementById("resetMsg").innerText = "Verifying account for: " + currentMobile;
+        setMsg("resetMsg1", "Verifying account for: " + currentMobile, "");
         document.getElementById("forgotModal").style.display = "flex";
         document.getElementById("resetStep1").style.display = "block";
         document.getElementById("resetStep2").style.display = "none";
       }
-
       function closeForgotModal() {
         document.getElementById("forgotModal").style.display = "none";
       }
 
       function sendOTP() {
         let email = document.getElementById("resetEmail").value.trim();
-        if (!email) return alert("Please enter your registered email address.");
-
+        if (!email) {
+          setMsg("resetMsg1", "Please enter your registered email.", "error");
+          return;
+        }
+        setMsg("resetMsg1", "Sending OTP...", "");
         let s = document.createElement("script");
-        s.src = API_URL + "?action=sendEmailOTP&email=" + encodeURIComponent(email) + "&mobile=" + encodeURIComponent(currentMobile) + "&callback=handleOTPSent";
+        s.src =
+          API_URL +
+          "?action=sendEmailOTP&email=" +
+          encodeURIComponent(email) +
+          "&mobile=" +
+          encodeURIComponent(currentMobile) +
+          "&callback=handleOTPSent";
         document.body.appendChild(s);
       }
-
       function handleOTPSent(res) {
         if (res.status === "success") {
           targetUserId = res.userId;
-          alert("✅ Account Verified! Please check your email for the OTP.");
+          toast("✅ Account verified! OTP sent to your email.");
           document.getElementById("resetStep1").style.display = "none";
           document.getElementById("resetStep2").style.display = "block";
         } else {
-          alert("❌ Error: " + res.message);
+          setMsg(
+            "resetMsg1",
+            "❌ " + (res.message || "Verification failed."),
+            "error"
+          );
         }
       }
 
-      // ── RESET PASSWORD — hashes new password before sending (FIX #4)
+      // FIX #4 — reset hashes new password before sending
       async function verifyAndReset() {
         let userOTP = document.getElementById("inputOTP").value.trim();
-        let newPass  = document.getElementById("newPassword").value;
-
-        if (!userOTP) return alert("Please enter the OTP sent to your email.");
-        if (!newPass || newPass.length < 6) return alert("Password must be at least 6 characters.");
-
-        // Hash the new password client-side before sending
+        let newPass = document.getElementById("newPassword").value;
+        if (!userOTP) {
+          setMsg("resetMsg2", "Please enter the OTP.", "error");
+          return;
+        }
+        if (!newPass || newPass.length < 6) {
+          setMsg(
+            "resetMsg2",
+            "Password must be at least 6 characters.",
+            "error"
+          );
+          return;
+        }
         let hashedNew = await sha256(newPass);
-
         let s = document.createElement("script");
-        s.src = API_URL + "?action=resetPassword&UserId=" + encodeURIComponent(targetUserId) + "&otp=" + encodeURIComponent(userOTP) + "&NewPassword=" + hashedNew + "&callback=handleResetDone";
+        s.src =
+          API_URL +
+          "?action=resetPassword&UserId=" +
+          encodeURIComponent(targetUserId) +
+          "&otp=" +
+          encodeURIComponent(userOTP) +
+          "&NewPassword=" +
+          hashedNew +
+          "&callback=handleResetDone";
         document.body.appendChild(s);
       }
-
       function handleResetDone(res) {
         if (res.status === "success") {
-          alert("✅ Password changed successfully! Please login again.");
+          toast("✅ Password changed! Please login again.");
           closeForgotModal();
           location.reload();
         } else {
-          alert("❌ " + (res.message || "Error updating password. Please contact Admin."));
+          setMsg(
+            "resetMsg2",
+            "❌ " + (res.message || "Invalid OTP. Please try again."),
+            "error"
+          );
         }
       }
 
-      // ── Toggle password visibility
-      document.getElementById("togglePassword").addEventListener("click", function () {
-        let p = document.getElementById("password");
-        if (p.type === "password") {
-          p.type = "text";
-          this.classList.replace("fa-eye", "fa-eye-slash");
-          this.style.color = "#f7a01a";
-        } else {
-          p.type = "password";
-          this.classList.replace("fa-eye-slash", "fa-eye");
-          this.style.color = "#aaa";
-        }
-      });
+      document
+        .getElementById("togglePassword")
+        .addEventListener("click", function () {
+          let p = document.getElementById("password");
+          if (p.type === "password") {
+            p.type = "text";
+            this.classList.replace("fa-eye", "fa-eye-slash");
+            this.style.color = "#f7a01a";
+          } else {
+            p.type = "password";
+            this.classList.replace("fa-eye-slash", "fa-eye");
+            this.style.color = "#aaa";
+          }
+        });
     </script>
   </body>
 </html>

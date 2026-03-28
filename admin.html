@@ -4,228 +4,604 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Panel - Mandir System</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
-      * { box-sizing: border-box; }
-      body { margin: 0; font-family: "Poppins", sans-serif; background: #f4f6f9; color: #333; }
-
-      /* LAYOUT */
-      .layout { display: flex; min-height: 100vh; }
-
-      /* SIDEBAR */
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: #f4f6f9;
+        color: #333;
+      }
+      .layout {
+        display: flex;
+        min-height: 100vh;
+      }
       .sidebar {
-        width: 260px; background: #334155; color: white;
-        display: flex; flex-direction: column;
-        box-shadow: 4px 0 15px rgba(0,0,0,0.1); z-index: 1000;
+        width: 260px;
+        background: #334155;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
         transition: left 0.3s ease;
       }
-      .sidebar h2 { text-align: center; color: #f7a01a; margin: 25px 0; font-weight: 700; font-size: 1.5rem; }
-      .sidebar ul { list-style: none; padding: 0; margin: 0; }
+      .sidebar h2 {
+        text-align: center;
+        color: #f7a01a;
+        margin: 25px 0;
+        font-weight: 700;
+        font-size: 1.5rem;
+      }
+      .sidebar ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
       .sidebar li {
-        padding: 15px 25px; cursor: pointer;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-        transition: all 0.3s ease; display: flex; align-items: center; gap: 12px; font-weight: 400;
+        padding: 15px 25px;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 400;
       }
-      .sidebar li:hover, .sidebar li.active-nav { background: #f7a01a; color: white; padding-left: 30px; }
-
-      /* MAIN */
-      .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
-
-      /* HEADER */
-      .header { background: white; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-      .header h3 { margin: 0; color: #946c44; font-weight: 600; }
-
-      /* BUTTONS */
+      .sidebar li:hover,
+      .sidebar li.active-nav {
+        background: #f7a01a;
+        color: white;
+        padding-left: 30px;
+      }
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        min-width: 0;
+      }
+      .header {
+        background: white;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        flex-wrap: wrap;
+      }
+      .header h3 {
+        margin: 0;
+        color: #946c44;
+        font-weight: 600;
+        font-size: 1rem;
+      }
       button {
-        padding: 10px 20px; background: #f7a01a; color: white; border: none;
-        border-radius: 8px; cursor: pointer; font-family: "Poppins", sans-serif;
-        font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(247,160,26,0.3);
+        padding: 10px 20px;
+        background: #f7a01a;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: "Poppins", sans-serif;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(247, 160, 26, 0.3);
       }
-      button:hover { background: #d35400; transform: translateY(-2px); }
-      button:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
-      .btn-small { padding: 6px 12px; font-size: 0.85rem; margin-right: 5px; box-shadow: none; }
-      .btn-danger { background: #e74c3c; box-shadow: 0 4px 10px rgba(231,76,60,0.3); }
-      .btn-danger:hover { background: #c0392b; }
-      .btn-secondary { background: #334155; }
-      .btn-secondary:hover { background: #1e293b; }
-
-      /* PAGES */
-      .page { display: none; padding: 30px; }
-      .page.active { display: block; animation: fadeIn 0.4s ease; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-      /* CARDS & GRIDS */
-      .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
-      #masterPage .grid-layout { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
-
-      .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-top: 4px solid #f7a01a; margin-bottom: 25px; }
-      .card h3 { margin-top: 0; color: #333; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-      .card h3 i { color: #f7a01a; }
-
-      /* DASHBOARD SUMMARY CARDS */
-      .card-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-left: 5px solid #f7a01a; text-align: center; transition: transform 0.3s ease; }
-      .card-box:hover { transform: translateY(-5px); }
-      .card-box h4 { margin: 0; color: #666; font-size: 1rem; font-weight: 600; }
-      .card-box h2 { margin: 10px 0 0; color: #333; font-size: 2.2rem; font-weight: 700; }
-
-      /* OVERLAY */
-      .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; z-index: 900; }
-      .overlay.active { display: block; }
-
-      /* FORMS & INPUTS */
-      input, select {
-        width: 100%; padding: 10px 15px; margin-bottom: 15px;
-        border: 1px solid #ddd; border-radius: 8px; font-family: "Poppins", sans-serif;
-        outline: none; transition: border-color 0.3s;
+      button:hover {
+        background: #d35400;
+        transform: translateY(-2px);
       }
-      input:focus, select:focus { border-color: #f7a01a; }
-      .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-
-      /* TABLES */
-      .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
-      table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-top: 10px; }
-      thead { background: #334155; color: white; }
-      th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; white-space: nowrap; }
-      tbody tr:hover { background: #fdfbf7; }
-      table input, table select { margin-bottom: 0; padding: 6px 10px; min-width: 140px; box-sizing: border-box; }
-
-      .action-btns { display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-end; }
-      .action-btns button { margin: 0 !important; flex-shrink: 0; }
-
-      /* LOADING OVERLAY */
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .btn-sm {
+        padding: 5px 10px;
+        font-size: 12px;
+        margin: 0;
+        box-shadow: none;
+      }
+      .btn-danger {
+        background: #e74c3c;
+        box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+      }
+      .btn-danger:hover {
+        background: #c0392b;
+      }
+      .btn-info {
+        background: #2980b9;
+        box-shadow: none;
+      }
+      .btn-info:hover {
+        background: #1a6fa0;
+      }
+      .btn-green {
+        background: #27ae60;
+        box-shadow: none;
+      }
+      .btn-green:hover {
+        background: #1e8449;
+      }
+      .btn-secondary {
+        background: #334155;
+      }
+      .btn-secondary:hover {
+        background: #1e293b;
+      }
+      .page {
+        display: none;
+        padding: 20px;
+      }
+      .page.active {
+        display: block;
+        animation: fadeIn 0.4s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .grid-layout {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .card {
+        background: white;
+        padding: 22px;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        border-top: 4px solid #f7a01a;
+        margin-bottom: 20px;
+      }
+      .card h3 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #f4f6f9;
+        padding-bottom: 10px;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1rem;
+      }
+      .card h3 i {
+        color: #f7a01a;
+      }
+      .card-box {
+        background: white;
+        padding: 22px;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        border-left: 5px solid #f7a01a;
+        text-align: center;
+        transition: transform 0.3s ease;
+      }
+      .card-box:hover {
+        transform: translateY(-5px);
+      }
+      .card-box h4 {
+        margin: 0;
+        color: #666;
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+      .card-box h2 {
+        margin: 10px 0 0;
+        color: #333;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        display: none;
+        z-index: 900;
+      }
+      .overlay.active {
+        display: block;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: "Poppins", sans-serif;
+        outline: none;
+        transition: border-color 0.3s;
+        font-size: 14px;
+      }
+      input:focus,
+      select:focus {
+        border-color: #f7a01a;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 4px;
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 14px;
+      }
+      @media (max-width: 540px) {
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 10px;
+        min-width: 500px;
+      }
+      thead {
+        background: #334155;
+        color: white;
+      }
+      th,
+      td {
+        padding: 11px 14px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      tbody tr:hover {
+        background: #fdfbf7;
+        cursor: pointer;
+      }
+      .action-btns {
+        display: flex;
+        gap: 6px;
+        flex-wrap: nowrap;
+        align-items: center;
+      }
       #loadingOverlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(255,255,255,0.8); z-index: 9999;
-        justify-content: center; align-items: center; flex-direction: column; gap: 15px;
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.85);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        gap: 15px;
       }
-      #loadingOverlay.show { display: flex; }
-      .spinner { width: 42px; height: 42px; border: 4px solid #f7a01a; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
-      @keyframes spin { to { transform: rotate(360deg); } }
-
-      /* MOBILE MENU */
-      #menuBtn { display: none; background: #f7a01a; color: white; border-radius: 8px; padding: 8px 12px; }
+      #loadingOverlay.show {
+        display: flex;
+      }
+      .spinner {
+        width: 42px;
+        height: 42px;
+        border: 4px solid #f7a01a;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #menuBtn {
+        display: none;
+        background: #f7a01a;
+        color: white;
+        border-radius: 8px;
+        padding: 8px 12px;
+        box-shadow: none;
+      }
       @media (max-width: 768px) {
-        #menuBtn { display: block; }
-        .sidebar { position: fixed; top: 0; left: -260px; width: 260px; height: 100%; z-index: 1000; background: #334155; transition: left 0.3s ease; }
-        .sidebar.active { left: 0; }
+        #menuBtn {
+          display: block;
+        }
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: -260px;
+          width: 260px;
+          height: 100%;
+          z-index: 1000;
+          background: #334155;
+          transition: left 0.3s ease;
+        }
+        .sidebar.active {
+          left: 0;
+        }
+        .page {
+          padding: 14px;
+        }
+        .card {
+          padding: 16px;
+        }
       }
-
-      /* BADGE */
-      .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-      .badge-green { background: #eafaf1; color: #27ae60; }
-      .badge-red { background: #fdedec; color: #e74c3c; }
-      .badge-blue { background: #ebf5fb; color: #2980b9; }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .badge-green {
+        background: #eafaf1;
+        color: #27ae60;
+      }
+      .badge-red {
+        background: #fdedec;
+        color: #e74c3c;
+      }
+      .amt-green {
+        color: #27ae60;
+        font-weight: 700;
+      }
+      .amt-red {
+        color: #e74c3c;
+        font-weight: 700;
+      }
+      .search-bar {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: "Poppins", sans-serif;
+        outline: none;
+        margin-bottom: 14px;
+        font-size: 13px;
+      }
+      .search-bar:focus {
+        border-color: #f7a01a;
+      }
+      .filter-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      @media (max-width: 600px) {
+        .filter-row {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
-
   <body>
-
-    <!-- Loading overlay -->
     <div id="loadingOverlay">
       <div class="spinner"></div>
-      <div style="font-family:Poppins,sans-serif; color:#334155; font-weight:600;">Loading data...</div>
+      <div
+        style="
+          font-family: Poppins, sans-serif;
+          color: #334155;
+          font-weight: 600;
+        "
+      >
+        Loading data...
+      </div>
     </div>
 
     <div class="layout">
       <div class="sidebar">
         <h2><i class="fa-solid fa-om"></i> Admin Panel</h2>
-        <ul id="navList">
-          <li onclick="showPage('home', this)" class="active-nav"><i class="fa-solid fa-house"></i> Home</li>
-          <li onclick="openDashboard(this)"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
-          <li onclick="showPage('contributionPage', this)"><i class="fa-solid fa-hand-holding-dollar"></i> Contribution</li>
-          <li onclick="showPage('expensePage', this)"><i class="fa-solid fa-money-bill-wave"></i> Expense</li>
-          <li onclick="showPage('usersPage', this)"><i class="fa-solid fa-users"></i> Manage Users</li>
-          <li onclick="showPage('masterPage', this)"><i class="fa-solid fa-database"></i> Master Data</li>
-          <li onclick="logout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</li>
+        <ul>
+          <li onclick="showPage('home',this)" class="active-nav">
+            <i class="fa-solid fa-house"></i> Home
+          </li>
+          <li onclick="openDashboard(this)">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
+          </li>
+          <li onclick="showPage('contributionPage',this)">
+            <i class="fa-solid fa-hand-holding-dollar"></i> Contribution
+          </li>
+          <li onclick="showPage('expensePage',this)">
+            <i class="fa-solid fa-money-bill-wave"></i> Expense
+          </li>
+          <li onclick="showPage('usersPage',this)">
+            <i class="fa-solid fa-users"></i> Manage Users
+          </li>
+          <li onclick="showPage('masterPage',this)">
+            <i class="fa-solid fa-database"></i> Master Data
+          </li>
+          <li onclick="logout()">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+          </li>
         </ul>
       </div>
       <div class="overlay" onclick="toggleSidebar()"></div>
 
       <div class="main">
         <div class="header">
-          <div style="display:flex;align-items:center;gap:10px;">
+          <div style="display: flex; align-items: center; gap: 10px">
             <button id="menuBtn" onclick="toggleSidebar()">☰</button>
-            <h3 id="welcomeUser"><i class="fa-solid fa-user-shield"></i> Welcome, Admin</h3>
+            <h3 id="welcomeUser">
+              <i class="fa-solid fa-user-shield"></i> Welcome, Admin
+            </h3>
           </div>
-          <button class="btn-danger" onclick="logout()"><i class="fa-solid fa-power-off"></i> Logout</button>
+          <button
+            class="btn-danger"
+            onclick="logout()"
+            style="padding: 8px 16px; font-size: 13px"
+          >
+            <i class="fa-solid fa-power-off"></i> Logout
+          </button>
         </div>
 
-        <!-- HOME PAGE -->
+        <!-- HOME -->
         <div id="home" class="page active">
           <div class="grid-layout">
             <div class="card-box">
               <h4>Total Members</h4>
-              <h2 id="totalUsers" style="color:#334155;">0</h2>
+              <h2 id="totalUsers" style="color: #334155">0</h2>
             </div>
             <div class="card-box">
-              <h4>Total Contributions (₹)</h4>
-              <h2 id="totalContribution" style="color:#27ae60;">0</h2>
+              <h4>Total Contributions</h4>
+              <h2
+                id="totalContribution"
+                style="color: #27ae60; font-size: 1.5rem"
+              >
+                ₹0
+              </h2>
             </div>
             <div class="card-box">
-              <h4>Total Expenses (₹)</h4>
-              <h2 id="totalExpense" style="color:#e74c3c;">0</h2>
+              <h4>Total Expenses</h4>
+              <h2 id="totalExpense" style="color: #e74c3c; font-size: 1.5rem">
+                ₹0
+              </h2>
             </div>
             <div class="card-box">
-              <h4>Net Balance (₹)</h4>
-              <h2 id="netBalance" style="color:#f7a01a;">0</h2>
+              <h4>Net Balance</h4>
+              <h2 id="netBalance" style="color: #f7a01a; font-size: 1.5rem">
+                ₹0
+              </h2>
             </div>
           </div>
         </div>
 
-        <!-- DASHBOARD (iframe) -->
+        <!-- DASHBOARD -->
         <div id="dashboardPage" class="page">
-          <iframe id="dashboardFrame" src="" style="width:100%;height:100vh;border:none;"></iframe>
+          <iframe
+            id="dashboardFrame"
+            src=""
+            style="width: 100%; height: 100vh; border: none"
+          ></iframe>
         </div>
 
-        <!-- CONTRIBUTIONS PAGE -->
+        <!-- CONTRIBUTIONS -->
         <div id="contributionPage" class="page">
           <div class="card">
             <h3><i class="fa-solid fa-plus-circle"></i> Add Contribution</h3>
             <div class="form-row">
-              <div><label>User</label><select id="user"></select></div>
-              <div><label>Amount (₹)</label><input id="amount" placeholder="Enter Amount" type="number" min="1" /></div>
-              <div><label>Month</label><select id="month"></select></div>
-            </div>
-            <div class="form-row">
-              <div><label>Year</label><select id="contribYear"></select></div>
-              <div><label>Contribution Type</label><select id="type"></select></div>
-              <div><label>Occasion</label><select id="occasion"></select></div>
-            </div>
-            <div class="form-row">
-              <div><label>Note / Remarks</label><input id="note" placeholder="Optional Note" /></div>
-            </div>
-            <button onclick="addContribution()"><i class="fa-solid fa-check"></i> Save Contribution</button>
-          </div>
-
-          <div class="card">
-            <h3><i class="fa-solid fa-list-ul"></i> Contribution Records</h3>
-            <div class="form-row" style="margin-bottom:15px;">
-              <div><input id="searchContrib" placeholder="🔍 Name or Mobile..." onkeyup="filterContributions()" /></div>
               <div>
-                <label style="font-size:11px;font-weight:bold;">From Date</label>
-                <input type="date" id="contribStart" onchange="filterContributions()" />
+                <label>User</label
+                ><select id="user"></select>
               </div>
               <div>
-                <label style="font-size:11px;font-weight:bold;">To Date</label>
-                <input type="date" id="contribEnd" onchange="filterContributions()" />
+                <label>Amount (₹)</label
+                ><input
+                  id="amount"
+                  placeholder="Enter Amount"
+                  type="number"
+                  min="1"
+                />
+              </div>
+              <div>
+                <label>Month</label
+                ><select id="month"></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div>
+                <label>Year</label
+                ><select id="contribYear"></select>
+              </div>
+              <div>
+                <label>Type</label
+                ><select id="type"></select>
+              </div>
+              <div>
+                <label>Occasion</label
+                ><select id="occasion"></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div style="grid-column: 1/-1">
+                <label>Note</label
+                ><input id="note" placeholder="Optional note" />
+              </div>
+            </div>
+            <button onclick="addContribution()">
+              <i class="fa-solid fa-check"></i> Save Contribution
+            </button>
+          </div>
+          <div class="card">
+            <h3>
+              <i class="fa-solid fa-list-ul"></i> Contribution Records
+              <span style="font-size: 11px; font-weight: 400; color: #999"
+                >(click row to view · edit/delete via buttons)</span
+              >
+            </h3>
+            <div class="filter-row">
+              <input
+                class="search-bar"
+                id="searchContrib"
+                placeholder="🔍 Search name, mobile, amount..."
+                onkeyup="filterContributions()"
+                style="margin: 0"
+              />
+              <div>
+                <label style="font-size: 11px">From Date</label
+                ><input
+                  type="date"
+                  id="contribStart"
+                  onchange="filterContributions()"
+                  style="margin: 0; padding: 8px 10px"
+                />
+              </div>
+              <div>
+                <label style="font-size: 11px">To Date</label
+                ><input
+                  type="date"
+                  id="contribEnd"
+                  onchange="filterContributions()"
+                  style="margin: 0; padding: 8px 10px"
+                />
               </div>
             </div>
             <div class="table-responsive">
               <table>
                 <thead>
                   <tr>
+                    <th>#</th>
                     <th>Name</th>
-                    <th>Amount (₹)</th>
+                    <th>Amount</th>
                     <th>Month</th>
                     <th>Year</th>
                     <th>Type</th>
                     <th>Date</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="tb"></tbody>
@@ -234,28 +610,64 @@
           </div>
         </div>
 
-        <!-- EXPENSES PAGE -->
+        <!-- EXPENSES -->
         <div id="expensePage" class="page">
           <div class="card">
             <h3><i class="fa-solid fa-file-invoice-dollar"></i> Add Expense</h3>
             <div class="form-row">
-              <div><label>Expense Title</label><input id="title" placeholder="e.g. Electricity Bill" /></div>
-              <div><label>Amount (₹)</label><input id="expAmount" placeholder="Enter Amount" type="number" min="1" /></div>
-              <div><label>Expense Type</label><select id="expenseType"></select></div>
+              <div>
+                <label>Title</label
+                ><input id="title" placeholder="e.g. Electricity Bill" />
+              </div>
+              <div>
+                <label>Amount (₹)</label
+                ><input
+                  id="expAmount"
+                  placeholder="Enter Amount"
+                  type="number"
+                  min="1"
+                />
+              </div>
+              <div>
+                <label>Expense Type</label
+                ><select id="expenseType"></select>
+              </div>
             </div>
             <div class="form-row">
-              <div><label>Year</label><select id="expYear"></select></div>
-              <div><label>Month</label><select id="expMonth"><option value="">None</option></select></div>
+              <div>
+                <label>Year</label
+                ><select id="expYear"></select>
+              </div>
+              <div>
+                <label>Month</label
+                ><select id="expMonth">
+                  <option value="">None</option>
+                </select>
+              </div>
             </div>
-            <button onclick="addExpense()"><i class="fa-solid fa-check"></i> Save Expense</button>
+            <button onclick="addExpense()">
+              <i class="fa-solid fa-check"></i> Save Expense
+            </button>
           </div>
-
           <div class="card">
-            <h3><i class="fa-solid fa-list-ul"></i> Expense Records</h3>
+            <h3>
+              <i class="fa-solid fa-list-ul"></i> Expense Records
+              <span style="font-size: 11px; font-weight: 400; color: #999"
+                >(click row to view · edit via buttons)</span
+              >
+            </h3>
             <div class="table-responsive">
               <table>
                 <thead>
-                  <tr><th>Title</th><th>Type</th><th>Month</th><th>Amount (₹)</th><th>Action</th></tr>
+                  <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Month</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
                 </thead>
                 <tbody id="expenseRecordsBody"></tbody>
               </table>
@@ -263,37 +675,74 @@
           </div>
         </div>
 
-        <!-- USERS PAGE -->
+        <!-- USERS -->
         <div id="usersPage" class="page">
           <div class="card">
             <h3><i class="fa-solid fa-user-plus"></i> Add New User</h3>
             <div class="form-row">
-              <div><label>Full Name</label><input id="u_name" placeholder="Name" /></div>
-              <div><label>Mobile Number</label><input id="u_mobile" type="tel" pattern="[0-9]{10}" maxlength="10" /></div>
-            </div>
-            <div class="form-row">
-              <div><label>Email ID</label><input id="u_email" placeholder="email@example.com" type="email" /></div>
-              <div><label>Password</label><input id="u_password" type="password" placeholder="Password (min 6 chars)" /></div>
+              <div>
+                <label>Full Name</label><input id="u_name" placeholder="Name" />
+              </div>
+              <div>
+                <label>Mobile</label
+                ><input id="u_mobile" type="tel" maxlength="10" />
+              </div>
             </div>
             <div class="form-row">
               <div>
-                <label>Role</label>
-                <select id="u_role">
+                <label>Email</label
+                ><input
+                  id="u_email"
+                  placeholder="email@example.com"
+                  type="email"
+                />
+              </div>
+              <div>
+                <label>Password</label
+                ><input
+                  id="u_password"
+                  type="password"
+                  placeholder="Min 6 chars"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div>
+                <label>Role</label
+                ><select id="u_role">
                   <option>User</option>
                   <option>Admin</option>
                 </select>
               </div>
             </div>
-            <button onclick="addUser()"><i class="fa-solid fa-user-check"></i> Add User</button>
+            <button onclick="addUser()">
+              <i class="fa-solid fa-user-check"></i> Add User
+            </button>
           </div>
-
           <div class="card">
-            <h3><i class="fa-solid fa-users-gear"></i> Manage Users</h3>
-            <input type="text" id="userSearchInput" placeholder="🔍 Search by Name or Mobile..." onkeyup="renderUsers()" style="margin-bottom:15px;" />
+            <h3>
+              <i class="fa-solid fa-users-gear"></i> Manage Users
+              <span style="font-size: 11px; font-weight: 400; color: #999"
+                >(click row to view · edit via button)</span
+              >
+            </h3>
+            <input
+              class="search-bar"
+              id="userSearchInput"
+              placeholder="🔍 Search by Name or Mobile..."
+              onkeyup="renderUsers()"
+            />
             <div class="table-responsive">
               <table>
                 <thead>
-                  <tr><th>Photo</th><th>Name</th><th>Mobile</th><th>Role</th><th>Status</th><th>Action</th></tr>
+                  <tr>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>Mobile</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
                 </thead>
                 <tbody id="userTable"></tbody>
               </table>
@@ -301,85 +750,123 @@
           </div>
         </div>
 
-        <!-- MASTER DATA PAGE -->
+        <!-- MASTER -->
         <div id="masterPage" class="page">
-          <div class="grid-layout">
+          <div
+            class="grid-layout"
+            style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))"
+          >
             <div class="card">
               <h3><i class="fa-solid fa-tags"></i> Contribution Types</h3>
-              <div style="display:flex;gap:10px;">
-                <input id="t_name" placeholder="New Type Name" />
-                <button onclick="addType()" style="width:100px;">Add</button>
+              <div style="display: flex; gap: 10px">
+                <input
+                  id="t_name"
+                  placeholder="New Type Name"
+                  style="margin: 0"
+                /><button
+                  onclick="addType()"
+                  style="width: 80px; padding: 10px"
+                >
+                  Add
+                </button>
               </div>
-              <div class="table-responsive"><table><tbody id="typeTable"></tbody></table></div>
+              <div class="table-responsive">
+                <table>
+                  <tbody id="typeTable"></tbody>
+                </table>
+              </div>
             </div>
             <div class="card">
               <h3><i class="fa-solid fa-calendar-star"></i> Occasions</h3>
-              <div style="display:flex;gap:10px;">
-                <input id="o_name" placeholder="New Occasion" />
-                <button onclick="addOccasion()" style="width:100px;">Add</button>
+              <div style="display: flex; gap: 10px">
+                <input
+                  id="o_name"
+                  placeholder="New Occasion"
+                  style="margin: 0"
+                /><button
+                  onclick="addOccasion()"
+                  style="width: 80px; padding: 10px"
+                >
+                  Add
+                </button>
               </div>
-              <div class="table-responsive"><table><tbody id="occasionTable"></tbody></table></div>
+              <div class="table-responsive">
+                <table>
+                  <tbody id="occasionTable"></tbody>
+                </table>
+              </div>
             </div>
             <div class="card">
               <h3><i class="fa-solid fa-receipt"></i> Expense Types</h3>
-              <div style="display:flex;gap:10px;">
-                <input id="e_name" placeholder="New Expense Type" />
-                <button onclick="addExpenseType()" style="width:100px;">Add</button>
+              <div style="display: flex; gap: 10px">
+                <input
+                  id="e_name"
+                  placeholder="New Expense Type"
+                  style="margin: 0"
+                /><button
+                  onclick="addExpenseType()"
+                  style="width: 80px; padding: 10px"
+                >
+                  Add
+                </button>
               </div>
-              <div class="table-responsive"><table><tbody id="expenseTable"></tbody></table></div>
+              <div class="table-responsive">
+                <table>
+                  <tbody id="expenseTable"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
-
-      </div><!-- end .main -->
-    </div><!-- end .layout -->
+      </div>
+    </div>
 
     <script src="config.js"></script>
     <script src="app.js"></script>
-
     <script>
-      /* ═══════════════════════════════════════════
-         SESSION & AUTH (FIX #3 — role verified)
-      ═══════════════════════════════════════════ */
-      function checkAdminSession() {
+      /* ── SESSION (FIX #2 — removed pageshow loop) ── */
+      (function () {
         let s = JSON.parse(localStorage.getItem("session"));
         if (!s || Date.now() > s.expiry || s.role !== "Admin") {
           localStorage.clear();
           location.replace("login.html");
-          return false;
+          return;
         }
         s.expiry = Date.now() + 30 * 60 * 1000;
         localStorage.setItem("session", JSON.stringify(s));
-        return true;
-      }
-      if (!checkAdminSession()) throw new Error("Not authorized");
-      window.addEventListener("pageshow", checkAdminSession);
+      })();
 
       function showUser() {
         let s = JSON.parse(localStorage.getItem("session"));
-        if (s) document.getElementById("welcomeUser").innerHTML = `<i class="fa-solid fa-user-shield"></i> Welcome, ${s.name}`;
+        if (s)
+          document.getElementById(
+            "welcomeUser"
+          ).innerHTML = `<i class="fa-solid fa-user-shield"></i> Welcome, ${s.name}`;
       }
-
       function logout() {
         localStorage.clear();
-        location.replace("login.html"); // FIX #31
+        location.replace("login.html");
       }
 
-      /* ═══════════════════════════════════════════
-         UI CONTROL
-      ═══════════════════════════════════════════ */
       function toggleSidebar() {
         document.querySelector(".sidebar").classList.toggle("active");
         document.querySelector(".overlay").classList.toggle("active");
-        document.body.style.overflow = document.querySelector(".sidebar").classList.contains("active") ? "hidden" : "auto";
+        document.body.style.overflow = document
+          .querySelector(".sidebar")
+          .classList.contains("active")
+          ? "hidden"
+          : "auto";
       }
-
-      function showPage(id, element) {
-        document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      function showPage(id, el) {
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("active"));
         document.getElementById(id).classList.add("active");
-        if (element) {
-          document.querySelectorAll(".sidebar li").forEach(li => li.classList.remove("active-nav"));
-          element.classList.add("active-nav");
+        if (el) {
+          document
+            .querySelectorAll(".sidebar li")
+            .forEach((l) => l.classList.remove("active-nav"));
+          el.classList.add("active-nav");
         }
         if (window.innerWidth < 768) {
           document.querySelector(".sidebar").classList.remove("active");
@@ -387,50 +874,63 @@
           document.body.style.overflow = "auto";
         }
       }
-
-      function openDashboard(element) {
-        showPage("dashboardPage", element);
-        let frame = document.getElementById("dashboardFrame");
-        if (!frame.src || frame.src === window.location.href) {
-          frame.src = "dashboard.html";
-        }
+      function openDashboard(el) {
+        showPage("dashboardPage", el);
+        let f = document.getElementById("dashboardFrame");
+        if (!f.src || f.src === window.location.href) f.src = "dashboard.html";
       }
-
       function setLoading(show) {
-        document.getElementById("loadingOverlay").classList.toggle("show", show);
+        document
+          .getElementById("loadingOverlay")
+          .classList.toggle("show", show);
       }
 
-      /* ═══════════════════════════════════════════
-         DATA VARIABLES
-      ═══════════════════════════════════════════ */
-      let users = [], data = [], types = [], expenseTypes = [], occasions = [], expenses = [];
+      /* ── DATA ── */
+      let users = [],
+        data = [],
+        types = [],
+        expenseTypes = [],
+        occasions = [],
+        expenses = [];
+      const MONTHS = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
 
-      /* ═══════════════════════════════════════════
-         SUMMARY (FIX #15, #19 — fmt() used)
-      ═══════════════════════════════════════════ */
       function loadSummary() {
         document.getElementById("totalUsers").innerText = users.length;
         let totalC = data.reduce((a, b) => a + Number(b.Amount || 0), 0);
         let totalE = expenses.reduce((a, b) => a + Number(b.Amount || 0), 0);
-        document.getElementById("totalContribution").innerText = fmt(totalC);
-        document.getElementById("totalExpense").innerText = fmt(totalE);
-        document.getElementById("netBalance").innerText = fmt(totalC - totalE);
+        document.getElementById("totalContribution").innerText =
+          "₹" + fmt(totalC);
+        document.getElementById("totalExpense").innerText = "₹" + fmt(totalE);
+        let net = totalC - totalE;
+        document.getElementById("netBalance").innerText =
+          "₹" + fmt(Math.abs(net));
+        document.getElementById("netBalance").style.color =
+          net >= 0 ? "#27ae60" : "#e74c3c";
       }
 
-      /* ═══════════════════════════════════════════
-         INIT
-      ═══════════════════════════════════════════ */
       async function init() {
         setLoading(true);
         try {
           let allData = (await getData("getAllData")) || {};
-          users        = allData.users        || [];
-          types        = allData.types        || [];
+          users = allData.users || [];
+          types = allData.types || [];
           expenseTypes = allData.expenseTypes || [];
-          occasions    = allData.occasions    || [];
-          data         = allData.contributions || [];
-          expenses     = allData.expenses     || [];
-
+          occasions = allData.occasions || [];
+          data = allData.contributions || [];
+          expenses = allData.expenses || [];
           showUser();
           loadMonths();
           loadYears();
@@ -452,97 +952,246 @@
         }
       }
 
-      /* ═══════════════════════════════════════════
-         LOAD DROPDOWNS
-      ═══════════════════════════════════════════ */
       function loadMonths() {
-        const m = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-        const options = m.map(x => `<option value="${x}">${x}</option>`).join("");
-        ["month", "expMonth", "filterContribMonth"].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.innerHTML = (id !== "month" ? '<option value="">All/None</option>' : "") + options;
+        const opts = MONTHS.map(
+          (x) => `<option value="${x}">${x}</option>`
+        ).join("");
+        ["month", "expMonth"].forEach((id) => {
+          let el = document.getElementById(id);
+          if (el)
+            el.innerHTML =
+              (id !== "month" ? '<option value="">None</option>' : "") + opts;
         });
       }
-
-      // FIX #23 — Year dropdown built from actual data, not hardcoded ±1
       function loadYears() {
         let years = new Set();
-        data.forEach(c => { let y = Number(c.Year); if (!isNaN(y) && y > 2000) years.add(y); });
-        expenses.forEach(e => { let y = Number(e.Year); if (!isNaN(y) && y > 2000) years.add(y); });
+        data.forEach((c) => {
+          let y = Number(c.Year);
+          if (!isNaN(y) && y > 2000) years.add(y);
+        });
+        expenses.forEach((e) => {
+          let y = Number(e.Year);
+          if (!isNaN(y) && y > 2000) years.add(y);
+        });
         let cur = new Date().getFullYear();
-        years.add(cur); years.add(cur + 1);
-        let sorted = Array.from(years).sort((a, b) => b - a);
-        let opts = sorted.map(y => `<option value="${y}">${y}</option>`).join("");
-        ["contribYear", "expYear"].forEach(id => {
+        years.add(cur);
+        years.add(cur + 1);
+        let opts = Array.from(years)
+          .sort((a, b) => b - a)
+          .map((y) => `<option value="${y}">${y}</option>`)
+          .join("");
+        ["contribYear", "expYear"].forEach((id) => {
           let el = document.getElementById(id);
-          if (el) { el.innerHTML = opts; el.value = cur; }
+          if (el) {
+            el.innerHTML = opts;
+            el.value = cur;
+          }
         });
       }
-
       function loadUsers() {
         document.getElementById("user").innerHTML = users
-          .filter(u => u.Status !== "Inactive")
-          .map(u => `<option value="${u.UserId}">${u.Name}</option>`).join("");
+          .filter((u) => u.Status !== "Inactive")
+          .map((u) => `<option value="${u.UserId}">${u.Name}</option>`)
+          .join("");
       }
-
       function loadTypes() {
         document.getElementById("type").innerHTML = types
-          .map(t => `<option value="${t.TypeId}">${t.TypeName}</option>`).join("");
+          .map((t) => `<option value="${t.TypeId}">${t.TypeName}</option>`)
+          .join("");
       }
-
       function loadExpenseTypes() {
         document.getElementById("expenseType").innerHTML = expenseTypes
-          .map(e => `<option value="${e.ExpenseTypeId}">${e.Name}</option>`).join("");
+          .map((e) => `<option value="${e.ExpenseTypeId}">${e.Name}</option>`)
+          .join("");
       }
-
       function loadOccasions() {
-        document.getElementById("occasion").innerHTML = `<option value="">None</option>` +
-          occasions.map(o => `<option value="${o.OccasionId}">${o.OccasionName}</option>`).join("");
+        document.getElementById("occasion").innerHTML =
+          '<option value="">None</option>' +
+          occasions
+            .map(
+              (o) =>
+                `<option value="${o.OccasionId}">${o.OccasionName}</option>`
+            )
+            .join("");
       }
 
-      /* ═══════════════════════════════════════════
-         RENDER CONTRIBUTIONS
-         FIX #20 — added Date + Year columns
-         FIX #11 — missing date no longer hides record
-      ═══════════════════════════════════════════ */
-      const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
+      /* ── RENDER CONTRIBUTIONS — view-only rows, edit via popup ── */
       function render(list) {
         if (!list) list = data;
-        document.getElementById("tb").innerHTML = list.map(c => {
-          let name = users.find(u => String(u.UserId) === String(c.UserId))?.Name || "Unknown";
-          let mOpt = MONTHS.map(x => `<option ${x === c.ForMonth ? "selected" : ""}>${x}</option>`).join("");
-          let tOpt = types.map(t => `<option value="${t.TypeId}" ${String(t.TypeId) === String(c.TypeId) ? "selected" : ""}>${t.TypeName}</option>`).join("");
-          return `
-  <tr>
-    <td><b>${escapeHtml(name)}</b></td>
-    <td><input type="number" value="${c.Amount}" id="amt_${c.Id}" style="min-width:90px;"></td>
-    <td><select id="mon_${c.Id}">${mOpt}</select></td>
-    <td><select id="yr_${c.Id}" style="min-width:75px;">${Array.from({length:3},(_,i)=>{let y=new Date().getFullYear()-1+i;return `<option ${String(c.Year)===String(y)?"selected":""}>${y}</option>`;}).join("")}</select></td>
-    <td><select id="type_${c.Id}">${tOpt}</select></td>
-    <td style="font-size:12px;color:#666;">${c.PaymentDate || "—"}</td>
-    <td>
-      <div class="action-btns">
-        <button class="btn-small" onclick="update('${c.Id}')"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn-small btn-danger" onclick="del('${c.Id}')"><i class="fa-solid fa-trash"></i></button>
-      </div>
-    </td>
-  </tr>`;
-        }).join("");
+        let n = 0;
+        document.getElementById("tb").innerHTML = list
+          .map((c) => {
+            n++;
+            let name =
+              users.find((u) => String(u.UserId) === String(c.UserId))?.Name ||
+              "Unknown";
+            let tName =
+              types.find((t) => String(t.TypeId) === String(c.TypeId))
+                ?.TypeName || "—";
+            let oName =
+              occasions.find(
+                (o) => String(o.OccasionId) === String(c.OccasionId)
+              )?.OccasionName || "";
+            return `<tr onclick="viewContribution('${
+              c.Id
+            }')" title="Click to view details">
+        <td>${n}</td>
+        <td><b>${escapeHtml(name)}</b></td>
+        <td class="amt-green">₹ ${fmt(c.Amount)}</td>
+        <td>${escapeHtml(c.ForMonth || "—")}</td>
+        <td>${escapeHtml(String(c.Year || "—"))}</td>
+        <td><span class="badge badge-green">${escapeHtml(tName)}</span></td>
+        <td style="font-size:12px;color:#888;">${c.PaymentDate || "—"}</td>
+        <td onclick="event.stopPropagation()">
+          <div class="action-btns">
+            <button class="btn-sm btn-info" onclick="showReceipt(${JSON.stringify(
+              c
+            ).replace(/"/g, "&quot;")},'${escapeHtml(name)}','${escapeHtml(
+              tName
+            )}','${escapeHtml(
+              oName
+            )}')" title="Receipt"><i class="fa-solid fa-receipt"></i></button>
+            <button class="btn-sm" onclick="openEditContrib('${
+              c.Id
+            }')" title="Edit"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-sm btn-danger" onclick="del('${
+              c.Id
+            }')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`;
+          })
+          .join("");
       }
 
-      // FIX #11 — records without PaymentDate are still shown; only date filter skipped
+      /* VIEW contribution detail popup */
+      function viewContribution(id) {
+        let c = data.find((x) => String(x.Id) === String(id));
+        if (!c) return;
+        let name =
+          users.find((u) => String(u.UserId) === String(c.UserId))?.Name ||
+          "Unknown";
+        let tName =
+          types.find((t) => String(t.TypeId) === String(c.TypeId))?.TypeName ||
+          "—";
+        let oName =
+          occasions.find((o) => String(o.OccasionId) === String(c.OccasionId))
+            ?.OccasionName || "—";
+        showDetailPopup(
+          "Contribution Details",
+          [
+            ["Receipt ID", escapeHtml(c.ReceiptID || "—")],
+            ["Donor Name", escapeHtml(name)],
+            [
+              "Amount",
+              "<span style='color:#27ae60;font-size:1.1rem;font-weight:700;'>₹ " +
+                fmt(c.Amount) +
+                "</span>",
+            ],
+            ["For Month", escapeHtml(c.ForMonth || "—")],
+            ["Year", escapeHtml(String(c.Year || "—"))],
+            [
+              "Type",
+              `<span class="badge badge-green">${escapeHtml(tName)}</span>`,
+            ],
+            ["Occasion", escapeHtml(oName)],
+            ["Note", escapeHtml(c.Note || "—")],
+            ["Date Recorded", escapeHtml(c.PaymentDate || "—")],
+          ],
+          `openEditContrib('${id}')`
+        );
+      }
+
+      /* EDIT contribution popup */
+      function openEditContrib(id) {
+        let c = data.find((x) => String(x.Id) === String(id));
+        if (!c) return;
+        let mOpts = MONTHS.map(
+          (x) => `<option ${x === c.ForMonth ? "selected" : ""}>${x}</option>`
+        ).join("");
+        let tOpts = types
+          .map(
+            (t) =>
+              `<option value="${t.TypeId}" ${
+                String(t.TypeId) === String(c.TypeId) ? "selected" : ""
+              }>${t.TypeName}</option>`
+          )
+          .join("");
+        let yOpts = Array.from(
+          new Set([
+            ...data.map((d) => Number(d.Year)),
+            new Date().getFullYear(),
+            new Date().getFullYear() + 1,
+          ])
+        )
+          .filter((y) => y > 2000)
+          .sort((a, b) => b - a)
+          .map(
+            (y) =>
+              `<option ${
+                String(c.Year) === String(y) ? "selected" : ""
+              }>${y}</option>`
+          )
+          .join("");
+        let html = `
+      <div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Contribution</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+      <div class="_mbdy">
+        <label class="_fl">Amount (₹)</label><input class="_fi" type="number" id="ec_amt" value="${c.Amount}"/>
+        <label class="_fl">Month</label><select class="_fi" id="ec_mon">${mOpts}</select>
+        <label class="_fl">Year</label><select class="_fi" id="ec_yr">${yOpts}</select>
+        <label class="_fl">Type</label><select class="_fi" id="ec_typ">${tOpts}</select>
+      </div>
+      <div class="_mft">
+        <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+        <button class="_mbtn" style="background:#f7a01a;" onclick="saveEditContrib('${id}')"><i class="fa-solid fa-check"></i> Save Changes</button>
+      </div>`;
+        openModal(html, "460px");
+      }
+      async function saveEditContrib(id) {
+        let amt = document.getElementById("ec_amt").value;
+        let mon = document.getElementById("ec_mon").value;
+        let yr = document.getElementById("ec_yr").value;
+        let typ = document.getElementById("ec_typ").value;
+        if (!amt || amt <= 0) {
+          toast("Please enter a valid amount.", "error");
+          return;
+        }
+        try {
+          let res = await postData({
+            action: "updateContribution",
+            Id: id,
+            Amount: amt,
+            ForMonth: mon,
+            Year: yr,
+            TypeId: typ,
+          });
+          if (res.status === "updated") {
+            toast("✅ Contribution updated.");
+            closeModal();
+            updateLocalData("contributions", id, {
+              Amount: amt,
+              ForMonth: mon,
+              Year: yr,
+              TypeId: typ,
+            });
+          } else toast("❌ Update failed.", "error");
+        } catch (err) {
+          toast("❌ " + err.message, "error");
+        }
+      }
+
       function filterContributions() {
-        const txt   = document.getElementById("searchContrib").value.toLowerCase();
+        const txt = document
+          .getElementById("searchContrib")
+          .value.toLowerCase();
         const start = document.getElementById("contribStart").value;
-        const end   = document.getElementById("contribEnd").value;
-
-        const filtered = data.filter(c => {
-          const user = users.find(u => String(u.UserId) === String(c.UserId));
-          const nameMatch = (user?.Name.toLowerCase() || "").includes(txt) ||
-                            String(user?.Mobile || "").includes(txt) ||
-                            String(c.Amount).includes(txt);
-
+        const end = document.getElementById("contribEnd").value;
+        const filtered = data.filter((c) => {
+          const user = users.find((u) => String(u.UserId) === String(c.UserId));
+          const nameMatch =
+            (user?.Name.toLowerCase() || "").includes(txt) ||
+            String(user?.Mobile || "").includes(txt) ||
+            String(c.Amount).includes(txt);
           let dateMatch = true;
           if ((start || end) && c.PaymentDate) {
             const parts = String(c.PaymentDate).split(" ")[0].split("-");
@@ -556,117 +1205,403 @@
         render(filtered);
       }
 
-      /* ═══════════════════════════════════════════
-         RENDER EXPENSES (FIX #32 — fmt)
-      ═══════════════════════════════════════════ */
+      /* ── RENDER EXPENSES — view-only rows ── */
       function renderExpenses() {
-        document.getElementById("expenseRecordsBody").innerHTML = expenses.map(e => {
-          let tOpt = expenseTypes.map(t =>
-            `<option value="${t.ExpenseTypeId}" ${String(t.ExpenseTypeId) === String(e.ExpenseTypeId) ? "selected" : ""}>${t.Name}</option>`
-          ).join("");
-          let savedMonth = e.ForMonth || e.Note || "";
-          let mOpt = MONTHS.map(x => `<option ${x === savedMonth ? "selected" : ""}>${x}</option>`).join("");
-          return `
-  <tr>
-    <td><input value="${escapeHtml(e.Title)}" id="eTitle_${e.Id}"></td>
-    <td><select id="eType_${e.Id}">${tOpt}</select></td>
-    <td><select id="eMon_${e.Id}"><option value="">None</option>${mOpt}</select></td>
-    <td><input type="number" value="${e.Amount}" id="eAmt_${e.Id}"></td>
-    <td>
-      <div class="action-btns">
-        <button class="btn-small" onclick="updateExpense('${e.Id}')"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn-small btn-danger" onclick="deleteExpense('${e.Id}')"><i class="fa-solid fa-trash"></i></button>
-      </div>
-    </td>
-  </tr>`;
-        }).join("");
+        let n = 0;
+        document.getElementById("expenseRecordsBody").innerHTML = expenses
+          .map((e) => {
+            n++;
+            let tName =
+              expenseTypes.find(
+                (t) => String(t.ExpenseTypeId) === String(e.ExpenseTypeId)
+              )?.Name || "—";
+            let mn = e.ForMonth || e.Note || "—";
+            return `<tr onclick="viewExpense('${
+              e.Id
+            }')" title="Click to view details">
+        <td>${n}</td>
+        <td><b>${escapeHtml(e.Title || "")}</b></td>
+        <td>${escapeHtml(tName)}</td>
+        <td>${escapeHtml(mn)}</td>
+        <td class="amt-red">₹ ${fmt(e.Amount)}</td>
+        <td style="font-size:12px;color:#888;">${e.PaymentDate || "—"}</td>
+        <td onclick="event.stopPropagation()">
+          <div class="action-btns">
+            <button class="btn-sm" onclick="openEditExpense('${
+              e.Id
+            }')" title="Edit"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-sm btn-danger" onclick="deleteExpense('${
+              e.Id
+            }')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`;
+          })
+          .join("");
       }
 
-      /* ═══════════════════════════════════════════
-         RENDER USERS
-         FIX #21 — table header now has Photo+Status
-      ═══════════════════════════════════════════ */
+      function viewExpense(id) {
+        let e = expenses.find((x) => String(x.Id) === String(id));
+        if (!e) return;
+        let tName =
+          expenseTypes.find(
+            (t) => String(t.ExpenseTypeId) === String(e.ExpenseTypeId)
+          )?.Name || "—";
+        showDetailPopup(
+          "Expense Details",
+          [
+            ["Title", escapeHtml(e.Title || "—")],
+            [
+              "Amount",
+              "<span style='color:#e74c3c;font-size:1.1rem;font-weight:700;'>₹ " +
+                fmt(e.Amount) +
+                "</span>",
+            ],
+            ["Type", escapeHtml(tName)],
+            ["Month", escapeHtml(e.ForMonth || e.Note || "—")],
+            ["Year", escapeHtml(String(e.Year || "—"))],
+            ["Date", escapeHtml(e.PaymentDate || "—")],
+          ],
+          `openEditExpense('${id}')`
+        );
+      }
+
+      function openEditExpense(id) {
+        let e = expenses.find((x) => String(x.Id) === String(id));
+        if (!e) return;
+        let tOpts = expenseTypes
+          .map(
+            (t) =>
+              `<option value="${t.ExpenseTypeId}" ${
+                String(t.ExpenseTypeId) === String(e.ExpenseTypeId)
+                  ? "selected"
+                  : ""
+              }>${t.Name}</option>`
+          )
+          .join("");
+        let mn = e.ForMonth || e.Note || "";
+        let mOpts = MONTHS.map(
+          (x) => `<option ${x === mn ? "selected" : ""}>${x}</option>`
+        ).join("");
+        let html = `
+      <div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Expense</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+      <div class="_mbdy">
+        <label class="_fl">Title</label><input class="_fi" id="ee_title" value="${escapeHtml(
+          e.Title || ""
+        )}"/>
+        <label class="_fl">Amount (₹)</label><input class="_fi" type="number" id="ee_amt" value="${
+          e.Amount
+        }"/>
+        <label class="_fl">Expense Type</label><select class="_fi" id="ee_type">${tOpts}</select>
+        <label class="_fl">Month</label><select class="_fi" id="ee_mon"><option value="">None</option>${mOpts}</select>
+      </div>
+      <div class="_mft">
+        <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+        <button class="_mbtn" style="background:#f7a01a;" onclick="saveEditExpense('${id}','${
+          e.Year || new Date().getFullYear()
+        }')"><i class="fa-solid fa-check"></i> Save Changes</button>
+      </div>`;
+        openModal(html, "460px");
+      }
+      async function saveEditExpense(id, yr) {
+        try {
+          let res = await postData({
+            action: "updateExpense",
+            Id: id,
+            Title: document.getElementById("ee_title").value,
+            Amount: document.getElementById("ee_amt").value,
+            ExpenseTypeId: document.getElementById("ee_type").value,
+            ForMonth: document.getElementById("ee_mon").value,
+            Year: yr,
+          });
+          toast(
+            res.status === "updated"
+              ? "✅ Expense updated."
+              : "❌ Update failed.",
+            res.status === "updated" ? "" : "error"
+          );
+          if (res.status === "updated") {
+            closeModal();
+            init();
+          }
+        } catch (err) {
+          toast("❌ " + err.message, "error");
+        }
+      }
+
+      /* ── RENDER USERS — view-only rows ── */
       function renderUsers() {
-        let searchVal = (document.getElementById("userSearchInput")?.value || "").toLowerCase();
+        let sv = (
+          document.getElementById("userSearchInput")?.value || ""
+        ).toLowerCase();
         document.getElementById("userTable").innerHTML = users
-          .filter(u => u.Name.toLowerCase().includes(searchVal) || String(u.Mobile || "").includes(searchVal))
-          .map(u => `
-  <tr>
-    <td><img src="${escapeHtml(u.PhotoURL || "")}" onerror="this.src=''" width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;"></td>
-    <td><input value="${escapeHtml(u.Name)}" id="name_${u.UserId}" style="min-width:120px;"></td>
-    <td><input value="${escapeHtml(String(u.Mobile || ""))}" id="mob_${u.UserId}" style="min-width:110px;"></td>
-    <td>
-      <select id="role_${u.UserId}" style="min-width:90px;">
-        <option ${u.Role === "User"  ? "selected" : ""}>User</option>
-        <option ${u.Role === "Admin" ? "selected" : ""}>Admin</option>
-      </select>
-    </td>
-    <td>
-      <select id="status_${u.UserId}" style="min-width:90px;">
-        <option ${u.Status === "Active"   ? "selected" : ""}>Active</option>
-        <option ${u.Status === "Inactive" ? "selected" : ""}>Inactive</option>
-      </select>
-    </td>
-    <td>
-      <div class="action-btns">
-        <button class="btn-small" onclick="updateUserFull('${u.UserId}')"><i class="fa-solid fa-save"></i></button>
-        <button class="btn-small btn-danger" onclick="deleteUser('${u.UserId}')"><i class="fa-solid fa-trash"></i></button>
-      </div>
-    </td>
-  </tr>`).join("");
+          .filter(
+            (u) =>
+              u.Name.toLowerCase().includes(sv) ||
+              String(u.Mobile || "").includes(sv)
+          )
+          .map(
+            (u) => `
+      <tr onclick="viewUser('${u.UserId}')" title="Click to view details">
+        <td><img src="${
+          u.PhotoURL ? escapeHtml(u.PhotoURL) : ""
+        }" onerror="this.style.display='none'" width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;"/></td>
+        <td><b>${escapeHtml(u.Name)}</b></td>
+        <td>${escapeHtml(String(u.Mobile || ""))}</td>
+        <td><span class="badge ${
+          u.Role === "Admin" ? "badge-red" : "badge-green"
+        }">${u.Role}</span></td>
+        <td><span class="badge ${
+          u.Status === "Active" ? "badge-green" : "badge-red"
+        }">${u.Status || "Active"}</span></td>
+        <td onclick="event.stopPropagation()">
+          <div class="action-btns">
+            <button class="btn-sm" onclick="openEditUser('${
+              u.UserId
+            }')"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-sm btn-danger" onclick="deleteUser('${
+              u.UserId
+            }')"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`
+          )
+          .join("");
       }
 
+      function viewUser(id) {
+        let u = users.find((x) => String(x.UserId) === String(id));
+        if (!u) return;
+        let contribTotal = data
+          .filter((c) => String(c.UserId) === id)
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        showDetailPopup(
+          "Member Details",
+          [
+            ["Name", escapeHtml(u.Name)],
+            ["Mobile", escapeHtml(String(u.Mobile || "—"))],
+            ["Email", escapeHtml(u.Email || "—")],
+            [
+              "Role",
+              `<span class="badge ${
+                u.Role === "Admin" ? "badge-red" : "badge-green"
+              }">${u.Role}</span>`,
+            ],
+            [
+              "Status",
+              `<span class="badge ${
+                u.Status === "Active" ? "badge-green" : "badge-red"
+              }">${u.Status || "Active"}</span>`,
+            ],
+            [
+              "Total Contributions",
+              "<span style='color:#27ae60;font-weight:700;'>₹ " +
+                fmt(contribTotal) +
+                "</span>",
+            ],
+          ],
+          `openEditUser('${id}')`
+        );
+      }
+
+      function openEditUser(id) {
+        let u = users.find((x) => String(x.UserId) === String(id));
+        if (!u) return;
+        let html = `
+      <div class="_mhdr"><h3><i class="fa-solid fa-user-pen"></i> Edit User</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+      <div class="_mbdy">
+        <label class="_fl">Full Name</label><input class="_fi" id="eu_name" value="${escapeHtml(
+          u.Name
+        )}"/>
+        <label class="_fl">Mobile <span style="color:#999;font-weight:400;">(read-only)</span></label>
+        <input class="_fi" value="${escapeHtml(
+          String(u.Mobile || "")
+        )}" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;"/>
+        <label class="_fl">Email</label><input class="_fi" id="eu_email" value="${escapeHtml(
+          u.Email || ""
+        )}"/>
+        <label class="_fl">Role</label>
+        <select class="_fi" id="eu_role"><option ${
+          u.Role === "User" ? "selected" : ""
+        }>User</option><option ${
+          u.Role === "Admin" ? "selected" : ""
+        }>Admin</option></select>
+        <label class="_fl">Status</label>
+        <select class="_fi" id="eu_status"><option ${
+          u.Status === "Active" ? "selected" : ""
+        }>Active</option><option ${
+          u.Status === "Inactive" ? "selected" : ""
+        }>Inactive</option></select>
+      </div>
+      <div class="_mft">
+        <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+        <button class="_mbtn" style="background:#f7a01a;" onclick="saveEditUser('${id}')"><i class="fa-solid fa-check"></i> Save Changes</button>
+      </div>`;
+        openModal(html, "460px");
+      }
+      async function saveEditUser(id) {
+        let s = JSON.parse(localStorage.getItem("session"));
+        let u = users.find((x) => String(x.UserId) === id);
+        try {
+          let res = await postData({
+            action: "updateUser",
+            UserId: id,
+            Name: document.getElementById("eu_name").value,
+            Mobile: u?.Mobile || "",
+            Role: document.getElementById("eu_role").value,
+            Status: document.getElementById("eu_status").value,
+            Email: document.getElementById("eu_email").value,
+            Password: "",
+            PhotoURL: u?.PhotoURL || "",
+            AdminName: s.name,
+          });
+          toast(
+            res.status === "updated" ? "✅ User updated." : "❌ Update failed.",
+            res.status === "updated" ? "" : "error"
+          );
+          if (res.status === "updated") {
+            closeModal();
+            init();
+          }
+        } catch (err) {
+          toast("❌ " + err.message, "error");
+        }
+      }
+
+      /* ── MASTER DATA TABLES ── */
       function renderTypes() {
-        document.getElementById("typeTable").innerHTML = types.map(t => `
-  <tr>
-    <td style="width:100%;"><input value="${escapeHtml(t.TypeName)}" id="t_${t.TypeId}"></td>
-    <td>
-      <div class="action-btns">
-        <button class="btn-small" onclick="updateType('${t.TypeId}')"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn-small btn-danger" onclick="deleteType('${t.TypeId}')"><i class="fa-solid fa-trash"></i></button>
-      </div>
-    </td>
-  </tr>`).join("");
+        document.getElementById("typeTable").innerHTML = types
+          .map(
+            (t) => `
+      <tr><td style="width:100%;font-size:13px;">${escapeHtml(t.TypeName)}</td>
+      <td><div class="action-btns">
+        <button class="btn-sm" onclick="openEditType('${
+          t.TypeId
+        }','${escapeHtml(
+              t.TypeName
+            )}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-sm btn-danger" onclick="deleteType('${
+          t.TypeId
+        }')"><i class="fa-solid fa-trash"></i></button>
+      </div></td></tr>`
+          )
+          .join("");
       }
-
       function renderOccasions() {
-        document.getElementById("occasionTable").innerHTML = occasions.map(o => `
-  <tr>
-    <td style="width:100%;"><input value="${escapeHtml(o.OccasionName)}" id="o_${o.OccasionId}"></td>
-    <td>
-      <div class="action-btns">
-        <button class="btn-small" onclick="updateOccasion('${o.OccasionId}')"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn-small btn-danger" onclick="deleteOccasion('${o.OccasionId}')"><i class="fa-solid fa-trash"></i></button>
-      </div>
-    </td>
-  </tr>`).join("");
+        document.getElementById("occasionTable").innerHTML = occasions
+          .map(
+            (o) => `
+      <tr><td style="width:100%;font-size:13px;">${escapeHtml(
+        o.OccasionName
+      )}</td>
+      <td><div class="action-btns">
+        <button class="btn-sm" onclick="openEditOccasion('${
+          o.OccasionId
+        }','${escapeHtml(
+              o.OccasionName
+            )}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-sm btn-danger" onclick="deleteOccasion('${
+          o.OccasionId
+        }')"><i class="fa-solid fa-trash"></i></button>
+      </div></td></tr>`
+          )
+          .join("");
       }
-
       function renderExpenseTypes() {
-        document.getElementById("expenseTable").innerHTML = expenseTypes.map(e => `
-  <tr>
-    <td style="width:100%;"><input value="${escapeHtml(e.Name)}" id="e_${e.ExpenseTypeId}"></td>
-    <td>
-      <div class="action-btns">
-        <button class="btn-small" onclick="updateExpenseType('${e.ExpenseTypeId}')"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn-small btn-danger" onclick="deleteExpenseType('${e.ExpenseTypeId}')"><i class="fa-solid fa-trash"></i></button>
-      </div>
-    </td>
-  </tr>`).join("");
+        document.getElementById("expenseTable").innerHTML = expenseTypes
+          .map(
+            (e) => `
+      <tr><td style="width:100%;font-size:13px;">${escapeHtml(e.Name)}</td>
+      <td><div class="action-btns">
+        <button class="btn-sm" onclick="openEditExpenseType('${
+          e.ExpenseTypeId
+        }','${escapeHtml(e.Name)}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-sm btn-danger" onclick="deleteExpenseType('${
+          e.ExpenseTypeId
+        }')"><i class="fa-solid fa-trash"></i></button>
+      </div></td></tr>`
+          )
+          .join("");
       }
 
-      /* ═══════════════════════════════════════════
-         CRUD — CONTRIBUTIONS
-         FIX #18 — toast() replaces alert()
-         FIX #34 — Year now sent on update
-      ═══════════════════════════════════════════ */
+      /* inline edit popups for master data */
+      function openEditType(id, val) {
+        openModal(
+          `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Type</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Type Name</label><input class="_fi" id="edit_val" value="${escapeHtml(
+            val
+          )}"/></div><div class="_mft"><button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button><button class="_mbtn" style="background:#f7a01a;" onclick="saveType('${id}')">Save</button></div>`,
+          "400px"
+        );
+      }
+      async function saveType(id) {
+        let res = await postData({
+          action: "updateType",
+          TypeId: id,
+          TypeName: document.getElementById("edit_val").value,
+        });
+        toast(
+          res.status === "updated" ? "✅ Updated." : "❌ Failed.",
+          res.status === "updated" ? "" : "error"
+        );
+        closeModal();
+        init();
+      }
+
+      function openEditOccasion(id, val) {
+        openModal(
+          `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Occasion</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Occasion Name</label><input class="_fi" id="edit_val" value="${escapeHtml(
+            val
+          )}"/></div><div class="_mft"><button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button><button class="_mbtn" style="background:#f7a01a;" onclick="saveOccasion('${id}')">Save</button></div>`,
+          "400px"
+        );
+      }
+      async function saveOccasion(id) {
+        let res = await postData({
+          action: "updateOccasion",
+          OccasionId: id,
+          OccasionName: document.getElementById("edit_val").value,
+        });
+        toast(
+          res.status === "updated" ? "✅ Updated." : "❌ Failed.",
+          res.status === "updated" ? "" : "error"
+        );
+        closeModal();
+        init();
+      }
+
+      function openEditExpenseType(id, val) {
+        openModal(
+          `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Expense Type</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Name</label><input class="_fi" id="edit_val" value="${escapeHtml(
+            val
+          )}"/></div><div class="_mft"><button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button><button class="_mbtn" style="background:#f7a01a;" onclick="saveExpType('${id}')">Save</button></div>`,
+          "400px"
+        );
+      }
+      async function saveExpType(id) {
+        let res = await postData({
+          action: "updateExpenseType",
+          ExpenseTypeId: id,
+          Name: document.getElementById("edit_val").value,
+        });
+        toast(
+          res.status === "updated" ? "✅ Updated." : "❌ Failed.",
+          res.status === "updated" ? "" : "error"
+        );
+        closeModal();
+        init();
+      }
+
+      /* ── CRUD — ADD ── */
       async function addContribution() {
         if (!checkSession()) return;
-        let userId = document.getElementById("user").value;
-        let amount = document.getElementById("amount").value;
-        let year   = document.getElementById("contribYear").value;
-        if (!userId || !amount || amount <= 0) return toast("Please select a user and enter a valid amount.", "error");
-
+        let userId = document.getElementById("user").value,
+          amount = document.getElementById("amount").value,
+          year = document.getElementById("contribYear").value;
+        if (!userId || !amount || amount <= 0)
+          return toast(
+            "Please select a user and enter a valid amount.",
+            "error"
+          );
         try {
           let res = await postData({
             action: "addContribution",
@@ -677,238 +1612,207 @@
             Year: year,
             TypeId: document.getElementById("type").value,
             OccasionId: document.getElementById("occasion").value,
-            Note: document.getElementById("note").value
+            Note: document.getElementById("note").value,
           });
           if (res.status === "success") {
             toast("✅ Contribution added! Receipt: " + res.receiptId);
             document.getElementById("amount").value = "";
             document.getElementById("note").value = "";
             init();
-          } else {
-            toast("❌ Failed to add contribution.", "error");
-          }
-        } catch (err) { toast("❌ " + err.message, "error"); }
+          } else toast("❌ Failed to add.", "error");
+        } catch (err) {
+          toast("❌ " + err.message, "error");
+        }
       }
-
-      async function update(id) {
-        let amt = document.getElementById("amt_"  + id).value;
-        let mon = document.getElementById("mon_"  + id).value;
-        let tid = document.getElementById("type_" + id).value;
-        let yr  = document.getElementById("yr_"   + id)?.value || new Date().getFullYear();
-        try {
-          let res = await postData({ action: "updateContribution", Id: id, Amount: amt, ForMonth: mon, TypeId: tid, Year: yr });
-          if (res.status === "updated") {
-            updateLocalData("contributions", id, { Amount: amt, ForMonth: mon, TypeId: tid, Year: yr });
-            toast("✅ Updated successfully.");
-          } else { toast("❌ Failed to update.", "error"); }
-        } catch (err) { toast("❌ " + err.message, "error"); }
-      }
-
       async function del(id) {
         if (!confirm("Delete this contribution?")) return;
         try {
           let res = await postData({ action: "deleteContribution", Id: id });
-          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed to delete.", res.status === "deleted" ? "" : "error");
+          toast(
+            res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+            res.status === "deleted" ? "" : "error"
+          );
           init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
+        } catch (err) {
+          toast("❌ " + err.message, "error");
+        }
       }
-
-      /* ═══════════════════════════════════════════
-         CRUD — EXPENSES
-      ═══════════════════════════════════════════ */
       async function addExpense() {
         if (!checkSession()) return;
-        let title  = document.getElementById("title").value;
-        let amount = document.getElementById("expAmount").value;
-        let year   = document.getElementById("expYear").value;
-        if (!title || !amount || amount <= 0) return toast("Please enter a title and a valid amount.", "error");
+        let title = document.getElementById("title").value,
+          amount = document.getElementById("expAmount").value,
+          year = document.getElementById("expYear").value;
+        if (!title || !amount || amount <= 0)
+          return toast("Please enter a title and amount.", "error");
         try {
           let res = await postData({
-            action: "addExpense", Id: Date.now(),
-            Title: title, Amount: amount, Year: year,
+            action: "addExpense",
+            Id: Date.now(),
+            Title: title,
+            Amount: amount,
+            Year: year,
             ForMonth: document.getElementById("expMonth").value,
-            ExpenseTypeId: document.getElementById("expenseType").value
+            ExpenseTypeId: document.getElementById("expenseType").value,
           });
-          toast(res.status === "success" ? "✅ Expense added." : "❌ Failed.", res.status === "success" ? "" : "error");
+          toast(
+            res.status === "success" ? "✅ Expense added." : "❌ Failed.",
+            res.status === "success" ? "" : "error"
+          );
           document.getElementById("title").value = "";
           document.getElementById("expAmount").value = "";
           init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
+        } catch (err) {
+          toast("❌ " + err.message, "error");
+        }
       }
-
-      async function updateExpense(id) {
-        if (!checkSession()) return;
-        let old = expenses.find(x => String(x.Id) === String(id));
-        try {
-          let res = await postData({
-            action: "updateExpense", Id: id,
-            Title: document.getElementById("eTitle_" + id).value,
-            Amount: document.getElementById("eAmt_"   + id).value,
-            ExpenseTypeId: document.getElementById("eType_" + id).value,
-            ForMonth: document.getElementById("eMon_" + id).value,
-            Year: old?.Year || new Date().getFullYear()
-          });
-          toast(res.status === "updated" ? "✅ Updated." : "❌ Failed.", res.status === "updated" ? "" : "error");
-          init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
-      }
-
       async function deleteExpense(id) {
-        if (!checkSession()) return;
         if (!confirm("Delete this expense?")) return;
         try {
           let res = await postData({ action: "deleteExpense", Id: id });
-          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          toast(
+            res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+            res.status === "deleted" ? "" : "error"
+          );
           init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
+        } catch (err) {
+          toast("❌ " + err.message, "error");
+        }
       }
-
-      /* ═══════════════════════════════════════════
-         CRUD — USERS
-      ═══════════════════════════════════════════ */
       async function addUser() {
         if (!checkSession()) return;
-        let name   = document.getElementById("u_name").value.trim();
-        let mobile = document.getElementById("u_mobile").value.trim();
-        let pass   = document.getElementById("u_password").value;
-        let email  = document.getElementById("u_email").value.trim();
-        let role   = document.getElementById("u_role").value;
-
-        if (!name || !mobile || !pass || !email) return toast("All fields including Email are required.", "error");
-        if (pass.length < 6) return toast("Password must be at least 6 characters.", "error");
-        if (!/^\d{10}$/.test(mobile)) return toast("Mobile must be exactly 10 digits.", "error");
-
+        let name = document.getElementById("u_name").value.trim(),
+          mobile = document.getElementById("u_mobile").value.trim(),
+          pass = document.getElementById("u_password").value,
+          email = document.getElementById("u_email").value.trim(),
+          role = document.getElementById("u_role").value;
+        if (!name || !mobile || !pass || !email)
+          return toast("All fields including Email are required.", "error");
+        if (pass.length < 6)
+          return toast("Password must be at least 6 characters.", "error");
+        if (!/^\d{10}$/.test(mobile))
+          return toast("Mobile must be exactly 10 digits.", "error");
         try {
           let res = await postData({
-            action: "addUser", UserId: Date.now(),
-            Name: name, Mobile: mobile,
-            Password: pass, Email: email, Role: role
+            action: "addUser",
+            UserId: Date.now(),
+            Name: name,
+            Mobile: mobile,
+            Password: pass,
+            Email: email,
+            Role: role,
           });
-          if (res.status === "error") { toast("❌ " + res.message, "error"); }
-          else { toast("✅ User added successfully."); init(); }
-        } catch (err) { toast("❌ " + err.message, "error"); }
+          if (res.status === "error") toast("❌ " + res.message, "error");
+          else {
+            toast("✅ User added.");
+            document.getElementById("u_name").value = "";
+            document.getElementById("u_mobile").value = "";
+            document.getElementById("u_password").value = "";
+            document.getElementById("u_email").value = "";
+            init();
+          }
+        } catch (err) {
+          toast("❌ " + err.message, "error");
+        }
       }
-
       async function deleteUser(id) {
-        if (!checkSession()) return;
-        if (!confirm("Delete user?")) return;
+        if (!confirm("Delete this user?")) return;
         try {
           let res = await postData({ action: "deleteUser", UserId: id });
-          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          toast(
+            res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+            res.status === "deleted" ? "" : "error"
+          );
           init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
+        } catch (err) {
+          toast("❌ " + err.message, "error");
+        }
       }
-
-      async function updateUserFull(id) {
-        if (!checkSession()) return;
-        let s = JSON.parse(localStorage.getItem("session"));
-        let currentUser = users.find(u => String(u.UserId) === String(id));
-        try {
-          let res = await postData({
-            action: "updateUser",
-            UserId: id,
-            Name:   document.getElementById("name_"   + id).value,
-            Mobile: document.getElementById("mob_"    + id).value,
-            Role:   document.getElementById("role_"   + id).value,
-            Status: document.getElementById("status_" + id).value,
-            Password: "",          // empty = keep existing (server logic preserved)
-            Email:    currentUser?.Email    || "",
-            PhotoURL: currentUser?.PhotoURL || "",
-            AdminName: s.name
-          });
-          toast(res.status === "updated" ? "✅ User updated & logged." : "❌ Update failed.", res.status === "updated" ? "" : "error");
-          if (res.status === "updated") init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
-      }
-
-      /* ═══════════════════════════════════════════
-         CRUD — MASTER DATA
-      ═══════════════════════════════════════════ */
       async function addType() {
-        if (!checkSession()) return;
-        let val = document.getElementById("t_name").value.trim();
-        if (!val) return toast("Please enter a type name.", "error");
+        let v = document.getElementById("t_name").value.trim();
+        if (!v) return;
         try {
-          let res = await postData({ action: "addType", TypeName: val });
-          toast(res.status === "success" ? "✅ Added." : "❌ Failed.", res.status === "success" ? "" : "error");
+          let r = await postData({ action: "addType", TypeName: v });
+          toast(
+            r.status === "success" ? "✅ Added." : "❌ Failed.",
+            r.status === "success" ? "" : "error"
+          );
           document.getElementById("t_name").value = "";
           init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
-      }
-      async function updateType(id) {
-        if (!checkSession()) return;
-        try {
-          let res = await postData({ action: "updateType", TypeId: id, TypeName: document.getElementById("t_" + id).value });
-          toast(res.status === "updated" ? "✅ Updated." : "❌ Failed.", res.status === "updated" ? "" : "error");
-          init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
+        } catch (e) {
+          toast("❌ " + e.message, "error");
+        }
       }
       async function deleteType(id) {
-        if (!checkSession()) return;
-        if (!confirm("Delete this type?")) return;
+        if (!confirm("Delete?")) return;
         try {
-          let res = await postData({ action: "deleteType", TypeId: id });
-          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          let r = await postData({ action: "deleteType", TypeId: id });
+          toast(
+            r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+            r.status === "deleted" ? "" : "error"
+          );
           init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
+        } catch (e) {
+          toast("❌ " + e.message, "error");
+        }
       }
-
       async function addOccasion() {
-        if (!checkSession()) return;
-        let val = document.getElementById("o_name").value.trim();
-        if (!val) return toast("Please enter an occasion name.", "error");
+        let v = document.getElementById("o_name").value.trim();
+        if (!v) return;
         try {
-          let res = await postData({ action: "addOccasion", OccasionName: val });
-          toast(res.status === "success" ? "✅ Added." : "❌ Failed.", res.status === "success" ? "" : "error");
+          let r = await postData({ action: "addOccasion", OccasionName: v });
+          toast(
+            r.status === "success" ? "✅ Added." : "❌ Failed.",
+            r.status === "success" ? "" : "error"
+          );
           document.getElementById("o_name").value = "";
           init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
-      }
-      async function updateOccasion(id) {
-        if (!checkSession()) return;
-        try {
-          let res = await postData({ action: "updateOccasion", OccasionId: id, OccasionName: document.getElementById("o_" + id).value });
-          toast(res.status === "updated" ? "✅ Updated." : "❌ Failed.", res.status === "updated" ? "" : "error");
-          init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
+        } catch (e) {
+          toast("❌ " + e.message, "error");
+        }
       }
       async function deleteOccasion(id) {
-        if (!checkSession()) return;
-        if (!confirm("Delete this occasion?")) return;
+        if (!confirm("Delete?")) return;
         try {
-          let res = await postData({ action: "deleteOccasion", OccasionId: id });
-          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          let r = await postData({ action: "deleteOccasion", OccasionId: id });
+          toast(
+            r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+            r.status === "deleted" ? "" : "error"
+          );
           init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
+        } catch (e) {
+          toast("❌ " + e.message, "error");
+        }
       }
-
       async function addExpenseType() {
-        if (!checkSession()) return;
-        let val = document.getElementById("e_name").value.trim();
-        if (!val) return toast("Please enter an expense type name.", "error");
+        let v = document.getElementById("e_name").value.trim();
+        if (!v) return;
         try {
-          let res = await postData({ action: "addExpenseType", Name: val });
-          toast(res.status === "success" ? "✅ Added." : "❌ Failed.", res.status === "success" ? "" : "error");
+          let r = await postData({ action: "addExpenseType", Name: v });
+          toast(
+            r.status === "success" ? "✅ Added." : "❌ Failed.",
+            r.status === "success" ? "" : "error"
+          );
           document.getElementById("e_name").value = "";
           init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
-      }
-      async function updateExpenseType(id) {
-        if (!checkSession()) return;
-        try {
-          let res = await postData({ action: "updateExpenseType", ExpenseTypeId: id, Name: document.getElementById("e_" + id).value });
-          toast(res.status === "updated" ? "✅ Updated." : "❌ Failed.", res.status === "updated" ? "" : "error");
-          init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
+        } catch (e) {
+          toast("❌ " + e.message, "error");
+        }
       }
       async function deleteExpenseType(id) {
-        if (!checkSession()) return;
-        if (!confirm("Delete this expense type?")) return;
+        if (!confirm("Delete?")) return;
         try {
-          let res = await postData({ action: "deleteExpenseType", ExpenseTypeId: id });
-          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          let r = await postData({
+            action: "deleteExpenseType",
+            ExpenseTypeId: id,
+          });
+          toast(
+            r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+            r.status === "deleted" ? "" : "error"
+          );
           init();
-        } catch (err) { toast("❌ " + err.message, "error"); }
+        } catch (e) {
+          toast("❌ " + e.message, "error");
+        }
       }
 
       init();
