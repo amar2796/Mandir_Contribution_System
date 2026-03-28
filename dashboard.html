@@ -176,20 +176,16 @@
 
     <div class="filter-group" style="margin-top: 15px;">
       <div>
-        <label><b>Month</b></label>
-        <select id="filterMonth"><option value="">All Months</option></select>
+        <label><b>User Search</b></label>
+        <input type="text" id="dashUserSearch" placeholder="Name or Mobile" onkeyup="applyFilter()">
       </div>
       <div>
-        <label><b>User</b></label>
-        <select id="filterUser"><option value="">All Users</option></select>
+        <label><b>Start Date</b></label>
+        <input type="date" id="dashStart" onchange="applyFilter()">
       </div>
       <div>
-        <label><b>Type</b></label>
-        <select id="filterType"><option value="">All Types</option></select>
-      </div>
-      <div>
-        <label><b>Occasion</b></label>
-        <select id="filterOccasion"><option value="">All Occasions</option></select>
+        <label><b>End Date</b></label>
+        <input type="date" id="dashEnd" onchange="applyFilter()">
       </div>
     </div>
     
@@ -281,30 +277,38 @@ window.addEventListener("pageshow", function(e){
 
 (function(){
   let s = JSON.parse(localStorage.getItem("session"));
-  if(!s || Date.now() > s.expiry || s.user.Role !== "Admin"){
-    localStorage.clear();
-    return location.replace("login.html");
-  }
+
+if (!s || Date.now() > s.expiry || s.role !== "Admin") {
+  localStorage.clear();
+  location.replace("login.html");
+}
   s.expiry = Date.now() + (30 * 60 * 1000);
   localStorage.setItem("session", JSON.stringify(s));
 })();
 
 // GLOBAL VARIABLES
+// dashboard.html - Fixed Recursion and Data Mapping
 let users=[], contributions=[], expenses=[], types=[], expenseTypes=[], occasions=[];
 let filteredC = [], filteredE = [];
-let months = ["January","February","March","April","May","June",
-"July","August","September","October","November","December"];
+let months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-// CALCULATION LOGIC
-function getOpeningBalance(year, yearConfig, contributions, expenses){
+// Fixed Opening Balance with a Hard Stop at 2024
+function getOpeningBalance(year, yearConfig, contributions, expenses) {
+  if (year < 2024 || !yearConfig || yearConfig.length === 0) return 0;
+
   let found = yearConfig.find(y => Number(y.Year) === Number(year));
-  if(found && found.OpeningBalance) return Number(found.OpeningBalance);
+  if (found && found.OpeningBalance !== "" && found.OpeningBalance !== undefined) {
+    return Number(found.OpeningBalance);
+  }
 
   let prevYear = year - 1;
   let prevOpening = getOpeningBalance(prevYear, yearConfig, contributions, expenses);
 
-  let prevContri = contributions.filter(c => Number(c.Year) === prevYear).reduce((s,c)=>s+Number(c.Amount||0),0);
-  let prevExpense = expenses.filter(e => Number(e.Year) === prevYear).reduce((s,e)=>s+Number(e.Amount||0),0);
+  let prevContri = contributions.filter(c => Number(c.Year) === prevYear)
+    .reduce((s, c) => s + Number(c.Amount || 0), 0);
+
+  let prevExpense = expenses.filter(e => Number(e.Year) === prevYear)
+    .reduce((s, e) => s + Number(e.Amount || 0), 0);
 
   return prevOpening + prevContri - prevExpense;
 }
@@ -312,63 +316,79 @@ function getOpeningBalance(year, yearConfig, contributions, expenses){
 // INIT
 // NEW, FAST INIT
 async function init(){
-  // 1. Make a SINGLE request to the server
   let allData = await getData("getAllData");
+  if(!allData) return;
 
-  // 2. Distribute the data instantly
   users = allData.users || [];
   contributions = allData.contributions || [];
   expenses = allData.expenses || [];
   types = allData.types || [];
   expenseTypes = allData.expenseTypes || [];
   occasions = allData.occasions || [];
-  
-  yearConfig = allData.yearConfig || [];
-  window.yearConfig = yearConfig;
+  window.yearConfig = allData.yearConfig || [];
 
-  // 3. Load UI
   loadYearDropdown();   
   loadFilters();
-  applyFilter();        
+  applyFilter();     
 }
 
 // LOAD FILTERS
 function loadFilters(){
-  document.getElementById("filterMonth").innerHTML =
-    `<option value="">All Months</option>` + months.map(m=>`<option value="${m}">${m}</option>`).join("");
+  const filterMonth = document.getElementById("filterMonth");
+  if(filterMonth) {
+    filterMonth.innerHTML = `<option value="">All Months</option>` + 
+      months.map(m => `<option value="${m}">${m}</option>`).join("");
+  }
 
-  document.getElementById("filterUser").innerHTML =
-    `<option value="">All Users</option>` + users.map(u=>`<option value="${u.UserId}">${u.Name}</option>`).join("");
-    
-  document.getElementById("filterType").innerHTML =
-    `<option value="">All Types</option>` + types.map(t=>`<option value="${t.TypeId}">${t.TypeName}</option>`).join("");
+  const filterUser = document.getElementById("filterUser");
+  if(filterUser) {
+    filterUser.innerHTML = `<option value="">All Users</option>` + 
+      users.map(u => `<option value="${u.UserId}">${u.Name}</option>`).join("");
+  }
+  
+  const filterType = document.getElementById("filterType");
+  if(filterType) {
+    filterType.innerHTML = `<option value="">All Types</option>` + 
+      types.map(t => `<option value="${t.TypeId}">${t.TypeName}</option>`).join("");
+  }
 
-  document.getElementById("filterOccasion").innerHTML =
-    `<option value="">All Occasions</option>` + occasions.map(o=>`<option value="${o.OccasionId}">${o.OccasionName}</option>`).join("");
+  const filterOccasion = document.getElementById("filterOccasion");
+  if(filterOccasion) {
+    filterOccasion.innerHTML = `<option value="">All Occasions</option>` + 
+      occasions.map(o => `<option value="${o.OccasionId}">${o.OccasionName}</option>`).join("");
+  }
 }
 
 // APPLY FILTERS
-function applyFilter(){
-  let m = document.getElementById("filterMonth").value;
-  let u = document.getElementById("filterUser").value;
-  let t = document.getElementById("filterType").value;
-  let o = document.getElementById("filterOccasion").value;
+function applyFilter() {
+  const txt = (document.getElementById("dashUserSearch")?.value || "").toLowerCase();
+  const start = document.getElementById("dashStart")?.value;
+  const end = document.getElementById("dashEnd")?.value;
+  const targetYear = Number(selectedYear);
 
   filteredC = contributions.filter(c => {
-    return (Number(c.Year) === selectedYear) &&
-           (!m || c.ForMonth === m) &&
-           (!u || String(c.UserId) === String(u)) &&
-           (!t || String(c.TypeId) === String(t)) &&
-           (!o || String(c.OccasionId) === String(o));
+    // FIX: Using 'Date' column from your sheet
+    if (!c.Date) return false; 
+
+    const user = users.find(u => String(u.UserId) === String(c.UserId));
+    const uMatch = !txt || (user?.Name.toLowerCase() || "").includes(txt) || String(user?.Mobile || "").includes(txt);
+    
+    const parts = String(c.Date).split(" ")[0].split("-");
+    const cDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    const dMatch = (!start || cDate >= start) && (!end || cDate <= end);
+    
+    return uMatch && dMatch && (Number(c.Year) === targetYear);
   });
 
   filteredE = expenses.filter(e => {
-    // If user or occasion is filtered, hide expenses entirely
-    if(u || o) return false;
+    // FIX: Using 'Date' column from your sheet
+    if (!e.Date) return false;
+
+    const parts = String(e.Date).split(" ")[0].split("-");
+    const eDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    const dMatch = (!start || eDate >= start) && (!end || eDate <= end);
     
-    // FIX: Look for both property names
-    let savedMonth = e.ForMonth || e.Note || "";
-    return (Number(e.Year) === selectedYear) && (!m || savedMonth === m);
+    return dMatch && (Number(e.Year) === targetYear);
   });
 
   renderAll();

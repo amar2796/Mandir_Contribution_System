@@ -1,463 +1,745 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>User Dashboard - Mandir System</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Dashboard - Mandir System</title>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
 
-  <style>
-    /* GLOBAL RESET & TYPOGRAPHY */
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background: #f4f6f9;
-      color: #333;
-    }
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
-    /* HEADER */
-    .header {
-      background: white;
-      padding: 15px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
+    <style>
+      /* GLOBAL RESET & TYPOGRAPHY */
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: #f4f6f9;
+        color: #333;
+      }
 
-    .header h3 { 
-      margin: 0; 
-      color: #946c44; 
-      font-weight: 600;
-    }
+      /* HEADER */
+      .header {
+        background: white;
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
 
-    .main-container {
-      padding: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+      .header h3 {
+        margin: 0;
+        color: #946c44;
+        font-weight: 600;
+      }
 
-    /* BUTTONS */
-    button {
-      padding: 10px 20px;
-      background: #f7a01a;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: 'Poppins', sans-serif;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 10px rgba(247, 160, 26, 0.3);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      justify-content: center;
-    }
-    button:hover { background: #d35400; transform: translateY(-2px); }
+      .main-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-    .btn-secondary { background: #334155; box-shadow: 0 4px 10px rgba(51, 65, 85, 0.3); }
-    .btn-secondary:hover { background: #1e293b; }
-    
-    .btn-danger { background: #e74c3c; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3); }
-    .btn-danger:hover { background: #c0392b; }
+      /* BUTTONS */
+      button {
+        padding: 10px 20px;
+        background: #f7a01a;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: "Poppins", sans-serif;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(247, 160, 26, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+      }
+      button:hover {
+        background: #d35400;
+        transform: translateY(-2px);
+      }
 
-    /* CARDS & GRIDS */
-    .grid-layout {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      margin-bottom: 20px;
-    }
+      .btn-secondary {
+        background: #334155;
+        box-shadow: 0 4px 10px rgba(51, 65, 85, 0.3);
+      }
+      .btn-secondary:hover {
+        background: #1e293b;
+      }
 
-    .card {
-      background: white;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-      border-top: 4px solid #f7a01a;
-      margin-bottom: 20px;
-    }
+      .btn-danger {
+        background: #e74c3c;
+        box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+      }
+      .btn-danger:hover {
+        background: #c0392b;
+      }
 
-    .card h3 {
-      margin-top: 0;
-      color: #333;
-      border-bottom: 2px solid #f4f6f9;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .card h3 i { color: #f7a01a; }
+      /* CARDS & GRIDS */
+      .grid-layout {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+      }
 
-    /* DASHBOARD TOTAL BANNER */
-    .total-banner {
-      background: linear-gradient(135deg, #27ae60, #2ecc71);
-      color: white;
-      padding: 25px;
-      border-radius: 12px;
-      text-align: center;
-      margin-bottom: 20px;
-      box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
-    }
-    .total-banner h2 { margin: 0; font-size: 1.2rem; font-weight: 400; opacity: 0.9; }
-    .total-banner h1 { margin: 10px 0 0 0; font-size: 2.8rem; font-weight: 700; }
+      .card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        border-top: 4px solid #f7a01a;
+        margin-bottom: 20px;
+      }
 
-    /* SUMMARY LISTS */
-    .summary-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px dashed #eee;
-      font-size: 1.05rem;
-    }
-    .summary-item:last-child { border-bottom: none; }
-    .summary-item b { color: #27ae60; }
+      .card h3 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #f4f6f9;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .card h3 i {
+        color: #f7a01a;
+      }
 
-    /* FORMS & INPUTS */
-    input, select {
-      width: 100%;
-      padding: 10px 15px;
-      margin-bottom: 15px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-family: 'Poppins', sans-serif;
-      outline: none;
-      transition: border-color 0.3s;
-    }
-    input:focus, select:focus { border-color: #f7a01a; }
-    
-    .filter-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      align-items: center;
-    }
+      /* DASHBOARD TOTAL BANNER */
+      .total-banner {
+        background: linear-gradient(135deg, #27ae60, #2ecc71);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
+      }
+      .total-banner h2 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 400;
+        opacity: 0.9;
+      }
+      .total-banner h1 {
+        margin: 10px 0 0 0;
+        font-size: 2.8rem;
+        font-weight: 700;
+      }
 
-    /* TABLES & ANTI-OVERLAP RULES */
-    .table-responsive { 
-      overflow-x: auto; 
-      -webkit-overflow-scrolling: touch; 
-      width: 100%;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-top: 10px;
-    }
-    
-    thead { background: #334155; color: white; }
-    
-    th, td { 
-      padding: 12px 15px; 
-      text-align: left; 
-      border-bottom: 1px solid #eee; 
-      white-space: nowrap; /* Prevents text from squishing */
-    }
-    
-    tbody tr:hover { background: #fdfbf7; }
-    .amount-col { font-weight: 600; color: #27ae60; }
+      /* SUMMARY LISTS */
+      .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px dashed #eee;
+        font-size: 1.05rem;
+      }
+      .summary-item:last-child {
+        border-bottom: none;
+      }
+      .summary-item b {
+        color: #27ae60;
+      }
 
-  </style>
-</head>
+      /* FORMS & INPUTS */
+      input,
+      select {
+        width: 100%;
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-family: "Poppins", sans-serif;
+        outline: none;
+        transition: border-color 0.3s;
+      }
+      input:focus,
+      select:focus {
+        border-color: #f7a01a;
+      }
 
-<body>
+      .filter-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        align-items: center;
+      }
 
-<div class="header">
-  <h3 id="welcomeUser"><i class="fa-solid fa-user"></i> Loading User...</h3>
-  <button class="btn-danger" onclick="logout()"><i class="fa-solid fa-power-off"></i> Logout</button>
-</div>
+      /* TABLES & ANTI-OVERLAP RULES */
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+      }
 
-<div class="main-container">
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 10px;
+      }
 
-  <div class="total-banner">
-    <h2><i class="fa-solid fa-hand-holding-dollar"></i> Your Total Contributions</h2>
-    <h1>₹ <span id="totalAmount">0</span></h1>
-  </div>
+      thead {
+        background: #334155;
+        color: white;
+      }
 
-  <div class="grid-layout">
-    <div class="card">
-      <h3><i class="fa-solid fa-calendar-days"></i> Month-wise Contribution</h3>
-      <div id="monthSummary"></div>
+      th,
+      td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        white-space: nowrap; /* Prevents text from squishing */
+      }
+
+      tbody tr:hover {
+        background: #fdfbf7;
+      }
+      .amount-col {
+        font-weight: 600;
+        color: #27ae60;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="header">
+      <h3 id="welcomeUser"><i class="fa-solid fa-user"></i> Loading User...</h3>
+      <button class="btn-danger" onclick="logout()">
+        <i class="fa-solid fa-power-off"></i> Logout
+      </button>
     </div>
 
-    <div class="card">
-      <h3><i class="fa-solid fa-chart-pie"></i> Type-wise Contribution</h3>
-      <div id="typeSummary"></div>
-    </div>
-  </div>
+    <div class="main-container">
+      <div class="grid-layout">
+        <div class="card" style="display: flex; align-items: center; gap: 20px">
+          <img
+            id="u_dash_photo"
+            src="https://via.placeholder.com/80"
+            width="80"
+            height="80"
+            style="
+              border-radius: 50%;
+              border: 3px solid #f7a01a;
+              object-fit: cover;
+            "
+          />
+          <div>
+            <h2 id="u_dash_name" style="margin: 0; color: #334155">
+              User Name
+            </h2>
+            <p id="u_dash_mobile" style="margin: 5px 0; color: #666"></p>
+            <button
+              class="btn-small"
+              onclick="editUserProfile()"
+              style="font-size: 12px; padding: 5px 10px"
+            >
+              Edit Profile
+            </button>
+          </div>
+        </div>
 
-  <div class="card">
-    <h3><i class="fa-solid fa-filter"></i> Search & Filters</h3>
-    
-    <div class="filter-row">
-      <div>
-        <label style="font-size: 0.9rem; color: #666; font-weight: 600;">Filter by Month</label>
-        <select id="filterMonth" style="margin-bottom: 0;"></select>
+        <div class="card" id="goalSection" style="display: none">
+          <h3 id="goalTitle">
+            <i class="fa-solid fa-bullseye"></i> Goal Progress
+          </h3>
+          <div
+            style="
+              background: #eee;
+              border-radius: 15px;
+              height: 25px;
+              width: 100%;
+              position: relative;
+              overflow: hidden;
+            "
+          >
+            <div
+              id="goalBar"
+              style="
+                background: linear-gradient(90deg, #f7a01a, #d35400);
+                height: 100%;
+                width: 0%;
+                transition: width 1s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 12px;
+              "
+            >
+              0%
+            </div>
+          </div>
+          <p
+            id="goalAmount"
+            style="margin: 10px 0 0; font-weight: 600; text-align: right"
+          ></p>
+        </div>
       </div>
-      <div>
-        <label style="font-size: 0.9rem; color: #666; font-weight: 600;">Filter by Type</label>
-        <select id="filterType" style="margin-bottom: 0;"></select>
+      <div class="total-banner">
+        <h2>
+          <i class="fa-solid fa-hand-holding-dollar"></i> Your Total
+          Contributions
+        </h2>
+        <h1>₹ <span id="totalAmount">0</span></h1>
       </div>
-      <div>
-        <label style="font-size: 0.9rem; color: #666; font-weight: 600;">Search Anything</label>
-        <input type="text" id="searchInput" placeholder="Search month, amount, type..." onkeyup="searchData()" style="margin-bottom: 0;">
+
+      <div class="grid-layout">
+        <div class="card">
+          <h3>
+            <i class="fa-solid fa-calendar-days"></i> Month-wise Contribution
+          </h3>
+          <div id="monthSummary"></div>
+        </div>
+
+        <div class="card">
+          <h3><i class="fa-solid fa-chart-pie"></i> Type-wise Contribution</h3>
+          <div id="typeSummary"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fa-solid fa-filter"></i> Search & Filters</h3>
+
+        <div class="filter-row">
+          <div>
+            <label style="font-size: 0.9rem; color: #666; font-weight: 600"
+              >Filter by Month</label
+            >
+            <select id="filterMonth" style="margin-bottom: 0"></select>
+          </div>
+          <div>
+            <label style="font-size: 0.9rem; color: #666; font-weight: 600"
+              >Filter by Type</label
+            >
+            <select id="filterType" style="margin-bottom: 0"></select>
+          </div>
+          <div>
+            <label style="font-size: 0.9rem; color: #666; font-weight: 600"
+              >Search Anything</label
+            >
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Search month, amount, type..."
+              onkeyup="searchData()"
+              style="margin-bottom: 0"
+            />
+          </div>
+        </div>
+
+        <div
+          style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap"
+        >
+          <button onclick="applyFilter()" style="flex: 1">
+            <i class="fa-solid fa-magnifying-glass"></i> Apply Filters
+          </button>
+          <button onclick="resetFilter()" class="btn-secondary" style="flex: 1">
+            <i class="fa-solid fa-rotate-right"></i> Reset
+          </button>
+          <button
+            onclick="exportPDF()"
+            style="
+              flex: 1;
+              background: #27ae60;
+              box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
+            "
+          >
+            <i class="fa-solid fa-file-pdf"></i> Export PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fa-solid fa-list-ul"></i> Your Contribution Records</h3>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Amount</th>
+                <th>Month</th>
+                <th>Type</th>
+                <th>Date Recorded</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
-      <button onclick="applyFilter()" style="flex: 1;"><i class="fa-solid fa-magnifying-glass"></i> Apply Filters</button>
-      <button onclick="resetFilter()" class="btn-secondary" style="flex: 1;"><i class="fa-solid fa-rotate-right"></i> Reset</button>
-      <button onclick="exportPDF()" style="flex: 1; background: #27ae60; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
-    </div>
-  </div>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
 
-  <div class="card">
-    <h3><i class="fa-solid fa-list-ul"></i> Your Contribution Records</h3>
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>Amount</th>
-            <th>Month</th>
-            <th>Type</th>
-            <th>Date Recorded</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-    </div>
-  </div>
+    <script>
+      // ================= SESSION & AUTH =================
+      (function () {
+        let s = JSON.parse(localStorage.getItem("session"));
 
-</div>
+        if (!s || Date.now() > s.expiry) {
+          localStorage.clear();
+          location.replace("login.html");
+          return;
+        }
 
-<script src="config.js"></script>
-<script src="app.js"></script>
+        // 🔥 FIX HERE
+        if (s.role !== "User") {
+          location.replace("admin.html");
+          return;
+        }
 
-<script>
-// ================= SESSION & AUTH =================
-(function(){
-  let s = JSON.parse(localStorage.getItem("session"));
-  if(!s || Date.now()>s.expiry){
-    localStorage.clear();
-    location.replace("login.html");
-  }
-  if(s.user.Role!=="User"){
-    location.replace("admin.html");
-  }
-  s.expiry = Date.now() + (30*60*1000);
-  localStorage.setItem("session", JSON.stringify(s));
-})();
+        // refresh session
+        s.expiry = Date.now() + 30 * 60 * 1000;
+        localStorage.setItem("session", JSON.stringify(s));
+      })();
 
-window.addEventListener("pageshow", ()=>{
-  if(!localStorage.getItem("session")){
-    location.replace("login.html");
-  }
-});
+      window.addEventListener("pageshow", () => {
+        if (!localStorage.getItem("session")) {
+          location.replace("login.html");
+        }
+      });
 
-function logout(){
-  localStorage.clear();
-  location.replace("index.html");
-}
+      function logout() {
+        localStorage.clear();
+        location.replace("index.html");
+      }
 
-// ================= VARIABLES =================
-let users=[], types=[], occasions=[], data=[];
-let months = ["January","February","March","April","May","June",
-"July","August","September","October","November","December"];
+      // ================= VARIABLES =================
+      let users = [],
+        types = [],
+        occasions = [],
+        data = [];
+      let months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
 
-function showUser(){
-  let s = JSON.parse(localStorage.getItem("session"));
-  document.getElementById("welcomeUser").innerHTML = `<i class="fa-solid fa-user"></i> Welcome, ${s.user.Name}`;
-}
+      function showUser() {
+        let s = JSON.parse(localStorage.getItem("session"));
+        document.getElementById(
+          "welcomeUser"
+        ).innerHTML = `<i class="fa-solid fa-user"></i> Welcome, ${s.name}`;
+      }
 
-// ================= FAST DATA INIT =================
-async function init(){
-  // Fetch all data instantly via optimized backend logic
-  let allData = await getData("getAllData") || {};
+      // Add this function to your user.html script section
+      async function editUserProfile() {
+        const s = JSON.parse(localStorage.getItem("session"));
 
-  users = allData.users || [];
-  types = allData.types || [];
-  occasions = allData.occasions || [];
+        // Create a hidden file input
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
 
-  let s = JSON.parse(localStorage.getItem("session"));
-  let allContributions = allData.contributions || [];
+        input.onchange = async (e) => {
+          const file = e.target.files[0];
+          const reader = new FileReader();
 
-  // Strictly filter only the logged-in user's data
-  data = allContributions.filter(c => String(c.UserId) === String(s.user.UserId));
+          reader.onload = async () => {
+            const base64 = reader.result;
 
-  showUser();
-  loadFilters();
-  renderTable(data);
+            // We use FETCH for POST because images are too large for JSONP
+            const response = await fetch(API_URL, {
+              method: "POST",
+              body: JSON.stringify({
+                action: "uploadAndSaveProfile",
+                UserId: s.userId,
+                Name: s.name,
+                Mobile: "",
+                Role: s.role,
+                Password: "",
+                Email: "",
+                Status: "Active",
+                AdminName: s.name,
+                fileName: "User_" + s.userId + ".png",
+              }),
+            });
 
-  calculateTotal();
-  renderMonthSummary();
-  renderTypeSummary();
-}
+            const res = await response.json();
+            if (res.status === "success") {
+              alert("✅ Photo Uploaded Successfully!");
+              logout(); // Refresh session
+            }
+          };
+          reader.readAsDataURL(file);
+        };
 
-// ================= UI & FILTER LOGIC =================
-function loadFilters(){
-  document.getElementById("filterMonth").innerHTML =
-    '<option value="">All Months</option>' +
-    months.map(m=>`<option value="${m}">${m}</option>`).join("");
+        input.click();
+      }
 
-  document.getElementById("filterType").innerHTML =
-    '<option value="">All Types</option>' +
-    types.map(t=>`<option value="${t.TypeId}">${t.TypeName}</option>`).join("");
-}
+      // ================= MERGED DATA INIT =================
+      async function init() {
+        // 1. Fetch all data instantly via optimized backend logic
+        let allData = (await getData("getAllData")) || {};
+        let s = JSON.parse(localStorage.getItem("session")); //
 
-function renderTable(list){
-  document.getElementById("tableBody").innerHTML = list.map(c=>{
-    let type = types.find(t=>String(t.TypeId)===String(c.TypeId))?.TypeName || "Contribution";
-    return `
+        // 2. Update Profile UI (NEW FEATURE)
+        document.getElementById("u_dash_name").innerText = s.name;
+        document.getElementById("u_dash_mobile").innerText = ""; // mobile not in session
+        document.getElementById("u_dash_photo").src =
+          "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><circle cx='40' cy='40' r='40' fill='%23f7a01a'/></svg>";
+        // 3. Store the data in variables
+        users = allData.users || [];
+        types = allData.types || [];
+        occasions = allData.occasions || []; //
+
+        let allContributions = allData.contributions || [];
+
+        // 4. Strictly filter only the logged-in user's data
+        data = allContributions.filter(
+          (c) => String(c.UserId) === String(s.userId)
+        );
+
+        // 5. Run all UI functions
+        showUser();
+        loadFilters();
+        renderTable(data);
+        calculateTotal();
+        renderMonthSummary();
+        renderTypeSummary();
+
+        // 6. New Goal Logic
+        renderGoals(allData.goals);
+      }
+
+      function renderGoals(goals) {
+        if (!goals) return;
+
+        // Look for the goal marked "Enabled" in the GOALS sheet
+        let activeGoal = goals.find((g) => g.Status === "Enabled");
+
+        if (activeGoal) {
+          document.getElementById("goalSection").style.display = "block";
+          document.getElementById(
+            "goalTitle"
+          ).innerHTML = `<i class="fa-solid fa-bullseye"></i> ${activeGoal.GoalName}`;
+
+          // Calculate progress percentage
+          let percent =
+            (activeGoal.CurrentAmount / activeGoal.TargetAmount) * 100;
+
+          // Update the visual bar
+          let bar = document.getElementById("goalBar");
+          bar.style.width = Math.min(percent, 100) + "%";
+          bar.innerText = Math.round(percent) + "%";
+
+          // Update the text amount
+          document.getElementById(
+            "goalAmount"
+          ).innerText = `₹${activeGoal.CurrentAmount} / ₹${activeGoal.TargetAmount}`;
+        }
+      }
+
+      // ================= UI & FILTER LOGIC =================
+      function loadFilters() {
+        document.getElementById("filterMonth").innerHTML =
+          '<option value="">All Months</option>' +
+          months.map((m) => `<option value="${m}">${m}</option>`).join("");
+
+        document.getElementById("filterType").innerHTML =
+          '<option value="">All Types</option>' +
+          types
+            .map((t) => `<option value="${t.TypeId}">${t.TypeName}</option>`)
+            .join("");
+      }
+
+      function renderTable(list) {
+        document.getElementById("tableBody").innerHTML = list
+          .map((c) => {
+            let type =
+              types.find((t) => String(t.TypeId) === String(c.TypeId))
+                ?.TypeName || "Contribution";
+            return `
     <tr>
       <td class="amount-col">₹ ${c.Amount}</td>
       <td><b>${c.ForMonth}</b></td>
-      <td><span style="background:#eafaf1; color:#27ae60; padding:4px 8px; border-radius:6px; font-size:0.85rem;">${type}</span></td>
+      <td>
+        <span style="font-size:0.75rem; color:#888; display:block;">${
+          c.ReceiptID || "N/A"
+        }</span>
+        <span style="background:#eafaf1; color:#27ae60; padding:2px 6px; border-radius:4px; font-size:0.8rem;">${type}</span>
+      </td>
       <td>${c.PaymentDate || "N/A"}</td>
     </tr>`;
-  }).join("") || `<tr><td colspan="4" style="text-align:center;">No records found</td></tr>`;
-}
-
-function calculateTotal(){
-  document.getElementById("totalAmount").innerText =
-    data.reduce((s,c)=>s+Number(c.Amount||0),0);
-}
-
-function renderMonthSummary(){
-  let map = {};
-  data.forEach(c=>{
-    map[c.ForMonth] = (map[c.ForMonth]||0)+Number(c.Amount||0);
-  });
-
-  let html = Object.keys(map).map(m=>
-    `<div class="summary-item"><span>${m}</span> <b>₹ ${map[m]}</b></div>`
-  ).join("");
-
-  document.getElementById("monthSummary").innerHTML = html || "<div style='text-align:center; color:#888;'>No data yet</div>";
-}
-
-function renderTypeSummary(){
-  let map = {};
-  data.forEach(c=>{
-    let t = types.find(x=>String(x.TypeId)===String(c.TypeId))?.TypeName || "Other";
-    map[t] = (map[t]||0)+Number(c.Amount||0);
-  });
-
-  let html = Object.keys(map).map(t=>
-    `<div class="summary-item"><span>${t}</span> <b>₹ ${map[t]}</b></div>`
-  ).join("");
-
-  document.getElementById("typeSummary").innerHTML = html || "<div style='text-align:center; color:#888;'>No data yet</div>";
-}
-
-function applyFilter(){
-  let m = document.getElementById("filterMonth").value;
-  let t = document.getElementById("filterType").value;
-
-  let f = data.filter(c=>{
-    return (!m || c.ForMonth===m) &&
-           (!t || String(c.TypeId)===String(t));
-  });
-
-  renderTable(f);
-}
-
-function resetFilter(){
-  document.getElementById("filterMonth").value="";
-  document.getElementById("filterType").value="";
-  document.getElementById("searchInput").value="";
-  renderTable(data);
-}
-
-function searchData(){
-  let txt = document.getElementById("searchInput").value.toLowerCase();
-
-  let f = data.filter(c=>{
-    let t = types.find(x=>String(x.TypeId)===String(c.TypeId))?.TypeName || "";
-    return t.toLowerCase().includes(txt) ||
-           c.ForMonth.toLowerCase().includes(txt) ||
-           String(c.Amount).includes(txt) || 
-           (c.PaymentDate && c.PaymentDate.toLowerCase().includes(txt));
-  });
-
-  renderTable(f);
-}
-
-// ================= PDF EXPORT =================
-function exportPDF(){
-  const { jsPDF } = window.jspdf;
-  let doc = new jsPDF();
-
-  let s = JSON.parse(localStorage.getItem("session"));
-  
-  doc.setFontSize(16);
-  doc.setTextColor(148, 108, 68);
-  doc.text("Mandir Contribution Report", 14, 15);
-  
-  doc.setFontSize(12);
-  doc.setTextColor(50, 50, 50);
-  doc.text(`User: ${s.user.Name}`, 14, 23);
-  
-  // Get currently displayed total from table
-  let currentTotal = 0;
-  let rows=[];
-  
-  document.querySelectorAll("#tableBody tr").forEach(tr=>{
-    let r=[];
-    let tds = tr.querySelectorAll("td");
-    
-    // Skip if it's the "No records found" row
-    if(tds.length === 1) return;
-    
-    tds.forEach((td,i)=>{
-      let txt = td.innerText;
-      if(i===0) {
-        txt = txt.replace("₹","Rs.").trim();
-        // Calculate total of filtered rows for PDF
-        let amt = Number(txt.replace("Rs.","").trim());
-        if(!isNaN(amt)) currentTotal += amt;
+          })
+          .join("");
       }
-      r.push(txt);
-    });
-    if(r.length > 0) rows.push(r);
-  });
 
-  doc.text(`Total Displayed: Rs. ${currentTotal}`, 14, 30);
+      function calculateTotal() {
+        document.getElementById("totalAmount").innerText = data.reduce(
+          (s, c) => s + Number(c.Amount || 0),
+          0
+        );
+      }
 
-  if(rows.length > 0) {
-    doc.autoTable({
-      head:[["Amount", "Month", "Type", "Date Recorded"]],
-      body:rows,
-      startY:35,
-      theme: 'grid',
-      headStyles: { fillColor: [51, 65, 85] }
-    });
-  } else {
-    doc.text("No transactions available.", 14, 40);
-  }
+      function renderMonthSummary() {
+        let map = {};
+        data.forEach((c) => {
+          map[c.ForMonth] = (map[c.ForMonth] || 0) + Number(c.Amount || 0);
+        });
 
-  doc.save(`My_Mandir_Report_${Date.now()}.pdf`);
-}
+        let html = Object.keys(map)
+          .map(
+            (m) =>
+              `<div class="summary-item"><span>${m}</span> <b>₹ ${map[m]}</b></div>`
+          )
+          .join("");
 
-// START
-init();
+        document.getElementById("monthSummary").innerHTML =
+          html ||
+          "<div style='text-align:center; color:#888;'>No data yet</div>";
+      }
 
-</script>
+      function renderTypeSummary() {
+        let map = {};
+        data.forEach((c) => {
+          let t =
+            types.find((x) => String(x.TypeId) === String(c.TypeId))
+              ?.TypeName || "Other";
+          map[t] = (map[t] || 0) + Number(c.Amount || 0);
+        });
 
-</body>
+        let html = Object.keys(map)
+          .map(
+            (t) =>
+              `<div class="summary-item"><span>${t}</span> <b>₹ ${map[t]}</b></div>`
+          )
+          .join("");
+
+        document.getElementById("typeSummary").innerHTML =
+          html ||
+          "<div style='text-align:center; color:#888;'>No data yet</div>";
+      }
+
+      function applyFilter() {
+        let m = document.getElementById("filterMonth").value;
+        let t = document.getElementById("filterType").value;
+
+        let f = data.filter((c) => {
+          return (
+            (!m || c.ForMonth === m) && (!t || String(c.TypeId) === String(t))
+          );
+        });
+
+        renderTable(f);
+      }
+
+      function resetFilter() {
+        document.getElementById("filterMonth").value = "";
+        document.getElementById("filterType").value = "";
+        document.getElementById("searchInput").value = "";
+        renderTable(data);
+      }
+
+      function searchData() {
+        let txt = document.getElementById("searchInput").value.toLowerCase();
+
+        let f = data.filter((c) => {
+          let t =
+            types.find((x) => String(x.TypeId) === String(c.TypeId))
+              ?.TypeName || "";
+          return (
+            t.toLowerCase().includes(txt) ||
+            c.ForMonth.toLowerCase().includes(txt) ||
+            String(c.Amount).includes(txt) ||
+            (c.PaymentDate && c.PaymentDate.toLowerCase().includes(txt))
+          );
+        });
+
+        renderTable(f);
+      }
+
+      // ================= PDF EXPORT =================
+      function exportPDF() {
+        const { jsPDF } = window.jspdf;
+        let doc = new jsPDF();
+
+        let s = JSON.parse(localStorage.getItem("session"));
+
+        doc.setFontSize(16);
+        doc.setTextColor(148, 108, 68);
+        doc.text("Mandir Contribution Report", 14, 15);
+
+        doc.setFontSize(12);
+        doc.setTextColor(50, 50, 50);
+        doc.text(`User: ${s.name}`, 14, 23);
+
+        // Get currently displayed total from table
+        let currentTotal = 0;
+        let rows = [];
+
+        document.querySelectorAll("#tableBody tr").forEach((tr) => {
+          let r = [];
+          let tds = tr.querySelectorAll("td");
+
+          // Skip if it's the "No records found" row
+          if (tds.length === 1) return;
+
+          tds.forEach((td, i) => {
+            let txt = td.innerText;
+            if (i === 0) {
+              txt = txt.replace("₹", "Rs.").trim();
+              // Calculate total of filtered rows for PDF
+              let amt = Number(txt.replace("Rs.", "").trim());
+              if (!isNaN(amt)) currentTotal += amt;
+            }
+            r.push(txt);
+          });
+          if (r.length > 0) rows.push(r);
+        });
+
+        doc.text(`Total Displayed: Rs. ${currentTotal}`, 14, 30);
+
+        if (rows.length > 0) {
+          doc.autoTable({
+            head: [["Amount", "Month", "Type", "Date Recorded"]],
+            body: rows,
+            startY: 35,
+            theme: "grid",
+            headStyles: { fillColor: [51, 65, 85] },
+          });
+        } else {
+          doc.text("No transactions available.", 14, 40);
+        }
+
+        doc.save(`My_Mandir_Report_${Date.now()}.pdf`);
+      }
+
+      // START
+      init();
+    </script>
+  </body>
 </html>

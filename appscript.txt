@@ -4,75 +4,97 @@ const SHEETS = {
   OCCASIONS: "OCCASIONS", // ✅ ADDED
   EXPENSE_TYPES: "EXPENSE_TYPES",
   CONTRIBUTIONS: "CONTRIBUTIONS",
-  EXPENSES: "EXPENSES"
+  EXPENSES: "EXPENSES",
+  AUDIT: "AUDIT_LOGS",
+  GOALS: "GOALS"
 };
+
+function hashPassword(pwd) {
+  const raw = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    pwd
+  );
+  return raw.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+}
+
+// 1. AUTOMATIC BACKUP (Run this via a Time-Trigger)
+function autoBackupSystem() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const folder = DriveApp.getRootFolder(); // Or a specific folder ID
+  const name = "Backup_Mandir_" + Utilities.formatDate(new Date(), "GMT+5:30", "yyyy-MM-dd");
+  DriveApp.getFileById(ss.getId()).makeCopy(name, folder);
+}
+
+// 2. AUDIT LOGGING HELPER
+function logAction(adminName, action, details) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.AUDIT);
+  const timestamp = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+  sheet.appendRow([timestamp, adminName, action, details]);
+}
+
+
 
 // FORMAT DATE
 function formatDate() {
-  let d = new Date();
-
-  let day = String(d.getDate()).padStart(2, '0');
-  let month = String(d.getMonth() + 1).padStart(2, '0');
-  let year = d.getFullYear();
-
-  let hh = String(d.getHours()).padStart(2, '0');
-  let mm = String(d.getMinutes()).padStart(2, '0');
-  let ss = String(d.getSeconds()).padStart(2, '0');
-
-  return `${day}-${month}-${year} ${hh}:${mm}:${ss}`;
+  return Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
 }
 
 // COMMON
-function getSheetData(name){
+function getSheetData(name) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   const data = sheet.getDataRange().getValues();
   const headers = data.shift();
 
-  return data.map(r=>{
-    let o={};
-    headers.forEach((h,i)=>o[h]=r[i]);
+  return data.map(r => {
+    let o = {};
+    headers.forEach((h, i) => o[h] = r[i]);
     return o;
   });
 }
 
 // MAIN
-function doGet(e){
-
-
+function doGet(e) {
   const action = e.parameter.action;
   const callback = e.parameter.callback || "cb";
 
   let result = {};
 
-  // LOGIN
-  if(action==="login"){
-    let users = getSheetData(SHEETS.USERS);
+  // LOGIN WITH STATUS CHECK
+ if (action === "login") {
+  let users = getSheetData(SHEETS.USERS);
 
-    let user = users.find(u =>
-      String(u.Mobile) === String(e.parameter.mobile) &&
-      String(u.Password) === String(e.parameter.password)
-    );
+  let hashed = hashPassword(e.parameter.password);
 
-    result = user ? {status:"success", user} : {status:"fail"};
+  let user = users.find(u =>
+    String(u.Mobile) === String(e.parameter.mobile) &&
+    String(u.Password) === hashed
+  );
+
+  if (user && user.Status === "Inactive") {
+    result = { status: "error", message: "Account is Deactivated." };
+  } else {
+    result = user ? { status: "success", user } : { status: "fail" };
   }
+}
+
 
   // ===== GET DATA =====
-  else if(action==="getUsers") result = getSheetData(SHEETS.USERS);
-  else if(action==="getTypes") result = getSheetData(SHEETS.TYPES);
+  else if (action === "getUsers") result = getSheetData(SHEETS.USERS);
+  else if (action === "getTypes") result = getSheetData(SHEETS.TYPES);
 
   // ✅ FIXED NAME (MATCH FRONTEND)
-  else if(action==="getExpenseTypes") result = getSheetData(SHEETS.EXPENSE_TYPES);
+  else if (action === "getExpenseTypes") result = getSheetData(SHEETS.EXPENSE_TYPES);
 
   // ✅ NEW (IMPORTANT)
-  else if(action==="getOccasions") result = getSheetData(SHEETS.OCCASIONS);
+  else if (action === "getOccasions") result = getSheetData(SHEETS.OCCASIONS);
 
-  else if(action==="getContributions") result = getSheetData(SHEETS.CONTRIBUTIONS);
-  else if(action==="getExpenses") result = getSheetData(SHEETS.EXPENSES);
+  else if (action === "getContributions") result = getSheetData(SHEETS.CONTRIBUTIONS);
+  else if (action === "getExpenses") result = getSheetData(SHEETS.EXPENSES);
 
-  else if(action==="getYearConfig") result = getSheetData("YEAR_CONFIG");
+  else if (action === "getYearConfig") result = getSheetData("YEAR_CONFIG");
 
   // ===== GET ALL DATA IN ONE REQUEST (THE FIX) =====
-  else if(action === "getAllData"){
+  else if (action === "getAllData") {
     result = {
       users: getSheetData(SHEETS.USERS),
       types: getSheetData(SHEETS.TYPES),
@@ -80,96 +102,149 @@ function doGet(e){
       occasions: getSheetData(SHEETS.OCCASIONS),
       contributions: getSheetData(SHEETS.CONTRIBUTIONS),
       expenses: getSheetData(SHEETS.EXPENSES),
-      yearConfig: getSheetData("YEAR_CONFIG")
+      yearConfig: getSheetData("YEAR_CONFIG"),
+      goals: getSheetData(SHEETS.GOALS)
     };
   }
 
   // ADD USER
-  else if(action==="addUser"){
+  else if (action === "addUser") {
     let existingUsers = getSheetData("USERS");
     let exists = existingUsers.some(u => String(u.Mobile) === String(e.parameter.Mobile));
-    
-    if(exists) {
-      result = {status:"error", message:"Mobile number already exists"};
+
+    if (exists) {
+      result = { status: "error", message: "Mobile number already exists" };
     } else {
       addRow("USERS", [
         e.parameter.UserId,
         e.parameter.Name,
         e.parameter.Mobile,
         e.parameter.Role,
-        e.parameter.Password
+        hashPassword(e.parameter.Password),
+        e.parameter.Email // New 6th Column 
       ]);
-      result = {status:"success"};
+      result = { status: "success" };
+    }
+  }
+
+  // NEW: Action to send OTP via Email
+  else if (action === "sendEmailOTP") {
+    let email = e.parameter.email;
+    let mobile = e.parameter.mobile;
+    let users = getSheetData("USERS");
+
+    let user = users.find(u =>
+      String(u.Mobile) === String(mobile) &&
+      String(u.Email).toLowerCase() === String(email).toLowerCase()
+    );
+
+    if (user) {
+      let otp = Math.floor(100000 + Math.random() * 900000);
+      // SECURITY FIX: Store OTP in CacheService instead of returning it to browser
+      const cache = CacheService.getScriptCache();
+      cache.put("otp_" + user.UserId, String(otp), 600); // Valid for 10 minutes
+
+      MailApp.sendEmail({
+        to: email,
+        subject: "Mandir System - Password Reset OTP",
+        htmlBody: `<div style="font-family:sans-serif; padding:20px; border:1px solid #f7a01a;">
+                  <h2>Verification Code</h2>
+                  <h1 style="color:#f7a01a;">${otp}</h1>
+                  <p>This code expires in 10 minutes.</p>
+                 </div>`
+      });
+      // Do NOT return the OTP here anymore [cite: 25]
+      result = { status: "success", userId: user.UserId };
+    } else {
+      result = { status: "error", message: "Mobile and Email do not match." };
+    }
+  }
+
+  // Replace your existing resetPassword to verify the Cache OTP
+  else if (action === "resetPassword") {
+    const cache = CacheService.getScriptCache();
+    const savedOtp = cache.get("otp_" + e.parameter.UserId);
+
+    if (savedOtp && String(e.parameter.otp) === savedOtp) {
+      let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("USERS");
+      let data = sheet.getDataRange().getValues();
+      let found = false;
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(e.parameter.UserId)) {
+          sheet.getRange(i + 1, 5).setValue(e.parameter.NewPassword);
+          cache.remove("otp_" + e.parameter.UserId); // Clear OTP after use
+          found = true;
+          break;
+        }
+      }
+      result = found ? { status: "success" } : { status: "error" };
+    } else {
+      result = { status: "error", message: "Invalid or expired OTP." };
     }
   }
 
   // DELETE USER
-  else if(action==="deleteUser"){
+  else if (action === "deleteUser") {
     result = deleteRow("USERS", e.parameter.UserId);
   }
 
   // UPDATE USER
-  else if(action==="updateUser"){
+  else if (action === "updateUser") {
     result = updateUser(e.parameter);
   }
 
-  else if(action==="addType"){
+  else if (action === "addType") {
     addRow("TYPES", [Date.now(), e.parameter.TypeName]);
-    result = {status:"success"};
+    result = { status: "success" };
   }
 
-  else if(action==="deleteType"){
+  else if (action === "deleteType") {
     result = deleteRow("TYPES", e.parameter.TypeId);
   }
 
-  else if(action==="updateType"){
+  else if (action === "updateType") {
     result = updateSingle("TYPES", e.parameter.TypeId, e.parameter.TypeName);
   }
 
-  else if(action==="addOccasion"){
+  else if (action === "addOccasion") {
     addRow("OCCASIONS", [Date.now(), e.parameter.OccasionName]);
-    result = {status:"success"};
+    result = { status: "success" };
   }
 
-  else if(action==="deleteOccasion"){
+  else if (action === "deleteOccasion") {
     result = deleteRow("OCCASIONS", e.parameter.OccasionId);
   }
 
-  else if(action==="updateOccasion"){
+  else if (action === "updateOccasion") {
     result = updateSingle("OCCASIONS", e.parameter.OccasionId, e.parameter.OccasionName);
   }
 
-  else if(action==="addExpenseType"){
+  else if (action === "addExpenseType") {
     addRow("EXPENSE_TYPES", [Date.now(), e.parameter.Name]);
-    result = {status:"success"};
+    result = { status: "success" };
   }
 
-  else if(action==="deleteExpenseType"){
+  else if (action === "deleteExpenseType") {
     result = deleteRow("EXPENSE_TYPES", e.parameter.ExpenseTypeId);
   }
 
-  else if(action==="updateExpenseType"){
+  else if (action === "updateExpenseType") {
     result = updateSingle("EXPENSE_TYPES", e.parameter.ExpenseTypeId, e.parameter.Name);
   }
 
-  // ===== ADD CONTRIBUTION =====
-  else if(action==="addContribution"){
+  // ADD CONTRIBUTION WITH RECEIPT ID
+  else if (action === "addContribution") {
+    let receiptId = "TRX-" + Date.now();
     addRow(SHEETS.CONTRIBUTIONS, [
-      e.parameter.Id,
-      e.parameter.UserId,
-      e.parameter.Amount,
-      formatDate(),
-      e.parameter.ForMonth,
-      e.parameter.Year || new Date().getFullYear(), 
-      e.parameter.TypeId,
-      e.parameter.OccasionId || "",   
-      e.parameter.Note || ""          
+      e.parameter.Id, e.parameter.UserId, e.parameter.Amount,
+      formatDate(), e.parameter.ForMonth, e.parameter.Year,
+      e.parameter.TypeId, e.parameter.OccasionId, e.parameter.Note, receiptId
     ]);
-    result = {status:"success"};
+    result = { status: "success", receiptId: receiptId };
   }
 
   // ===== ADD EXPENSE =====
-  else if(action==="addExpense"){
+  else if (action === "addExpense") {
     addRow(SHEETS.EXPENSES, [
       e.parameter.Id,
       e.parameter.Title,
@@ -179,127 +254,198 @@ function doGet(e){
       e.parameter.ExpenseTypeId,
       e.parameter.ForMonth || "" // Added Month tracking for expenses
     ]);
-    result = {status:"success"};
+    result = { status: "success" };
   }
 
   // DELETE
-  else if(action==="deleteContribution"){
+  else if (action === "deleteContribution") {
     result = deleteRow(SHEETS.CONTRIBUTIONS, e.parameter.Id);
   }
 
   // DELETE EXPENSE 
-  else if(action==="deleteExpense"){
+  else if (action === "deleteExpense") {
     result = deleteRow(SHEETS.EXPENSES, e.parameter.Id);
   }
 
   // UPDATE CONTRIBUTION
-  else if(action==="updateContribution"){
+  else if (action === "updateContribution") {
     result = updateRow(SHEETS.CONTRIBUTIONS, e.parameter);
   }
-  
+
   // UPDATE EXPENSE
-  else if(action==="updateExpense"){
+  else if (action === "updateExpense") {
     result = updateExpenseRow(SHEETS.EXPENSES, e.parameter);
   }
 
-  else result = {error:"Invalid"};
+  else result = { error: "Invalid" };
 
   return ContentService
-    .createTextOutput(callback+"("+JSON.stringify(result)+")")
+    .createTextOutput(callback + "(" + JSON.stringify(result) + ")")
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
 //update single line
-function updateSingle(sheetName, id, value){
+function updateSingle(sheetName, id, value) {
 
   let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
   let data = sheet.getDataRange().getValues();
 
-  for(let i=1;i<data.length;i++){
+  for (let i = 1; i < data.length; i++) {
 
-    if(String(data[i][0]) === String(id)){
-      sheet.getRange(i+1,2).setValue(value);
-      return {status:"updated"};
+    if (String(data[i][0]) === String(id)) {
+      sheet.getRange(i + 1, 2).setValue(value);
+      return { status: "updated" };
     }
   }
 
-  return {status:"not found"};
+  return { status: "not found" };
+}
+
+// NEW: Function to upload file to Drive and return the Link
+function uploadUserPhoto(base64Data, fileName) {
+  const folderId = "1vX1tA8-DcgNbvEdl8vr2KE7VkP055YRy"; // PASTE YOUR ID HERE
+  const folder = DriveApp.getFolderById(folderId);
+
+  // Convert Base64 string to a blob
+  const contentType = base64Data.substring(5, base64Data.indexOf(';'));
+  const bytes = Utilities.base64Decode(base64Data.split(',')[1]);
+  const blob = Utilities.newBlob(bytes, contentType, fileName);
+
+  // Create file and set sharing to 'Anyone with link'
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  // Return the direct download link
+  return "https://drive.google.com/uc?export=view&id=" + file.getId();
 }
 
 //update user
-function updateUser(body){
-
-  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("USERS");
+function updateUser(e) {
+  let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
   let data = sheet.getDataRange().getValues();
+  let found = false;
+  let userId = e.UserId;
 
-  for(let i=1;i<data.length;i++){
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(userId)) {
+      let oldPassword = data[i][3]; // Existing hashed password [cite: 65, 67]
 
-    if(String(data[i][0]) === String(body.UserId)){
+      sheet.getRange(i + 1, 2).setValue(e.Name); // Name [cite: 66]
+      sheet.getRange(i + 1, 3).setValue(e.Mobile); // Mobile [cite: 66]
+      
+      if (e.Password && e.Password.trim() !== "") {
+        sheet.getRange(i + 1, 4).setValue(hashPassword(e.Password)); // New Hash [cite: 67]
+      } else {
+        sheet.getRange(i + 1, 4).setValue(oldPassword); // Keep Old [cite: 67]
+      }
 
-      sheet.getRange(i+1,2).setValue(body.Name);
-      sheet.getRange(i+1,3).setValue(body.Mobile);
-      sheet.getRange(i+1,4).setValue(body.Role);
-      sheet.getRange(i+1,5).setValue(body.Password);
+      sheet.getRange(i + 1, 5).setValue(e.Role); // Role [cite: 68]
+      sheet.getRange(i + 1, 6).setValue(e.Email); // Email [cite: 68]
+      sheet.getRange(i + 1, 7).setValue(e.Status || "Active"); // Status [cite: 68, 69]
+      sheet.getRange(i + 1, 8).setValue(e.PhotoURL || ""); // Photo [cite: 69, 70]
 
-      return {status:"updated"};
+      found = true;
+      break;
     }
   }
-
-  return {status:"not found"};
+  if (found) {
+    logAction(e.AdminName || "System", "Update User", "User ID: " + userId + " updated."); 
+    return { status: "updated" };
+  }
+  return { status: "not found" };
 }
 
 // ADD
-function addRow(name,row){
+function addRow(name, row) {
   SpreadsheetApp.getActiveSpreadsheet()
     .getSheetByName(name)
     .appendRow(row);
 }
 
 // DELETE
-function deleteRow(name,id){
+function deleteRow(name, id) {
   let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   let data = sheet.getDataRange().getValues();
 
-  for(let i=1;i<data.length;i++){
-    if(String(data[i][0])===String(id)){
-      sheet.deleteRow(i+1);
-      return {status:"deleted"};
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(id)) {
+      sheet.deleteRow(i + 1);
+      return { status: "deleted" };
     }
   }
-  return {status:"not found"};
+  return { status: "not found" };
 }
 
 // UPDATE CONTRIBUTION (Preserves Year, Occasion, Note)
-function updateRow(name,body){
+function updateRow(name, body) {
   let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
-  let data = sheet.getDataRange().getValues();
-  for(let i=1;i<data.length;i++){
-    if(String(data[i][0])===String(body.Id)){
-      sheet.getRange(i+1,3).setValue(body.Amount);
-      sheet.getRange(i+1,5).setValue(body.ForMonth);
-      if(body.Year) sheet.getRange(i+1,6).setValue(body.Year);
-      sheet.getRange(i+1,7).setValue(body.TypeId);
-      if(body.OccasionId !== undefined) sheet.getRange(i+1,8).setValue(body.OccasionId);
-      if(body.Note !== undefined) sheet.getRange(i+1,9).setValue(body.Note);
-      return {status:"updated"};
-    }
+  let values = sheet.getDataRange().getValues();
+  let ids = values.map(r => String(r[0]));
+  let rowIndex = ids.indexOf(String(body.Id));
+
+  if (rowIndex !== -1) {
+    let row = rowIndex + 1;
+    sheet.getRange(row, 3).setValue(body.Amount);
+    sheet.getRange(row, 5).setValue(body.ForMonth);
+    if (body.Year) sheet.getRange(row, 6).setValue(body.Year);
+    sheet.getRange(row, 7).setValue(body.TypeId);
+    return { status: "updated" };
   }
-  return {status:"not found"};
+  return { status: "not found" };
 }
 
 // UPDATE EXPENSE
-function updateExpenseRow(name,body){
+function updateExpenseRow(name, body) {
   let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   let data = sheet.getDataRange().getValues();
-  for(let i=1;i<data.length;i++){
-    if(String(data[i][0])===String(body.Id)){
-      sheet.getRange(i+1,2).setValue(body.Title);
-      sheet.getRange(i+1,3).setValue(body.Amount);
-      sheet.getRange(i+1,5).setValue(body.Year);
-      sheet.getRange(i+1,6).setValue(body.ExpenseTypeId);
-      sheet.getRange(i+1,7).setValue(body.ForMonth);
-      return {status:"updated"};
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(body.Id)) {
+      sheet.getRange(i + 1, 2).setValue(body.Title);
+      sheet.getRange(i + 1, 3).setValue(body.Amount);
+      sheet.getRange(i + 1, 5).setValue(body.Year);
+      sheet.getRange(i + 1, 6).setValue(body.ExpenseTypeId);
+      sheet.getRange(i + 1, 7).setValue(body.ForMonth);
+      return { status: "updated" };
     }
   }
-  return {status:"not found"};
+  return { status: "not found" };
+}
+
+function verifyEmailSystem() {
+  try {
+    MailApp.sendEmail({
+      to: "amarjeetvish@gmail.com", // Put your own email here to test
+      subject: "Mandir System - Verification Test",
+      htmlBody: "<h2>It Works!</h2><p>This email confirms your Google Script can send OTPs for free.</p>"
+    });
+    Logger.log("Success! Check your inbox.");
+  } catch (e) {
+    Logger.log("Error: " + e.toString());
+  }
+}
+
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  let result = {};
+
+  if (data.action === "uploadAndSaveProfile") {
+    const photoUrl = uploadUserPhoto(data.base64, data.fileName);
+
+    // Update the user's row with this new URL
+    const userUpdateRes = updateUser({
+      UserId: data.UserId,
+      Name: data.Name,
+      Mobile: data.Mobile,
+      Role: data.Role,
+      Password: data.Password,
+      Email: data.Email,
+      Status: data.Status,
+      PhotoURL: photoUrl, // The new Drive Link
+      AdminName: data.AdminName
+    });
+
+    result = { status: "success", photoUrl: photoUrl };
+  }
+
+  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
 }

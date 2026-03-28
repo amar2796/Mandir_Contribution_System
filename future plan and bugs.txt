@@ -1,0 +1,30 @@
+Future
+==================================================================================================
+To make the "Mandir System" more robust and professional, I recommend adding these features:
+
+    Automated Receipt Generation:
+
+        When a contribution is saved, generate a simple digital receipt (PDF) that can be shared with the donor via WhatsApp.
+
+    Financial "Soft Close" / Locking:
+
+        Add a feature to "Lock" a previous year so that contributions or expenses for 2024 cannot be edited once the audit is complete.
+
+    Visual Charts (Chart.js):
+
+        Replace the simple tables in dashboard.html with a Pie Chart for "Expense Types" and a Line Chart for "Monthly Contribution Trends."
+
+    Bulk Upload:
+
+        An admin tool to upload a CSV file of members or historical contributions to avoid manual entry for large groups.
+
+    Deleted Records Log:
+
+        Instead of deleteRow permanently removing data, move deleted items to a "Trash" sheet so they can be recovered if deleted by mistake.
+		
+		
+	
+	
+	
+Bugs
+===================================================================================================
