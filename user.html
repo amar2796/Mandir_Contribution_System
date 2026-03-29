@@ -41,6 +41,7 @@
         z-index: 200;
         gap: 8px;
         border-bottom: 2px solid #f7a01a;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
       }
       .header-left {
         display: flex;
@@ -1221,7 +1222,7 @@
       function showReceiptById(rid) {
         const d = window._rcptStore[rid];
         if (!d) return;
-        showReceipt(d.c, d.userName, d.typeName, d.occasionName);
+        showReceipt(d.c, d.userName, d.typeName, d.occasionName, false);
       }
 
       function calculateTotal() {
@@ -1529,6 +1530,29 @@
       }
 
       init();
+
+      /* ═══ FIX 8: SCROLL HIDE/SHOW HEADER ═══ */
+      (function () {
+        const hdr = document.querySelector(".header");
+        if (!hdr) return;
+        let lastY = 0;
+        window.addEventListener(
+          "scroll",
+          function () {
+            const y = window.scrollY;
+            if (y > lastY && y > 60) hdr.style.transform = "translateY(-100%)";
+            else hdr.style.transform = "";
+            lastY = y;
+          },
+          { passive: true }
+        );
+      })();
+
+      /* ═══ FIX 3: BROADCAST SESSION REVOKE TO OTHER TABS ═══ */
+      (function () {
+        const s = JSON.parse(localStorage.getItem("session") || "null");
+        if (s && s.userId) broadcastSessionRevoke(s.userId);
+      })();
     </script>
   </body>
 </html>

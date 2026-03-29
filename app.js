@@ -60,7 +60,32 @@ function postData(data) {
   });
 }
 
-/* ═══ SESSION CHECK ═══ */
+/* ═══ ONE-SESSION-PER-USER (Broadcast across tabs) ═══ */
+(function(){
+  // Listen for logout broadcast from other tabs
+  if(typeof BroadcastChannel !== "undefined"){
+    window._sessionBC = new BroadcastChannel("mandir_session");
+    window._sessionBC.onmessage = function(e){
+      if(e.data && e.data.type === "SESSION_REVOKED"){
+        const s = JSON.parse(localStorage.getItem("session") || "null");
+        // If the revoked userId matches current session, force logout
+        if(s && String(s.userId) === String(e.data.userId)){
+          localStorage.clear();
+          toast("⚠️ Your session was opened on another device. Logged out.", "warn");
+          setTimeout(()=>location.replace("login.html"), 1800);
+        }
+      }
+    };
+  }
+})();
+
+function broadcastSessionRevoke(userId){
+  if(typeof BroadcastChannel !== "undefined" && window._sessionBC){
+    window._sessionBC.postMessage({type:"SESSION_REVOKED", userId: String(userId)});
+  }
+}
+
+
 function checkSession() {
   let s=JSON.parse(localStorage.getItem("session"));
   if(!s||Date.now()>s.expiry){localStorage.clear();toast("Session expired. Please login again.","error");setTimeout(()=>location.replace("login.html"),1500);return false;}
@@ -115,9 +140,12 @@ function _ensureModalCSS(){
     ._mbtn:hover{filter:brightness(1.1);transform:translateY(-1px);}
     @media(max-width:520px){#_uniModal{padding:8px;}._mbdy{padding:16px;}._mft{padding:12px 16px;}}
     /* CROP MODAL */
-    #_cropWrap{position:relative;overflow:hidden;background:#111;width:100%;height:300px;cursor:crosshair;user-select:none;}
-    #_cropImg{position:absolute;top:0;left:0;transform-origin:top left;}
-    #_cropBox{position:absolute;border:2px solid #f7a01a;box-shadow:0 0 0 9999px rgba(0,0,0,0.5);pointer-events:none;}
+    #_cropWrap{position:relative;overflow:hidden;background:#111;width:100%;height:300px;cursor:grab;user-select:none;touch-action:none;}
+    #_cropWrap:active{cursor:grabbing;}
+    #_cropImg{position:absolute;top:0;left:0;transform-origin:top left;transition:none;}
+    #_cropBox{position:absolute;border:2.5px solid #f7a01a;box-shadow:0 0 0 9999px rgba(0,0,0,0.55);pointer-events:none;border-radius:2px;}
+    #_zoomSlider{width:100%;accent-color:#f7a01a;cursor:pointer;}
+    #_zoomLabel{font-size:11px;color:#888;text-align:center;display:block;margin:2px 0 8px;}
   `;
   document.head.appendChild(st);
 }
@@ -149,7 +177,11 @@ function openCropModal(file, onDone) {
           <img id="_cropImg" src="" draggable="false"/>
           <div id="_cropBox"></div>
         </div>
-        <p style="font-size:11px;color:#999;margin:8px 0 0;text-align:center;">Drag to reposition · Square crop applied automatically</p>
+        <div style="margin:10px 0 2px;">
+          <label id="_zoomLabel">Zoom: 100%</label>
+          <input id="_zoomSlider" type="range" min="100" max="400" value="100" step="5"/>
+        </div>
+        <p style="font-size:11px;color:#999;margin:4px 0 0;text-align:center;">Drag to reposition · Use slider or pinch to zoom · Square crop</p>
       </div>
       <div class="_mft">
         <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
@@ -173,48 +205,99 @@ function openCropModal(file, onDone) {
 function initCrop(imgEl, origSrc, onDone) {
   const wrap=document.getElementById("_cropWrap");
   const cropBox=document.getElementById("_cropBox");
+  const zoomSlider=document.getElementById("_zoomSlider");
+  const zoomLabel=document.getElementById("_zoomLabel");
   const wW=wrap.clientWidth, wH=wrap.clientHeight;
   const iW=imgEl.naturalWidth, iH=imgEl.naturalHeight;
-  const scale=Math.min(wW/iW, wH/iH);
-  const dW=iW*scale, dH=iH*scale;
-  const oX=(wW-dW)/2, oY=(wH-dH)/2;
-  imgEl.style.width=dW+"px"; imgEl.style.height=dH+"px";
-  imgEl.style.left=oX+"px"; imgEl.style.top=oY+"px";
 
-  const side=Math.min(dW,dH)*0.85;
-  let cx=(dW-side)/2+oX, cy=(dH-side)/2+oY;
-  let dragging=false, dragSX, dragSY, startCX, startCY;
+  // Base scale: fit image into wrap
+  const baseScale=Math.min(wW/iW, wH/iH);
+  let zoom=1; // multiplier on top of baseScale
+  let imgX=0, imgY=0;
 
-  function drawBox(){
-    cropBox.style.left=cx+"px"; cropBox.style.top=cy+"px";
-    cropBox.style.width=side+"px"; cropBox.style.height=side+"px";
+  // Square crop box = 80% of min(wW,wH), centered
+  const side=Math.min(wW,wH)*0.82;
+  const boxL=(wW-side)/2, boxT=(wH-side)/2;
+  cropBox.style.left=boxL+"px"; cropBox.style.top=boxT+"px";
+  cropBox.style.width=side+"px"; cropBox.style.height=side+"px";
+
+  function clampImg() {
+    const dW=iW*baseScale*zoom, dH=iH*baseScale*zoom;
+    // clamp so crop box is always fully inside image
+    const minX=boxL+side-dW, maxX=boxL;
+    const minY=boxT+side-dH, maxY=boxT;
+    imgX=Math.max(minX,Math.min(maxX,imgX));
+    imgY=Math.max(minY,Math.min(maxY,imgY));
   }
-  drawBox();
 
-  wrap.addEventListener("mousedown",e=>{dragging=true;dragSX=e.clientX;dragSY=e.clientY;startCX=cx;startCY=cy;});
-  wrap.addEventListener("touchstart",e=>{dragging=true;dragSX=e.touches[0].clientX;dragSY=e.touches[0].clientY;startCX=cx;startCY=cy;},{passive:true});
-  function onMove(ex,ey){
+  function applyTransform() {
+    const dW=iW*baseScale*zoom, dH=iH*baseScale*zoom;
+    imgEl.style.width=dW+"px"; imgEl.style.height=dH+"px";
+    imgEl.style.left=imgX+"px"; imgEl.style.top=imgY+"px";
+  }
+
+  // Init position: center image, crop box inside it
+  zoom=1;
+  imgX=(wW-iW*baseScale)/2; imgY=(wH-iH*baseScale)/2;
+  clampImg(); applyTransform();
+
+  // Zoom slider
+  if(zoomSlider){
+    zoomSlider.addEventListener("input",function(){
+      zoom=Number(this.value)/100;
+      zoomLabel.textContent="Zoom: "+this.value+"%";
+      clampImg(); applyTransform();
+    });
+  }
+
+  // Mouse drag
+  let dragging=false, lastX, lastY;
+  wrap.addEventListener("mousedown",e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;e.preventDefault();});
+  window.addEventListener("mousemove",e=>{
     if(!dragging)return;
-    cx=Math.max(oX,Math.min(oX+dW-side,startCX+(ex-dragSX)));
-    cy=Math.max(oY,Math.min(oY+dH-side,startCY+(ey-dragSY)));
-    drawBox();
-  }
-  wrap.addEventListener("mousemove",e=>onMove(e.clientX,e.clientY));
-  wrap.addEventListener("touchmove",e=>onMove(e.touches[0].clientX,e.touches[0].clientY),{passive:true});
+    imgX+=e.clientX-lastX; imgY+=e.clientY-lastY;
+    lastX=e.clientX; lastY=e.clientY;
+    clampImg(); applyTransform();
+  });
   window.addEventListener("mouseup",()=>{dragging=false;});
-  window.addEventListener("touchend",()=>{dragging=false;});
+
+  // Touch drag + pinch zoom
+  let lastDist=null, lastTX, lastTY;
+  wrap.addEventListener("touchstart",e=>{
+    if(e.touches.length===1){lastTX=e.touches[0].clientX;lastTY=e.touches[0].clientY;}
+    if(e.touches.length===2){lastDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+  },{passive:true});
+  wrap.addEventListener("touchmove",e=>{
+    if(e.touches.length===1){
+      imgX+=e.touches[0].clientX-lastTX; imgY+=e.touches[0].clientY-lastTY;
+      lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY;
+      clampImg(); applyTransform();
+    } else if(e.touches.length===2&&lastDist){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      const ratio=d/lastDist;
+      zoom=Math.max(1,Math.min(4,zoom*ratio));
+      if(zoomSlider){zoomSlider.value=Math.round(zoom*100);zoomLabel.textContent="Zoom: "+Math.round(zoom*100)+"%";}
+      lastDist=d;
+      clampImg(); applyTransform();
+    }
+  },{passive:true});
+  wrap.addEventListener("touchend",e=>{if(e.touches.length<2)lastDist=null;},{passive:true});
 
   window._doCrop=function(){
-    const sx=(cx-oX)/scale, sy=(cy-oY)/scale, ss=side/scale;
+    // Convert screen crop box coords back to image natural coords
+    const dW=iW*baseScale*zoom;
+    const naturalScale=iW/dW; // px per natural pixel
+    const cropNatX=(boxL-imgX)*naturalScale;
+    const cropNatY=(boxT-imgY)*naturalScale;
+    const cropNatS=side*naturalScale;
     const out=400;
     const canvas=document.createElement("canvas"); canvas.width=out; canvas.height=out;
     const ctx=canvas.getContext("2d");
     const temp=new Image(); temp.src=origSrc;
     temp.onload=function(){
-      ctx.drawImage(temp,sx,sy,ss,ss,0,0,out,out);
-      const b64=canvas.toDataURL("image/jpeg",0.75);
-      closeModal();
-      onDone(b64);
+      ctx.drawImage(temp,cropNatX,cropNatY,cropNatS,cropNatS,0,0,out,out);
+      const b64=canvas.toDataURL("image/jpeg",0.80);
+      closeModal(); onDone(b64);
     };
   };
 }
@@ -233,10 +316,16 @@ function _storeReceipt(c, userName, typeName, occasionName) {
   return id;
 }
 
-/* ═══ RECEIPT POPUP — with WhatsApp text, PDF share & Email ═══ */
-function showReceipt(c, userName, typeName, occasionName){
+/* ═══ RECEIPT POPUP — PDF for user; all share options for admin ═══ */
+function showReceipt(c, userName, typeName, occasionName, isAdmin){
   const rid = _storeReceipt(c, userName, typeName, occasionName);
   const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const shareButtons = isAdmin ? `
+      <button class="_mbtn" style="background:#27ae60;" onclick="exportReceiptPDF('${rid}')"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
+      <button class="_mbtn" style="background:#25d366;" onclick="sendReceiptWhatsApp('${rid}')"><i class="fa-brands fa-whatsapp"></i> WhatsApp Text</button>
+      <button class="_mbtn" style="background:#128c7e;" onclick="exportReceiptPDFForWhatsApp('${rid}')"><i class="fa-brands fa-whatsapp"></i> WhatsApp PDF</button>
+      <button class="_mbtn" style="background:#2980b9;" onclick="sendReceiptEmail('${rid}')"><i class="fa-solid fa-envelope"></i> Email</button>`
+    : `<button class="_mbtn" style="background:#27ae60;" onclick="exportReceiptPDF('${rid}')"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>`;
   let html=`
     <div class="_mhdr"><h3><i class="fa-solid fa-receipt"></i> Contribution Receipt</h3><button class="_mcls" onclick="closeModal()">×</button></div>
     <div class="_mbdy">
@@ -257,14 +346,11 @@ function showReceipt(c, userName, typeName, occasionName){
         <div class="_row"><span class="_rl">Note</span><span class="_rv">${escapeHtml(c.Note||"—")}</span></div>
         <div class="_row"><span class="_rl">Date Recorded</span><span class="_rv">${escapeHtml(c.PaymentDate||"—")}</span></div>
       </div>
-      <div style="text-align:center;font-size:11px;color:#bbb;">Thank you for your generous contribution 🙏</div>
+      <div style="text-align:center;font-size:12px;color:#946c44;font-weight:600;padding:6px 0;border-top:1px dashed #e0e0e0;margin-top:4px;">~ Thank you for your generous contribution ~</div>
     </div>
     <div class="_mft" style="flex-wrap:wrap;gap:8px;">
       <button class="_mbtn" style="background:#999;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>
-      <button class="_mbtn" style="background:#27ae60;" onclick="exportReceiptPDF('${rid}')"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
-      <button class="_mbtn" style="background:#25d366;" onclick="sendReceiptWhatsApp('${rid}')"><i class="fa-brands fa-whatsapp"></i> WhatsApp Text</button>
-      <button class="_mbtn" style="background:#128c7e;" onclick="exportReceiptPDFForWhatsApp('${rid}')"><i class="fa-brands fa-whatsapp"></i> WhatsApp PDF</button>
-      <button class="_mbtn" style="background:#2980b9;" onclick="sendReceiptEmail('${rid}')"><i class="fa-solid fa-envelope"></i> Send Email</button>
+      ${shareButtons}
     </div>`;
   openModal(html,"520px");
 }
@@ -363,9 +449,10 @@ function exportReceiptPDF(rid){
     styles:{fontSize:9,cellPadding:3}
   });
   let fy=doc.lastAutoTable.finalY+6;
-  doc.setFontSize(7.5); doc.setTextColor(160,160,160);
-  doc.text("Thank you for your generous contribution. 🙏",w/2,fy,{align:"center"});
-  doc.text("SHREE HANUMAN MANDIR  |  System Generated — Not Manually Signed",w/2,ph-5,{align:"center"});
+  doc.setFontSize(8); doc.setTextColor(120,80,30); doc.setFont(undefined,"bold");
+  doc.text("~ Thank you for your generous contribution ~",w/2,fy,{align:"center"});
+  doc.setFont(undefined,"normal"); doc.setFontSize(7); doc.setTextColor(160,160,160);
+  doc.text("SHREE HANUMAN MANDIR  |  Paliya, Sultanpur  |  System Generated",w/2,ph-5,{align:"center"});
   doc.save("Receipt_"+displayRID+".pdf");
 }
 

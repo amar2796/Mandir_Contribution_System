@@ -357,23 +357,23 @@
     <script src="config.js"></script>
     <script>
       // ── Redirect already-logged-in users away from login page
-      (function() {
+      (function () {
         try {
           let s = JSON.parse(localStorage.getItem("session"));
           if (s && Date.now() < s.expiry) {
             location.replace(s.role === "Admin" ? "admin.html" : "user.html");
           }
-        } catch(e) {}
+        } catch (e) {}
       })();
 
       // ── Security: block forward-navigation back to admin/user after logout
       // Push a dummy state so the browser has a "back" target on the login page
       history.pushState(null, "", location.href);
-      window.addEventListener("popstate", function() {
+      window.addEventListener("popstate", function () {
         history.pushState(null, "", location.href);
       });
       // pageshow: catches bfcache-restored pages (back button with cache)
-      window.addEventListener("pageshow", function(e) {
+      window.addEventListener("pageshow", function (e) {
         if (e.persisted) {
           try {
             let s = JSON.parse(localStorage.getItem("session"));
@@ -383,7 +383,9 @@
             } else {
               location.replace(s.role === "Admin" ? "admin.html" : "user.html");
             }
-          } catch(err) { localStorage.clear(); }
+          } catch (err) {
+            localStorage.clear();
+          }
         }
       });
 
@@ -493,6 +495,15 @@
                   expiry: Date.now() + 30 * 60 * 1000,
                 })
               );
+              // Kick out any other tab/window already logged in as this user
+              try {
+                const _bc = new BroadcastChannel("mandir_session");
+                _bc.postMessage({
+                  type: "SESSION_REVOKED",
+                  userId: String(user.UserId),
+                });
+                setTimeout(() => _bc.close(), 500);
+              } catch (e) {}
               setMsg(
                 "loginMsg",
                 "✓ Login successful! Redirecting...",

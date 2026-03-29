@@ -80,6 +80,7 @@
         flex-direction: column;
         overflow-y: auto;
         min-width: 0;
+        scroll-behavior: smooth;
       }
       .header {
         background: white;
@@ -90,6 +91,14 @@
         gap: 10px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         flex-wrap: wrap;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      .header.hdr-hidden {
+        transform: translateY(-100%);
+        box-shadow: none;
       }
       .header h3 {
         margin: 0;
@@ -493,9 +502,6 @@
       }
       .header {
         border-bottom: 2px solid #f7a01a22;
-        position: sticky;
-        top: 0;
-        z-index: 100;
       }
       @keyframes shimmer {
         0% {
@@ -575,9 +581,6 @@
           </li>
           <li onclick="showPage('goalsPage',this)">
             <i class="fa-solid fa-bullseye"></i> Manage Goals
-          </li>
-          <li onclick="logout()">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
           </li>
         </ul>
 
@@ -1015,6 +1018,13 @@
                 style="background: #334155; box-shadow: none"
               >
                 <i class="fa-solid fa-layer-group"></i> Bulk Insert
+              </button>
+              <button
+                onclick="openWalkInContribution()"
+                style="background: #946c44; box-shadow: none"
+              >
+                <i class="fa-solid fa-person-walking-arrow-right"></i> Walk-in
+                Entry
               </button>
             </div>
           </div>
@@ -2160,9 +2170,14 @@
         document.getElementById("tb").innerHTML = list
           .map((c) => {
             n++;
+            let isWalkIn = String(c.UserId).startsWith("WALKIN_");
             let name =
               users.find((u) => String(u.UserId) === String(c.UserId))?.Name ||
-              "Unknown";
+              (isWalkIn
+                ? String(c.Note || "")
+                    .match(/Walk-in:\s*([^|]+)/)?.[1]
+                    ?.trim() || "Walk-in Donor"
+                : "Unknown");
             let tName =
               types.find((t) => String(t.TypeId) === String(c.TypeId))
                 ?.TypeName || "—";
@@ -2172,11 +2187,14 @@
               )?.OccasionName || "";
             const _rid = _storeReceipt(c, name, tName, oName);
             let displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+            let walkInBadge = String(c.UserId).startsWith("WALKIN_")
+              ? `<span style="font-size:9px;background:#946c44;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">WALK-IN</span>`
+              : "";
             return `<tr onclick="viewContribution('${
               c.Id
             }')" title="Click to view details">
         <td>${n}</td>
-        <td><b>${escapeHtml(name)}</b></td>
+        <td><b>${escapeHtml(name)}</b>${walkInBadge}</td>
         <td class="amt-green">₹ ${fmt(c.Amount)}</td>
         <td>${escapeHtml(c.ForMonth || "—")}</td>
         <td>${escapeHtml(String(c.Year || "—"))}</td>
@@ -2205,9 +2223,14 @@
       function viewContribution(id) {
         let c = data.find((x) => String(x.Id) === String(id));
         if (!c) return;
+        let isWalkIn = String(c.UserId).startsWith("WALKIN_");
         let name =
           users.find((u) => String(u.UserId) === String(c.UserId))?.Name ||
-          "Unknown";
+          (isWalkIn
+            ? String(c.Note || "")
+                .match(/Walk-in:\s*([^|]+)/)?.[1]
+                ?.trim() || "Walk-in Donor"
+            : "Unknown");
         let tName =
           types.find((t) => String(t.TypeId) === String(c.TypeId))?.TypeName ||
           "—";
@@ -2326,9 +2349,17 @@
         const filtered = data.filter((c) => {
           const user = users.find((u) => String(u.UserId) === String(c.UserId));
           const displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+          const walkInName = String(c.UserId).startsWith("WALKIN_")
+            ? (
+                String(c.Note || "")
+                  .match(/Walk-in:\s*([^|]+)/)?.[1]
+                  ?.trim() || ""
+              ).toLowerCase()
+            : "";
           const nameMatch =
             !txt ||
             (user?.Name.toLowerCase() || "").includes(txt) ||
+            walkInName.includes(txt) ||
             String(user?.Mobile || "").includes(txt) ||
             String(c.Amount).includes(txt) ||
             displayRID.toLowerCase().includes(txt) ||
@@ -3396,12 +3427,14 @@
         let target = document.getElementById("g_target").value;
         let current = document.getElementById("g_current").value || "0";
         let status = document.getElementById("g_status").value;
-        if (!name || !target || target <= 0)
+        if (!name || !target || Number(target) <= 0)
           return toast("Please enter goal name and target amount.", "error");
+        const newGoalId =
+          "G" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
         try {
           let res = await postData({
             action: "addGoal",
-            GoalId: Date.now(),
+            GoalId: newGoalId,
             GoalName: name,
             TargetAmount: target,
             CurrentAmount: current,
@@ -3409,10 +3442,18 @@
           });
           if (res.status === "success") {
             toast("✅ Goal saved!");
+            // Optimistic local update
+            goals.push({
+              GoalId: newGoalId,
+              GoalName: name,
+              TargetAmount: Number(target),
+              CurrentAmount: Number(current),
+              Status: status,
+            });
+            renderGoals();
             document.getElementById("g_name").value = "";
             document.getElementById("g_target").value = "";
             document.getElementById("g_current").value = "";
-            init();
           } else toast("❌ Failed: " + (res.message || ""), "error");
         } catch (e) {
           toast("❌ " + e.message, "error");
@@ -3454,22 +3495,37 @@
       }
 
       async function saveEditGoal(id) {
+        const nameVal = document.getElementById("eg_name").value.trim();
+        const targetVal = document.getElementById("eg_target").value;
+        const currentVal = document.getElementById("eg_current").value || "0";
+        const statusVal = document.getElementById("eg_status").value;
+        if (!nameVal) return toast("Goal name required.", "error");
         try {
           let res = await postData({
             action: "updateGoal",
             GoalId: id,
-            GoalName: document.getElementById("eg_name").value,
-            TargetAmount: document.getElementById("eg_target").value,
-            CurrentAmount: document.getElementById("eg_current").value || "0",
-            Status: document.getElementById("eg_status").value,
+            GoalName: nameVal,
+            TargetAmount: targetVal,
+            CurrentAmount: currentVal,
+            Status: statusVal,
           });
-          toast(
-            res.status === "updated" ? "✅ Goal updated." : "❌ Failed.",
-            res.status === "updated" ? "" : "error"
-          );
           if (res.status === "updated") {
+            toast("✅ Goal updated.");
+            // Optimistic local update — no full reload needed
+            const idx = goals.findIndex((x) => String(x.GoalId) === String(id));
+            if (idx !== -1) {
+              goals[idx] = {
+                ...goals[idx],
+                GoalName: nameVal,
+                TargetAmount: Number(targetVal),
+                CurrentAmount: Number(currentVal),
+                Status: statusVal,
+              };
+            }
+            renderGoals();
             closeModal();
-            init();
+          } else {
+            toast("❌ Failed: " + (res.message || ""), "error");
           }
         } catch (e) {
           toast("❌ " + e.message, "error");
@@ -3493,10 +3549,196 @@
       function showReceiptById(rid) {
         const d = window._rcptStore[rid];
         if (!d) return;
-        showReceipt(d.c, d.userName, d.typeName, d.occasionName);
+        showReceipt(d.c, d.userName, d.typeName, d.occasionName, true);
       }
 
       init();
+
+      /* ═══ FIX 8: SCROLL HIDE/SHOW HEADER ═══ */
+      (function () {
+        const mainEl = document.querySelector(".main");
+        const hdr = document.querySelector(".header");
+        if (!mainEl || !hdr) return;
+        let lastY = 0;
+        mainEl.addEventListener(
+          "scroll",
+          function () {
+            const y = mainEl.scrollTop;
+            if (y > lastY && y > 60) hdr.classList.add("hdr-hidden");
+            else hdr.classList.remove("hdr-hidden");
+            lastY = y;
+          },
+          { passive: true }
+        );
+      })();
+
+      /* ═══ FIX 3: BROADCAST SESSION REVOKE TO OTHER TABS on load ═══ */
+      (function () {
+        const s = JSON.parse(localStorage.getItem("session") || "null");
+        if (s && s.userId) broadcastSessionRevoke(s.userId);
+      })();
+
+      /* ═══ FIX 5: MANUAL WALK-IN CONTRIBUTION (no user account) ═══ */
+      function openWalkInContribution() {
+        const months = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+        const curY = new Date().getFullYear();
+        let yearOpts = "";
+        for (let y = curY + 1; y >= 2023; y--)
+          yearOpts += `<option value="${y}"${
+            y === curY ? " selected" : ""
+          }>${y}</option>`;
+        let monthOpts = months
+          .map((m) => `<option value="${m}">${m}</option>`)
+          .join("");
+        let typeOpts = types
+          .map(
+            (t) =>
+              `<option value="${t.TypeId}">${escapeHtml(t.TypeName)}</option>`
+          )
+          .join("");
+        let occasionOpts =
+          `<option value="">— None —</option>` +
+          occasions
+            .map(
+              (o) =>
+                `<option value="${o.OccasionId}">${escapeHtml(
+                  o.OccasionName
+                )}</option>`
+            )
+            .join("");
+        let html = `
+          <div class="_mhdr"><h3><i class="fa-solid fa-person-walking-arrow-right"></i> Walk-in / Manual Entry</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy">
+            <div style="background:#fff8e8;border:1px solid #f7a01a44;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#946c44;">
+              <i class="fa-solid fa-circle-info"></i> Use this for donors who visit in person and do <b>not</b> have a registered account.
+            </div>
+            <label class="_fl">Donor Full Name <span style="color:#e74c3c">*</span></label>
+            <input class="_fi" id="wi_name" placeholder="e.g. Ramesh Kumar" />
+            <label class="_fl">Mobile Number (optional)</label>
+            <input class="_fi" id="wi_mobile" placeholder="e.g. 9876543210" maxlength="15" />
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div>
+                <label class="_fl">Amount (₹) <span style="color:#e74c3c">*</span></label>
+                <input class="_fi" id="wi_amount" type="number" min="1" placeholder="Enter amount" />
+              </div>
+              <div>
+                <label class="_fl">Year <span style="color:#e74c3c">*</span></label>
+                <select class="_fi" id="wi_year">${yearOpts}</select>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div>
+                <label class="_fl">Month</label>
+                <select class="_fi" id="wi_month"><option value="">— All / General —</option>${monthOpts}</select>
+              </div>
+              <div>
+                <label class="_fl">Type</label>
+                <select class="_fi" id="wi_type">${typeOpts}</select>
+              </div>
+            </div>
+            <label class="_fl">Occasion</label>
+            <select class="_fi" id="wi_occasion">${occasionOpts}</select>
+            <label class="_fl">Note / Purpose</label>
+            <input class="_fi" id="wi_note" placeholder="e.g. Prasad, Pooja, Birthday" />
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+            <button class="_mbtn" style="background:#f7a01a;" onclick="saveWalkIn()"><i class="fa-solid fa-check"></i> Save & Get Receipt</button>
+          </div>`;
+        openModal(html, "500px");
+      }
+
+      async function saveWalkIn() {
+        const name = document.getElementById("wi_name").value.trim();
+        const mobile = document.getElementById("wi_mobile").value.trim();
+        const amount = document.getElementById("wi_amount").value;
+        const year = document.getElementById("wi_year").value;
+        const month = document.getElementById("wi_month").value;
+        const typeId = document.getElementById("wi_type").value;
+        const occasionId = document.getElementById("wi_occasion").value;
+        const note = document.getElementById("wi_note").value.trim();
+        if (!name) return toast("Please enter donor name.", "error");
+        if (!amount || Number(amount) <= 0)
+          return toast("Please enter a valid amount.", "error");
+        // Use WALKIN_ prefix as UserId so it's clearly a manual entry
+        const walkInUserId = "WALKIN_" + Date.now();
+        const btn = document.querySelector("#_uniModal ._mbtn:last-child");
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Saving...";
+        }
+        try {
+          let res = await postData({
+            action: "addContribution",
+            Id: "wi_" + Date.now(),
+            UserId: walkInUserId,
+            Amount: amount,
+            ForMonth: month || "General",
+            Year: year,
+            TypeId: typeId,
+            OccasionId: occasionId,
+            Note:
+              (note ? note + " | " : "") +
+              "Walk-in: " +
+              name +
+              (mobile ? " | " + mobile : ""),
+          });
+          if (res.status === "success") {
+            toast("✅ Walk-in entry saved!");
+            // Build a mock contribution object for the receipt
+            const mockC = {
+              ReceiptID: res.receiptId || "TRX-wi" + Date.now(),
+              Amount: amount,
+              ForMonth: month || "General",
+              Year: year,
+              Note: note || "",
+              PaymentDate:
+                new Date().toLocaleDateString("en-IN") +
+                " " +
+                new Date().toLocaleTimeString("en-IN"),
+            };
+            const tName = types.find(
+              (t) => String(t.TypeId) === String(typeId)
+            );
+            const oName = occasions.find(
+              (o) => String(o.OccasionId) === String(occasionId)
+            );
+            closeModal();
+            init();
+            setTimeout(
+              () =>
+                showReceipt(
+                  mockC,
+                  name,
+                  tName?.TypeName || "Contribution",
+                  oName?.OccasionName || "—",
+                  true
+                ),
+              400
+            );
+          } else toast("❌ Failed: " + (res.message || ""), "error");
+        } catch (e) {
+          toast("❌ " + e.message, "error");
+        }
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML =
+            '<i class="fa-solid fa-check"></i> Save & Get Receipt';
+        }
+      }
     </script>
   </body>
 </html>
