@@ -475,36 +475,180 @@
         </ul>
 
         <!-- Live Summary Panel in sidebar -->
-        <div id="sidebarSummary" style="margin:16px 10px 0;background:rgba(255,255,255,0.07);border-radius:10px;padding:12px 10px;font-size:12px;">
-          <div style="color:#f7a01a;font-weight:700;margin-bottom:8px;font-size:11.5px;letter-spacing:0.3px;">
-            <i class="fa-solid fa-chart-simple"></i> LIVE SUMMARY
+        <div
+          id="sidebarSummary"
+          style="
+            margin: 14px 10px 0;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 10px;
+            padding: 12px 10px;
+            font-size: 12px;
+          "
+        >
+          <div
+            style="
+              color: #f7a01a;
+              font-weight: 700;
+              margin-bottom: 8px;
+              font-size: 11px;
+              letter-spacing: 0.5px;
+              text-transform: uppercase;
+            "
+          >
+            <i class="fa-solid fa-chart-simple"></i> SHREE HANUMAN MANDIR
           </div>
-          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
-            <span style="color:#aaa;font-size:11px;">Members</span>
-            <span id="sb_members" style="color:#fff;font-weight:600;">—</span>
+          <div
+            style="
+              color: #aaa;
+              font-size: 9.5px;
+              margin-bottom: 8px;
+              letter-spacing: 0.3px;
+            "
+          >
+            PALIYA, SULTANPUR — LIVE SUMMARY
           </div>
-          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
-            <span style="color:#aaa;font-size:11px;">This Month</span>
-            <span id="sb_month" style="color:#2ecc71;font-weight:600;">—</span>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            "
+          >
+            <span style="color: #aaa; font-size: 11px">Members</span>
+            <span id="sb_members" style="color: #fff; font-weight: 600">—</span>
           </div>
-          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
-            <span style="color:#aaa;font-size:11px;">This Year</span>
-            <span id="sb_year" style="color:#2ecc71;font-weight:600;">—</span>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            "
+          >
+            <span style="color: #aaa; font-size: 11px">This Month</span>
+            <span id="sb_month" style="color: #2ecc71; font-weight: 600"
+              >—</span
+            >
           </div>
-          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
-            <span style="color:#aaa;font-size:11px;">Expenses</span>
-            <span id="sb_exp" style="color:#e74c3c;font-weight:600;">—</span>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            "
+          >
+            <span style="color: #aaa; font-size: 11px"
+              >This Year Collected</span
+            >
+            <span id="sb_year" style="color: #2ecc71; font-weight: 600">—</span>
           </div>
-          <div style="display:flex;justify-content:space-between;padding:5px 0;">
-            <span style="color:#aaa;font-size:11px;">Balance</span>
-            <span id="sb_bal" style="color:#f7a01a;font-weight:700;">—</span>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+            "
+          >
+            <span style="color: #aaa; font-size: 11px">This Year Expense</span>
+            <span id="sb_exp" style="color: #e74c3c; font-weight: 600">—</span>
           </div>
-          <!-- WhatsApp Report Buttons -->
-          <div style="margin-top:10px;display:flex;flex-direction:column;gap:7px;">
-            <button onclick="sendWhatsAppReport('month')" style="background:#25D366;box-shadow:none;padding:7px 8px;font-size:11px;border-radius:7px;width:100%;justify-content:center;">
+          <!-- WhatsApp Report — Month/Year selectors -->
+          <div
+            style="
+              margin-top: 12px;
+              border-top: 1px solid rgba(255, 255, 255, 0.1);
+              padding-top: 10px;
+            "
+          >
+            <div
+              style="
+                color: #f7a01a;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.3px;
+                margin-bottom: 6px;
+              "
+            >
+              <i class="fa-brands fa-whatsapp"></i> WHATSAPP REPORT
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 5px;
+                margin-bottom: 7px;
+              "
+            >
+              <div>
+                <div style="color: #aaa; font-size: 9px; margin-bottom: 3px">
+                  MONTH
+                </div>
+                <select
+                  id="wa_month"
+                  style="
+                    width: 100%;
+                    background: #1e293b;
+                    color: #fff;
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    border-radius: 5px;
+                    padding: 4px 5px;
+                    font-size: 11px;
+                    outline: none;
+                    font-family: Poppins, sans-serif;
+                    margin: 0;
+                  "
+                ></select>
+              </div>
+              <div>
+                <div style="color: #aaa; font-size: 9px; margin-bottom: 3px">
+                  YEAR
+                </div>
+                <select
+                  id="wa_year"
+                  style="
+                    width: 100%;
+                    background: #1e293b;
+                    color: #fff;
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    border-radius: 5px;
+                    padding: 4px 5px;
+                    font-size: 11px;
+                    outline: none;
+                    font-family: Poppins, sans-serif;
+                    margin: 0;
+                  "
+                ></select>
+              </div>
+            </div>
+            <button
+              onclick="sendWhatsAppReport('month')"
+              style="
+                background: #25d366;
+                box-shadow: none;
+                padding: 7px 8px;
+                font-size: 11px;
+                border-radius: 7px;
+                width: 100%;
+                justify-content: center;
+                margin-bottom: 6px;
+              "
+            >
               <i class="fa-brands fa-whatsapp"></i> Monthly Report
             </button>
-            <button onclick="sendWhatsAppReport('year')" style="background:#128C7E;box-shadow:none;padding:7px 8px;font-size:11px;border-radius:7px;width:100%;justify-content:center;">
+            <button
+              onclick="sendWhatsAppReport('year')"
+              style="
+                background: #128c7e;
+                box-shadow: none;
+                padding: 7px 8px;
+                font-size: 11px;
+                border-radius: 7px;
+                width: 100%;
+                justify-content: center;
+              "
+            >
               <i class="fa-brands fa-whatsapp"></i> Yearly Report
             </button>
           </div>
@@ -514,19 +658,129 @@
 
       <div class="main">
         <div class="header">
-          <div style="display: flex; align-items: center; gap: 10px">
-            <button id="menuBtn" onclick="toggleSidebar()">☰</button>
-            <h3 id="welcomeUser">
-              <i class="fa-solid fa-user-shield"></i> Welcome, Admin
-            </h3>
-          </div>
-          <button
-            class="btn-danger"
-            onclick="logout()"
-            style="padding: 8px 16px; font-size: 13px"
+          <div
+            style="display: flex; align-items: center; gap: 10px; min-width: 0"
           >
-            <i class="fa-solid fa-power-off"></i> Logout
-          </button>
+            <button
+              id="menuBtn"
+              onclick="toggleSidebar()"
+              style="flex-shrink: 0"
+            >
+              ☰
+            </button>
+            <div style="min-width: 0">
+              <div
+                style="
+                  font-size: 11px;
+                  color: #aaa;
+                  font-weight: 400;
+                  line-height: 1.2;
+                "
+              >
+                Welcome,
+              </div>
+              <div
+                id="welcomeUser"
+                style="
+                  font-weight: 700;
+                  font-size: 0.95rem;
+                  color: #334155;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  max-width: 220px;
+                "
+              >
+                Admin
+              </div>
+            </div>
+          </div>
+          <!-- Right: Avatar + dropdown -->
+          <div style="position: relative; flex-shrink: 0">
+            <img
+              id="adminAvatar"
+              src=""
+              onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'><circle cx=\'20\' cy=\'20\' r=\'20\' fill=\'%23f7a01a\'/><text x=\'20\' y=\'26\' text-anchor=\'middle\' fill=\'white\' font-size=\'18\' font-family=\'Arial\'>&#128100;</text></svg>'"
+              onclick="toggleAdminDropdown()"
+              title="Account"
+              style="
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                border: 2.5px solid #f7a01a;
+                object-fit: cover;
+                background: #faeeda;
+                cursor: pointer;
+                box-shadow: 0 2px 8px rgba(247, 160, 26, 0.3);
+                display: block;
+                transition: transform 0.2s;
+              "
+              onmouseover="this.style.transform='scale(1.08)'"
+              onmouseout="this.style.transform='scale(1)'"
+            />
+            <div
+              id="adminDropdown"
+              style="
+                display: none;
+                position: absolute;
+                right: 0;
+                top: 50px;
+                background: #fff;
+                border-radius: 12px;
+                min-width: 180px;
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+                border: 1px solid #f0f0f0;
+                z-index: 999;
+                overflow: hidden;
+              "
+            >
+              <div
+                onclick="closeAdminDropdown();openAdminEditProfile()"
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  padding: 12px 16px;
+                  font-size: 13px;
+                  font-weight: 600;
+                  color: #334155;
+                  cursor: pointer;
+                  border-bottom: 1px solid #f5f5f5;
+                  transition: background 0.15s;
+                "
+                onmouseover="this.style.background='#fafaf5'"
+                onmouseout="this.style.background=''"
+              >
+                <i
+                  class="fa-solid fa-user-pen"
+                  style="color: #f7a01a; width: 16px; text-align: center"
+                ></i>
+                Edit Profile
+              </div>
+              <div
+                onclick="logout()"
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  padding: 12px 16px;
+                  font-size: 13px;
+                  font-weight: 600;
+                  color: #e74c3c;
+                  cursor: pointer;
+                  transition: background 0.15s;
+                "
+                onmouseover="this.style.background='#fff5f5'"
+                onmouseout="this.style.background=''"
+              >
+                <i
+                  class="fa-solid fa-power-off"
+                  style="color: #e74c3c; width: 16px; text-align: center"
+                ></i>
+                Logout
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- HOME -->
@@ -612,9 +866,25 @@
                 ><input id="note" placeholder="Optional note" />
               </div>
             </div>
-            <button onclick="addContribution()">
-              <i class="fa-solid fa-check"></i> Save Contribution
-            </button>
+            <div
+              style="
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                align-items: center;
+                margin-top: 4px;
+              "
+            >
+              <button onclick="addContribution()">
+                <i class="fa-solid fa-check"></i> Save Contribution
+              </button>
+              <button
+                onclick="openBulkInsert()"
+                style="background: #334155; box-shadow: none"
+              >
+                <i class="fa-solid fa-layer-group"></i> Bulk Insert
+              </button>
+            </div>
           </div>
           <div class="card">
             <h3>
@@ -627,7 +897,7 @@
               <input
                 class="search-bar"
                 id="searchContrib"
-                placeholder="🔍 Search name, mobile, amount..."
+                placeholder="🔍 Search name, mobile, amount, MNR-..."
                 onkeyup="filterContributions()"
                 style="margin: 0"
               />
@@ -660,6 +930,7 @@
                     <th>Month</th>
                     <th>Year</th>
                     <th>Type</th>
+                    <th>Tracking ID</th>
                     <th>Date</th>
                     <th>Actions</th>
                   </tr>
@@ -716,6 +987,33 @@
                 >(click row to view · edit via buttons)</span
               >
             </h3>
+            <div class="filter-row" style="margin-bottom: 12px">
+              <input
+                class="search-bar"
+                id="searchExpense"
+                placeholder="🔍 Search title, type, month..."
+                onkeyup="filterExpenses()"
+                style="margin: 0"
+              />
+              <div>
+                <label style="font-size: 11px">Year</label>
+                <select
+                  id="expFilterYear"
+                  onchange="filterExpenses()"
+                  style="margin: 0; padding: 8px 10px"
+                ></select>
+              </div>
+              <div>
+                <label style="font-size: 11px">Month</label>
+                <select
+                  id="expFilterMonth"
+                  onchange="filterExpenses()"
+                  style="margin: 0; padding: 8px 10px"
+                >
+                  <option value="">All Months</option>
+                </select>
+              </div>
+            </div>
             <div class="table-responsive">
               <table>
                 <thead>
@@ -724,6 +1022,7 @@
                     <th>Title</th>
                     <th>Type</th>
                     <th>Month</th>
+                    <th>Year</th>
                     <th>Amount</th>
                     <th>Date</th>
                     <th>Actions</th>
@@ -815,10 +1114,29 @@
           <div class="card">
             <h3><i class="fa-solid fa-bullseye"></i> Add / Edit Goal</h3>
             <div class="form-row">
-              <div><label>Goal Name</label><input id="g_name" placeholder="e.g. Temple Renovation"/></div>
-              <div><label>Target Amount (₹)</label><input id="g_target" type="number" min="1" placeholder="500000"/></div>
+              <div>
+                <label>Goal Name</label
+                ><input id="g_name" placeholder="e.g. Temple Renovation" />
+              </div>
+              <div>
+                <label>Target Amount (₹)</label
+                ><input
+                  id="g_target"
+                  type="number"
+                  min="1"
+                  placeholder="500000"
+                />
+              </div>
             </div>
             <div class="form-row">
+              <div>
+                <label
+                  >Collected So Far (₹)
+                  <span style="color: #aaa; font-size: 10px; font-weight: 400"
+                    >— update manually each time</span
+                  ></label
+                ><input id="g_current" type="number" min="0" placeholder="0" />
+              </div>
               <div>
                 <label>Status</label>
                 <select id="g_status">
@@ -827,13 +1145,25 @@
                 </select>
               </div>
             </div>
-            <button onclick="addGoal()"><i class="fa-solid fa-plus"></i> Save Goal</button>
+            <button onclick="addGoal()">
+              <i class="fa-solid fa-plus"></i> Save Goal
+            </button>
           </div>
           <div class="card">
             <h3><i class="fa-solid fa-list-ul"></i> Goals List</h3>
             <div class="table-responsive">
               <table>
-                <thead><tr><th>#</th><th>Goal Name</th><th>Target (₹)</th><th>Collected (₹)</th><th>Progress</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Goal Name</th>
+                    <th>Target (₹)</th>
+                    <th>Collected (₹)</th>
+                    <th>Progress</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
                 <tbody id="goalTableBody"></tbody>
               </table>
             </div>
@@ -843,64 +1173,79 @@
         <!-- MASTER -->
         <div id="masterPage" class="page">
           <div
-            class="grid-layout"
-            style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))"
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+              gap: 14px;
+            "
           >
-            <div class="card">
+            <div class="card" style="margin-bottom: 0">
               <h3><i class="fa-solid fa-tags"></i> Contribution Types</h3>
-              <div style="display: flex; gap: 10px">
+              <div style="display: flex; gap: 8px; margin-bottom: 10px">
                 <input
                   id="t_name"
                   placeholder="New Type Name"
-                  style="margin: 0"
-                /><button
+                  style="margin: 0; flex: 1"
+                />
+                <button
                   onclick="addType()"
-                  style="width: 80px; padding: 10px"
+                  style="width: 60px; padding: 10px; flex-shrink: 0"
                 >
                   Add
                 </button>
               </div>
-              <div class="table-responsive">
+              <div
+                class="table-responsive"
+                style="max-height: 280px; overflow-y: auto"
+              >
                 <table>
                   <tbody id="typeTable"></tbody>
                 </table>
               </div>
             </div>
-            <div class="card">
-              <h3><i class="fa-solid fa-calendar-star"></i> Occasions</h3>
-              <div style="display: flex; gap: 10px">
+            <div class="card" style="margin-bottom: 0">
+              <h3><i class="fa-solid fa-star"></i> Occasions</h3>
+              <div style="display: flex; gap: 8px; margin-bottom: 10px">
                 <input
                   id="o_name"
                   placeholder="New Occasion"
-                  style="margin: 0"
-                /><button
+                  style="margin: 0; flex: 1"
+                />
+                <button
                   onclick="addOccasion()"
-                  style="width: 80px; padding: 10px"
+                  style="width: 60px; padding: 10px; flex-shrink: 0"
                 >
                   Add
                 </button>
               </div>
-              <div class="table-responsive">
+              <div
+                class="table-responsive"
+                style="max-height: 280px; overflow-y: auto"
+              >
                 <table>
                   <tbody id="occasionTable"></tbody>
                 </table>
               </div>
             </div>
-            <div class="card">
+            <div class="card" style="margin-bottom: 0">
               <h3><i class="fa-solid fa-receipt"></i> Expense Types</h3>
-              <div style="display: flex; gap: 10px">
+              <div style="display: flex; gap: 8px; margin-bottom: 10px">
                 <input
                   id="e_name"
                   placeholder="New Expense Type"
-                  style="margin: 0"
-                /><button
+                  style="margin: 0; flex: 1"
+                />
+                <button
                   onclick="addExpenseType()"
-                  style="width: 80px; padding: 10px"
+                  style="width: 60px; padding: 10px; flex-shrink: 0"
                 >
                   Add
                 </button>
               </div>
-              <div class="table-responsive">
+              <div
+                class="table-responsive"
+                style="max-height: 280px; overflow-y: auto"
+              >
                 <table>
                   <tbody id="expenseTable"></tbody>
                 </table>
@@ -927,26 +1272,189 @@
         localStorage.setItem("session", JSON.stringify(s));
         return true;
       }
-      if (!_checkAdminSession()) { /* stop */ }
+      if (!_checkAdminSession()) {
+        /* stop */
+      }
       // Block back-button re-entry after logout
-      window.addEventListener("pageshow", function(e) {
+      window.addEventListener("pageshow", function (e) {
         _checkAdminSession();
       });
       // Block tab re-use with copied URL after session expires
-      document.addEventListener("visibilitychange", function() {
+      document.addEventListener("visibilitychange", function () {
         if (!document.hidden) _checkAdminSession();
       });
 
       function showUser() {
         let s = JSON.parse(localStorage.getItem("session"));
-        if (s)
-          document.getElementById(
-            "welcomeUser"
-          ).innerHTML = `<i class="fa-solid fa-user-shield"></i> ${s.name}`;
+        if (!s) return;
+        document.getElementById("welcomeUser").innerText = s.name || "Admin";
+        // Set admin avatar if profile photo exists
+        let myProfile = users.find(
+          (u) => String(u.UserId) === String(s.userId)
+        );
+        if (myProfile?.PhotoURL) {
+          let url = myProfile.PhotoURL;
+          if (url.includes("drive.google.com/uc")) {
+            let m = url.match(/[?&]id=([^&]+)/);
+            if (m) url = "https://lh3.googleusercontent.com/d/" + m[1];
+          }
+          document.getElementById("adminAvatar").src = url;
+        }
       }
-      function logout() {
-        localStorage.clear();
-        location.replace("login.html");
+
+      function toggleAdminDropdown() {
+        let d = document.getElementById("adminDropdown");
+        d.style.display = d.style.display === "none" ? "block" : "none";
+      }
+      function closeAdminDropdown() {
+        document.getElementById("adminDropdown").style.display = "none";
+      }
+      document.addEventListener("click", (e) => {
+        if (
+          !e.target.closest("#adminAvatar") &&
+          !e.target.closest("#adminDropdown")
+        ) {
+          closeAdminDropdown();
+        }
+      });
+      let _adminSelfCroppedB64 = "";
+
+      function openAdminEditProfile(previewB64, prefillName, prefillEmail) {
+        let s = JSON.parse(localStorage.getItem("session"));
+        let myProfile = users.find(
+          (u) => String(u.UserId) === String(s.userId)
+        );
+        let displayName =
+          prefillName !== undefined
+            ? prefillName
+            : myProfile?.Name || s.name || "";
+        let displayEmail =
+          prefillEmail !== undefined
+            ? prefillEmail
+            : myProfile?.Email || s.email || "";
+        let photoSrc = previewB64 || myProfile?.PhotoURL || "";
+        let fallbackSvg =
+          "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
+        let html = `
+          <div class="_mhdr"><h3><i class="fa-solid fa-user-shield"></i> Edit Admin Profile</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy" style="text-align:center;">
+            <div style="position:relative;width:88px;margin:0 auto 10px;">
+              <img id="adminPhotoPreview" src="${escapeHtml(
+                photoSrc
+              )}" onerror="this.src='${fallbackSvg}'"
+                style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#faeeda;display:block;margin-bottom:0;box-shadow:0 4px 14px rgba(247,160,26,0.25);"/>
+              <div onclick="document.getElementById('adminPhotoFile').click()" style="position:absolute;bottom:2px;right:2px;width:26px;height:26px;background:#f7a01a;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.2);border:2px solid white;" title="Change Photo">
+                <i class="fa-solid fa-camera" style="color:white;font-size:11px;"></i>
+              </div>
+            </div>
+            <input type="file" id="adminPhotoFile" accept="image/*" style="display:none;" onchange="handleAdminSelfPhotoSelected(this)"/>
+            <div style="text-align:left;margin-top:6px;">
+              <label class="_fl">Full Name</label>
+              <input class="_fi" id="asp_name" value="${escapeHtml(
+                displayName
+              )}" placeholder="Your name"/>
+              <label class="_fl">Email</label>
+              <input class="_fi" id="asp_email" type="email" value="${escapeHtml(
+                displayEmail
+              )}" placeholder="your@email.com"/>
+              <label class="_fl">Mobile <span style="color:#bbb;font-weight:400;font-size:10px;">(read-only)</span></label>
+              <input class="_fi" value="${escapeHtml(
+                String(myProfile?.Mobile || "")
+              )}" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;"/>
+            </div>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal();_adminSelfCroppedB64='';">Cancel</button>
+            <button class="_mbtn" style="background:#f7a01a;" onclick="saveAdminProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
+          </div>`;
+        openModal(html, "460px");
+      }
+
+      function handleAdminSelfPhotoSelected(input) {
+        let file = input.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+          toast("Photo must be under 5MB.", "error");
+          return;
+        }
+        let savedName = document.getElementById("asp_name")?.value || "";
+        let savedEmail = document.getElementById("asp_email")?.value || "";
+        openCropModal(file, function (base64) {
+          _adminSelfCroppedB64 = base64;
+          openAdminEditProfile(base64, savedName, savedEmail);
+        });
+      }
+
+      async function saveAdminProfile() {
+        let s = JSON.parse(localStorage.getItem("session"));
+        let myProfile = users.find(
+          (u) => String(u.UserId) === String(s.userId)
+        );
+        let name = document.getElementById("asp_name").value.trim();
+        let email = document.getElementById("asp_email").value.trim();
+        if (!name) {
+          toast("Name cannot be empty.", "error");
+          return;
+        }
+        let photoURL = myProfile?.PhotoURL || "";
+        if (_adminSelfCroppedB64) {
+          toast("Uploading photo...", "warn");
+          try {
+            let response = await fetch(API_URL, {
+              method: "POST",
+              body: JSON.stringify({
+                action: "uploadAndSaveProfile",
+                UserId: s.userId,
+                Name: name,
+                Mobile: myProfile?.Mobile || "",
+                Role: s.role,
+                Password: "",
+                Email: email,
+                Status: "Active",
+                AdminName: name,
+                base64: _adminSelfCroppedB64,
+                fileName: "Admin_" + s.userId + "_" + Date.now() + ".jpg",
+                oldPhotoURL: myProfile?.PhotoURL || "",
+              }),
+            });
+            let res = await response.json();
+            if (res.status === "success") {
+              photoURL = res.photoUrl;
+              toast("✅ Photo uploaded!");
+            } else
+              toast("Photo upload failed, profile still updating.", "warn");
+          } catch (e) {
+            toast("Photo upload error: " + e.message, "warn");
+          }
+        }
+        try {
+          let res = await postData({
+            action: "updateUser",
+            UserId: s.userId,
+            Name: name,
+            Mobile: myProfile?.Mobile || "",
+            Role: s.role,
+            Status: myProfile?.Status || "Active",
+            Email: email,
+            Password: "",
+            PhotoURL: photoURL,
+            AdminName: name,
+          });
+          if (res.status === "updated") {
+            s.name = name;
+            s.email = email;
+            s.expiry = Date.now() + 30 * 60 * 1000;
+            localStorage.setItem("session", JSON.stringify(s));
+            _adminSelfCroppedB64 = "";
+            toast("✅ Profile updated!");
+            closeModal();
+            init();
+          } else {
+            toast("❌ Update failed.", "error");
+          }
+        } catch (err) {
+          toast("❌ " + err.message, "error");
+        }
       }
 
       function toggleSidebar() {
@@ -1009,123 +1517,213 @@
       ];
 
       function loadSummary() {
-        document.getElementById("totalUsers").innerText = users.length;
+        // Total Members = active users with Role=User only (not Admins)
+        let memberCount = users.filter(
+          (u) => u.Role !== "Admin" && u.Status !== "Inactive"
+        ).length;
+        document.getElementById("totalUsers").innerText = memberCount;
         let totalC = data.reduce((a, b) => a + Number(b.Amount || 0), 0);
         let totalE = expenses.reduce((a, b) => a + Number(b.Amount || 0), 0);
-        document.getElementById("totalContribution").innerText = "₹" + fmt(totalC);
+        document.getElementById("totalContribution").innerText =
+          "₹" + fmt(totalC);
         document.getElementById("totalExpense").innerText = "₹" + fmt(totalE);
         let net = totalC - totalE;
-        document.getElementById("netBalance").innerText = "₹" + fmt(Math.abs(net));
-        document.getElementById("netBalance").style.color = net >= 0 ? "#27ae60" : "#e74c3c";
+        document.getElementById("netBalance").innerText =
+          "₹" + fmt(Math.abs(net));
+        document.getElementById("netBalance").style.color =
+          net >= 0 ? "#27ae60" : "#e74c3c";
         updateSidebarSummary();
       }
 
       function updateSidebarSummary() {
         const now = new Date();
         const curYear = now.getFullYear();
-        const curMonth = ["January","February","March","April","May","June","July","August","September","October","November","December"][now.getMonth()];
-        // This month contributions
-        let monthC = data.filter(c => String(c.Year) === String(curYear) && c.ForMonth === curMonth)
-          .reduce((s,c) => s + Number(c.Amount||0), 0);
-        // This year contributions
-        let yearC = data.filter(c => String(c.Year) === String(curYear))
-          .reduce((s,c) => s + Number(c.Amount||0), 0);
-        // This year expenses
-        let yearE = expenses.filter(e => String(e.Year) === String(curYear))
-          .reduce((s,e) => s + Number(e.Amount||0), 0);
-        let bal = yearC - yearE;
+        const MOS = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+        const curMonth = MOS[now.getMonth()];
+        let monthC = data
+          .filter(
+            (c) => String(c.Year) === String(curYear) && c.ForMonth === curMonth
+          )
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        let yearC = data
+          .filter((c) => String(c.Year) === String(curYear))
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        let yearE = expenses
+          .filter((e) => String(e.Year) === String(curYear))
+          .reduce((s, e) => s + Number(e.Amount || 0), 0);
         let sb = document.getElementById("sb_members");
-        if (sb) sb.innerText = users.filter(u => u.Status !== "Inactive").length;
+        if (sb)
+          sb.innerText = users.filter(
+            (u) => u.Role !== "Admin" && u.Status !== "Inactive"
+          ).length;
         let sbm = document.getElementById("sb_month");
         if (sbm) sbm.innerText = "₹" + fmt(monthC);
         let sby = document.getElementById("sb_year");
         if (sby) sby.innerText = "₹" + fmt(yearC);
         let sbe = document.getElementById("sb_exp");
         if (sbe) sbe.innerText = "₹" + fmt(yearE);
-        let sbb = document.getElementById("sb_bal");
-        if (sbb) { sbb.innerText = "₹" + fmt(Math.abs(bal)); sbb.style.color = bal >= 0 ? "#f7a01a" : "#e74c3c"; }
+        // Populate WA month/year selectors
+        let waMonth = document.getElementById("wa_month");
+        let waYear = document.getElementById("wa_year");
+        if (waMonth && waMonth.options.length === 0) {
+          MOS.forEach((m, i) => {
+            let o = document.createElement("option");
+            o.value = m;
+            o.textContent = m;
+            if (i === now.getMonth()) o.selected = true;
+            waMonth.appendChild(o);
+          });
+        }
+        if (waYear && waYear.options.length === 0) {
+          let years = new Set();
+          data.forEach((c) => {
+            let y = Number(c.Year);
+            if (!isNaN(y) && y > 2000) years.add(y);
+          });
+          for (let y = 2023; y <= curYear; y++) years.add(y);
+          Array.from(years)
+            .sort((a, b) => b - a)
+            .forEach((y) => {
+              let o = document.createElement("option");
+              o.value = y;
+              o.textContent = y;
+              if (y === curYear) o.selected = true;
+              waYear.appendChild(o);
+            });
+        }
       }
 
       function sendWhatsAppReport(type) {
-        const now = new Date();
-        const curYear = now.getFullYear();
-        const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-        const curMonth = MONTHS[now.getMonth()];
-
+        const MOS = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+        // Get selected month/year from sidebar dropdowns
+        let waMonth = document.getElementById("wa_month");
+        let waYear = document.getElementById("wa_year");
+        const selMonth = waMonth ? waMonth.value : MOS[new Date().getMonth()];
+        const selYear = waYear
+          ? Number(waYear.value)
+          : new Date().getFullYear();
+        const genDate = new Date().toLocaleDateString("en-IN");
         let msg = "";
 
         if (type === "month") {
-          // Monthly report for current month
-          let monthContribs = data.filter(c => String(c.Year) === String(curYear) && c.ForMonth === curMonth);
-          let monthTotal = monthContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
-          let monthExp = expenses.filter(e => String(e.Year) === String(curYear) && e.ForMonth === curMonth)
-            .reduce((s,e) => s + Number(e.Amount||0), 0);
-
-          // Per-member breakdown
+          let monthContribs = data.filter(
+            (c) => String(c.Year) === String(selYear) && c.ForMonth === selMonth
+          );
+          let monthTotal = monthContribs.reduce(
+            (s, c) => s + Number(c.Amount || 0),
+            0
+          );
+          let monthExp = expenses
+            .filter(
+              (e) =>
+                String(e.Year) === String(selYear) && e.ForMonth === selMonth
+            )
+            .reduce((s, e) => s + Number(e.Amount || 0), 0);
           let memberLines = users
-            .filter(u => u.Status !== "Inactive" && u.Role !== "Admin")
-            .map(u => {
-              let paid = monthContribs.filter(c => String(c.UserId) === String(u.UserId))
-                .reduce((s,c) => s + Number(c.Amount||0), 0);
-              return paid > 0 ? `  ✅ ${u.Name}: ₹${fmt(paid)}` : `  ⬜ ${u.Name}: ₹0`;
-            }).join("\n");
-
-          msg = `🕉️ *Shree Hanuman Mandir*\n`
-              + `📍 Paliya, Sultanpur\n\n`
-              + `📅 *Monthly Report — ${curMonth} ${curYear}*\n`
-              + `━━━━━━━━━━━━━━━━━━━━\n`
-              + `👥 *Member Contributions:*\n${memberLines}\n\n`
-              + `━━━━━━━━━━━━━━━━━━━━\n`
-              + `💰 Total Collected: ₹${fmt(monthTotal)}\n`
-              + `💸 Expenses: ₹${fmt(monthExp)}\n`
-              + `📊 Net: ₹${fmt(monthTotal - monthExp)}\n`
-              + `━━━━━━━━━━━━━━━━━━━━\n`
-              + `_Generated: ${new Date().toLocaleDateString("en-IN")}_`;
-
-        } else {
-          // Yearly report
-          let yearContribs = data.filter(c => String(c.Year) === String(curYear));
-          let yearTotal = yearContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
-          let yearExp = expenses.filter(e => String(e.Year) === String(curYear))
-            .reduce((s,e) => s + Number(e.Amount||0), 0);
-
-          // Per-member yearly breakdown
-          let memberLines = users
-            .filter(u => u.Status !== "Inactive" && u.Role !== "Admin")
-            .map(u => {
-              let paid = yearContribs.filter(c => String(c.UserId) === String(u.UserId))
-                .reduce((s,c) => s + Number(c.Amount||0), 0);
-              let months = [...new Set(yearContribs.filter(c => String(c.UserId) === String(u.UserId)).map(c => c.ForMonth))].join(", ");
+            .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
+            .map((u) => {
+              let paid = monthContribs
+                .filter((c) => String(c.UserId) === String(u.UserId))
+                .reduce((s, c) => s + Number(c.Amount || 0), 0);
               return paid > 0
-                ? `  ✅ ${u.Name}: ₹${fmt(paid)} (${months})`
+                ? `  ✅ ${u.Name}: ₹${fmt(paid)}`
                 : `  ⬜ ${u.Name}: ₹0`;
-            }).join("\n");
-
-          // Month-wise summary
-          let monthLines = MONTHS.map(m => {
-            let mc = yearContribs.filter(c => c.ForMonth === m).reduce((s,c) => s + Number(c.Amount||0), 0);
-            let me = expenses.filter(e => String(e.Year) === String(curYear) && e.ForMonth === m).reduce((s,e) => s + Number(e.Amount||0), 0);
+            })
+            .join("\n");
+          msg =
+            `🕉️ *SHREE HANUMAN MANDIR*\n` +
+            `📍 Paliya, Sultanpur\n\n` +
+            `📅 *Monthly Report — ${selMonth} ${selYear}*\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `👥 *Member Contributions:*\n${memberLines}\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `💰 Total Collected: ₹${fmt(monthTotal)}\n` +
+            `💸 Total Expenses: ₹${fmt(monthExp)}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `_System Generated — ${genDate}_`;
+        } else {
+          let yearContribs = data.filter(
+            (c) => String(c.Year) === String(selYear)
+          );
+          let yearTotal = yearContribs.reduce(
+            (s, c) => s + Number(c.Amount || 0),
+            0
+          );
+          let yearExp = expenses
+            .filter((e) => String(e.Year) === String(selYear))
+            .reduce((s, e) => s + Number(e.Amount || 0), 0);
+          let memberLines = users
+            .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
+            .map((u) => {
+              let paid = yearContribs
+                .filter((c) => String(c.UserId) === String(u.UserId))
+                .reduce((s, c) => s + Number(c.Amount || 0), 0);
+              let mos = [
+                ...new Set(
+                  yearContribs
+                    .filter((c) => String(c.UserId) === String(u.UserId))
+                    .map((c) => c.ForMonth)
+                ),
+              ].join(", ");
+              return paid > 0
+                ? `  ✅ ${u.Name}: ₹${fmt(paid)} (${mos})`
+                : `  ⬜ ${u.Name}: ₹0`;
+            })
+            .join("\n");
+          let monthLines = MOS.map((m) => {
+            let mc = yearContribs
+              .filter((c) => c.ForMonth === m)
+              .reduce((s, c) => s + Number(c.Amount || 0), 0);
+            let me = expenses
+              .filter(
+                (e) => String(e.Year) === String(selYear) && e.ForMonth === m
+              )
+              .reduce((s, e) => s + Number(e.Amount || 0), 0);
             if (mc === 0 && me === 0) return "";
-            return `  ${m}: +₹${fmt(mc)} / -₹${fmt(me)}`;
-          }).filter(Boolean).join("\n");
-
-          msg = `🕉️ *Shree Hanuman Mandir*\n`
-              + `📍 Paliya, Sultanpur\n\n`
-              + `📆 *Annual Report — ${curYear}*\n`
-              + `━━━━━━━━━━━━━━━━━━━━\n`
-              + `👥 *Member Contributions:*\n${memberLines}\n\n`
-              + `📅 *Month-wise:*\n${monthLines || "  No data"}\n\n`
-              + `━━━━━━━━━━━━━━━━━━━━\n`
-              + `💰 Total Collected: ₹${fmt(yearTotal)}\n`
-              + `💸 Total Expenses: ₹${fmt(yearExp)}\n`
-              + `📊 Net Balance: ₹${fmt(yearTotal - yearExp)}\n`
-              + `━━━━━━━━━━━━━━━━━━━━\n`
-              + `_Generated: ${new Date().toLocaleDateString("en-IN")}_`;
+            return `  ${m}: Collected ₹${fmt(mc)}  |  Expense ₹${fmt(me)}`;
+          })
+            .filter(Boolean)
+            .join("\n");
+          msg =
+            `🕉️ *SHREE HANUMAN MANDIR*\n` +
+            `📍 Paliya, Sultanpur\n\n` +
+            `📆 *Annual Report — ${selYear}*\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `👥 *Member Contributions:*\n${memberLines}\n\n` +
+            `📅 *Month-wise Breakdown:*\n${monthLines || "  No data"}\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `💰 Total Collected: ₹${fmt(yearTotal)}\n` +
+            `💸 Total Expenses: ₹${fmt(yearExp)}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `_System Generated — ${genDate}_`;
         }
-
-        // Open WhatsApp with pre-filled message
-        let url = "https://wa.me/?text=" + encodeURIComponent(msg);
-        window.open(url, "_blank");
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
       }
 
       async function init() {
@@ -1152,6 +1750,7 @@
           renderOccasions();
           renderExpenseTypes();
           renderExpenses();
+          loadExpenseFilters();
           renderGoals();
           loadSummary();
         } catch (err) {
@@ -1241,8 +1840,8 @@
               occasions.find(
                 (o) => String(o.OccasionId) === String(c.OccasionId)
               )?.OccasionName || "";
-            // Store receipt data safely using registry
             const _rid = _storeReceipt(c, name, tName, oName);
+            let displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
             return `<tr onclick="viewContribution('${
               c.Id
             }')" title="Click to view details">
@@ -1252,6 +1851,9 @@
         <td>${escapeHtml(c.ForMonth || "—")}</td>
         <td>${escapeHtml(String(c.Year || "—"))}</td>
         <td><span class="badge badge-green">${escapeHtml(tName)}</span></td>
+        <td style="font-size:11px;color:#888;font-family:monospace;">${escapeHtml(
+          displayRID || "—"
+        )}</td>
         <td style="font-size:12px;color:#888;">${c.PaymentDate || "—"}</td>
         <td onclick="event.stopPropagation()">
           <div class="action-btns">
@@ -1393,10 +1995,14 @@
         const end = document.getElementById("contribEnd").value;
         const filtered = data.filter((c) => {
           const user = users.find((u) => String(u.UserId) === String(c.UserId));
+          const displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
           const nameMatch =
+            !txt ||
             (user?.Name.toLowerCase() || "").includes(txt) ||
             String(user?.Mobile || "").includes(txt) ||
-            String(c.Amount).includes(txt);
+            String(c.Amount).includes(txt) ||
+            displayRID.toLowerCase().includes(txt) ||
+            (c.ReceiptID || "").toLowerCase().includes(txt);
           let dateMatch = true;
           if ((start || end) && c.PaymentDate) {
             const parts = String(c.PaymentDate).split(" ")[0].split("-");
@@ -1411,9 +2017,10 @@
       }
 
       /* ── RENDER EXPENSES — view-only rows ── */
-      function renderExpenses() {
+      function renderExpenses(list) {
+        if (!list) list = expenses;
         let n = 0;
-        document.getElementById("expenseRecordsBody").innerHTML = expenses
+        document.getElementById("expenseRecordsBody").innerHTML = list
           .map((e) => {
             n++;
             let tName =
@@ -1428,6 +2035,7 @@
         <td><b>${escapeHtml(e.Title || "")}</b></td>
         <td>${escapeHtml(tName)}</td>
         <td>${escapeHtml(mn)}</td>
+        <td>${escapeHtml(String(e.Year || "—"))}</td>
         <td class="amt-red">₹ ${fmt(e.Amount)}</td>
         <td style="font-size:12px;color:#888;">${e.PaymentDate || "—"}</td>
         <td onclick="event.stopPropagation()">
@@ -1443,6 +2051,71 @@
       </tr>`;
           })
           .join("");
+      }
+
+      function loadExpenseFilters() {
+        let years = new Set();
+        expenses.forEach((e) => {
+          let y = Number(e.Year);
+          if (!isNaN(y) && y > 2000) years.add(y);
+        });
+        let cur = new Date().getFullYear();
+        for (let y = 2023; y <= cur + 1; y++) years.add(y);
+        let yOpts =
+          `<option value="">All Years</option>` +
+          Array.from(years)
+            .sort((a, b) => b - a)
+            .map((y) => `<option value="${y}">${y}</option>`)
+            .join("");
+        let ey = document.getElementById("expFilterYear");
+        if (ey) {
+          ey.innerHTML = yOpts;
+          ey.value = String(cur);
+        }
+        let MONTHS = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+        let mOpts =
+          `<option value="">All Months</option>` +
+          MONTHS.map((m) => `<option value="${m}">${m}</option>`).join("");
+        let em = document.getElementById("expFilterMonth");
+        if (em) em.innerHTML = mOpts;
+      }
+
+      function filterExpenses() {
+        const txt = (
+          document.getElementById("searchExpense")?.value || ""
+        ).toLowerCase();
+        const yr = document.getElementById("expFilterYear")?.value || "";
+        const mo = document.getElementById("expFilterMonth")?.value || "";
+        const filtered = expenses.filter((e) => {
+          let tName =
+            expenseTypes.find(
+              (t) => String(t.ExpenseTypeId) === String(e.ExpenseTypeId)
+            )?.Name || "";
+          let mn = e.ForMonth || e.Note || "";
+          const textMatch =
+            !txt ||
+            (e.Title || "").toLowerCase().includes(txt) ||
+            tName.toLowerCase().includes(txt) ||
+            mn.toLowerCase().includes(txt) ||
+            String(e.Amount).includes(txt);
+          const yearMatch = !yr || String(e.Year) === yr;
+          const monthMatch = !mo || mn === mo;
+          return textMatch && yearMatch && monthMatch;
+        });
+        renderExpenses(filtered);
       }
 
       function viewExpense(id) {
@@ -1548,9 +2221,11 @@
           .map(
             (u) => `
       <tr onclick="viewUser('${u.UserId}')" title="Click to view details">
-        <td onclick="event.stopPropagation();openEditUser('${u.UserId}')" title="Click to edit user" style="cursor:pointer;"><img src="${
-          u.PhotoURL ? escapeHtml(u.PhotoURL) : ""
-        }" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23f7a01a\'/></svg>'" width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;"/></td>
+        <td onclick="event.stopPropagation();openEditUser('${
+          u.UserId
+        }')" title="Click to edit user" style="cursor:pointer;"><img src="${
+              u.PhotoURL ? escapeHtml(u.PhotoURL) : ""
+            }" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23f7a01a\'/></svg>'" width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;"/></td>
         <td><b>${escapeHtml(u.Name)}</b></td>
         <td>${escapeHtml(String(u.Mobile || ""))}</td>
         <td><span class="badge ${
@@ -1611,7 +2286,14 @@
 
       function openEditUser(id) {
         _adminPendingCroppedB64 = ""; // clear any pending crop on fresh open
-        openEditUserWithPreview(id, "", undefined, undefined, undefined, undefined);
+        openEditUserWithPreview(
+          id,
+          "",
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        );
       }
 
       /* Admin: photo crop handler — uses JS variable (not DOM) to survive modal swap */
@@ -1621,24 +2303,41 @@
       function handleAdminPhotoSelected(input, userId) {
         let file = input.files[0];
         if (!file) return;
-        if (file.size > 5 * 1024 * 1024) { toast("Photo must be under 5MB.", "error"); return; }
+        if (file.size > 5 * 1024 * 1024) {
+          toast("Photo must be under 5MB.", "error");
+          return;
+        }
         // Save current form values before crop modal replaces the edit modal
-        let savedName   = document.getElementById("eu_name")?.value   || "";
-        let savedEmail  = document.getElementById("eu_email")?.value  || "";
-        let savedRole   = document.getElementById("eu_role")?.value   || "";
+        let savedName = document.getElementById("eu_name")?.value || "";
+        let savedEmail = document.getElementById("eu_email")?.value || "";
+        let savedRole = document.getElementById("eu_role")?.value || "";
         let savedStatus = document.getElementById("eu_status")?.value || "";
         _adminPendingUserId = userId;
-        openCropModal(file, function(base64) {
+        openCropModal(file, function (base64) {
           _adminPendingCroppedB64 = base64;
           // Re-open edit user modal with cropped preview and preserved values
-          let u = users.find(x => String(x.UserId) === String(userId));
+          let u = users.find((x) => String(x.UserId) === String(userId));
           if (!u) return;
-          openEditUserWithPreview(userId, base64, savedName, savedEmail, savedRole, savedStatus);
+          openEditUserWithPreview(
+            userId,
+            base64,
+            savedName,
+            savedEmail,
+            savedRole,
+            savedStatus
+          );
         });
       }
 
-      function openEditUserWithPreview(id, previewB64, prefName, prefEmail, prefRole, prefStatus) {
-        let u = users.find(x => String(x.UserId) === String(id));
+      function openEditUserWithPreview(
+        id,
+        previewB64,
+        prefName,
+        prefEmail,
+        prefRole,
+        prefStatus
+      ) {
+        let u = users.find((x) => String(x.UserId) === String(id));
         if (!u) return;
         let photoSrc = previewB64 || u.PhotoURL || "";
         let html = `
@@ -1655,19 +2354,33 @@
           </div>
           <input type="file" id="eu_photoFile" accept="image/*" style="display:none;" onchange="handleAdminPhotoSelected(this,'${id}')"/>
         </div>
-        <label class="_fl">Full Name</label><input class="_fi" id="eu_name" value="${escapeHtml(prefName !== undefined ? prefName : u.Name)}"/>
+        <label class="_fl">Full Name</label><input class="_fi" id="eu_name" value="${escapeHtml(
+          prefName !== undefined ? prefName : u.Name
+        )}"/>
         <label class="_fl">Mobile <span style="color:#999;font-weight:400;">(read-only)</span></label>
-        <input class="_fi" value="${escapeHtml(String(u.Mobile||""))}" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;"/>
-        <label class="_fl">Email</label><input class="_fi" id="eu_email" value="${escapeHtml(prefEmail !== undefined ? prefEmail : (u.Email||""))}"/>
+        <input class="_fi" value="${escapeHtml(
+          String(u.Mobile || "")
+        )}" readonly style="background:#f5f5f5;color:#999;cursor:not-allowed;"/>
+        <label class="_fl">Email</label><input class="_fi" id="eu_email" value="${escapeHtml(
+          prefEmail !== undefined ? prefEmail : u.Email || ""
+        )}"/>
         <label class="_fl">Role</label>
         <select class="_fi" id="eu_role">
-          <option ${(prefRole||u.Role)==="User"?"selected":""}>User</option>
-          <option ${(prefRole||u.Role)==="Admin"?"selected":""}>Admin</option>
+          <option ${
+            (prefRole || u.Role) === "User" ? "selected" : ""
+          }>User</option>
+          <option ${
+            (prefRole || u.Role) === "Admin" ? "selected" : ""
+          }>Admin</option>
         </select>
         <label class="_fl">Status</label>
         <select class="_fi" id="eu_status">
-          <option ${(prefStatus||u.Status)==="Active"?"selected":""}>Active</option>
-          <option ${(prefStatus||u.Status)==="Inactive"?"selected":""}>Inactive</option>
+          <option ${
+            (prefStatus || u.Status) === "Active" ? "selected" : ""
+          }>Active</option>
+          <option ${
+            (prefStatus || u.Status) === "Inactive" ? "selected" : ""
+          }>Inactive</option>
         </select>
       </div>
       <div class="_mft">
@@ -1865,15 +2578,155 @@
         init();
       }
 
-      /* ── CRUD — ADD ── */
+      /* ── BULK INSERT — same user, multiple months ── */
+      function openBulkInsert() {
+        if (!checkSession()) return;
+        let userOpts = users
+          .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
+          .map(
+            (u) => `<option value="${u.UserId}">${escapeHtml(u.Name)}</option>`
+          )
+          .join("");
+        let typeOpts = types
+          .map(
+            (t) =>
+              `<option value="${t.TypeId}">${escapeHtml(t.TypeName)}</option>`
+          )
+          .join("");
+        let yearOpts = Array.from(
+          new Set([
+            ...data.map((d) => Number(d.Year)),
+            new Date().getFullYear(),
+            new Date().getFullYear() + 1,
+          ])
+        )
+          .filter((y) => y > 2000)
+          .sort((a, b) => b - a)
+          .map(
+            (y) =>
+              `<option value="${y}"${
+                y === new Date().getFullYear() ? " selected" : ""
+              }>${y}</option>`
+          )
+          .join("");
+        let MOS = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+        let monthChecks = MOS.map(
+          (m) =>
+            `<label style="display:inline-flex;align-items:center;gap:4px;margin:3px 6px 3px 0;font-size:12px;cursor:pointer;"><input type="checkbox" value="${m}" style="width:auto;margin:0;accent-color:#f7a01a;"/> ${m}</label>`
+        ).join("");
+        let html = `
+          <div class="_mhdr"><h3><i class="fa-solid fa-layer-group"></i> Bulk Insert Contributions</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy">
+            <label class="_fl">User</label><select class="_fi" id="bk_user">${userOpts}</select>
+            <label class="_fl">Amount per Month (₹)</label><input class="_fi" type="number" id="bk_amount" placeholder="e.g. 500"/>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div><label class="_fl">Year</label><select class="_fi" id="bk_year" style="margin-bottom:0;">${yearOpts}</select></div>
+              <div><label class="_fl">Type</label><select class="_fi" id="bk_type" style="margin-bottom:0;">${typeOpts}</select></div>
+            </div>
+            <label class="_fl" style="margin-top:12px;">Select Months</label>
+            <div style="background:#f8f8f8;border-radius:8px;padding:10px;margin-bottom:4px;">${monthChecks}</div>
+            <button onclick="selectAllMonths(true)" style="padding:4px 10px;font-size:11px;box-shadow:none;background:#334155;margin:4px 4px 0 0;">Select All</button>
+            <button onclick="selectAllMonths(false)" style="padding:4px 10px;font-size:11px;box-shadow:none;background:#64748b;margin:4px 0 0 0;">Clear</button>
+            <label class="_fl" style="margin-top:12px;">Note (optional)</label>
+            <input class="_fi" id="bk_note" placeholder="e.g. Annual contribution"/>
+            <div id="bk_status" style="font-size:12px;color:#27ae60;font-weight:600;min-height:18px;margin-top:4px;"></div>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+            <button class="_mbtn" style="background:#f7a01a;" onclick="runBulkInsert()"><i class="fa-solid fa-check"></i> Insert All</button>
+          </div>`;
+        openModal(html, "520px");
+      }
+
+      function selectAllMonths(val) {
+        document
+          .querySelectorAll("#_uniModal input[type=checkbox]")
+          .forEach((cb) => (cb.checked = val));
+      }
+
+      async function runBulkInsert() {
+        if (!checkSession()) return;
+        let userId = document.getElementById("bk_user").value;
+        let amount = document.getElementById("bk_amount").value;
+        let year = document.getElementById("bk_year").value;
+        let typeId = document.getElementById("bk_type").value;
+        let note = document.getElementById("bk_note").value;
+        let checked = [
+          ...document.querySelectorAll(
+            "#_uniModal input[type=checkbox]:checked"
+          ),
+        ].map((cb) => cb.value);
+        if (!userId || !amount || amount <= 0)
+          return toast("Please select user and enter amount.", "error");
+        if (checked.length === 0)
+          return toast("Please select at least one month.", "error");
+        let status = document.getElementById("bk_status");
+        status.textContent = `Inserting 0 / ${checked.length}...`;
+        let done = 0,
+          failed = 0;
+        for (let m of checked) {
+          try {
+            let res = await postData({
+              action: "addContribution",
+              Id: Date.now() + "_" + m,
+              UserId: userId,
+              Amount: amount,
+              ForMonth: m,
+              Year: year,
+              TypeId: typeId,
+              OccasionId: "",
+              Note: note,
+            });
+            if (res.status === "success") done++;
+            else failed++;
+          } catch (e) {
+            failed++;
+          }
+          status.textContent = `Inserting ${done + failed} / ${
+            checked.length
+          }...`;
+          await new Promise((r) => setTimeout(r, 300)); // small delay between calls
+        }
+        status.textContent = `✅ Done: ${done} inserted${
+          failed > 0 ? " | ❌ " + failed + " failed" : ""
+        }`;
+        toast(
+          done > 0
+            ? "✅ Bulk insert complete! " + done + " records added."
+            : "❌ All inserts failed.",
+          ""
+        );
+        setTimeout(() => {
+          closeModal();
+          init();
+        }, 1200);
+      }
       async function addContribution() {
         if (!checkSession()) return;
         let s = JSON.parse(localStorage.getItem("session"));
         let userId = document.getElementById("user").value;
         // Prevent admin from contributing as themselves — admin manages only
-        let selectedUser = users.find(u => String(u.UserId) === String(userId));
+        let selectedUser = users.find(
+          (u) => String(u.UserId) === String(userId)
+        );
         if (selectedUser && selectedUser.Role === "Admin") {
-          return toast("⚠️ Admin accounts cannot make contributions. Select a member.", "warn");
+          return toast(
+            "⚠️ Admin accounts cannot make contributions. Select a member.",
+            "warn"
+          );
         }
         let amount = document.getElementById("amount").value,
           year = document.getElementById("contribYear").value;
@@ -2097,24 +2950,28 @@
         }
       }
 
-
       /* ── GOALS MANAGEMENT ── */
       let goals = [];
 
       function renderGoals() {
-        let allC = data;
-        document.getElementById("goalTableBody").innerHTML = goals.length === 0
-          ? `<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No goals yet</td></tr>`
-          : goals.map((g, i) => {
-              // Auto-calculate collected from contributions tagged with this goal
-              let collected = allC
-                .filter(c => String(c.GoalId) === String(g.GoalId) || String(c.OccasionId) === String(g.GoalId))
-                .reduce((s, c) => s + Number(c.Amount || 0), 0);
-              let pct = g.TargetAmount > 0 ? Math.min(100, Math.round((collected / Number(g.TargetAmount)) * 100)) : 0;
-              let barColor = pct >= 100 ? "#27ae60" : pct >= 50 ? "#f7a01a" : "#e74c3c";
-              return `<tr>
-                <td>${i+1}</td>
-                <td><b>${escapeHtml(g.GoalName||"—")}</b></td>
+        document.getElementById("goalTableBody").innerHTML =
+          goals.length === 0
+            ? `<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No goals yet</td></tr>`
+            : goals
+                .map((g, i) => {
+                  let collected = Number(g.CurrentAmount || 0);
+                  let pct =
+                    g.TargetAmount > 0
+                      ? Math.min(
+                          100,
+                          Math.round((collected / Number(g.TargetAmount)) * 100)
+                        )
+                      : 0;
+                  let barColor =
+                    pct >= 100 ? "#27ae60" : pct >= 50 ? "#f7a01a" : "#e74c3c";
+                  return `<tr>
+                <td>${i + 1}</td>
+                <td><b>${escapeHtml(g.GoalName || "—")}</b></td>
                 <td>₹ ${fmt(g.TargetAmount)}</td>
                 <td class="amt-green">₹ ${fmt(collected)}</td>
                 <td style="min-width:120px;">
@@ -2123,45 +2980,76 @@
                   </div>
                   <span style="font-size:10px;color:#888;">${pct}%</span>
                 </td>
-                <td><span class="badge ${g.Status==='Enabled'?'badge-green':'badge-red'}">${g.Status||"Disabled"}</span></td>
+                <td><span class="badge ${
+                  g.Status === "Enabled" ? "badge-green" : "badge-red"
+                }">${g.Status || "Disabled"}</span></td>
                 <td onclick="event.stopPropagation()">
                   <div class="action-btns">
-                    <button class="btn-sm" onclick="openEditGoal('${g.GoalId}')"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-sm btn-danger" onclick="deleteGoal('${g.GoalId}')"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn-sm" onclick="openEditGoal('${
+                      g.GoalId
+                    }')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-sm btn-danger" onclick="deleteGoal('${
+                      g.GoalId
+                    }')"><i class="fa-solid fa-trash"></i></button>
                   </div>
                 </td>
               </tr>`;
-            }).join("");
+                })
+                .join("");
       }
 
       async function addGoal() {
         let name = document.getElementById("g_name").value.trim();
         let target = document.getElementById("g_target").value;
+        let current = document.getElementById("g_current").value || "0";
         let status = document.getElementById("g_status").value;
-        if (!name || !target || target <= 0) return toast("Please enter goal name and target amount.", "error");
+        if (!name || !target || target <= 0)
+          return toast("Please enter goal name and target amount.", "error");
         try {
-          let res = await postData({ action: "addGoal", GoalId: Date.now(), GoalName: name, TargetAmount: target, Status: status });
+          let res = await postData({
+            action: "addGoal",
+            GoalId: Date.now(),
+            GoalName: name,
+            TargetAmount: target,
+            CurrentAmount: current,
+            Status: status,
+          });
           if (res.status === "success") {
             toast("✅ Goal saved!");
             document.getElementById("g_name").value = "";
             document.getElementById("g_target").value = "";
+            document.getElementById("g_current").value = "";
             init();
-          } else toast("❌ Failed: " + (res.message||""), "error");
-        } catch(e) { toast("❌ " + e.message, "error"); }
+          } else toast("❌ Failed: " + (res.message || ""), "error");
+        } catch (e) {
+          toast("❌ " + e.message, "error");
+        }
       }
 
       function openEditGoal(id) {
-        let g = goals.find(x => String(x.GoalId) === String(id));
+        let g = goals.find((x) => String(x.GoalId) === String(id));
         if (!g) return;
         let html = `
           <div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Goal</h3><button class="_mcls" onclick="closeModal()">×</button></div>
           <div class="_mbdy">
-            <label class="_fl">Goal Name</label><input class="_fi" id="eg_name" value="${escapeHtml(g.GoalName||'')}"/>
-            <label class="_fl">Target Amount (₹)</label><input class="_fi" type="number" id="eg_target" value="${g.TargetAmount||0}"/>
+            <label class="_fl">Goal Name</label><input class="_fi" id="eg_name" value="${escapeHtml(
+              g.GoalName || ""
+            )}"/>
+            <label class="_fl">Target Amount (₹)</label><input class="_fi" type="number" id="eg_target" value="${
+              g.TargetAmount || 0
+            }"/>
+            <label class="_fl">Collected So Far (₹) <span style="color:#aaa;font-size:10px;font-weight:400;">update each time funds received</span></label>
+            <input class="_fi" type="number" id="eg_current" value="${
+              g.CurrentAmount || 0
+            }"/>
             <label class="_fl">Status</label>
             <select class="_fi" id="eg_status">
-              <option ${g.Status==='Enabled'?'selected':''}>Enabled</option>
-              <option ${g.Status==='Disabled'?'selected':''}>Disabled</option>
+              <option ${
+                g.Status === "Enabled" ? "selected" : ""
+              }>Enabled</option>
+              <option ${
+                g.Status === "Disabled" ? "selected" : ""
+              }>Disabled</option>
             </select>
           </div>
           <div class="_mft">
@@ -2172,26 +3060,40 @@
       }
 
       async function saveEditGoal(id) {
-        let g = goals.find(x => String(x.GoalId) === String(id));
         try {
           let res = await postData({
-            action: "updateGoal", GoalId: id,
+            action: "updateGoal",
+            GoalId: id,
             GoalName: document.getElementById("eg_name").value,
             TargetAmount: document.getElementById("eg_target").value,
+            CurrentAmount: document.getElementById("eg_current").value || "0",
             Status: document.getElementById("eg_status").value,
           });
-          toast(res.status === "updated" ? "✅ Goal updated." : "❌ Failed.", res.status === "updated" ? "" : "error");
-          if (res.status === "updated") { closeModal(); init(); }
-        } catch(e) { toast("❌ " + e.message, "error"); }
+          toast(
+            res.status === "updated" ? "✅ Goal updated." : "❌ Failed.",
+            res.status === "updated" ? "" : "error"
+          );
+          if (res.status === "updated") {
+            closeModal();
+            init();
+          }
+        } catch (e) {
+          toast("❌ " + e.message, "error");
+        }
       }
 
       async function deleteGoal(id) {
         if (!confirm("Delete this goal?")) return;
         try {
           let res = await postData({ action: "deleteGoal", GoalId: id });
-          toast(res.status === "deleted" ? "✅ Deleted." : "❌ Failed.", res.status === "deleted" ? "" : "error");
+          toast(
+            res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+            res.status === "deleted" ? "" : "error"
+          );
           init();
-        } catch(e) { toast("❌ " + e.message, "error"); }
+        } catch (e) {
+          toast("❌ " + e.message, "error");
+        }
       }
 
       function showReceiptById(rid) {

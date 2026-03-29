@@ -80,7 +80,9 @@ function loadYearDropdown(){
   let years=new Set();
   if(typeof contributions!=="undefined")contributions.forEach(c=>{let y=Number(c.Year);if(!isNaN(y)&&y>2000)years.add(y);});
   if(typeof expenses!=="undefined")expenses.forEach(e=>{let y=Number(e.Year);if(!isNaN(y)&&y>2000)years.add(y);});
-  years.add(new Date().getFullYear());
+  // Always include 2023 through current year so historic data is accessible
+  let curY=new Date().getFullYear();
+  for(let y=2023;y<=curY+1;y++) years.add(y);
   let sorted=Array.from(years).filter(y=>!isNaN(y)).sort((a,b)=>b-a);
   yearSelect.innerHTML=sorted.map(y=>`<option value="${y}">${y}</option>`).join("");
   selectedYear=Number(yearSelect.value);
@@ -274,12 +276,13 @@ function exportReceiptPDF(rid){
   const {jsPDF}=window.jspdf;
   let doc=new jsPDF({format:"a5",unit:"mm"});
   let w=doc.internal.pageSize.getWidth();
-  doc.setFillColor(51,65,85); doc.rect(0,0,w,30,"F");
-  doc.setTextColor(247,160,26); doc.setFontSize(15); doc.setFont(undefined,"bold");
-  doc.text("Shree Hanuman Mandir",w/2,12,{align:"center"});
-  doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont(undefined,"normal");
-  doc.text("Paliya, Sultanpur  |  Contribution Receipt",w/2,20,{align:"center"});
-  doc.text("OFFICIAL RECEIPT",w/2,27,{align:"center"});
+  let ph=doc.internal.pageSize.getHeight();
+  doc.setFillColor(51,65,85); doc.rect(0,0,w,32,"F");
+  doc.setTextColor(247,160,26); doc.setFontSize(14); doc.setFont(undefined,"bold");
+  doc.text("SHREE HANUMAN MANDIR",w/2,12,{align:"center"});
+  doc.setTextColor(255,255,255); doc.setFontSize(8.5); doc.setFont(undefined,"normal");
+  doc.text("PALIYA, SULTANPUR",w/2,19,{align:"center"});
+  doc.text("OFFICIAL CONTRIBUTION RECEIPT",w/2,25,{align:"center"});
   doc.autoTable({
     body:[
       ["Tracking ID", displayRID],["Donor Name",userName||"—"],
@@ -288,13 +291,14 @@ function exportReceiptPDF(rid){
       ["Type",typeName||"—"],["Occasion",occasionName||"—"],
       ["Note",c.Note||"—"],["Date Recorded",c.PaymentDate||"—"]
     ],
-    startY:36, theme:"grid",
-    columnStyles:{0:{fontStyle:"bold",cellWidth:45,fillColor:[250,238,218],textColor:[99,56,6]},1:{cellWidth:w-73}},
+    startY:38, theme:"grid",
+    columnStyles:{0:{fontStyle:"bold",cellWidth:42,fillColor:[250,238,218],textColor:[99,56,6]},1:{cellWidth:w-60}},
     styles:{fontSize:9,cellPadding:3}
   });
-  let fy=doc.lastAutoTable.finalY+8;
-  doc.setFontSize(8);doc.setTextColor(160,160,160);
-  doc.text("Thank you for your generous contribution. Generated: "+new Date().toLocaleDateString("en-IN"),w/2,fy,{align:"center"});
+  let fy=doc.lastAutoTable.finalY+6;
+  doc.setFontSize(7.5); doc.setTextColor(160,160,160);
+  doc.text("Thank you for your generous contribution. 🙏",w/2,fy,{align:"center"});
+  doc.text("SHREE HANUMAN MANDIR  |  System Generated — Not Manually Signed",w/2,ph-5,{align:"center"});
   doc.save("Receipt_"+displayRID+".pdf");
 }
 

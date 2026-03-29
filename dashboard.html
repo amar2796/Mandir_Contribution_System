@@ -310,12 +310,28 @@
       }
       /* Mobile: compress transaction log */
       @media (max-width: 560px) {
-        body { padding: 6px 4px; }
-        .col-hide-mob { display: none !important; }
-        th, td { padding: 8px 7px; font-size: 11px; white-space: normal; }
-        table { min-width: 300px; }
-        .card { padding: 14px 10px; }
-        .grid-layout { gap: 10px; margin-bottom: 10px; }
+        body {
+          padding: 6px 4px;
+        }
+        .col-hide-mob {
+          display: none !important;
+        }
+        th,
+        td {
+          padding: 8px 7px;
+          font-size: 11px;
+          white-space: normal;
+        }
+        table {
+          min-width: 300px;
+        }
+        .card {
+          padding: 14px 10px;
+        }
+        .grid-layout {
+          gap: 10px;
+          margin-bottom: 10px;
+        }
       }
     </style>
   </head>
@@ -341,8 +357,16 @@
             />
           </div>
           <div>
+            <label>Tracking ID (MNR-)</label>
+            <input
+              type="text"
+              id="dashTrackingSearch"
+              placeholder="MNR-... or TRX-..."
+              onkeyup="applyFilter()"
+            />
+          </div>
+          <div>
             <label>Start Date</label>
-            <!-- FIX #7 — readonly, calendar only -->
             <div class="date-wrap">
               <input
                 type="text"
@@ -374,7 +398,7 @@
               style="width: 100%; padding: 10px; font-size: 12px"
               onclick="clearDates()"
             >
-              <i class="fa-solid fa-xmark"></i> Clear Dates
+              <i class="fa-solid fa-xmark"></i> Clear All Filters
             </button>
           </div>
         </div>
@@ -393,13 +417,27 @@
         <p>
           <span>Opening Balance:</span><b>₹ <span id="opening">0</span></b>
         </p>
-        <p style="background:#eafaf1;padding:6px 8px;border-radius:6px;border-bottom:none;">
-          <span style="font-weight:700;color:#27ae60;"><i class="fa-solid fa-circle-check" style="margin-right:4px;"></i>Full Year Collection:</span>
+        <p
+          style="
+            background: #eafaf1;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border-bottom: none;
+          "
+        >
+          <span style="font-weight: 700; color: #27ae60"
+            ><i class="fa-solid fa-circle-check" style="margin-right: 4px"></i
+            >Full Year Collection:</span
+          >
           <b class="amount-col">₹ <span id="yearFullC">0</span></b>
         </p>
         <p>
-          <span style="color:#999;font-size:12px;" id="filteredCountLabel">↳ Filtered Contributions:</span>
-          <b class="amount-col" style="font-size:12px;">+ ₹ <span id="yearTotalC">0</span></b>
+          <span style="color: #999; font-size: 12px" id="filteredCountLabel"
+            >↳ Filtered Contributions:</span
+          >
+          <b class="amount-col" style="font-size: 12px"
+            >+ ₹ <span id="yearTotalC">0</span></b
+          >
         </p>
         <p>
           <span>Filtered Expenses:</span
@@ -496,7 +534,7 @@
         s.expiry = Date.now() + 30 * 60 * 1000;
         localStorage.setItem("session", JSON.stringify(s));
       })();
-      window.addEventListener("pageshow", function() {
+      window.addEventListener("pageshow", function () {
         let s = JSON.parse(localStorage.getItem("session"));
         if (!s || Date.now() > s.expiry || s.role !== "Admin") {
           localStorage.clear();
@@ -504,7 +542,7 @@
           location.replace("login.html");
         }
       });
-      document.addEventListener("visibilitychange", function() {
+      document.addEventListener("visibilitychange", function () {
         if (!document.hidden) {
           let s = JSON.parse(localStorage.getItem("session"));
           if (!s || Date.now() > s.expiry || s.role !== "Admin") {
@@ -627,6 +665,10 @@
         s.dataset.val = "";
         e.value = "";
         e.dataset.val = "";
+        let us = document.getElementById("dashUserSearch");
+        if (us) us.value = "";
+        let ts = document.getElementById("dashTrackingSearch");
+        if (ts) ts.value = "";
         applyFilter();
       }
 
@@ -653,7 +695,7 @@
         return prevO + prevC - prevE;
       }
 
-      // ── INIT — loadYearDropdown called AFTER data (FIX #4)
+      // ── INIT
       async function init() {
         document.getElementById("loadingMsg").style.display = "block";
         try {
@@ -666,7 +708,7 @@
           expenseTypes = allData.expenseTypes || [];
           occasions = allData.occasions || [];
           window.yearConfig = allData.yearConfig || [];
-          loadYearDropdown(); // ← called after data is ready
+          loadYearDropdown();
           applyFilter();
         } catch (err) {
           document.getElementById("loadingMsg").innerText =
@@ -676,10 +718,13 @@
         }
       }
 
-      // ── APPLY FILTERS (FIX #8/#9 — uses PaymentDate correctly)
+      // ── APPLY FILTERS with tracking ID support
       function applyFilter() {
         const txt = (
           document.getElementById("dashUserSearch")?.value || ""
+        ).toLowerCase();
+        const trackTxt = (
+          document.getElementById("dashTrackingSearch")?.value || ""
         ).toLowerCase();
         const startRaw =
           document.getElementById("dashStart")?.dataset.val || "";
@@ -693,6 +738,11 @@
             !txt ||
             (user?.Name.toLowerCase() || "").includes(txt) ||
             String(user?.Mobile || "").includes(txt);
+          const displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+          const trkMatch =
+            !trackTxt ||
+            (c.ReceiptID || "").toLowerCase().includes(trackTxt) ||
+            displayRID.toLowerCase().includes(trackTxt);
           let dMatch = true;
           if ((startRaw || endRaw) && c.PaymentDate) {
             const parts = String(c.PaymentDate).split(" ")[0].split("-");
@@ -702,7 +752,7 @@
                 (!startRaw || cd >= startRaw) && (!endRaw || cd <= endRaw);
             }
           }
-          return uMatch && dMatch;
+          return uMatch && trkMatch && dMatch;
         });
 
         filteredE = expenses.filter((e) => {
@@ -750,7 +800,8 @@
           contributions.reduce((s, c) => s + Number(c.Amount || 0), 0) -
           expenses.reduce((s, e) => s + Number(e.Amount || 0), 0);
         // Full year collection (unfiltered, all contributions for the year)
-        let fullYearC = contributions.filter(c => Number(c.Year) === yr)
+        let fullYearC = contributions
+          .filter((c) => Number(c.Year) === yr)
           .reduce((s, c) => s + Number(c.Amount || 0), 0);
         document.getElementById("opening").innerText = fmt(opening);
         document.getElementById("yearFullC").innerText = fmt(fullYearC);
@@ -761,7 +812,12 @@
         // Update filtered count label
         let filtLabel = document.getElementById("filteredCountLabel");
         if (filtLabel) {
-          let countTxt = filteredC.length > 0 ? filteredC.length + " Filtered Contribution" + (filteredC.length !== 1 ? "s" : "") : "Filtered Contributions";
+          let countTxt =
+            filteredC.length > 0
+              ? filteredC.length +
+                " Filtered Contribution" +
+                (filteredC.length !== 1 ? "s" : "")
+              : "Filtered Contributions";
           filtLabel.textContent = "↳ " + countTxt + ":";
         }
       }
@@ -890,22 +946,27 @@
         let doc = new jsPDF("p", "mm", "a4");
         let w = doc.internal.pageSize.getWidth();
         doc.setFillColor(51, 65, 85);
-        doc.rect(0, 0, w, 20, "F");
+        doc.rect(0, 0, w, 22, "F");
         doc.setTextColor(247, 160, 26);
         doc.setFontSize(14);
         doc.setFont(undefined, "bold");
-        doc.text("Mandir Financial Dashboard — " + selectedYear, w / 2, 13, {
-          align: "center",
-        });
+        doc.text(
+          "SHREE HANUMAN MANDIR — FINANCIAL REPORT " + selectedYear,
+          w / 2,
+          13,
+          { align: "center" }
+        );
         let totalC = document.getElementById("yearTotalC").innerText;
         let totalE = document.getElementById("yearTotalE").innerText;
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setTextColor(50, 50, 50);
         doc.setFont(undefined, "normal");
         doc.text(
-          `Contributions: Rs. ${totalC}   |   Expenses: Rs. ${totalE}`,
+          `Contributions: Rs. ${totalC}   |   Expenses: Rs. ${totalE}   |   Generated: ${new Date().toLocaleDateString(
+            "en-IN"
+          )}`,
           14,
-          28
+          30
         );
         let rows = [];
         document.querySelectorAll("#detailTable tbody tr").forEach((tr) => {
@@ -920,11 +981,29 @@
             ["Date", "Name / Title", "Type", "Month", "Occasion", "Amount"],
           ],
           body: rows,
-          startY: 34,
+          startY: 35,
           theme: "grid",
-          headStyles: { fillColor: [51, 65, 85] },
+          headStyles: { fillColor: [51, 65, 85], fontStyle: "bold" },
           styles: { fontSize: 8 },
+          alternateRowStyles: { fillColor: [253, 251, 247] },
         });
+        // System generated footer on every page
+        let pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          let ph = doc.internal.pageSize.getHeight();
+          doc.setFontSize(7);
+          doc.setTextColor(170, 170, 170);
+          doc.text(
+            "SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  |  System Generated — Not Manually Signed",
+            w / 2,
+            ph - 5,
+            { align: "center" }
+          );
+          doc.text(`Page ${i} of ${pageCount}`, w - 14, ph - 5, {
+            align: "right",
+          });
+        }
         doc.save(`Mandir_Report_${selectedYear}_${Date.now()}.pdf`);
       }
 

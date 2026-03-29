@@ -6,249 +6,597 @@
     <title>User Dashboard - Mandir System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
-      * { box-sizing: border-box; }
-      body { margin: 0; font-family: "Poppins", sans-serif; background: #f0f2f5; color: #333; }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Poppins", sans-serif;
+        background: #f0f2f5;
+        color: #333;
+      }
 
       /* ══ HEADER ══ */
       .header {
         background: #fff;
-        padding: 9px 14px;
+        padding: 0 14px;
+        height: 56px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-        position: sticky; top: 0; z-index: 100;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+        position: sticky;
+        top: 0;
+        z-index: 200;
         gap: 8px;
         border-bottom: 2px solid #f7a01a;
       }
-      .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
-      .hdr-avatar {
-        width: 40px; height: 40px; border-radius: 50%;
-        border: 2.5px solid #f7a01a; object-fit: cover;
-        background: #faeeda; flex-shrink: 0; cursor: pointer;
-        box-shadow: 0 2px 8px rgba(247,160,26,0.3);
-        transition: transform 0.2s;
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        flex: 1;
       }
-      .hdr-avatar:hover { transform: scale(1.08); }
-      .hdr-info { min-width: 0; }
+      .hdr-welcome {
+        font-size: 12px;
+        color: #888;
+        font-weight: 400;
+      }
       .hdr-name {
-        font-weight: 700; font-size: 0.92rem; color: #334155;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        max-width: 180px; display: block; line-height: 1.3;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #334155;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+        display: block;
+        line-height: 1.2;
       }
-      .hdr-edit {
-        font-size: 11px; color: #f7a01a; cursor: pointer;
-        font-weight: 600; text-decoration: none; display: inline-flex;
-        align-items: center; gap: 3px;
+      .header-right {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-shrink: 0;
+        position: relative;
       }
-      .hdr-edit:hover { color: #d35400; }
-      .header-right { display: flex; gap: 7px; align-items: center; flex-shrink: 0; }
+
+      /* Avatar + dropdown */
+      .hdr-avatar-wrap {
+        position: relative;
+      }
+      .hdr-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2.5px solid #f7a01a;
+        object-fit: cover;
+        background: #faeeda;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(247, 160, 26, 0.3);
+        transition: transform 0.2s;
+        display: block;
+      }
+      .hdr-avatar:hover {
+        transform: scale(1.08);
+      }
+      .hdr-dropdown {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 50px;
+        background: #fff;
+        border-radius: 12px;
+        min-width: 180px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        border: 1px solid #f0f0f0;
+        z-index: 999;
+        overflow: hidden;
+        animation: dropFade 0.18s ease;
+      }
+      @keyframes dropFade {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .hdr-dropdown.open {
+        display: block;
+      }
+      .hdr-drop-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        transition: background 0.15s;
+        border-bottom: 1px solid #f5f5f5;
+      }
+      .hdr-drop-item:last-child {
+        border-bottom: none;
+      }
+      .hdr-drop-item:hover {
+        background: #fafaf5;
+        color: #f7a01a;
+      }
+      .hdr-drop-item i {
+        width: 16px;
+        text-align: center;
+        color: #f7a01a;
+      }
+      .hdr-drop-item.danger {
+        color: #e74c3c;
+      }
+      .hdr-drop-item.danger i {
+        color: #e74c3c;
+      }
+      .hdr-drop-item.danger:hover {
+        background: #fff5f5;
+      }
 
       /* ══ MAIN CONTENT ══ */
-      .main { padding: 12px 10px; max-width: 960px; margin: 0 auto; }
+      .main {
+        padding: 12px 10px;
+        max-width: 960px;
+        margin: 0 auto;
+      }
 
       /* ══ BUTTONS ══ */
       button {
-        padding: 9px 16px; background: #f7a01a; color: white; border: none;
-        border-radius: 8px; cursor: pointer; font-family: "Poppins", sans-serif;
-        font-weight: 600; font-size: 13px; transition: all 0.25s;
-        box-shadow: 0 3px 10px rgba(247,160,26,0.28);
-        display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+        padding: 9px 16px;
+        background: #f7a01a;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: "Poppins", sans-serif;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.25s;
+        box-shadow: 0 3px 10px rgba(247, 160, 26, 0.28);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
       }
-      button:active { transform: scale(0.97); }
-      button:hover { background: #d35400; box-shadow: 0 4px 14px rgba(211,84,0,0.3); }
-      .btn-secondary { background: #334155; box-shadow: 0 3px 10px rgba(51,65,85,0.25); }
-      .btn-secondary:hover { background: #1e293b; }
-      .btn-danger { background: #e74c3c; box-shadow: 0 3px 10px rgba(231,76,60,0.25); }
-      .btn-danger:hover { background: #c0392b; }
-      .btn-green { background: #27ae60; box-shadow: 0 3px 10px rgba(39,174,96,0.25); }
-      .btn-green:hover { background: #1e8449; }
-      .btn-sm { padding: 5px 10px; font-size: 11.5px; box-shadow: none; border-radius: 6px; }
-      .btn-blue { background: #2980b9; box-shadow: none; }
-      .btn-blue:hover { background: #1a6fa0; }
+      button:active {
+        transform: scale(0.97);
+      }
+      button:hover {
+        background: #d35400;
+        box-shadow: 0 4px 14px rgba(211, 84, 0, 0.3);
+      }
+      .btn-secondary {
+        background: #334155;
+        box-shadow: 0 3px 10px rgba(51, 65, 85, 0.25);
+      }
+      .btn-secondary:hover {
+        background: #1e293b;
+      }
+      .btn-danger {
+        background: #e74c3c;
+        box-shadow: 0 3px 10px rgba(231, 76, 60, 0.25);
+      }
+      .btn-danger:hover {
+        background: #c0392b;
+      }
+      .btn-green {
+        background: #27ae60;
+        box-shadow: 0 3px 10px rgba(39, 174, 96, 0.25);
+      }
+      .btn-green:hover {
+        background: #1e8449;
+      }
+      .btn-sm {
+        padding: 5px 10px;
+        font-size: 11.5px;
+        box-shadow: none;
+        border-radius: 6px;
+      }
+      .btn-blue {
+        background: #2980b9;
+        box-shadow: none;
+      }
+      .btn-blue:hover {
+        background: #1a6fa0;
+      }
 
       /* ══ GRID ══ */
       .grid-layout {
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 12px; margin-bottom: 12px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
       }
 
       /* ══ CARDS ══ */
       .card {
-        background: white; padding: 16px 14px; border-radius: 14px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.06); border-top: 3px solid #f7a01a;
+        background: white;
+        padding: 16px 14px;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        border-top: 3px solid #f7a01a;
         margin-bottom: 12px;
       }
       .card h3 {
-        margin: 0 0 12px; color: #334155; border-bottom: 1.5px solid #f0f2f5;
-        padding-bottom: 8px; display: flex; align-items: center;
-        gap: 8px; font-size: 0.95rem; font-weight: 700;
+        margin: 0 0 12px;
+        color: #334155;
+        border-bottom: 1.5px solid #f0f2f5;
+        padding-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+        font-weight: 700;
       }
-      .card h3 i { color: #f7a01a; font-size: 0.9rem; }
+      .card h3 i {
+        color: #f7a01a;
+        font-size: 0.9rem;
+      }
 
       /* ══ TOTAL BANNER ══ */
       .total-banner {
-        background: linear-gradient(135deg, #1a9e55 0%, #27ae60 50%, #2ecc71 100%);
-        color: white; padding: 20px 16px; border-radius: 14px;
-        text-align: center; margin-bottom: 12px;
-        box-shadow: 0 6px 20px rgba(39,174,96,0.32);
-        position: relative; overflow: hidden;
+        background: linear-gradient(
+          135deg,
+          #1a9e55 0%,
+          #27ae60 50%,
+          #2ecc71 100%
+        );
+        color: white;
+        padding: 20px 16px;
+        border-radius: 14px;
+        text-align: center;
+        margin-bottom: 12px;
+        box-shadow: 0 6px 20px rgba(39, 174, 96, 0.32);
+        position: relative;
+        overflow: hidden;
       }
       .total-banner::before {
         content: "🕉️";
-        position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-        font-size: 2.5rem; opacity: 0.12;
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 2.5rem;
+        opacity: 0.12;
       }
-      .total-banner h2 { margin: 0; font-size: 0.85rem; font-weight: 500; opacity: 0.88; letter-spacing: 0.3px; }
-      .total-banner h1 { margin: 6px 0 0; font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; }
+      .total-banner h2 {
+        margin: 0;
+        font-size: 0.85rem;
+        font-weight: 500;
+        opacity: 0.88;
+        letter-spacing: 0.3px;
+      }
+      .total-banner h1 {
+        margin: 6px 0 0;
+        font-size: 2.2rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
 
       /* ══ GOAL ══ */
       .goal-card {
-        background: white; padding: 16px 14px; border-radius: 14px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.06); border-top: 3px solid #f7a01a;
+        background: white;
+        padding: 16px 14px;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        border-top: 3px solid #f7a01a;
         margin-bottom: 12px;
       }
-      .goal-card h3 { margin: 0 0 10px; font-size: 0.95rem; display:flex;align-items:center;gap:8px;font-weight:700;color:#334155; }
-      .goal-card h3 i { color: #f7a01a; }
+      .goal-card h3 {
+        margin: 0 0 10px;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        color: #334155;
+      }
+      .goal-card h3 i {
+        color: #f7a01a;
+      }
 
       /* ══ SUMMARY ITEMS ══ */
       .summary-item {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 9px 0; border-bottom: 1px dashed #eee; font-size: 0.88rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 0;
+        border-bottom: 1px dashed #eee;
+        font-size: 0.88rem;
       }
-      .summary-item:last-child { border-bottom: none; }
-      .summary-item b { color: #27ae60; font-size: 0.93rem; }
+      .summary-item:last-child {
+        border-bottom: none;
+      }
+      .summary-item b {
+        color: #27ae60;
+        font-size: 0.93rem;
+      }
 
       /* ══ FORM ELEMENTS ══ */
-      input, select {
-        width: 100%; padding: 9px 12px; margin-bottom: 10px; border: 1.5px solid #e8e8e8;
-        border-radius: 8px; font-family: "Poppins", sans-serif; outline: none;
-        transition: border-color 0.2s, box-shadow 0.2s; font-size: 13px; background: #fafafa;
+      input,
+      select {
+        width: 100%;
+        padding: 9px 12px;
+        margin-bottom: 10px;
+        border: 1.5px solid #e8e8e8;
+        border-radius: 8px;
+        font-family: "Poppins", sans-serif;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        font-size: 13px;
+        background: #fafafa;
       }
-      input:focus, select:focus {
-        border-color: #f7a01a; background: #fff;
-        box-shadow: 0 0 0 3px rgba(247,160,26,0.1);
+      input:focus,
+      select:focus {
+        border-color: #f7a01a;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(247, 160, 26, 0.1);
       }
-      label { display: block; font-size: 11.5px; font-weight: 600; color: #666; margin-bottom: 3px; }
+      label {
+        display: block;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #666;
+        margin-bottom: 3px;
+      }
 
       /* ══ FILTER ROW ══ */
       .filter-row {
-        display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
-        gap: 10px; align-items: end;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 10px;
+        align-items: end;
       }
       .filter-actions {
-        display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
       }
-      .filter-actions button { flex: 1; min-width: 80px; justify-content: center; }
+      .filter-actions button {
+        flex: 1;
+        min-width: 80px;
+        justify-content: center;
+      }
 
       /* ══ TABLE ══ */
-      .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; border-radius: 10px; }
-      table {
-        width: 100%; border-collapse: collapse; background: white;
-        border-radius: 10px; overflow: hidden; margin-top: 6px; min-width: 320px;
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        border-radius: 10px;
       }
-      thead { background: #334155; color: white; }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 6px;
+        min-width: 320px;
+      }
+      thead {
+        background: #334155;
+        color: white;
+      }
       th {
-        padding: 10px 11px; text-align: left; font-size: 12px;
-        font-weight: 600; white-space: nowrap; letter-spacing: 0.2px;
+        padding: 10px 11px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        letter-spacing: 0.2px;
       }
       td {
-        padding: 9px 11px; text-align: left; border-bottom: 1px solid #f0f0f0;
-        font-size: 12.5px; white-space: nowrap;
+        padding: 9px 11px;
+        text-align: left;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 12.5px;
+        white-space: nowrap;
       }
-      tbody tr:last-child td { border-bottom: none; }
-      tbody tr:hover { background: #fffbf2; cursor: pointer; }
-      .amount-col { font-weight: 700; color: #27ae60; }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      tbody tr:hover {
+        background: #fffbf2;
+        cursor: pointer;
+      }
+      .amount-col {
+        font-weight: 700;
+        color: #27ae60;
+      }
 
       /* ══ PHOTO PREVIEW ══ */
       .photo-preview {
-        width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
-        border: 3px solid #f7a01a; background: #faeeda; display: block;
-        margin: 0 auto 12px; box-shadow: 0 4px 14px rgba(247,160,26,0.25);
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #f7a01a;
+        background: #faeeda;
+        display: block;
+        margin: 0 auto 12px;
+        box-shadow: 0 4px 14px rgba(247, 160, 26, 0.25);
       }
 
       /* ══ MOBILE RESPONSIVE ══ */
       @media (max-width: 600px) {
-        .grid-layout { grid-template-columns: 1fr; gap: 10px; }
+        .grid-layout {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
       }
-
       @media (max-width: 480px) {
-        .main { padding: 8px 6px; }
-        .card, .goal-card { padding: 13px 10px; border-radius: 12px; margin-bottom: 10px; }
-        .card h3 { font-size: 0.88rem; margin-bottom: 10px; padding-bottom: 7px; }
-        .total-banner { padding: 16px 12px; border-radius: 12px; margin-bottom: 10px; }
-        .total-banner h1 { font-size: 1.85rem; }
-        .total-banner h2 { font-size: 0.78rem; }
-        .summary-item { font-size: 0.82rem; padding: 7px 0; }
-        .hdr-name { max-width: 120px; font-size: 0.84rem; }
-        /* Filter: 2 cols on mobile */
-        .filter-row { grid-template-columns: 1fr 1fr; gap: 8px; }
-        input, select { padding: 8px 10px; font-size: 12px; margin-bottom: 8px; }
-        /* Table: hide less important columns */
-        .col-year { display: none; }
-        .col-receipt-th { display: none; }
-        th, td { padding: 8px 7px; font-size: 11.5px; }
-        /* Buttons smaller on mobile */
-        button { padding: 8px 12px; font-size: 12px; gap: 5px; }
-        .btn-danger { padding: 7px 10px; font-size: 12px; }
+        .main {
+          padding: 8px 6px;
+        }
+        .card,
+        .goal-card {
+          padding: 13px 10px;
+          border-radius: 12px;
+          margin-bottom: 10px;
+        }
+        .card h3 {
+          font-size: 0.88rem;
+          margin-bottom: 10px;
+          padding-bottom: 7px;
+        }
+        .total-banner {
+          padding: 16px 12px;
+          border-radius: 12px;
+          margin-bottom: 10px;
+        }
+        .total-banner h1 {
+          font-size: 1.85rem;
+        }
+        .total-banner h2 {
+          font-size: 0.78rem;
+        }
+        .summary-item {
+          font-size: 0.82rem;
+          padding: 7px 0;
+        }
+        .hdr-name {
+          max-width: 120px;
+          font-size: 0.84rem;
+        }
+        .filter-row {
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        input,
+        select {
+          padding: 8px 10px;
+          font-size: 12px;
+          margin-bottom: 8px;
+        }
+        .col-year {
+          display: none;
+        }
+        .col-receipt-th {
+          display: none;
+        }
+        th,
+        td {
+          padding: 8px 7px;
+          font-size: 11.5px;
+        }
+        button {
+          padding: 8px 12px;
+          font-size: 12px;
+          gap: 5px;
+        }
       }
-
       @media (max-width: 360px) {
-        .main { padding: 6px 4px; }
-        .total-banner h1 { font-size: 1.6rem; }
-        .hdr-name { max-width: 90px; }
-        .filter-row { grid-template-columns: 1fr; }
+        .main {
+          padding: 6px 4px;
+        }
+        .total-banner h1 {
+          font-size: 1.6rem;
+        }
+        .hdr-name {
+          max-width: 90px;
+        }
+        .filter-row {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
   <body>
+    <!-- HEADER: left = Welcome + Name, right = avatar with dropdown -->
     <div class="header">
       <div class="header-left">
-        <img id="hdr_photo" class="hdr-avatar" src=""
-          onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'36\' height=\'36\'><circle cx=\'18\' cy=\'18\' r=\'18\' fill=\'%23f7a01a\'/><text x=\'18\' y=\'23\' text-anchor=\'middle\' fill=\'white\' font-size=\'16\' font-family=\'Arial\'>&#128100;</text></svg>'"
-          onclick="openEditProfile()" title="Edit Profile"
-        />
-        <div class="hdr-info">
+        <div>
+          <div class="hdr-welcome">Welcome,</div>
           <span class="hdr-name" id="hdr_name">Loading...</span>
-          <a class="hdr-edit" onclick="openEditProfile()"><i class="fa-solid fa-pen" style="font-size:10px;"></i> Edit Profile</a>
         </div>
       </div>
       <div class="header-right">
-        <button class="btn-danger" onclick="logout()" style="padding:8px 14px;font-size:13px;">
-          <i class="fa-solid fa-power-off"></i> <span class="hide-xs">Logout</span>
-        </button>
+        <div class="hdr-avatar-wrap">
+          <img
+            id="hdr_photo"
+            class="hdr-avatar"
+            src=""
+            onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'><circle cx=\'20\' cy=\'20\' r=\'20\' fill=\'%23f7a01a\'/><text x=\'20\' y=\'26\' text-anchor=\'middle\' fill=\'white\' font-size=\'18\' font-family=\'Arial\'>&#128100;</text></svg>'"
+            onclick="toggleUserDropdown()"
+            title="Account"
+          />
+          <div id="userDropdown" class="hdr-dropdown">
+            <div
+              class="hdr-drop-item"
+              onclick="closeDropdown();openEditProfile()"
+            >
+              <i class="fa-solid fa-user-pen"></i> Edit Profile
+            </div>
+            <div class="hdr-drop-item danger" onclick="logout()">
+              <i class="fa-solid fa-power-off"></i> Logout
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="main">
-      <!-- Row 1: Total banner (always first) -->
+      <!-- Total banner -->
       <div class="total-banner">
-        <h2><i class="fa-solid fa-hand-holding-dollar"></i> Your Total Contributions</h2>
+        <h2>
+          <i class="fa-solid fa-hand-holding-dollar"></i> Your Total
+          Contributions
+        </h2>
         <h1>₹ <span id="totalAmount">0</span></h1>
       </div>
 
-      <!-- Row 2: Goal (only if enabled) -->
-      <div class="goal-card" id="goalSection" style="display:none;">
-        <h3 id="goalTitle"><i class="fa-solid fa-bullseye"></i> Goal Progress</h3>
-        <div style="background:#eee;border-radius:15px;height:22px;width:100%;overflow:hidden;">
-          <div id="goalBar" style="background:linear-gradient(90deg,#f7a01a,#d35400);height:100%;width:0%;transition:width 1s ease;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:11px;">0%</div>
-        </div>
-        <p id="goalAmount" style="margin:8px 0 0;font-weight:600;text-align:right;font-size:13px;"></p>
-      </div>
+      <!-- All enabled Goals -->
+      <div id="goalsContainer"></div>
 
-      <!-- Month + Type summaries -->
+      <!-- Month + Type summaries: year-filtered -->
       <div class="grid-layout">
         <div class="card">
-          <h3><i class="fa-solid fa-calendar-days"></i> Month-wise</h3>
+          <h3>
+            <i class="fa-solid fa-calendar-days"></i> Month-wise
+            <select
+              id="summaryYear"
+              style="
+                margin: 0;
+                width: auto;
+                padding: 3px 8px;
+                font-size: 12px;
+                border-radius: 6px;
+                margin-left: auto;
+              "
+              onchange="renderSummaries()"
+            ></select>
+          </h3>
           <div id="monthSummary"></div>
         </div>
         <div class="card">
-          <h3><i class="fa-solid fa-chart-pie"></i> Type-wise</h3>
+          <h3>
+            <i class="fa-solid fa-chart-pie"></i> Type-wise
+            <span style="font-size: 10px; color: #aaa; font-weight: 400"
+              >(same year)</span
+            >
+          </h3>
           <div id="typeSummary"></div>
         </div>
       </div>
@@ -259,25 +607,56 @@
         <div class="filter-row">
           <div>
             <label>Year</label>
-            <select id="filterYear" style="margin:0;" onchange="applyFilter()"></select>
+            <select
+              id="filterYear"
+              style="margin: 0"
+              onchange="applyFilter()"
+            ></select>
           </div>
           <div>
             <label>Month</label>
-            <select id="filterMonth" style="margin:0;" onchange="applyFilter()"></select>
+            <select
+              id="filterMonth"
+              style="margin: 0"
+              onchange="applyFilter()"
+            ></select>
           </div>
           <div>
             <label>Type</label>
-            <select id="filterType" style="margin:0;" onchange="applyFilter()"></select>
+            <select
+              id="filterType"
+              style="margin: 0"
+              onchange="applyFilter()"
+            ></select>
           </div>
           <div>
             <label>Search</label>
-            <input type="text" id="searchInput" placeholder="Amount, month..." onkeyup="searchData()" style="margin:0;" />
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Amount, month, MNR..."
+              onkeyup="searchData()"
+              style="margin: 0"
+            />
           </div>
         </div>
         <div class="filter-actions">
-          <button onclick="applyFilter()" style="background:#334155;box-shadow:none;"><i class="fa-solid fa-magnifying-glass"></i> Apply</button>
-          <button onclick="resetFilter()" class="btn-secondary" style="background:#64748b;box-shadow:none;"><i class="fa-solid fa-rotate-right"></i> Reset</button>
-          <button onclick="exportPDF()" class="btn-green"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+          <button
+            onclick="applyFilter()"
+            style="background: #334155; box-shadow: none"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i> Apply
+          </button>
+          <button
+            onclick="resetFilter()"
+            class="btn-secondary"
+            style="background: #64748b; box-shadow: none"
+          >
+            <i class="fa-solid fa-rotate-right"></i> Reset
+          </button>
+          <button onclick="exportPDF()" class="btn-green">
+            <i class="fa-solid fa-file-pdf"></i> Export PDF
+          </button>
         </div>
       </div>
 
@@ -285,7 +664,9 @@
       <div class="card">
         <h3>
           <i class="fa-solid fa-list-ul"></i> Your Contributions
-          <span style="font-size:11px;font-weight:400;color:#999;">(click row for receipt)</span>
+          <span style="font-size: 11px; font-weight: 400; color: #999"
+            >(click row for receipt)</span
+          >
         </h3>
         <div class="table-responsive">
           <table>
@@ -295,7 +676,7 @@
                 <th>Amount (₹)</th>
                 <th>Month</th>
                 <th class="col-year">Year</th>
-                <th>Type</th>
+                <th>Tracking ID / Type</th>
                 <th>Date</th>
                 <th class="col-receipt-th">Receipt</th>
               </tr>
@@ -312,60 +693,114 @@
       // ── Session
       (function () {
         let s = JSON.parse(localStorage.getItem("session"));
-        if (!s || Date.now() > s.expiry) { localStorage.clear(); history.replaceState(null,"","login.html"); location.replace("login.html"); return; }
-        if (s.role !== "User") { location.replace("admin.html"); return; }
+        if (!s || Date.now() > s.expiry) {
+          localStorage.clear();
+          history.replaceState(null, "", "login.html");
+          location.replace("login.html");
+          return;
+        }
+        if (s.role !== "User") {
+          location.replace("admin.html");
+          return;
+        }
         s.expiry = Date.now() + 30 * 60 * 1000;
         localStorage.setItem("session", JSON.stringify(s));
       })();
-      window.addEventListener("pageshow", (e) => {
+      window.addEventListener("pageshow", () => {
         let s = JSON.parse(localStorage.getItem("session"));
-        if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null,"","login.html"); location.replace("login.html"); }
+        if (!s || Date.now() > s.expiry || s.role !== "User") {
+          localStorage.clear();
+          history.replaceState(null, "", "login.html");
+          location.replace("login.html");
+        }
       });
       document.addEventListener("visibilitychange", () => {
         if (!document.hidden) {
           let s = JSON.parse(localStorage.getItem("session"));
-          if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null,"","login.html"); location.replace("login.html"); }
+          if (!s || Date.now() > s.expiry || s.role !== "User") {
+            localStorage.clear();
+            history.replaceState(null, "", "login.html");
+            location.replace("login.html");
+          }
         }
       });
-      function logout() { localStorage.clear(); history.replaceState(null,"","login.html"); location.replace("login.html"); }
+      function logout() {
+        localStorage.clear();
+        history.replaceState(null, "", "login.html");
+        location.replace("login.html");
+      }
+
+      // ── Avatar dropdown
+      function toggleUserDropdown() {
+        document.getElementById("userDropdown").classList.toggle("open");
+      }
+      function closeDropdown() {
+        document.getElementById("userDropdown").classList.remove("open");
+      }
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".hdr-avatar-wrap")) closeDropdown();
+      });
 
       // ── Variables
-      let users = [], types = [], occasions = [], data = [], allContributions = [];
-      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      let users = [],
+        types = [],
+        occasions = [],
+        data = [],
+        allContributions = [],
+        allGoals = [];
+      const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
 
       // ── Update header with user info
       function updateHeader(myProfile, s) {
-        document.getElementById("hdr_name").innerText = myProfile?.Name || s.name;
-        if (myProfile?.PhotoURL) {
-          let url = myProfile.PhotoURL;
-          if (url.includes("drive.google.com/uc")) {
-            let m = url.match(/[?&]id=([^&]+)/);
-            if (m) url = "https://lh3.googleusercontent.com/d/" + m[1];
-          }
-          document.getElementById("hdr_photo").src = url;
+        document.getElementById("hdr_name").innerText =
+          myProfile?.Name || s.name;
+        let url = myProfile?.PhotoURL || "";
+        if (url.includes("drive.google.com/uc")) {
+          let m = url.match(/[?&]id=([^&]+)/);
+          if (m) url = "https://lh3.googleusercontent.com/d/" + m[1];
         }
+        if (url) document.getElementById("hdr_photo").src = url;
       }
 
       // ── EDIT PROFILE POPUP with crop
-      // _pendingCroppedB64 holds crop result in memory (profile modal is destroyed by crop modal)
       let _pendingCroppedB64 = "";
 
       function openEditProfile(previewB64, prefillName, prefillEmail) {
         let s = JSON.parse(localStorage.getItem("session"));
-        let myProfile = users.find(u => String(u.UserId) === String(s.userId));
-        // Use prefilled values if coming back from crop, else use current profile
-        let displayName  = prefillName  !== undefined ? prefillName  : (myProfile?.Name  || s.name || "");
-        let displayEmail = prefillEmail !== undefined ? prefillEmail : (myProfile?.Email || s.email || "");
-        // Photo: prefer new crop preview, else existing URL
+        let myProfile = users.find(
+          (u) => String(u.UserId) === String(s.userId)
+        );
+        let displayName =
+          prefillName !== undefined
+            ? prefillName
+            : myProfile?.Name || s.name || "";
+        let displayEmail =
+          prefillEmail !== undefined
+            ? prefillEmail
+            : myProfile?.Email || s.email || "";
         let photoSrc = previewB64 || myProfile?.PhotoURL || "";
-        let fallbackSvg = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
-
+        let fallbackSvg =
+          "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
         let html = `
           <div class="_mhdr"><h3><i class="fa-solid fa-user-pen"></i> Edit Profile</h3><button class="_mcls" onclick="closeModal()">×</button></div>
           <div class="_mbdy" style="text-align:center;">
             <div style="position:relative;width:88px;margin:0 auto 10px;">
-              <img id="photoPreview" class="photo-preview" src="${escapeHtml(photoSrc)}"
-                onerror="this.src='${fallbackSvg}'" style="margin-bottom:0;"/>
+              <img id="photoPreview" class="photo-preview" src="${escapeHtml(
+                photoSrc
+              )}" onerror="this.src='${fallbackSvg}'" style="margin-bottom:0;"/>
               <div onclick="pickPhoto()" style="position:absolute;bottom:2px;right:2px;width:26px;height:26px;background:#f7a01a;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.2);border:2px solid white;" title="Change Photo">
                 <i class="fa-solid fa-camera" style="color:white;font-size:11px;"></i>
               </div>
@@ -374,11 +809,17 @@
             <input type="file" id="photoFile" accept="image/*" style="display:none;" onchange="handlePhotoSelected(this)"/>
             <div style="text-align:left;">
               <label class="_fl">Full Name</label>
-              <input class="_fi" id="ep_name" value="${escapeHtml(displayName)}" placeholder="Your name"/>
+              <input class="_fi" id="ep_name" value="${escapeHtml(
+                displayName
+              )}" placeholder="Your name"/>
               <label class="_fl">Email</label>
-              <input class="_fi" id="ep_email" type="email" value="${escapeHtml(displayEmail)}" placeholder="your@email.com"/>
+              <input class="_fi" id="ep_email" type="email" value="${escapeHtml(
+                displayEmail
+              )}" placeholder="your@email.com"/>
               <label class="_fl">Mobile <span style="color:#bbb;font-weight:400;font-size:10px;">(read-only)</span></label>
-              <input class="_fi" value="${escapeHtml(String(myProfile?.Mobile || ""))}" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;margin-bottom:4px;"/>
+              <input class="_fi" value="${escapeHtml(
+                String(myProfile?.Mobile || "")
+              )}" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;margin-bottom:4px;"/>
               <label class="_fl">Password <span style="color:#bbb;font-weight:400;font-size:10px;">(use Forgot Password to change)</span></label>
               <input class="_fi" value="••••••••" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;"/>
             </div>
@@ -398,12 +839,13 @@
       function handlePhotoSelected(input) {
         let file = input.files[0];
         if (!file) return;
-        if (file.size > 5 * 1024 * 1024) { toast("Photo must be under 5MB.", "error"); return; }
-        // Save current form values before the crop modal destroys the profile modal
-        let savedName  = document.getElementById("ep_name")?.value  || "";
+        if (file.size > 5 * 1024 * 1024) {
+          toast("Photo must be under 5MB.", "error");
+          return;
+        }
+        let savedName = document.getElementById("ep_name")?.value || "";
         let savedEmail = document.getElementById("ep_email")?.value || "";
-        openCropModal(file, function(base64) {
-          // Crop done — store in memory variable, then reopen profile modal with preview
+        openCropModal(file, function (base64) {
           _pendingCroppedB64 = base64;
           openEditProfile(base64, savedName, savedEmail);
         });
@@ -411,14 +853,16 @@
 
       async function saveProfile() {
         let s = JSON.parse(localStorage.getItem("session"));
-        let myProfile = users.find(u => String(u.UserId) === String(s.userId));
-        let name  = document.getElementById("ep_name").value.trim();
+        let myProfile = users.find(
+          (u) => String(u.UserId) === String(s.userId)
+        );
+        let name = document.getElementById("ep_name").value.trim();
         let email = document.getElementById("ep_email").value.trim();
-        if (!name) { toast("Name cannot be empty.", "error"); return; }
-
-        let photoURL    = myProfile?.PhotoURL || "";
-        let oldPhotoURL = myProfile?.PhotoURL || "";
-
+        if (!name) {
+          toast("Name cannot be empty.", "error");
+          return;
+        }
+        let photoURL = myProfile?.PhotoURL || "";
         if (_pendingCroppedB64) {
           toast("Uploading photo...", "warn");
           try {
@@ -426,38 +870,48 @@
               method: "POST",
               body: JSON.stringify({
                 action: "uploadAndSaveProfile",
-                UserId: s.userId, Name: name,
-                Mobile: myProfile?.Mobile || "", Role: s.role,
-                Password: "", Email: email, Status: "Active",
+                UserId: s.userId,
+                Name: name,
+                Mobile: myProfile?.Mobile || "",
+                Role: s.role,
+                Password: "",
+                Email: email,
+                Status: "Active",
                 AdminName: name,
                 base64: _pendingCroppedB64,
                 fileName: "User_" + s.userId + "_" + Date.now() + ".jpg",
-                oldPhotoURL: oldPhotoURL,
+                oldPhotoURL: myProfile?.PhotoURL || "",
               }),
             });
             let res = await response.json();
             if (res.status === "success") {
               photoURL = res.photoUrl;
               toast("✅ Photo uploaded!");
-            } else {
+            } else
               toast("Photo upload failed, profile still updating.", "warn");
-            }
           } catch (e) {
             toast("Photo upload error: " + e.message, "warn");
           }
         }
-
         try {
           let res = await postData({
-            action: "updateUser", UserId: s.userId, Name: name,
-            Mobile: myProfile?.Mobile || "", Role: s.role,
-            Status: myProfile?.Status || "Active", Email: email,
-            Password: "", PhotoURL: photoURL, AdminName: name,
+            action: "updateUser",
+            UserId: s.userId,
+            Name: name,
+            Mobile: myProfile?.Mobile || "",
+            Role: s.role,
+            Status: myProfile?.Status || "Active",
+            Email: email,
+            Password: "",
+            PhotoURL: photoURL,
+            AdminName: name,
           });
           if (res.status === "updated") {
-            s.name = name; s.email = email; s.expiry = Date.now() + 30*60*1000;
+            s.name = name;
+            s.email = email;
+            s.expiry = Date.now() + 30 * 60 * 1000;
             localStorage.setItem("session", JSON.stringify(s));
-            _pendingCroppedB64 = ""; // clear after successful save
+            _pendingCroppedB64 = "";
             toast("✅ Profile updated!");
             closeModal();
             init();
@@ -478,74 +932,183 @@
           types = allData.types || [];
           occasions = allData.occasions || [];
           allContributions = allData.contributions || [];
-          data = allContributions.filter(c => String(c.UserId) === String(s.userId));
-
-          let myProfile = users.find(u => String(u.UserId) === String(s.userId));
+          allGoals = allData.goals || [];
+          data = allContributions.filter(
+            (c) => String(c.UserId) === String(s.userId)
+          );
+          let myProfile = users.find(
+            (u) => String(u.UserId) === String(s.userId)
+          );
           updateHeader(myProfile, s);
           loadFilters();
+          loadSummaryYears();
           renderTable(data);
           calculateTotal();
-          renderMonthSummary();
-          renderTypeSummary();
-          renderGoals(allData.goals);
+          renderSummaries();
+          renderGoals(allGoals);
         } catch (err) {
           toast("Failed to load: " + err.message, "error");
         }
       }
 
+      // ── ALL ENABLED GOALS (show all, not just first)
       function renderGoals(goals) {
-        if (!goals) return;
-        let ag = goals.find(g => g.Status === "Enabled");
-        if (ag) {
-          document.getElementById("goalSection").style.display = "block";
-          document.getElementById("goalTitle").innerHTML = `<i class="fa-solid fa-bullseye"></i> ${escapeHtml(ag.GoalName)}`;
-          let pct = (Number(ag.CurrentAmount) / Number(ag.TargetAmount)) * 100;
-          let bar = document.getElementById("goalBar");
-          setTimeout(()=>{ bar.style.width = Math.min(pct, 100) + "%"; bar.innerText = Math.round(pct) + "%"; }, 200);
-          document.getElementById("goalAmount").innerText = `₹${fmt(ag.CurrentAmount)} / ₹${fmt(ag.TargetAmount)}`;
+        let container = document.getElementById("goalsContainer");
+        if (!goals || goals.length === 0) {
+          container.innerHTML = "";
+          return;
         }
+        let enabled = goals.filter((g) => g.Status === "Enabled");
+        if (enabled.length === 0) {
+          container.innerHTML = "";
+          return;
+        }
+        container.innerHTML = enabled
+          .map((g) => {
+            // Use stored CurrentAmount from backend (admin sets manually)
+            let collected = Number(g.CurrentAmount || 0);
+            let target = Number(g.TargetAmount || 1);
+            let pct = Math.min(100, Math.round((collected / target) * 100));
+            let barColor =
+              pct >= 100 ? "#27ae60" : pct >= 60 ? "#f7a01a" : "#e74c3c";
+            return `<div class="goal-card">
+            <h3><i class="fa-solid fa-bullseye"></i> ${escapeHtml(
+              g.GoalName
+            )}</h3>
+            <div style="background:#eee;border-radius:15px;height:22px;width:100%;overflow:hidden;">
+              <div style="background:linear-gradient(90deg,${barColor},${barColor}dd);height:100%;width:${pct}%;transition:width 1s ease;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:11px;">${pct}%</div>
+            </div>
+            <p style="margin:8px 0 0;font-weight:600;text-align:right;font-size:13px;color:#555;">₹${fmt(
+              collected
+            )} / ₹${fmt(target)}</p>
+          </div>`;
+          })
+          .join("");
+      }
+
+      // ── SUMMARY YEAR SELECTOR
+      function loadSummaryYears() {
+        let years = new Set();
+        data.forEach((c) => {
+          let y = Number(c.Year);
+          if (!isNaN(y) && y > 2000) years.add(y);
+        });
+        for (let y = 2023; y <= new Date().getFullYear(); y++) years.add(y);
+        let sorted = Array.from(years).sort((a, b) => b - a);
+        let sel = document.getElementById("summaryYear");
+        sel.innerHTML = sorted
+          .map((y) => `<option value="${y}">${y}</option>`)
+          .join("");
+        sel.value = new Date().getFullYear();
+      }
+
+      function renderSummaries() {
+        let yr =
+          document.getElementById("summaryYear")?.value ||
+          String(new Date().getFullYear());
+        let yearData = data.filter((c) => String(c.Year) === String(yr));
+        // Month-wise
+        let mapM = {};
+        yearData.forEach((c) => {
+          mapM[c.ForMonth] = (mapM[c.ForMonth] || 0) + Number(c.Amount || 0);
+        });
+        document.getElementById("monthSummary").innerHTML =
+          months
+            .filter((m) => mapM[m])
+            .map(
+              (m) =>
+                `<div class="summary-item"><span>${m}</span><b>₹ ${fmt(
+                  mapM[m]
+                )}</b></div>`
+            )
+            .join("") ||
+          "<div style='text-align:center;color:#aaa;padding:10px 0;'>No data for " +
+            yr +
+            "</div>";
+        // Type-wise
+        let mapT = {};
+        yearData.forEach((c) => {
+          let t =
+            types.find((x) => String(x.TypeId) === String(c.TypeId))
+              ?.TypeName || "Other";
+          mapT[t] = (mapT[t] || 0) + Number(c.Amount || 0);
+        });
+        document.getElementById("typeSummary").innerHTML =
+          Object.keys(mapT)
+            .map(
+              (t) =>
+                `<div class="summary-item"><span>${t}</span><b>₹ ${fmt(
+                  mapT[t]
+                )}</b></div>`
+            )
+            .join("") ||
+          "<div style='text-align:center;color:#aaa;padding:10px 0;'>No data for " +
+            yr +
+            "</div>";
       }
 
       function loadFilters() {
         let years = new Set();
-        data.forEach(c => { let y = Number(c.Year); if (!isNaN(y) && y > 2000) years.add(y); });
-        years.add(new Date().getFullYear());
-        // Always include from 2023 minimum
+        data.forEach((c) => {
+          let y = Number(c.Year);
+          if (!isNaN(y) && y > 2000) years.add(y);
+        });
         for (let y = 2023; y <= new Date().getFullYear(); y++) years.add(y);
         document.getElementById("filterYear").innerHTML =
           `<option value="">All Years</option>` +
-          Array.from(years).sort((a,b)=>b-a).map(y => `<option value="${y}">${y}</option>`).join("");
+          Array.from(years)
+            .sort((a, b) => b - a)
+            .map((y) => `<option value="${y}">${y}</option>`)
+            .join("");
         document.getElementById("filterMonth").innerHTML =
           '<option value="">All Months</option>' +
-          months.map(m => `<option value="${m}">${m}</option>`).join("");
+          months.map((m) => `<option value="${m}">${m}</option>`).join("");
         document.getElementById("filterType").innerHTML =
           '<option value="">All Types</option>' +
-          types.map(t => `<option value="${t.TypeId}">${t.TypeName}</option>`).join("");
+          types
+            .map((t) => `<option value="${t.TypeId}">${t.TypeName}</option>`)
+            .join("");
       }
 
       function renderTable(list) {
         document.getElementById("tableBody").innerHTML =
           list.length === 0
             ? `<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No records found</td></tr>`
-            : list.map((c, i) => {
-                let type = types.find(t => String(t.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
-                let oName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
-                let uName = users.find(u => String(u.UserId) === String(c.UserId))?.Name || "Me";
-                // Store receipt data and use ID reference
-                const rid = _storeReceipt(c, uName, type, oName);
-                return `<tr onclick="showReceiptById('${rid}')" title="Click for receipt">
+            : list
+                .map((c, i) => {
+                  let type =
+                    types.find((t) => String(t.TypeId) === String(c.TypeId))
+                      ?.TypeName || "Contribution";
+                  let oName =
+                    occasions.find(
+                      (o) => String(o.OccasionId) === String(c.OccasionId)
+                    )?.OccasionName || "—";
+                  let uName =
+                    users.find((u) => String(u.UserId) === String(c.UserId))
+                      ?.Name || "Me";
+                  const rid = _storeReceipt(c, uName, type, oName);
+                  // Show MNR- prefix in display
+                  let displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+                  return `<tr onclick="showReceiptById('${rid}')" title="Click for receipt">
                   <td>${i + 1}</td>
                   <td class="amount-col">₹ ${fmt(c.Amount)}</td>
                   <td><b>${escapeHtml(c.ForMonth || "—")}</b></td>
                   <td class="col-year">${c.Year || "—"}</td>
                   <td>
-                    <span style="font-size:10px;color:#aaa;display:block;">${escapeHtml(c.ReceiptID || "")}</span>
-                    <span style="background:#eafaf1;color:#27ae60;padding:1px 6px;border-radius:4px;font-size:11px;">${escapeHtml(type)}</span>
+                    <span style="font-size:10px;color:#888;display:block;font-family:monospace;">${escapeHtml(
+                      displayRID
+                    )}</span>
+                    <span style="background:#eafaf1;color:#27ae60;padding:1px 6px;border-radius:4px;font-size:11px;">${escapeHtml(
+                      type
+                    )}</span>
                   </td>
-                  <td style="font-size:11px;color:#888;">${escapeHtml(c.PaymentDate || "N/A")}</td>
+                  <td style="font-size:11px;color:#888;">${escapeHtml(
+                    c.PaymentDate || "N/A"
+                  )}</td>
                   <td class="col-receipt-th"><button class="btn-blue btn-sm" onclick="event.stopPropagation();showReceiptById('${rid}')"><i class="fa-solid fa-receipt"></i></button></td>
                 </tr>`;
-              }).join("");
+                })
+                .join("");
       }
 
       function showReceiptById(rid) {
@@ -555,78 +1118,194 @@
       }
 
       function calculateTotal() {
-        document.getElementById("totalAmount").innerText = fmt(data.reduce((s,c) => s + Number(c.Amount||0), 0));
-      }
-      function renderMonthSummary() {
-        let map = {};
-        data.forEach(c => { map[c.ForMonth] = (map[c.ForMonth]||0) + Number(c.Amount||0); });
-        document.getElementById("monthSummary").innerHTML =
-          Object.keys(map).map(m => `<div class="summary-item"><span>${m}</span><b>₹ ${fmt(map[m])}</b></div>`).join("") ||
-          "<div style='text-align:center;color:#aaa;'>No data yet</div>";
-      }
-      function renderTypeSummary() {
-        let map = {};
-        data.forEach(c => {
-          let t = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Other";
-          map[t] = (map[t]||0) + Number(c.Amount||0);
-        });
-        document.getElementById("typeSummary").innerHTML =
-          Object.keys(map).map(t => `<div class="summary-item"><span>${t}</span><b>₹ ${fmt(map[t])}</b></div>`).join("") ||
-          "<div style='text-align:center;color:#aaa;'>No data yet</div>";
+        document.getElementById("totalAmount").innerText = fmt(
+          data.reduce((s, c) => s + Number(c.Amount || 0), 0)
+        );
       }
 
       function applyFilter() {
         let y = document.getElementById("filterYear").value;
         let m = document.getElementById("filterMonth").value;
         let t = document.getElementById("filterType").value;
-        renderTable(data.filter(c =>
-          (!y || String(c.Year) === y) &&
-          (!m || c.ForMonth === m) &&
-          (!t || String(c.TypeId) === String(t))
-        ));
+        renderTable(
+          data.filter(
+            (c) =>
+              (!y || String(c.Year) === y) &&
+              (!m || c.ForMonth === m) &&
+              (!t || String(c.TypeId) === String(t))
+          )
+        );
       }
       function resetFilter() {
-        ["filterYear","filterMonth","filterType"].forEach(id => (document.getElementById(id).value = ""));
+        ["filterYear", "filterMonth", "filterType"].forEach(
+          (id) => (document.getElementById(id).value = "")
+        );
         document.getElementById("searchInput").value = "";
         renderTable(data);
       }
       function searchData() {
         let txt = document.getElementById("searchInput").value.toLowerCase();
-        renderTable(data.filter(c => {
-          let t = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "";
-          return t.toLowerCase().includes(txt) ||
-            (c.ForMonth||"").toLowerCase().includes(txt) ||
-            String(c.Amount).includes(txt) ||
-            (c.PaymentDate||"").toLowerCase().includes(txt) ||
-            String(c.Year||"").includes(txt);
-        }));
+        renderTable(
+          data.filter((c) => {
+            let t =
+              types.find((x) => String(x.TypeId) === String(c.TypeId))
+                ?.TypeName || "";
+            let displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+            return (
+              t.toLowerCase().includes(txt) ||
+              (c.ForMonth || "").toLowerCase().includes(txt) ||
+              String(c.Amount).includes(txt) ||
+              (c.PaymentDate || "").toLowerCase().includes(txt) ||
+              String(c.Year || "").includes(txt) ||
+              displayRID.toLowerCase().includes(txt) ||
+              (c.ReceiptID || "").toLowerCase().includes(txt)
+            );
+          })
+        );
       }
 
       function exportPDF() {
         const { jsPDF } = window.jspdf;
-        let doc = new jsPDF();
-        let s = JSON.parse(localStorage.getItem("session"));
-        doc.setFontSize(15); doc.setTextColor(148,108,68);
-        doc.text("Mandir Contribution Report", 14, 15);
-        doc.setFontSize(11); doc.setTextColor(50,50,50);
-        doc.text(`Member: ${s.name}`, 14, 23);
-        let total = 0, rows = [];
-        document.querySelectorAll("#tableBody tr").forEach(tr => {
-          let tds = tr.querySelectorAll("td");
-          if (tds.length < 5) return;
-          let r = [];
-          tds.forEach((td, i) => {
-            let txt = td.innerText.trim();
-            if (i === 1) { let a = Number(txt.replace(/[₹,]/g,"").trim()); if (!isNaN(a)) total += a; txt = txt.replace("₹","Rs."); }
-            if (i < 6 && i !== 6) r.push(txt);
-          });
-          if (r.length >= 5) rows.push(r.slice(0,6));
+        let doc = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
         });
-        doc.text(`Total: Rs. ${total.toLocaleString("en-IN")}`, 14, 30);
-        if (rows.length > 0)
-          doc.autoTable({ head:[["#","Amount","Month","Year","Type","Date"]], body:rows, startY:35, theme:"grid", headStyles:{fillColor:[51,65,85]}, styles:{fontSize:9} });
-        else doc.text("No records.", 14, 40);
-        doc.save(`My_Mandir_${Date.now()}.pdf`);
+        let s = JSON.parse(localStorage.getItem("session"));
+        let w = doc.internal.pageSize.getWidth();
+        // Header band
+        doc.setFillColor(51, 65, 85);
+        doc.rect(0, 0, w, 28, "F");
+        doc.setTextColor(247, 160, 26);
+        doc.setFontSize(16);
+        doc.setFont(undefined, "bold");
+        doc.text("SHREE HANUMAN MANDIR", w / 2, 11, { align: "center" });
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont(undefined, "normal");
+        doc.text("PALIYA, SULTANPUR  |  CONTRIBUTION STATEMENT", w / 2, 18, {
+          align: "center",
+        });
+        doc.text("OFFICIAL DOCUMENT — FOR INTERNAL USE ONLY", w / 2, 24, {
+          align: "center",
+        });
+        // Member info
+        doc.setTextColor(50, 50, 50);
+        doc.setFontSize(10);
+        doc.setFont(undefined, "bold");
+        doc.text(`Member: ${s.name.toUpperCase()}`, 14, 36);
+        doc.setFont(undefined, "normal");
+        doc.setFontSize(9);
+        doc.text(
+          `Generated: ${new Date().toLocaleDateString(
+            "en-IN"
+          )}  |  System Generated Report`,
+          14,
+          42
+        );
+        // Compute total from data (not DOM)
+        let filterY = document.getElementById("filterYear").value;
+        let filterM = document.getElementById("filterMonth").value;
+        let filterT = document.getElementById("filterType").value;
+        let srchTxt = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        let filtered = data.filter((c) => {
+          let t =
+            types.find((x) => String(x.TypeId) === String(c.TypeId))
+              ?.TypeName || "";
+          let dRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+          let base =
+            (!filterY || String(c.Year) === filterY) &&
+            (!filterM || c.ForMonth === filterM) &&
+            (!filterT || String(c.TypeId) === String(filterT));
+          if (!base) return false;
+          if (!srchTxt) return true;
+          return (
+            t.toLowerCase().includes(srchTxt) ||
+            String(c.Amount).includes(srchTxt) ||
+            (c.ForMonth || "").toLowerCase().includes(srchTxt) ||
+            dRID.toLowerCase().includes(srchTxt)
+          );
+        });
+        let total = filtered.reduce((s, c) => s + Number(c.Amount || 0), 0);
+        doc.setFont(undefined, "bold");
+        doc.setFontSize(10);
+        doc.text(
+          `Total Amount: Rs. ${total.toLocaleString("en-IN")}  (${
+            filtered.length
+          } record${filtered.length !== 1 ? "s" : ""})`,
+          14,
+          49
+        );
+        // Table
+        let rows = filtered.map((c, i) => {
+          let tName =
+            types.find((x) => String(x.TypeId) === String(c.TypeId))
+              ?.TypeName || "—";
+          let dRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+          return [
+            String(i + 1),
+            "Rs." + Number(c.Amount || 0).toLocaleString("en-IN"),
+            c.ForMonth || "—",
+            String(c.Year || "—"),
+            tName,
+            dRID,
+            c.PaymentDate || "—",
+          ];
+        });
+        if (rows.length > 0) {
+          doc.autoTable({
+            head: [
+              [
+                "#",
+                "Amount (Rs.)",
+                "Month",
+                "Year",
+                "Type",
+                "Tracking ID",
+                "Date",
+              ],
+            ],
+            body: rows,
+            startY: 54,
+            theme: "grid",
+            headStyles: {
+              fillColor: [51, 65, 85],
+              fontStyle: "bold",
+              fontSize: 9,
+            },
+            styles: { fontSize: 8.5, cellPadding: 3 },
+            columnStyles: {
+              0: { cellWidth: 8 },
+              1: { cellWidth: 25 },
+              5: { cellWidth: 35 },
+            },
+            alternateRowStyles: { fillColor: [253, 251, 247] },
+          });
+        } else {
+          doc.text("No records found.", 14, 58);
+        }
+        // Footer
+        let pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          let ph = doc.internal.pageSize.getHeight();
+          doc.setFontSize(7);
+          doc.setTextColor(170, 170, 170);
+          doc.text(
+            "SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  |  System Generated — Not Manually Signed",
+            w / 2,
+            ph - 5,
+            { align: "center" }
+          );
+          doc.text(`Page ${i} of ${pageCount}`, w - 14, ph - 5, {
+            align: "right",
+          });
+        }
+        doc.save(
+          `Mandir_Statement_${s.name.replace(/\s+/g, "_")}_${Date.now()}.pdf`
+        );
       }
 
       init();
