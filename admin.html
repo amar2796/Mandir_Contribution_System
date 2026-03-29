@@ -14,6 +14,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/brands.min.css"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -39,6 +43,8 @@
         box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
         z-index: 1000;
         transition: left 0.3s ease;
+        overflow-y: auto;
+        max-height: 100vh;
       }
       .sidebar h2 {
         text-align: center;
@@ -467,6 +473,42 @@
             <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
           </li>
         </ul>
+
+        <!-- Live Summary Panel in sidebar -->
+        <div id="sidebarSummary" style="margin:16px 10px 0;background:rgba(255,255,255,0.07);border-radius:10px;padding:12px 10px;font-size:12px;">
+          <div style="color:#f7a01a;font-weight:700;margin-bottom:8px;font-size:11.5px;letter-spacing:0.3px;">
+            <i class="fa-solid fa-chart-simple"></i> LIVE SUMMARY
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <span style="color:#aaa;font-size:11px;">Members</span>
+            <span id="sb_members" style="color:#fff;font-weight:600;">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <span style="color:#aaa;font-size:11px;">This Month</span>
+            <span id="sb_month" style="color:#2ecc71;font-weight:600;">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <span style="color:#aaa;font-size:11px;">This Year</span>
+            <span id="sb_year" style="color:#2ecc71;font-weight:600;">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <span style="color:#aaa;font-size:11px;">Expenses</span>
+            <span id="sb_exp" style="color:#e74c3c;font-weight:600;">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;">
+            <span style="color:#aaa;font-size:11px;">Balance</span>
+            <span id="sb_bal" style="color:#f7a01a;font-weight:700;">—</span>
+          </div>
+          <!-- WhatsApp Report Buttons -->
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:7px;">
+            <button onclick="sendWhatsAppReport('month')" style="background:#25D366;box-shadow:none;padding:7px 8px;font-size:11px;border-radius:7px;width:100%;justify-content:center;">
+              <i class="fa-brands fa-whatsapp"></i> Monthly Report
+            </button>
+            <button onclick="sendWhatsAppReport('year')" style="background:#128C7E;box-shadow:none;padding:7px 8px;font-size:11px;border-radius:7px;width:100%;justify-content:center;">
+              <i class="fa-brands fa-whatsapp"></i> Yearly Report
+            </button>
+          </div>
+        </div>
       </div>
       <div class="overlay" onclick="toggleSidebar()"></div>
 
@@ -970,14 +1012,120 @@
         document.getElementById("totalUsers").innerText = users.length;
         let totalC = data.reduce((a, b) => a + Number(b.Amount || 0), 0);
         let totalE = expenses.reduce((a, b) => a + Number(b.Amount || 0), 0);
-        document.getElementById("totalContribution").innerText =
-          "₹" + fmt(totalC);
+        document.getElementById("totalContribution").innerText = "₹" + fmt(totalC);
         document.getElementById("totalExpense").innerText = "₹" + fmt(totalE);
         let net = totalC - totalE;
-        document.getElementById("netBalance").innerText =
-          "₹" + fmt(Math.abs(net));
-        document.getElementById("netBalance").style.color =
-          net >= 0 ? "#27ae60" : "#e74c3c";
+        document.getElementById("netBalance").innerText = "₹" + fmt(Math.abs(net));
+        document.getElementById("netBalance").style.color = net >= 0 ? "#27ae60" : "#e74c3c";
+        updateSidebarSummary();
+      }
+
+      function updateSidebarSummary() {
+        const now = new Date();
+        const curYear = now.getFullYear();
+        const curMonth = ["January","February","March","April","May","June","July","August","September","October","November","December"][now.getMonth()];
+        // This month contributions
+        let monthC = data.filter(c => String(c.Year) === String(curYear) && c.ForMonth === curMonth)
+          .reduce((s,c) => s + Number(c.Amount||0), 0);
+        // This year contributions
+        let yearC = data.filter(c => String(c.Year) === String(curYear))
+          .reduce((s,c) => s + Number(c.Amount||0), 0);
+        // This year expenses
+        let yearE = expenses.filter(e => String(e.Year) === String(curYear))
+          .reduce((s,e) => s + Number(e.Amount||0), 0);
+        let bal = yearC - yearE;
+        let sb = document.getElementById("sb_members");
+        if (sb) sb.innerText = users.filter(u => u.Status !== "Inactive").length;
+        let sbm = document.getElementById("sb_month");
+        if (sbm) sbm.innerText = "₹" + fmt(monthC);
+        let sby = document.getElementById("sb_year");
+        if (sby) sby.innerText = "₹" + fmt(yearC);
+        let sbe = document.getElementById("sb_exp");
+        if (sbe) sbe.innerText = "₹" + fmt(yearE);
+        let sbb = document.getElementById("sb_bal");
+        if (sbb) { sbb.innerText = "₹" + fmt(Math.abs(bal)); sbb.style.color = bal >= 0 ? "#f7a01a" : "#e74c3c"; }
+      }
+
+      function sendWhatsAppReport(type) {
+        const now = new Date();
+        const curYear = now.getFullYear();
+        const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+        const curMonth = MONTHS[now.getMonth()];
+
+        let msg = "";
+
+        if (type === "month") {
+          // Monthly report for current month
+          let monthContribs = data.filter(c => String(c.Year) === String(curYear) && c.ForMonth === curMonth);
+          let monthTotal = monthContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
+          let monthExp = expenses.filter(e => String(e.Year) === String(curYear) && e.ForMonth === curMonth)
+            .reduce((s,e) => s + Number(e.Amount||0), 0);
+
+          // Per-member breakdown
+          let memberLines = users
+            .filter(u => u.Status !== "Inactive" && u.Role !== "Admin")
+            .map(u => {
+              let paid = monthContribs.filter(c => String(c.UserId) === String(u.UserId))
+                .reduce((s,c) => s + Number(c.Amount||0), 0);
+              return paid > 0 ? `  ✅ ${u.Name}: ₹${fmt(paid)}` : `  ⬜ ${u.Name}: ₹0`;
+            }).join("\n");
+
+          msg = `🕉️ *Shree Hanuman Mandir*\n`
+              + `📍 Paliya, Sultanpur\n\n`
+              + `📅 *Monthly Report — ${curMonth} ${curYear}*\n`
+              + `━━━━━━━━━━━━━━━━━━━━\n`
+              + `👥 *Member Contributions:*\n${memberLines}\n\n`
+              + `━━━━━━━━━━━━━━━━━━━━\n`
+              + `💰 Total Collected: ₹${fmt(monthTotal)}\n`
+              + `💸 Expenses: ₹${fmt(monthExp)}\n`
+              + `📊 Net: ₹${fmt(monthTotal - monthExp)}\n`
+              + `━━━━━━━━━━━━━━━━━━━━\n`
+              + `_Generated: ${new Date().toLocaleDateString("en-IN")}_`;
+
+        } else {
+          // Yearly report
+          let yearContribs = data.filter(c => String(c.Year) === String(curYear));
+          let yearTotal = yearContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
+          let yearExp = expenses.filter(e => String(e.Year) === String(curYear))
+            .reduce((s,e) => s + Number(e.Amount||0), 0);
+
+          // Per-member yearly breakdown
+          let memberLines = users
+            .filter(u => u.Status !== "Inactive" && u.Role !== "Admin")
+            .map(u => {
+              let paid = yearContribs.filter(c => String(c.UserId) === String(u.UserId))
+                .reduce((s,c) => s + Number(c.Amount||0), 0);
+              let months = [...new Set(yearContribs.filter(c => String(c.UserId) === String(u.UserId)).map(c => c.ForMonth))].join(", ");
+              return paid > 0
+                ? `  ✅ ${u.Name}: ₹${fmt(paid)} (${months})`
+                : `  ⬜ ${u.Name}: ₹0`;
+            }).join("\n");
+
+          // Month-wise summary
+          let monthLines = MONTHS.map(m => {
+            let mc = yearContribs.filter(c => c.ForMonth === m).reduce((s,c) => s + Number(c.Amount||0), 0);
+            let me = expenses.filter(e => String(e.Year) === String(curYear) && e.ForMonth === m).reduce((s,e) => s + Number(e.Amount||0), 0);
+            if (mc === 0 && me === 0) return "";
+            return `  ${m}: +₹${fmt(mc)} / -₹${fmt(me)}`;
+          }).filter(Boolean).join("\n");
+
+          msg = `🕉️ *Shree Hanuman Mandir*\n`
+              + `📍 Paliya, Sultanpur\n\n`
+              + `📆 *Annual Report — ${curYear}*\n`
+              + `━━━━━━━━━━━━━━━━━━━━\n`
+              + `👥 *Member Contributions:*\n${memberLines}\n\n`
+              + `📅 *Month-wise:*\n${monthLines || "  No data"}\n\n`
+              + `━━━━━━━━━━━━━━━━━━━━\n`
+              + `💰 Total Collected: ₹${fmt(yearTotal)}\n`
+              + `💸 Total Expenses: ₹${fmt(yearExp)}\n`
+              + `📊 Net Balance: ₹${fmt(yearTotal - yearExp)}\n`
+              + `━━━━━━━━━━━━━━━━━━━━\n`
+              + `_Generated: ${new Date().toLocaleDateString("en-IN")}_`;
+        }
+
+        // Open WhatsApp with pre-filled message
+        let url = "https://wa.me/?text=" + encodeURIComponent(msg);
+        window.open(url, "_blank");
       }
 
       async function init() {
@@ -1465,7 +1613,7 @@
         _adminPendingCroppedB64 = ""; // clear any pending crop on fresh open
         openEditUserWithPreview(id, "", undefined, undefined, undefined, undefined);
       }
-      }
+
       /* Admin: photo crop handler — uses JS variable (not DOM) to survive modal swap */
       let _adminPendingCroppedB64 = "";
       let _adminPendingUserId = "";
@@ -1720,8 +1868,14 @@
       /* ── CRUD — ADD ── */
       async function addContribution() {
         if (!checkSession()) return;
-        let userId = document.getElementById("user").value,
-          amount = document.getElementById("amount").value,
+        let s = JSON.parse(localStorage.getItem("session"));
+        let userId = document.getElementById("user").value;
+        // Prevent admin from contributing as themselves — admin manages only
+        let selectedUser = users.find(u => String(u.UserId) === String(userId));
+        if (selectedUser && selectedUser.Role === "Admin") {
+          return toast("⚠️ Admin accounts cannot make contributions. Select a member.", "warn");
+        }
+        let amount = document.getElementById("amount").value,
           year = document.getElementById("contribYear").value;
         if (!userId || !amount || amount <= 0)
           return toast(

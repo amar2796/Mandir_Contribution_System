@@ -234,6 +234,8 @@ function _storeReceipt(c, userName, typeName, occasionName) {
 /* ═══ RECEIPT POPUP ═══ */
 function showReceipt(c, userName, typeName, occasionName){
   const rid = _storeReceipt(c, userName, typeName, occasionName);
+  // Display receipt ID: replace TRX- prefix with MNR- for display
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
   let html=`
     <div class="_mhdr"><h3><i class="fa-solid fa-receipt"></i> Contribution Receipt</h3><button class="_mcls" onclick="closeModal()">×</button></div>
     <div class="_mbdy">
@@ -244,7 +246,7 @@ function showReceipt(c, userName, typeName, occasionName){
         <span style="background:#eafaf1;color:#1D9E75;border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;">✓ OFFICIAL RECEIPT</span>
       </div>
       <div style="border:1.5px dashed #e0e0e0;border-radius:12px;padding:4px 16px;margin-bottom:14px;">
-        <div class="_row"><span class="_rl">Receipt ID</span><span class="_rv" style="color:#f7a01a;">${escapeHtml(c.ReceiptID||"—")}</span></div>
+        <div class="_row"><span class="_rl">Tracking ID</span><span class="_rv" style="color:#f7a01a;font-family:monospace;">${escapeHtml(displayRID)}</span></div>
         <div class="_row"><span class="_rl">Donor Name</span><span class="_rv">${escapeHtml(userName)}</span></div>
         <div class="_row"><span class="_rl">Amount</span><span class="_rv" style="font-size:1.2rem;color:#27ae60;">₹ ${fmt(c.Amount)}</span></div>
         <div class="_row"><span class="_rl">For Month</span><span class="_rv">${escapeHtml(c.ForMonth||"—")}</span></div>
@@ -268,6 +270,7 @@ function exportReceiptPDF(rid){
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
   if(typeof window.jspdf==="undefined"){toast("PDF library not loaded.","error");return;}
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
   const {jsPDF}=window.jspdf;
   let doc=new jsPDF({format:"a5",unit:"mm"});
   let w=doc.internal.pageSize.getWidth();
@@ -279,7 +282,7 @@ function exportReceiptPDF(rid){
   doc.text("OFFICIAL RECEIPT",w/2,27,{align:"center"});
   doc.autoTable({
     body:[
-      ["Receipt ID", c.ReceiptID||"—"],["Donor Name",userName||"—"],
+      ["Tracking ID", displayRID],["Donor Name",userName||"—"],
       ["Amount (Rs.)", "Rs. "+Number(c.Amount||0).toLocaleString("en-IN")],
       ["For Month",c.ForMonth||"—"],["Year",String(c.Year||"—")],
       ["Type",typeName||"—"],["Occasion",occasionName||"—"],
@@ -292,7 +295,7 @@ function exportReceiptPDF(rid){
   let fy=doc.lastAutoTable.finalY+8;
   doc.setFontSize(8);doc.setTextColor(160,160,160);
   doc.text("Thank you for your generous contribution. Generated: "+new Date().toLocaleDateString("en-IN"),w/2,fy,{align:"center"});
-  doc.save("Receipt_"+(c.ReceiptID||"Mandir")+".pdf");
+  doc.save("Receipt_"+displayRID+".pdf");
 }
 
 /* ═══ VIEW-ONLY DETAIL POPUP ═══ */
