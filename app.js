@@ -80,12 +80,12 @@ function loadYearDropdown(){
   let years=new Set();
   if(typeof contributions!=="undefined")contributions.forEach(c=>{let y=Number(c.Year);if(!isNaN(y)&&y>2000)years.add(y);});
   if(typeof expenses!=="undefined")expenses.forEach(e=>{let y=Number(e.Year);if(!isNaN(y)&&y>2000)years.add(y);});
-  // Always include 2023 through current year so historic data is accessible
   let curY=new Date().getFullYear();
   for(let y=2023;y<=curY+1;y++) years.add(y);
   let sorted=Array.from(years).filter(y=>!isNaN(y)).sort((a,b)=>b-a);
-  yearSelect.innerHTML=sorted.map(y=>`<option value="${y}">${y}</option>`).join("");
-  selectedYear=Number(yearSelect.value);
+  yearSelect.innerHTML=sorted.map(y=>`<option value="${y}"${y===curY?" selected":""}>${y}</option>`).join("");
+  yearSelect.value=curY;
+  selectedYear=curY;
   yearSelect.onchange=function(){selectedYear=Number(this.value);if(typeof applyFilter==="function")applyFilter();};
 }
 
@@ -233,15 +233,14 @@ function _storeReceipt(c, userName, typeName, occasionName) {
   return id;
 }
 
-/* ═══ RECEIPT POPUP ═══ */
+/* ═══ RECEIPT POPUP — with WhatsApp text, PDF share & Email ═══ */
 function showReceipt(c, userName, typeName, occasionName){
   const rid = _storeReceipt(c, userName, typeName, occasionName);
-  // Display receipt ID: replace TRX- prefix with MNR- for display
   const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
   let html=`
     <div class="_mhdr"><h3><i class="fa-solid fa-receipt"></i> Contribution Receipt</h3><button class="_mcls" onclick="closeModal()">×</button></div>
     <div class="_mbdy">
-      <div style="text-align:center;padding:10px 0 18px;">
+      <div style="text-align:center;padding:10px 0 14px;">
         <div style="font-size:2.2rem;margin-bottom:6px;">🕉️</div>
         <div style="font-size:1.25rem;font-weight:700;color:#946c44;">Shree Hanuman Mandir</div>
         <div style="font-size:0.8rem;color:#999;margin-bottom:10px;">Paliya, Sultanpur</div>
@@ -260,11 +259,79 @@ function showReceipt(c, userName, typeName, occasionName){
       </div>
       <div style="text-align:center;font-size:11px;color:#bbb;">Thank you for your generous contribution 🙏</div>
     </div>
-    <div class="_mft">
+    <div class="_mft" style="flex-wrap:wrap;gap:8px;">
       <button class="_mbtn" style="background:#999;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>
-      <button class="_mbtn" style="background:#27ae60;" onclick="exportReceiptPDF('${rid}')"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+      <button class="_mbtn" style="background:#27ae60;" onclick="exportReceiptPDF('${rid}')"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
+      <button class="_mbtn" style="background:#25d366;" onclick="sendReceiptWhatsApp('${rid}')"><i class="fa-brands fa-whatsapp"></i> WhatsApp Text</button>
+      <button class="_mbtn" style="background:#128c7e;" onclick="exportReceiptPDFForWhatsApp('${rid}')"><i class="fa-brands fa-whatsapp"></i> WhatsApp PDF</button>
+      <button class="_mbtn" style="background:#2980b9;" onclick="sendReceiptEmail('${rid}')"><i class="fa-solid fa-envelope"></i> Send Email</button>
     </div>`;
-  openModal(html,"500px");
+  openModal(html,"520px");
+}
+
+function sendReceiptWhatsApp(rid){
+  const stored = window._rcptStore[rid];
+  if(!stored){toast("Receipt data not found.","error");return;}
+  const {c,userName,typeName,occasionName} = stored;
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const genDate = new Date().toLocaleDateString("en-IN");
+  const msg =
+    `🕉️ *SHREE HANUMAN MANDIR*\n` +
+    `📍 Paliya, Sultanpur\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `✅ *CONTRIBUTION RECEIPT*\n\n` +
+    `🔖 Tracking ID: *${displayRID}*\n` +
+    `👤 Donor: *${userName}*\n` +
+    `💰 Amount: *₹ ${Number(c.Amount||0).toLocaleString("en-IN")}*\n` +
+    `📅 Month: ${c.ForMonth||"—"} ${c.Year||""}\n` +
+    `🏷️ Type: ${typeName||"Contribution"}\n` +
+    (occasionName && occasionName!=="—" ? `🎉 Occasion: ${occasionName}\n` : "") +
+    (c.Note ? `📝 Note: ${c.Note}\n` : "") +
+    `📆 Date: ${c.PaymentDate||"—"}\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `_🙏 Thank you for your generous contribution_\n` +
+    `_System Generated — ${genDate}_`;
+  window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+}
+
+function exportReceiptPDFForWhatsApp(rid){
+  // Download PDF first, then open WhatsApp so user can attach manually
+  exportReceiptPDF(rid);
+  setTimeout(()=>{
+    const stored = window._rcptStore[rid];
+    if(!stored) return;
+    const {c,userName} = stored;
+    const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+    const msg = `🕉️ *SHREE HANUMAN MANDIR* — Receipt *${displayRID}* for *${userName}* (₹${Number(c.Amount||0).toLocaleString("en-IN")}, ${c.ForMonth||""} ${c.Year||""})\nPlease find the attached PDF receipt.`;
+    toast("📥 PDF downloaded — now attach it in WhatsApp","");
+    window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+  },1000);
+}
+
+function sendReceiptEmail(rid){
+  const stored = window._rcptStore[rid];
+  if(!stored){toast("Receipt data not found.","error");return;}
+  const {c,userName,typeName,occasionName} = stored;
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const subject = encodeURIComponent(`Contribution Receipt — ${displayRID} — Shree Hanuman Mandir`);
+  const body = encodeURIComponent(
+    `Dear ${userName},\n\n` +
+    `Thank you for your contribution to Shree Hanuman Mandir, Paliya, Sultanpur.\n\n` +
+    `CONTRIBUTION RECEIPT\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `Tracking ID : ${displayRID}\n` +
+    `Donor Name  : ${userName}\n` +
+    `Amount      : Rs. ${Number(c.Amount||0).toLocaleString("en-IN")}\n` +
+    `For Month   : ${c.ForMonth||"—"} ${c.Year||""}\n` +
+    `Type        : ${typeName||"Contribution"}\n` +
+    (occasionName && occasionName!=="—" ? `Occasion    : ${occasionName}\n` : "") +
+    (c.Note ? `Note        : ${c.Note}\n` : "") +
+    `Date Recorded: ${c.PaymentDate||"—"}\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `This is a system-generated receipt.\n\n` +
+    `Jai Shree Ram 🙏\nShree Hanuman Mandir`
+  );
+  window.open(`mailto:?subject=${subject}&body=${body}`,"_blank");
 }
 
 function exportReceiptPDF(rid){

@@ -333,6 +333,52 @@
           margin-bottom: 10px;
         }
       }
+
+      /* ── UI Enhancements ── */
+      .card {
+        transition: box-shadow 0.25s ease;
+      }
+      .card:hover {
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.09);
+      }
+      tbody tr {
+        transition: background 0.15s ease, box-shadow 0.15s ease;
+      }
+      tbody tr:hover {
+        background: #fffbf2 !important;
+        box-shadow: inset 3px 0 0 #f7a01a;
+        cursor: pointer;
+      }
+      .badge {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f4f6f9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d4a843;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #f7a01a;
+      }
+      button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .actions {
+        flex-wrap: wrap;
+      }
+      .actions button {
+        flex: 1;
+        min-width: 110px;
+        justify-content: center;
+      }
     </style>
   </head>
   <body>
@@ -409,45 +455,155 @@
           <button class="btn-green" onclick="exportDashboardPDF()">
             <i class="fa-solid fa-file-pdf"></i> Export PDF
           </button>
+          <button
+            style="background: #25d366; box-shadow: none"
+            onclick="dashboardWhatsApp()"
+          >
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+          </button>
+          <button
+            style="background: #2980b9; box-shadow: none"
+            onclick="dashboardEmail()"
+          >
+            <i class="fa-solid fa-envelope"></i> Email
+          </button>
         </div>
       </div>
 
       <div class="card summary-text">
         <h3 id="yearTitle"><i class="fa-solid fa-wallet"></i> Year Summary</h3>
-        <p>
-          <span>Opening Balance:</span><b>₹ <span id="opening">0</span></b>
-        </p>
-        <p
+        <div
           style="
-            background: #eafaf1;
-            padding: 6px 8px;
-            border-radius: 6px;
-            border-bottom: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
           "
         >
-          <span style="font-weight: 700; color: #27ae60"
-            ><i class="fa-solid fa-circle-check" style="margin-right: 4px"></i
-            >Full Year Collection:</span
+          <div
+            style="
+              background: linear-gradient(135deg, #eafaf1, #d5f5e3);
+              border-radius: 10px;
+              padding: 12px;
+              text-align: center;
+              border-left: 4px solid #27ae60;
+            "
           >
-          <b class="amount-col">₹ <span id="yearFullC">0</span></b>
-        </p>
-        <p>
-          <span style="color: #999; font-size: 12px" id="filteredCountLabel"
+            <div
+              style="
+                font-size: 10px;
+                color: #555;
+                font-weight: 600;
+                margin-bottom: 4px;
+              "
+            >
+              OPENING BALANCE
+            </div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #27ae60">
+              ₹ <span id="opening">0</span>
+            </div>
+          </div>
+          <div
+            style="
+              background: linear-gradient(135deg, #eafaf1, #d5f5e3);
+              border-radius: 10px;
+              padding: 12px;
+              text-align: center;
+              border-left: 4px solid #2ecc71;
+            "
+          >
+            <div
+              style="
+                font-size: 10px;
+                color: #555;
+                font-weight: 600;
+                margin-bottom: 4px;
+              "
+            >
+              YEAR COLLECTION
+            </div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #27ae60">
+              ₹ <span id="yearFullC">0</span>
+            </div>
+          </div>
+          <div
+            style="
+              background: linear-gradient(135deg, #fdedec, #fad5d2);
+              border-radius: 10px;
+              padding: 12px;
+              text-align: center;
+              border-left: 4px solid #e74c3c;
+            "
+          >
+            <div
+              style="
+                font-size: 10px;
+                color: #555;
+                font-weight: 600;
+                margin-bottom: 4px;
+              "
+            >
+              FILTERED EXPENSES
+            </div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #e74c3c">
+              ₹ <span id="yearTotalE">0</span>
+            </div>
+          </div>
+          <div
+            style="
+              background: linear-gradient(135deg, #fef9ee, #fdebd0);
+              border-radius: 10px;
+              padding: 12px;
+              text-align: center;
+              border-left: 4px solid #f7a01a;
+            "
+          >
+            <div
+              style="
+                font-size: 10px;
+                color: #555;
+                font-weight: 600;
+                margin-bottom: 4px;
+              "
+            >
+              CLOSING BALANCE
+            </div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #f7a01a">
+              ₹ <span id="closing">0</span>
+            </div>
+          </div>
+        </div>
+        <div
+          style="
+            background: #f8f8f8;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #666;
+          "
+        >
+          <span style="color: #999; font-size: 11px" id="filteredCountLabel"
             >↳ Filtered Contributions:</span
           >
-          <b class="amount-col" style="font-size: 12px"
+          <b style="color: #27ae60; float: right"
             >+ ₹ <span id="yearTotalC">0</span></b
           >
-        </p>
-        <p>
-          <span>Filtered Expenses:</span
-          ><b class="expense-col">- ₹ <span id="yearTotalE">0</span></b>
-        </p>
-        <p>
-          <span>Closing Balance:</span><b>₹ <span id="closing">0</span></b>
-        </p>
-        <div class="grand-total">
-          <b>💰 Overall Balance: ₹ <span id="grandTotal">0</span></b>
+        </div>
+        <div
+          style="
+            background: linear-gradient(135deg, #334155, #1e293b);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+          "
+        >
+          <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px">
+            💰 OVERALL NET BALANCE
+          </div>
+          <div style="font-size: 1.5rem; font-weight: 700; color: #f7a01a">
+            ₹ <span id="grandTotal">0</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1011,6 +1167,74 @@
         const d = window._rcptStore[rid];
         if (!d) return;
         showReceipt(d.c, d.userName, d.typeName, d.occasionName);
+      }
+
+      function dashboardWhatsApp() {
+        const genDate = new Date().toLocaleDateString("en-IN");
+        const totalC = document.getElementById("yearFullC").innerText;
+        const totalE = document.getElementById("yearTotalE").innerText;
+        const closing = document.getElementById("closing").innerText;
+        const grandTotal = document.getElementById("grandTotal").innerText;
+        // Member wise
+        let map = {};
+        filteredC.forEach((c) => {
+          map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
+        });
+        let memberLines =
+          Object.keys(map)
+            .map((uid) => {
+              let u = users.find((x) => String(x.UserId) === String(uid));
+              return u
+                ? `  ✅ ${u.Name}: ₹${Number(map[uid]).toLocaleString("en-IN")}`
+                : "";
+            })
+            .filter(Boolean)
+            .join("\n") || "  No contributions found";
+        const msg =
+          `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n` +
+          `📊 *Financial Report — ${selectedYear}*\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `💰 Year Collection: ₹${totalC}\n` +
+          `💸 Expenses: ₹${totalE}\n` +
+          `🏦 Closing Balance: ₹${closing}\n` +
+          `💎 Overall Balance: ₹${grandTotal}\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `👥 *Member Contributions:*\n${memberLines}\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `_System Generated — ${genDate}_`;
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+      }
+
+      function dashboardEmail() {
+        const genDate = new Date().toLocaleDateString("en-IN");
+        const totalC = document.getElementById("yearFullC").innerText;
+        const totalE = document.getElementById("yearTotalE").innerText;
+        const closing = document.getElementById("closing").innerText;
+        const grandTotal = document.getElementById("grandTotal").innerText;
+        const subject = encodeURIComponent(
+          `Financial Report ${selectedYear} — Shree Hanuman Mandir`
+        );
+        let map = {};
+        filteredC.forEach((c) => {
+          map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
+        });
+        let memberLines =
+          Object.keys(map)
+            .map((uid) => {
+              let u = users.find((x) => String(x.UserId) === String(uid));
+              return u
+                ? `  ${u.Name}: Rs.${Number(map[uid]).toLocaleString("en-IN")}`
+                : "";
+            })
+            .filter(Boolean)
+            .join("\n") || "  No contributions found";
+        const body = encodeURIComponent(
+          `SHREE HANUMAN MANDIR — FINANCIAL REPORT ${selectedYear}\nPaliya, Sultanpur\n\n` +
+            `Year Collection : Rs.${totalC}\nExpenses        : Rs.${totalE}\nClosing Balance : Rs.${closing}\nOverall Balance : Rs.${grandTotal}\n\n` +
+            `MEMBER-WISE CONTRIBUTIONS:\n${memberLines}\n\n` +
+            `System Generated — ${genDate}\nNot Manually Signed`
+        );
+        window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
       }
 
       init();

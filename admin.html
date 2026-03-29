@@ -430,32 +430,38 @@
       }
 
       /* ── UI ENHANCEMENTS ── */
-
-      /* Sidebar active item: left accent bar */
       .sidebar li.active-nav {
         border-left: 4px solid #f7c35a;
-        background: linear-gradient(90deg, rgba(247,160,26,0.92) 0%, rgba(247,140,10,0.82) 100%);
+        background: linear-gradient(
+          90deg,
+          rgba(247, 160, 26, 0.92),
+          rgba(247, 140, 10, 0.82)
+        );
         padding-left: 26px;
       }
       .sidebar li:hover:not(.active-nav) {
-        background: rgba(247,160,26,0.18);
-        padding-left: 30px;
+        background: rgba(247, 160, 26, 0.18);
         color: #f7c35a;
       }
-
-      /* Card-box stat tiles: gradient accent + icon space */
+      .sidebar li:last-child {
+        color: #f87171;
+      }
+      .sidebar li:last-child:hover {
+        background: rgba(231, 76, 60, 0.25) !important;
+        color: #fca5a5;
+      }
       .card-box {
         position: relative;
         overflow: hidden;
       }
       .card-box::after {
-        content: '';
+        content: "";
         position: absolute;
         top: -18px;
         right: -18px;
         width: 72px;
         height: 72px;
-        background: rgba(247,160,26,0.08);
+        background: rgba(247, 160, 26, 0.08);
         border-radius: 50%;
       }
       .card-box h2 {
@@ -464,8 +470,6 @@
       .card-box:hover h2 {
         transform: scale(1.06);
       }
-
-      /* Table rows: smooth highlight */
       tbody tr {
         transition: background 0.15s ease, box-shadow 0.15s ease;
       }
@@ -473,65 +477,64 @@
         background: #fffbf2 !important;
         box-shadow: inset 3px 0 0 #f7a01a;
       }
-
-      /* Cards: subtle hover lift */
       .card {
         transition: box-shadow 0.25s ease;
       }
       .card:hover {
-        box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
       }
-
-      /* Goal progress bar: smooth fill animation */
       @keyframes goalFill {
-        from { width: 0%; }
+        from {
+          width: 0%;
+        }
       }
       .goal-bar-fill {
-        animation: goalFill 0.8s cubic-bezier(.4,0,.2,1) both;
+        animation: goalFill 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
       }
-
-      /* Header: subtle bottom border glow on scroll */
       .header {
         border-bottom: 2px solid #f7a01a22;
         position: sticky;
         top: 0;
         z-index: 100;
       }
-
-      /* Sidebar logout item: red tint */
-      .sidebar li:last-child {
-        color: #f87171;
-        margin-top: auto;
-      }
-      .sidebar li:last-child:hover {
-        background: rgba(231,76,60,0.25) !important;
-        color: #fca5a5;
-      }
-
-      /* Skeleton shimmer for loading rows */
       @keyframes shimmer {
-        0%   { background-position: -600px 0; }
-        100% { background-position: 600px 0; }
+        0% {
+          background-position: -600px 0;
+        }
+        100% {
+          background-position: 600px 0;
+        }
       }
       .shimmer-row td {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+        background: linear-gradient(
+          90deg,
+          #f0f0f0 25%,
+          #e8e8e8 50%,
+          #f0f0f0 75%
+        );
         background-size: 600px 100%;
         animation: shimmer 1.4s infinite linear;
         color: transparent !important;
         border-radius: 4px;
       }
-
-      /* Badge: slight shadow for depth */
       .badge {
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         letter-spacing: 0.2px;
       }
-
-      /* Scrollbar: thin, branded */
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: #f4f6f9; }
-      ::-webkit-scrollbar-thumb { background: #d4a843; border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background: #f7a01a; }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f4f6f9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d4a843;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #f7a01a;
+      }
     </style>
   </head>
   <body>
@@ -751,10 +754,35 @@
                 border-radius: 7px;
                 width: 100%;
                 justify-content: center;
+                margin-bottom: 6px;
               "
             >
               <i class="fa-brands fa-whatsapp"></i> Yearly Report
             </button>
+            <button
+              onclick="sendWhatsAppPDFReport()"
+              style="
+                background: #e74c3c;
+                box-shadow: none;
+                padding: 7px 8px;
+                font-size: 11px;
+                border-radius: 7px;
+                width: 100%;
+                justify-content: center;
+              "
+            >
+              <i class="fa-solid fa-file-pdf"></i> PDF + WhatsApp
+            </button>
+            <div
+              id="wa_preview"
+              style="
+                margin-top: 8px;
+                font-size: 10px;
+                color: #94a3b8;
+                text-align: center;
+                line-height: 1.5;
+              "
+            ></div>
           </div>
         </div>
       </div>
@@ -1603,10 +1631,12 @@
         document
           .getElementById("loadingOverlay")
           .classList.toggle("show", show);
-        // Show shimmer skeleton in tables while loading
-        const shimmerRow = `<tr class="shimmer-row">${'<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>'.repeat(9)}</tr>`.repeat(4);
+        const shimmerRow =
+          `<tr class="shimmer-row">${"<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>".repeat(
+            9
+          )}</tr>`.repeat(4);
         if (show) {
-          ["tb", "expenseRecordsBody", "userTable"].forEach(id => {
+          ["tb", "expenseRecordsBody", "userTable"].forEach((id) => {
             let el = document.getElementById(id);
             if (el && el.innerHTML.trim() === "") el.innerHTML = shimmerRow;
           });
@@ -1694,7 +1724,7 @@
         if (sby) sby.innerText = "₹" + fmt(yearC);
         let sbe = document.getElementById("sb_exp");
         if (sbe) sbe.innerText = "₹" + fmt(yearE);
-        // Populate WA month/year selectors
+        // Populate WA selectors
         let waMonth = document.getElementById("wa_month");
         let waYear = document.getElementById("wa_year");
         if (waMonth && waMonth.options.length === 0) {
@@ -1705,6 +1735,7 @@
             if (i === now.getMonth()) o.selected = true;
             waMonth.appendChild(o);
           });
+          waMonth.addEventListener("change", _updateWaPreview);
         }
         if (waYear && waYear.options.length === 0) {
           let years = new Set();
@@ -1722,7 +1753,44 @@
               if (y === curYear) o.selected = true;
               waYear.appendChild(o);
             });
+          waYear.addEventListener("change", _updateWaPreview);
         }
+        _updateWaPreview();
+      }
+
+      function _updateWaPreview() {
+        let waMonth = document.getElementById("wa_month");
+        let waYear = document.getElementById("wa_year");
+        let prev = document.getElementById("wa_preview");
+        if (!prev) return;
+        const selMonth = waMonth ? waMonth.value : "";
+        const selYear = waYear
+          ? Number(waYear.value)
+          : new Date().getFullYear();
+        // Quick stats for selected period
+        let mc = data
+          .filter(
+            (c) => String(c.Year) === String(selYear) && c.ForMonth === selMonth
+          )
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        let me = expenses
+          .filter(
+            (e) => String(e.Year) === String(selYear) && e.ForMonth === selMonth
+          )
+          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+        let yc = data
+          .filter((c) => String(c.Year) === String(selYear))
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        let ye = expenses
+          .filter((e) => String(e.Year) === String(selYear))
+          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+        prev.innerHTML = `<span style="color:#f7a01a;font-weight:700;">${selMonth} ${selYear}</span><br>📥 ₹${fmt(
+          mc
+        )} in &nbsp;|&nbsp; 💸 ₹${fmt(
+          me
+        )} out<br><span style="color:#cbd5e1;">Year: ₹${fmt(
+          yc
+        )} in &nbsp;|&nbsp; ₹${fmt(ye)} out</span>`;
       }
 
       function sendWhatsAppReport(type) {
@@ -1740,7 +1808,6 @@
           "November",
           "December",
         ];
-        // Get selected month/year from sidebar dropdowns
         let waMonth = document.getElementById("wa_month");
         let waYear = document.getElementById("wa_year");
         const selMonth = waMonth ? waMonth.value : MOS[new Date().getMonth()];
@@ -1749,7 +1816,6 @@
           : new Date().getFullYear();
         const genDate = new Date().toLocaleDateString("en-IN");
         let msg = "";
-
         if (type === "month") {
           let monthContribs = data.filter(
             (c) => String(c.Year) === String(selYear) && c.ForMonth === selMonth
@@ -1775,17 +1841,11 @@
                 : `  ⬜ ${u.Name}: ₹0`;
             })
             .join("\n");
-          msg =
-            `🕉️ *SHREE HANUMAN MANDIR*\n` +
-            `📍 Paliya, Sultanpur\n\n` +
-            `📅 *Monthly Report — ${selMonth} ${selYear}*\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `👥 *Member Contributions:*\n${memberLines}\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `💰 Total Collected: ₹${fmt(monthTotal)}\n` +
-            `💸 Total Expenses: ₹${fmt(monthExp)}\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `_System Generated — ${genDate}_`;
+          msg = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n📅 *Monthly Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n━━━━━━━━━━━━━━━━━━━━\n💰 Total Collected: ₹${fmt(
+            monthTotal
+          )}\n💸 Total Expenses: ₹${fmt(
+            monthExp
+          )}\n━━━━━━━━━━━━━━━━━━━━\n_System Generated — ${genDate}_`;
         } else {
           let yearContribs = data.filter(
             (c) => String(c.Year) === String(selYear)
@@ -1829,20 +1889,171 @@
           })
             .filter(Boolean)
             .join("\n");
-          msg =
-            `🕉️ *SHREE HANUMAN MANDIR*\n` +
-            `📍 Paliya, Sultanpur\n\n` +
-            `📆 *Annual Report — ${selYear}*\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `👥 *Member Contributions:*\n${memberLines}\n\n` +
-            `📅 *Month-wise Breakdown:*\n${monthLines || "  No data"}\n\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `💰 Total Collected: ₹${fmt(yearTotal)}\n` +
-            `💸 Total Expenses: ₹${fmt(yearExp)}\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `_System Generated — ${genDate}_`;
+          msg = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n📆 *Annual Report — ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n📅 *Month-wise Breakdown:*\n${
+            monthLines || "  No data"
+          }\n\n━━━━━━━━━━━━━━━━━━━━\n💰 Total Collected: ₹${fmt(
+            yearTotal
+          )}\n💸 Total Expenses: ₹${fmt(
+            yearExp
+          )}\n━━━━━━━━━━━━━━━━━━━━\n_System Generated — ${genDate}_`;
         }
         window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+      }
+
+      function sendWhatsAppPDFReport() {
+        // Generate dashboard PDF then open WhatsApp with summary text
+        let waMonth = document.getElementById("wa_month");
+        let waYear = document.getElementById("wa_year");
+        const MOS = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+        const selMonth = waMonth ? waMonth.value : MOS[new Date().getMonth()];
+        const selYear = waYear
+          ? Number(waYear.value)
+          : new Date().getFullYear();
+        const genDate = new Date().toLocaleDateString("en-IN");
+        if (typeof window.jspdf === "undefined") {
+          toast("PDF library not loaded.", "error");
+          return;
+        }
+        const { jsPDF } = window.jspdf;
+        let doc = new jsPDF("p", "mm", "a4");
+        let w = doc.internal.pageSize.getWidth();
+        let ph = doc.internal.pageSize.getHeight();
+        // Header
+        doc.setFillColor(51, 65, 85);
+        doc.rect(0, 0, w, 26, "F");
+        doc.setTextColor(247, 160, 26);
+        doc.setFontSize(14);
+        doc.setFont(undefined, "bold");
+        doc.text("SHREE HANUMAN MANDIR", w / 2, 11, { align: "center" });
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont(undefined, "normal");
+        doc.text("PALIYA, SULTANPUR  |  FINANCIAL REPORT", w / 2, 18, {
+          align: "center",
+        });
+        doc.text("Generated: " + genDate, w / 2, 23, { align: "center" });
+        // Year summary rows
+        let yearContribs = data.filter(
+          (c) => String(c.Year) === String(selYear)
+        );
+        let monthContribs = data.filter(
+          (c) => String(c.Year) === String(selYear) && c.ForMonth === selMonth
+        );
+        let yrTotal = yearContribs.reduce(
+          (s, c) => s + Number(c.Amount || 0),
+          0
+        );
+        let yrExp = expenses
+          .filter((e) => String(e.Year) === String(selYear))
+          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+        let moTotal = monthContribs.reduce(
+          (s, c) => s + Number(c.Amount || 0),
+          0
+        );
+        let moExp = expenses
+          .filter(
+            (e) => String(e.Year) === String(selYear) && e.ForMonth === selMonth
+          )
+          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+        doc.autoTable({
+          head: [
+            ["Period", "Contributions (Rs.)", "Expenses (Rs.)", "Net (Rs.)"],
+          ],
+          body: [
+            [
+              selMonth + " " + selYear,
+              moTotal.toLocaleString("en-IN"),
+              moExp.toLocaleString("en-IN"),
+              (moTotal - moExp).toLocaleString("en-IN"),
+            ],
+            [
+              "Full Year " + selYear,
+              yrTotal.toLocaleString("en-IN"),
+              yrExp.toLocaleString("en-IN"),
+              (yrTotal - yrExp).toLocaleString("en-IN"),
+            ],
+          ],
+          startY: 30,
+          theme: "grid",
+          headStyles: {
+            fillColor: [51, 65, 85],
+            fontStyle: "bold",
+            fontSize: 9,
+          },
+          styles: { fontSize: 9, cellPadding: 3 },
+        });
+        // Member-wise
+        let memberRows = users
+          .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
+          .map((u, i) => {
+            let paid = yearContribs
+              .filter((c) => String(c.UserId) === String(u.UserId))
+              .reduce((s, c) => s + Number(c.Amount || 0), 0);
+            let moPaid = monthContribs
+              .filter((c) => String(c.UserId) === String(u.UserId))
+              .reduce((s, c) => s + Number(c.Amount || 0), 0);
+            return [
+              String(i + 1),
+              u.Name,
+              moPaid > 0 ? "Rs." + moPaid.toLocaleString("en-IN") : "—",
+              "Rs." + paid.toLocaleString("en-IN"),
+            ];
+          });
+        doc.autoTable({
+          head: [["#", "Member", "This Month (Rs.)", "Year Total (Rs.)"]],
+          body: memberRows,
+          startY: doc.lastAutoTable.finalY + 6,
+          theme: "grid",
+          headStyles: {
+            fillColor: [247, 160, 26],
+            fontStyle: "bold",
+            fontSize: 9,
+          },
+          styles: { fontSize: 8.5, cellPadding: 3 },
+          alternateRowStyles: { fillColor: [253, 251, 247] },
+        });
+        // Footer
+        let pages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pages; i++) {
+          doc.setPage(i);
+          doc.setFontSize(7);
+          doc.setTextColor(170, 170, 170);
+          doc.text(
+            "SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  |  System Generated — Not Manually Signed",
+            w / 2,
+            ph - 5,
+            { align: "center" }
+          );
+          doc.text(`Page ${i} of ${pages}`, w - 14, ph - 5, { align: "right" });
+        }
+        doc.save("Mandir_Report_" + selYear + "_" + selMonth + ".pdf");
+        setTimeout(() => {
+          let msg = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n📊 *Financial Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Month Collected: ₹${fmt(
+            moTotal
+          )}\n💸 Month Expenses: ₹${fmt(moExp)}\n📅 Year Collected: ₹${fmt(
+            yrTotal
+          )}\n📅 Year Expenses: ₹${fmt(
+            yrExp
+          )}\n━━━━━━━━━━━━━━━━━━━━\nPlease find the attached PDF report.\n_${genDate}_`;
+          toast("📥 PDF downloaded — attach it in WhatsApp", "");
+          window.open(
+            "https://wa.me/?text=" + encodeURIComponent(msg),
+            "_blank"
+          );
+        }, 900);
       }
 
       async function init() {
@@ -2697,7 +2908,71 @@
         init();
       }
 
-      /* ── BULK INSERT — same user, multiple months ── */
+      /* ── BULK INSERT v2: per-row (month + custom amount) ── */
+      const _BK_MONTHS = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+
+      function _bkRenderRows() {
+        let rows = document.querySelectorAll(".bk-row");
+        let total = 0;
+        rows.forEach((r) => {
+          let a = parseFloat(r.querySelector(".bk-amt").value) || 0;
+          total += a;
+        });
+        let t = document.getElementById("bk_total");
+        if (t) t.textContent = "Total: ₹" + total.toLocaleString("en-IN");
+      }
+
+      function bkAddRow(month, amount) {
+        let container = document.getElementById("bk_rows");
+        if (!container) return;
+        let mOpts = _BK_MONTHS
+          .map(
+            (m) =>
+              `<option value="${m}" ${
+                m === (month || "") ? "selected" : ""
+              }>${m}</option>`
+          )
+          .join("");
+        let idx = container.children.length;
+        let row = document.createElement("div");
+        row.className = "bk-row";
+        row.style.cssText =
+          "display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px;background:#f8f8f8;border-radius:8px;padding:8px 10px;";
+        row.innerHTML = `
+          <div><label style="font-size:11px;font-weight:600;color:#666;margin-bottom:3px;display:block;">Month</label>
+            <select class="bk-mon _fi" style="margin-bottom:0;">${mOpts}</select></div>
+          <div><label style="font-size:11px;font-weight:600;color:#666;margin-bottom:3px;display:block;">Amount (₹)</label>
+            <input class="bk-amt _fi" type="number" min="1" placeholder="e.g. 500" value="${
+              amount || ""
+            }" oninput="_bkRenderRows()" style="margin-bottom:0;"/></div>
+          <div style="padding-top:18px;"><button type="button" onclick="this.closest('.bk-row').remove();_bkRenderRows();" style="background:#e74c3c;box-shadow:none;padding:6px 10px;font-size:13px;" title="Remove"><i class="fa-solid fa-xmark"></i></button></div>`;
+        container.appendChild(row);
+        _bkRenderRows();
+      }
+
+      function bkFillAllMonths() {
+        let defAmt =
+          parseFloat(document.getElementById("bk_default_amt")?.value) || 0;
+        let container = document.getElementById("bk_rows");
+        if (!container) return;
+        // Clear existing rows
+        container.innerHTML = "";
+        _BK_MONTHS.forEach((m) => bkAddRow(m, defAmt || ""));
+      }
+
       function openBulkInsert() {
         if (!checkSession()) return;
         let userOpts = users
@@ -2728,82 +3003,79 @@
               }>${y}</option>`
           )
           .join("");
-        let MOS = [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "August",
-          "September",
-          "October",
-          "November",
-          "December",
-        ];
-        let monthChecks = MOS.map(
-          (m) =>
-            `<label style="display:inline-flex;align-items:center;gap:4px;margin:3px 6px 3px 0;font-size:12px;cursor:pointer;"><input type="checkbox" value="${m}" style="width:auto;margin:0;accent-color:#f7a01a;"/> ${m}</label>`
-        ).join("");
+
         let html = `
           <div class="_mhdr"><h3><i class="fa-solid fa-layer-group"></i> Bulk Insert Contributions</h3><button class="_mcls" onclick="closeModal()">×</button></div>
           <div class="_mbdy">
-            <label class="_fl">User</label><select class="_fi" id="bk_user">${userOpts}</select>
-            <label class="_fl">Amount per Month (₹)</label><input class="_fi" type="number" id="bk_amount" placeholder="e.g. 500"/>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <div><label class="_fl">User</label><select class="_fi" id="bk_user" style="margin-bottom:0;">${userOpts}</select></div>
               <div><label class="_fl">Year</label><select class="_fi" id="bk_year" style="margin-bottom:0;">${yearOpts}</select></div>
-              <div><label class="_fl">Type</label><select class="_fi" id="bk_type" style="margin-bottom:0;">${typeOpts}</select></div>
             </div>
-            <label class="_fl" style="margin-top:12px;">Select Months</label>
-            <div style="background:#f8f8f8;border-radius:8px;padding:10px;margin-bottom:4px;">${monthChecks}</div>
-            <button onclick="selectAllMonths(true)" style="padding:4px 10px;font-size:11px;box-shadow:none;background:#334155;margin:4px 4px 0 0;">Select All</button>
-            <button onclick="selectAllMonths(false)" style="padding:4px 10px;font-size:11px;box-shadow:none;background:#64748b;margin:4px 0 0 0;">Clear</button>
-            <label class="_fl" style="margin-top:12px;">Note (optional)</label>
-            <input class="_fi" id="bk_note" placeholder="e.g. Annual contribution"/>
-            <div id="bk_status" style="font-size:12px;color:#27ae60;font-weight:600;min-height:18px;margin-top:4px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <div><label class="_fl">Contribution Type</label><select class="_fi" id="bk_type" style="margin-bottom:0;">${typeOpts}</select></div>
+              <div><label class="_fl">Note (optional)</label><input class="_fi" id="bk_note" placeholder="e.g. Annual" style="margin-bottom:0;"/></div>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:10px;background:#fdf8ee;border-radius:8px;padding:10px;">
+              <div style="flex:1;">
+                <label class="_fl">Default Amount (₹) <span style="font-size:10px;color:#aaa;font-weight:400;">— fill all 12 months at once</span></label>
+                <input class="_fi" id="bk_default_amt" type="number" min="1" placeholder="e.g. 500" style="margin-bottom:0;" oninput="_bkRenderRows()"/>
+              </div>
+              <button type="button" onclick="bkFillAllMonths()" style="background:#334155;box-shadow:none;padding:10px 14px;white-space:nowrap;flex-shrink:0;">
+                <i class="fa-solid fa-calendar-check"></i> Fill All 12 Months
+              </button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-size:12px;font-weight:700;color:#334155;"><i class="fa-solid fa-list-ul" style="color:#f7a01a;margin-right:5px;"></i> Month Entries</span>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <span id="bk_total" style="font-size:12px;font-weight:700;color:#27ae60;"></span>
+                <button type="button" onclick="bkAddRow('','')" style="background:#f7a01a;box-shadow:none;padding:5px 12px;font-size:12px;">
+                  <i class="fa-solid fa-plus"></i> Add Row
+                </button>
+              </div>
+            </div>
+            <div id="bk_rows" style="max-height:320px;overflow-y:auto;padding-right:2px;"></div>
+            <div id="bk_status" style="font-size:12px;color:#27ae60;font-weight:600;min-height:18px;margin-top:8px;"></div>
           </div>
           <div class="_mft">
             <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
             <button class="_mbtn" style="background:#f7a01a;" onclick="runBulkInsert()"><i class="fa-solid fa-check"></i> Insert All</button>
           </div>`;
-        openModal(html, "520px");
-      }
-
-      function selectAllMonths(val) {
-        document
-          .querySelectorAll("#_uniModal input[type=checkbox]")
-          .forEach((cb) => (cb.checked = val));
+        openModal(html, "560px");
+        // Add one empty row to start
+        bkAddRow("", "");
       }
 
       async function runBulkInsert() {
         if (!checkSession()) return;
         let userId = document.getElementById("bk_user").value;
-        let amount = document.getElementById("bk_amount").value;
         let year = document.getElementById("bk_year").value;
         let typeId = document.getElementById("bk_type").value;
         let note = document.getElementById("bk_note").value;
-        let checked = [
-          ...document.querySelectorAll(
-            "#_uniModal input[type=checkbox]:checked"
-          ),
-        ].map((cb) => cb.value);
-        if (!userId || !amount || amount <= 0)
-          return toast("Please select user and enter amount.", "error");
-        if (checked.length === 0)
-          return toast("Please select at least one month.", "error");
+        // Collect all rows
+        let rows = [...document.querySelectorAll(".bk-row")]
+          .map((r) => ({
+            month: r.querySelector(".bk-mon").value,
+            amount: r.querySelector(".bk-amt").value,
+          }))
+          .filter((r) => r.month && r.amount && Number(r.amount) > 0);
+        if (!userId) return toast("Please select a user.", "error");
+        if (rows.length === 0)
+          return toast(
+            "Please add at least one month entry with amount.",
+            "error"
+          );
         let status = document.getElementById("bk_status");
-        status.textContent = `Inserting 0 / ${checked.length}...`;
+        status.textContent = `Inserting 0 / ${rows.length}...`;
         let done = 0,
           failed = 0;
-        for (let m of checked) {
+        for (let r of rows) {
           try {
             let res = await postData({
               action: "addContribution",
-              Id: Date.now() + "_" + m,
+              Id: Date.now() + "_" + r.month,
               UserId: userId,
-              Amount: amount,
-              ForMonth: m,
+              Amount: r.amount,
+              ForMonth: r.month,
               Year: year,
               TypeId: typeId,
               OccasionId: "",
@@ -2814,10 +3086,8 @@
           } catch (e) {
             failed++;
           }
-          status.textContent = `Inserting ${done + failed} / ${
-            checked.length
-          }...`;
-          await new Promise((r) => setTimeout(r, 300)); // small delay between calls
+          status.textContent = `Inserting ${done + failed} / ${rows.length}...`;
+          await new Promise((r) => setTimeout(r, 300));
         }
         status.textContent = `✅ Done: ${done} inserted${
           failed > 0 ? " | ❌ " + failed + " failed" : ""
@@ -2826,7 +3096,7 @@
           done > 0
             ? "✅ Bulk insert complete! " + done + " records added."
             : "❌ All inserts failed.",
-          ""
+          done > 0 ? "" : "error"
         );
         setTimeout(() => {
           closeModal();
@@ -3071,11 +3341,10 @@
 
       /* ── GOALS MANAGEMENT ── */
       let goals = [];
-      /* Safe goal ID registry — avoids inline-JS SyntaxError with special chars in GoalId */
       window._goalStore = {};
       let _goalIdx = 0;
       function _storeGoalId(goalId) {
-        const k = "g" + (++_goalIdx);
+        const k = "g" + ++_goalIdx;
         window._goalStore[k] = String(goalId);
         return k;
       }

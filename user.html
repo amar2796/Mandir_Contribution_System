@@ -521,6 +521,76 @@
           grid-template-columns: 1fr;
         }
       }
+
+      /* ── UI Enhancements ── */
+      .total-banner {
+        animation: bannerIn 0.5s ease-out;
+      }
+      @keyframes bannerIn {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .goal-card {
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+      }
+      .goal-card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+      }
+      .card {
+        transition: box-shadow 0.2s ease;
+      }
+      .card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+      }
+      .summary-item {
+        transition: background 0.15s;
+      }
+      .summary-item:hover {
+        background: #fdfbf7;
+        border-radius: 6px;
+        padding-left: 6px;
+      }
+      tbody tr {
+        transition: background 0.15s, box-shadow 0.15s;
+      }
+      tbody tr:hover {
+        background: #fffbf2 !important;
+        box-shadow: inset 3px 0 0 #f7a01a;
+      }
+      .filter-actions button {
+        white-space: nowrap;
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f4f6f9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d4a843;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #f7a01a;
+      }
+      @media (max-width: 600px) {
+        .filter-actions {
+          gap: 6px;
+        }
+        .filter-actions button {
+          min-width: 70px;
+          font-size: 11.5px;
+          padding: 8px 10px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -565,6 +635,16 @@
           Contributions
         </h2>
         <h1>₹ <span id="totalAmount">0</span></h1>
+        <div
+          id="quickStats"
+          style="
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+          "
+        ></div>
       </div>
 
       <!-- All enabled Goals -->
@@ -656,6 +736,18 @@
           </button>
           <button onclick="exportPDF()" class="btn-green">
             <i class="fa-solid fa-file-pdf"></i> Export PDF
+          </button>
+          <button
+            onclick="shareStatementWhatsApp()"
+            style="background: #25d366; box-shadow: none"
+          >
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+          </button>
+          <button
+            onclick="shareStatementEmail()"
+            style="background: #2980b9; box-shadow: none"
+          >
+            <i class="fa-solid fa-envelope"></i> Email
           </button>
         </div>
       </div>
@@ -951,7 +1043,7 @@
         }
       }
 
-      // ── ALL ENABLED GOALS (show all, not just first)
+      // ── ALL ENABLED GOALS (show all, not just first) — enhanced UI
       function renderGoals(goals) {
         let container = document.getElementById("goalsContainer");
         if (!goals || goals.length === 0) {
@@ -965,22 +1057,37 @@
         }
         container.innerHTML = enabled
           .map((g) => {
-            // Use stored CurrentAmount from backend (admin sets manually)
             let collected = Number(g.CurrentAmount || 0);
             let target = Number(g.TargetAmount || 1);
             let pct = Math.min(100, Math.round((collected / target) * 100));
             let barColor =
               pct >= 100 ? "#27ae60" : pct >= 60 ? "#f7a01a" : "#e74c3c";
-            return `<div class="goal-card">
-            <h3><i class="fa-solid fa-bullseye"></i> ${escapeHtml(
-              g.GoalName
-            )}</h3>
-            <div style="background:#eee;border-radius:15px;height:22px;width:100%;overflow:hidden;">
-              <div style="background:linear-gradient(90deg,${barColor},${barColor}dd);height:100%;width:${pct}%;transition:width 1s ease;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:11px;">${pct}%</div>
+            let statusLabel =
+              pct >= 100
+                ? `<span style="background:#eafaf1;color:#27ae60;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">✓ ACHIEVED</span>`
+                : `<span style="background:#fef9ee;color:#f7a01a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">${pct}% funded</span>`;
+            return `<div class="goal-card" style="border-left:4px solid ${barColor};">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <h3 style="margin:0;"><i class="fa-solid fa-bullseye"></i> ${escapeHtml(
+                g.GoalName
+              )}</h3>
+              ${statusLabel}
             </div>
-            <p style="margin:8px 0 0;font-weight:600;text-align:right;font-size:13px;color:#555;">₹${fmt(
+            <div style="background:#eee;border-radius:15px;height:18px;width:100%;overflow:hidden;">
+              <div style="background:linear-gradient(90deg,${barColor}cc,${barColor});height:100%;width:${pct}%;transition:width 1.2s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:flex-end;padding-right:6px;">
+                ${
+                  pct >= 12
+                    ? `<span style="color:white;font-weight:bold;font-size:10px;">${pct}%</span>`
+                    : ""
+                }
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:#666;">
+              <span>Collected: <b style="color:${barColor};">₹${fmt(
               collected
-            )} / ₹${fmt(target)}</p>
+            )}</b></span>
+              <span>Target: <b>₹${fmt(target)}</b></span>
+            </div>
           </div>`;
           })
           .join("");
@@ -1118,9 +1225,34 @@
       }
 
       function calculateTotal() {
-        document.getElementById("totalAmount").innerText = fmt(
-          data.reduce((s, c) => s + Number(c.Amount || 0), 0)
-        );
+        const total = data.reduce((s, c) => s + Number(c.Amount || 0), 0);
+        document.getElementById("totalAmount").innerText = fmt(total);
+        // Quick stats: this year, this month, total records
+        const now = new Date();
+        const curY = now.getFullYear();
+        const curM = months[now.getMonth()];
+        const thisYear = data
+          .filter((c) => String(c.Year) === String(curY))
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        const thisMonth = data
+          .filter((c) => String(c.Year) === String(curY) && c.ForMonth === curM)
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        const qs = document.getElementById("quickStats");
+        if (qs) {
+          qs.innerHTML = [
+            ["📅 This Month", "₹" + fmt(thisMonth)],
+            ["📆 This Year", "₹" + fmt(thisYear)],
+            ["🧾 Records", data.length],
+          ]
+            .map(
+              ([label, val]) =>
+                `<div style="background:rgba(255,255,255,0.18);border-radius:8px;padding:6px 14px;text-align:center;">
+              <div style="font-size:10px;opacity:0.85;">${label}</div>
+              <div style="font-weight:700;font-size:0.95rem;">${val}</div>
+            </div>`
+            )
+            .join("");
+        }
       }
 
       function applyFilter() {
@@ -1306,6 +1438,94 @@
         doc.save(
           `Mandir_Statement_${s.name.replace(/\s+/g, "_")}_${Date.now()}.pdf`
         );
+      }
+
+      function shareStatementWhatsApp() {
+        let s = JSON.parse(localStorage.getItem("session"));
+        let filterY = document.getElementById("filterYear").value;
+        let filterM = document.getElementById("filterMonth").value;
+        let filtered = data.filter(
+          (c) =>
+            (!filterY || String(c.Year) === filterY) &&
+            (!filterM || c.ForMonth === filterM)
+        );
+        let total = filtered.reduce((sum, c) => sum + Number(c.Amount || 0), 0);
+        let byMonth = {};
+        filtered.forEach((c) => {
+          byMonth[c.ForMonth || "—"] =
+            (byMonth[c.ForMonth || "—"] || 0) + Number(c.Amount || 0);
+        });
+        let monthLines =
+          Object.entries(byMonth)
+            .map(([m, a]) => `  📅 ${m}: ₹${fmt(a)}`)
+            .join("\n") || "  No records";
+        const genDate = new Date().toLocaleDateString("en-IN");
+        const periodLabel =
+          filterM && filterY
+            ? `${filterM} ${filterY}`
+            : filterY
+            ? `Year ${filterY}`
+            : "All Time";
+        const msg =
+          `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n` +
+          `📋 *My Contribution Statement*\n` +
+          `👤 Member: *${s.name}*\n` +
+          `📆 Period: ${periodLabel}\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `${monthLines}\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `💰 *Total: ₹${fmt(total)}* (${filtered.length} record${
+            filtered.length !== 1 ? "s" : ""
+          })\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `_System Generated — ${genDate}_\n_🙏 Jai Shree Ram_`;
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+      }
+
+      function shareStatementEmail() {
+        let s = JSON.parse(localStorage.getItem("session"));
+        let filterY = document.getElementById("filterYear").value;
+        let filterM = document.getElementById("filterMonth").value;
+        let filtered = data.filter(
+          (c) =>
+            (!filterY || String(c.Year) === filterY) &&
+            (!filterM || c.ForMonth === filterM)
+        );
+        let total = filtered.reduce((sum, c) => sum + Number(c.Amount || 0), 0);
+        const periodLabel =
+          filterM && filterY
+            ? `${filterM} ${filterY}`
+            : filterY
+            ? `Year ${filterY}`
+            : "All Time";
+        const genDate = new Date().toLocaleDateString("en-IN");
+        let rows =
+          filtered
+            .map((c, i) => {
+              let tName =
+                types.find((t) => String(t.TypeId) === String(c.TypeId))
+                  ?.TypeName || "Contribution";
+              let dRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+              return `  ${i + 1}. ${c.ForMonth || "—"} ${
+                c.Year || ""
+              } | Rs.${Number(c.Amount || 0).toLocaleString(
+                "en-IN"
+              )} | ${tName} | ${dRID}`;
+            })
+            .join("\n") || "  No records found";
+        const subject = encodeURIComponent(
+          `My Contribution Statement — ${periodLabel} — Shree Hanuman Mandir`
+        );
+        const body = encodeURIComponent(
+          `SHREE HANUMAN MANDIR, PALIYA, SULTANPUR\nCONTRIBUTION STATEMENT\n\n` +
+            `Member : ${s.name}\nPeriod : ${periodLabel}\nGenerated : ${genDate}\n\n` +
+            `RECORDS:\n${rows}\n\n` +
+            `TOTAL: Rs.${total.toLocaleString("en-IN")} (${
+              filtered.length
+            } record${filtered.length !== 1 ? "s" : ""})\n\n` +
+            `System Generated — Not Manually Signed\nJai Shree Ram 🙏`
+        );
+        window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
       }
 
       init();
