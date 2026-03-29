@@ -44,7 +44,11 @@
         z-index: 1000;
         transition: left 0.3s ease;
         overflow-y: auto;
-        max-height: 100vh;
+        /* FIX #4: Sticky sidebar — always stays in view on desktop */
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        flex-shrink: 0;
       }
       .sidebar h2 {
         text-align: center;
@@ -96,10 +100,7 @@
         z-index: 100;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
       }
-      .header.hdr-hidden {
-        transform: translateY(-100%);
-        box-shadow: none;
-      }
+      /* FIX #4: hdr-hidden removed — header always sticky */
       .header h3 {
         margin: 0;
         color: #946c44;
@@ -581,6 +582,12 @@
           </li>
           <li onclick="showPage('goalsPage',this)">
             <i class="fa-solid fa-bullseye"></i> Manage Goals
+          </li>
+          <li onclick="showPage('broadcastPage',this)">
+            <i class="fa-solid fa-bullhorn"></i> Broadcast
+          </li>
+          <li onclick="showPage('auditPage',this)">
+            <i class="fa-solid fa-scroll"></i> Audit Log
           </li>
         </ul>
 
@@ -1396,6 +1403,98 @@
           </div>
         </div>
       </div>
+
+        <!-- FIX #7: BROADCAST PAGE -->
+        <div id="broadcastPage" class="page">
+          <div class="card">
+            <h3><i class="fa-solid fa-bullhorn"></i> Send Broadcast Message</h3>
+            <div style="background:#fff8e8;border:1px solid #f7a01a44;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:#946c44;">
+              <i class="fa-solid fa-circle-info"></i> Broadcast messages are shared as WhatsApp announcements to all members. You can also post polls/innovations for member feedback.
+            </div>
+            <div class="form-row">
+              <div>
+                <label>Message Type</label>
+                <select id="bc_type">
+                  <option value="announcement">📢 Announcement / Information</option>
+                  <option value="poll">🗳️ Poll (Yes/No)</option>
+                  <option value="innovation">💡 New Innovation / Idea</option>
+                </select>
+              </div>
+              <div>
+                <label>Priority</label>
+                <select id="bc_priority">
+                  <option value="normal">Normal</option>
+                  <option value="important">⚠️ Important</option>
+                  <option value="urgent">🚨 Urgent</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label>Title / Subject</label>
+              <input id="bc_title" placeholder="e.g. Pooja Schedule Update, New Idea for Mandir..." />
+            </div>
+            <div>
+              <label>Message Content</label>
+              <textarea id="bc_message" placeholder="Write your message here..." style="width:100%;min-height:100px;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;resize:vertical;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#f7a01a'" onblur="this.style.borderColor='#ddd'"></textarea>
+            </div>
+            <div id="bc_poll_options" style="display:none;margin-top:4px;">
+              <label style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;display:block;">Poll Options (members can respond Yes/No/Suggestion)</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <span style="background:#eafaf1;color:#27ae60;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;">✅ Yes</span>
+                <span style="background:#fdedec;color:#e74c3c;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;">❌ No</span>
+                <span style="background:#fef9e7;color:#f7a01a;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;">💬 Give Suggestion</span>
+              </div>
+              <p style="font-size:11px;color:#aaa;margin-top:6px;">Members will respond via WhatsApp</p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+              <button onclick="sendBroadcast()" style="background:#25d366;">
+                <i class="fa-brands fa-whatsapp"></i> Send via WhatsApp
+              </button>
+              <button onclick="previewBroadcast()" style="background:#334155;">
+                <i class="fa-solid fa-eye"></i> Preview
+              </button>
+            </div>
+          </div>
+          <div class="card">
+            <h3><i class="fa-solid fa-history"></i> Broadcast History</h3>
+            <div id="broadcastHistory" style="font-size:13px;color:#888;text-align:center;padding:20px;">
+              No broadcasts sent yet in this session.
+            </div>
+          </div>
+        </div>
+
+        <!-- AUDIT LOG PAGE -->
+        <div id="auditPage" class="page">
+          <div class="card">
+            <h3><i class="fa-solid fa-scroll"></i> Audit Log
+              <span style="font-size:11px;font-weight:400;color:#999;">(Login/Logout times, all actions)</span>
+            </h3>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+              <input class="search-bar" id="auditSearch" placeholder="🔍 Search by user or action..." onkeyup="filterAuditLog()" style="margin:0;flex:1;min-width:200px;" />
+              <button onclick="loadAuditLog()" style="background:#334155;box-shadow:none;padding:9px 14px;">
+                <i class="fa-solid fa-rotate"></i> Refresh
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Timestamp</th>
+                    <th>User / Admin</th>
+                    <th>Action</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="auditTableBody">
+                  <tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">Click Refresh to load audit log</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+    </div>
     </div>
 
     <script src="config.js"></script>
@@ -1445,6 +1544,13 @@
       }
 
       function logout() {
+        // FIX #11: Log logout time before clearing session
+        try {
+          const s = JSON.parse(localStorage.getItem("session") || "{}");
+          if(s && s.userId) {
+            postData({action:"logout", userId:s.userId, userName:s.name||"Admin"}).catch(()=>{});
+          }
+        } catch(e) {}
         localStorage.clear();
         sessionStorage.clear();
         history.replaceState(null, "", "login.html");
@@ -1681,6 +1787,7 @@
           (u) => u.Role !== "Admin" && u.Status !== "Inactive"
         ).length;
         document.getElementById("totalUsers").innerText = memberCount;
+        // FIX #5 & #14: Include walk-in entries in all totals
         let totalC = data.reduce((a, b) => a + Number(b.Amount || 0), 0);
         let totalE = expenses.reduce((a, b) => a + Number(b.Amount || 0), 0);
         document.getElementById("totalContribution").innerText =
@@ -1840,6 +1947,10 @@
                 String(e.Year) === String(selYear) && e.ForMonth === selMonth
             )
             .reduce((s, e) => s + Number(e.Amount || 0), 0);
+          // FIX #12: Include walk-in entries in member lines
+          let walkInTotal = monthContribs
+            .filter((c) => String(c.UserId).startsWith("WALKIN_"))
+            .reduce((s, c) => s + Number(c.Amount || 0), 0);
           let memberLines = users
             .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
             .map((u) => {
@@ -1851,6 +1962,7 @@
                 : `  ⬜ ${u.Name}: ₹0`;
             })
             .join("\n");
+          if(walkInTotal > 0) memberLines += `\n  🚶 Walk-in Donors: ₹${fmt(walkInTotal)}`;
           msg = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n📅 *Monthly Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n━━━━━━━━━━━━━━━━━━━━\n💰 Total Collected: ₹${fmt(
             monthTotal
           )}\n💸 Total Expenses: ₹${fmt(
@@ -1867,6 +1979,9 @@
           let yearExp = expenses
             .filter((e) => String(e.Year) === String(selYear))
             .reduce((s, e) => s + Number(e.Amount || 0), 0);
+          let walkInTotalYr = yearContribs
+            .filter((c) => String(c.UserId).startsWith("WALKIN_"))
+            .reduce((s, c) => s + Number(c.Amount || 0), 0);
           let memberLines = users
             .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
             .map((u) => {
@@ -1885,6 +2000,8 @@
                 : `  ⬜ ${u.Name}: ₹0`;
             })
             .join("\n");
+          // FIX #12: Add walk-in total to yearly report
+          if(walkInTotalYr > 0) memberLines += `\n  🚶 Walk-in Donors: ₹${fmt(walkInTotalYr)}`;
           let monthLines = MOS.map((m) => {
             let mc = yearContribs
               .filter((c) => c.ForMonth === m)
@@ -2205,7 +2322,7 @@
         <td style="font-size:12px;color:#888;">${c.PaymentDate || "—"}</td>
         <td onclick="event.stopPropagation()">
           <div class="action-btns">
-            <button class="btn-sm btn-info" onclick="showReceiptById('${_rid}')" title="Receipt"><i class="fa-solid fa-receipt"></i></button>
+            <button class="btn-sm btn-info" onclick="event.stopPropagation();viewContrib_receipt('${_rid}')" title="View Receipt"><i class="fa-solid fa-receipt"></i></button>
             <button class="btn-sm" onclick="openEditContrib('${
               c.Id
             }')" title="Edit"><i class="fa-solid fa-pen"></i></button>
@@ -3551,26 +3668,15 @@
         if (!d) return;
         showReceipt(d.c, d.userName, d.typeName, d.occasionName, true);
       }
+      // FIX #13: viewContrib_receipt — only show receipt when explicitly requested
+      function viewContrib_receipt(rid) {
+        showReceiptById(rid);
+      }
 
       init();
 
-      /* ═══ FIX 8: SCROLL HIDE/SHOW HEADER ═══ */
-      (function () {
-        const mainEl = document.querySelector(".main");
-        const hdr = document.querySelector(".header");
-        if (!mainEl || !hdr) return;
-        let lastY = 0;
-        mainEl.addEventListener(
-          "scroll",
-          function () {
-            const y = mainEl.scrollTop;
-            if (y > lastY && y > 60) hdr.classList.add("hdr-hidden");
-            else hdr.classList.remove("hdr-hidden");
-            lastY = y;
-          },
-          { passive: true }
-        );
-      })();
+      /* FIX #4: Header always stays visible (sticky), scroll-hide removed */
+      /* No scroll-hide for admin header — menu stays accessible always */
 
       /* ═══ FIX 3: BROADCAST SESSION REVOKE TO OTHER TABS on load ═══ */
       (function () {

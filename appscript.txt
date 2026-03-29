@@ -126,7 +126,7 @@ function doGet(e) {
         if (h === "GoalId")     return sanitize(e.parameter.GoalId, 50) || generateId();
         if (h === "GoalName")   return sanitize(e.parameter.GoalName, 200);
         if (h === "TargetAmount") return Number(e.parameter.TargetAmount||0);
-        if (h === "CurrentAmount") return 0;
+        if (h === "CurrentAmount") return Number(e.parameter.CurrentAmount||0);
         if (h === "Status")     return sanitize(e.parameter.Status, 20) || "Disabled";
         if (h === "CreatedAt")  return formatDate();
         return "";
@@ -146,9 +146,10 @@ function doGet(e) {
     else {
       const sheetRow = idx + 2;
       headers.forEach((h,i) => {
-        if (h === "GoalName")     sheet.getRange(sheetRow,i+1).setValue(sanitize(e.parameter.GoalName,200));
-        if (h === "TargetAmount") sheet.getRange(sheetRow,i+1).setValue(Number(e.parameter.TargetAmount||0));
-        if (h === "Status")       sheet.getRange(sheetRow,i+1).setValue(sanitize(e.parameter.Status,20));
+        if (h === "GoalName")      sheet.getRange(sheetRow,i+1).setValue(sanitize(e.parameter.GoalName,200));
+        if (h === "TargetAmount")  sheet.getRange(sheetRow,i+1).setValue(Number(e.parameter.TargetAmount||0));
+        if (h === "CurrentAmount") sheet.getRange(sheetRow,i+1).setValue(Number(e.parameter.CurrentAmount||0));
+        if (h === "Status")        sheet.getRange(sheetRow,i+1).setValue(sanitize(e.parameter.Status,20));
       });
       logAction("Admin", "updateGoal", rid);
       result = { status: "updated" };

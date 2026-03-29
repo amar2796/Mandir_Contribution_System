@@ -27,7 +27,7 @@
         color: #333;
       }
 
-      /* ══ HEADER ══ */
+      /* ══ HEADER — FIX #4: Always sticky, never hides ══ */
       .header {
         background: #fff;
         padding: 0 14px;
@@ -41,7 +41,7 @@
         z-index: 200;
         gap: 8px;
         border-bottom: 2px solid #f7a01a;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        /* FIX #4: No transform on header - always visible */
       }
       .header-left {
         display: flex;
@@ -1323,26 +1323,41 @@
           align: "center",
         });
         // Member info
-        doc.setTextColor(50, 50, 50);
-        doc.setFontSize(10);
-        doc.setFont(undefined, "bold");
-        doc.text(`Member: ${s.name.toUpperCase()}`, 14, 36);
-        doc.setFont(undefined, "normal");
-        doc.setFontSize(9);
-        doc.text(
-          `Generated: ${new Date().toLocaleDateString(
-            "en-IN"
-          )}  |  System Generated Report`,
-          14,
-          42
-        );
-        // Compute total from data (not DOM)
         let filterY = document.getElementById("filterYear").value;
         let filterM = document.getElementById("filterMonth").value;
         let filterT = document.getElementById("filterType").value;
         let srchTxt = document
           .getElementById("searchInput")
           .value.toLowerCase();
+        const filterLabel =
+          [
+            filterY ? `Year: ${filterY}` : "",
+            filterM ? `Month: ${filterM}` : "",
+            filterT
+              ? `Type: ${
+                  (types.find((t) => String(t.TypeId) === filterT) || {})
+                    .TypeName || ""
+                }`
+              : "",
+            srchTxt ? `Search: "${srchTxt}"` : "",
+          ]
+            .filter(Boolean)
+            .join("  |  ") || "All Records";
+        doc.setTextColor(50, 50, 50);
+        doc.setFontSize(10);
+        doc.setFont(undefined, "bold");
+        doc.text(`Member: ${s.name.toUpperCase()}`, 14, 36);
+        doc.setFont(undefined, "normal");
+        doc.setFontSize(9);
+        // FIX #9: Show active filters in PDF
+        doc.text(
+          `Filters: ${filterLabel}  |  Generated: ${new Date().toLocaleDateString(
+            "en-IN"
+          )}`,
+          14,
+          42
+        );
+        doc.text("System Generated — Not Manually Signed", 14, 47);
         let filtered = data.filter((c) => {
           let t =
             types.find((x) => String(x.TypeId) === String(c.TypeId))
@@ -1364,12 +1379,14 @@
         let total = filtered.reduce((s, c) => s + Number(c.Amount || 0), 0);
         doc.setFont(undefined, "bold");
         doc.setFontSize(10);
+        doc.setFont(undefined, "bold");
+        doc.setFontSize(10);
         doc.text(
-          `Total Amount: Rs. ${total.toLocaleString("en-IN")}  (${
+          `Total: Rs. ${total.toLocaleString("en-IN")}  (${
             filtered.length
           } record${filtered.length !== 1 ? "s" : ""})`,
           14,
-          49
+          53
         );
         // Table
         let rows = filtered.map((c, i) => {
@@ -1401,7 +1418,7 @@
               ],
             ],
             body: rows,
-            startY: 54,
+            startY: 56,
             theme: "grid",
             headStyles: {
               fillColor: [51, 65, 85],

@@ -1011,20 +1011,34 @@
           `<tr><td colspan="3" style="text-align:center;color:#aaa;">No data</td></tr>`;
       }
 
+      // FIX #5 & #12: Helper to get display name for any UserId (including walk-in)
+      function getDisplayName(uid, note) {
+        if (!String(uid).startsWith("WALKIN_")) {
+          return (
+            users.find((x) => String(x.UserId) === String(uid))?.Name ||
+            "Unknown"
+          );
+        }
+        // Walk-in: extract name from Note field "Walk-in: Name | mobile"
+        const match = String(note || "").match(/Walk-in:\s*([^|]+)/);
+        return (match ? match[1].trim() : "Walk-in Donor") + " 🚶";
+      }
+
       function renderUserWise() {
-        let map = {};
+        let map = {},
+          noteMap = {};
         filteredC.forEach((c) => {
           map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
+          if (!noteMap[c.UserId]) noteMap[c.UserId] = c.Note || "";
         });
         let sortedU = Object.keys(map).sort((a, b) => map[b] - map[a]);
         let html = sortedU
           .map((uid) => {
-            let uName =
-              users.find((x) => String(x.UserId) === String(uid))?.Name ||
-              "Unknown";
-            return `<tr><td>${uName}</td><td class="amount-col">₹ ${fmt(
-              map[uid]
-            )}</td></tr>`;
+            // FIX #12: Use getDisplayName so walk-in shows name, not "Unknown"
+            let uName = getDisplayName(uid, noteMap[uid]);
+            return `<tr><td>${escapeHtml(
+              uName
+            )}</td><td class="amount-col">₹ ${fmt(map[uid])}</td></tr>`;
           })
           .join("");
         document.getElementById("userWiseBody").innerHTML =
@@ -1035,9 +1049,8 @@
       function renderDetails() {
         let rows = [];
         filteredC.forEach((c) => {
-          let uName =
-            users.find((x) => String(x.UserId) === String(c.UserId))?.Name ||
-            "Unknown";
+          // FIX #12: Walk-in shows actual name, not Unknown
+          let uName = getDisplayName(c.UserId, c.Note);
           let tName =
             types.find((x) => String(x.TypeId) === String(c.TypeId))
               ?.TypeName || "Contribution";
@@ -1047,7 +1060,7 @@
           const _drid = _storeReceipt(c, uName, tName, oName);
           rows.push({
             date: c.PaymentDate || "0",
-            html: `<tr style="cursor:pointer;" onclick="showReceiptById('${_drid}')">
+            html: `<tr style="cursor:pointer;" onclick="viewDashboardEntry('${_drid}')">
       <td>${c.PaymentDate || "N/A"}</td>
       <td><i class="fa-solid fa-user" style="color:#aaa;margin-right:4px;font-size:11px;"></i>${escapeHtml(
         uName
@@ -1055,7 +1068,7 @@
       <td><span class="badge badge-green">${escapeHtml(tName)}</span></td>
       <td>${c.ForMonth || "—"}</td><td>${escapeHtml(oName)}</td>
       <td class="amount-col">+ ₹ ${fmt(c.Amount)}</td>
-      <td><button class="btn-blue" style="padding:3px 8px;font-size:11px;box-shadow:none;" onclick="event.stopPropagation();showReceiptById('${_drid}')"><i class="fa-solid fa-receipt"></i></button></td>
+      <td><button class="btn-blue" style="padding:3px 8px;font-size:11px;box-shadow:none;" onclick="event.stopPropagation();showReceiptById('${_drid}')"><i class="fa-solid fa-receipt"></i> Receipt</button></td>
     </tr>`,
           });
         });
@@ -1161,6 +1174,49 @@
           });
         }
         doc.save(`Mandir_Report_${selectedYear}_${Date.now()}.pdf`);
+      }
+
+      // FIX #13: Click row shows detail popup, not auto receipt
+      function viewDashboardEntry(rid) {
+        const d = window._rcptStore ? window._rcptStore[rid] : null;
+        if (!d) {
+          showReceiptById(rid);
+          return;
+        }
+        const { c, userName, typeName, occasionName } = d;
+        const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, "MNR-");
+        const html = `
+          <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Contribution Details</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy">
+            <div style="border:1px solid #f0f0f0;border-radius:10px;padding:4px 16px;">
+              <div class="_row"><span class="_rl">Tracking ID</span><span class="_rv" style="color:#f7a01a;font-family:monospace;">${escapeHtml(
+                displayRID
+              )}</span></div>
+              <div class="_row"><span class="_rl">Donor</span><span class="_rv">${escapeHtml(
+                userName
+              )}</span></div>
+              <div class="_row"><span class="_rl">Amount</span><span class="_rv" style="color:#27ae60;font-size:1.1rem;">₹ ${fmt(
+                c.Amount
+              )}</span></div>
+              <div class="_row"><span class="_rl">Month / Year</span><span class="_rv">${escapeHtml(
+                c.ForMonth || "—"
+              )} ${escapeHtml(String(c.Year || ""))}</span></div>
+              <div class="_row"><span class="_rl">Type</span><span class="_rv">${escapeHtml(
+                typeName || "—"
+              )}</span></div>
+              <div class="_row"><span class="_rl">Occasion</span><span class="_rv">${escapeHtml(
+                occasionName || "—"
+              )}</span></div>
+              <div class="_row"><span class="_rl">Date Recorded</span><span class="_rv">${escapeHtml(
+                c.PaymentDate || "—"
+              )}</span></div>
+            </div>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Close</button>
+            <button class="_mbtn" style="background:#27ae60;" onclick="closeModal();showReceiptById('${rid}')"><i class="fa-solid fa-receipt"></i> View Receipt</button>
+          </div>`;
+        openModal(html, "480px");
       }
 
       function showReceiptById(rid) {

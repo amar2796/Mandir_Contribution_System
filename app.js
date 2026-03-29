@@ -61,18 +61,24 @@ function postData(data) {
 }
 
 /* ═══ ONE-SESSION-PER-USER (Broadcast across tabs) ═══ */
+/* FIX #6: Generate a unique tab token on load. When a new login happens,
+   the old tab receives SESSION_REVOKED. Current tab keeps its session.
+   On login, a new sessionToken is written to localStorage; old tab detects
+   token mismatch and logs out automatically. */
+window._myTabToken = Math.random().toString(36).slice(2) + Date.now();
+
 (function(){
-  // Listen for logout broadcast from other tabs
   if(typeof BroadcastChannel !== "undefined"){
     window._sessionBC = new BroadcastChannel("mandir_session");
     window._sessionBC.onmessage = function(e){
       if(e.data && e.data.type === "SESSION_REVOKED"){
         const s = JSON.parse(localStorage.getItem("session") || "null");
-        // If the revoked userId matches current session, force logout
-        if(s && String(s.userId) === String(e.data.userId)){
+        // Only log out if userId matches AND tab token doesn't match (not the new login tab)
+        if(s && String(s.userId) === String(e.data.userId) &&
+           e.data.newTabToken !== window._myTabToken){
           localStorage.clear();
-          toast("⚠️ Your session was opened on another device. Logged out.", "warn");
-          setTimeout(()=>location.replace("login.html"), 1800);
+          toast("⚠️ You logged in from another device/tab. This session has ended.", "warn");
+          setTimeout(()=>location.replace("login.html"), 2000);
         }
       }
     };
@@ -81,7 +87,11 @@ function postData(data) {
 
 function broadcastSessionRevoke(userId){
   if(typeof BroadcastChannel !== "undefined" && window._sessionBC){
-    window._sessionBC.postMessage({type:"SESSION_REVOKED", userId: String(userId)});
+    window._sessionBC.postMessage({
+      type:"SESSION_REVOKED",
+      userId: String(userId),
+      newTabToken: window._myTabToken  // current tab keeps session, others log out
+    });
   }
 }
 
@@ -89,8 +99,38 @@ function broadcastSessionRevoke(userId){
 function checkSession() {
   let s=JSON.parse(localStorage.getItem("session"));
   if(!s||Date.now()>s.expiry){localStorage.clear();toast("Session expired. Please login again.","error");setTimeout(()=>location.replace("login.html"),1500);return false;}
+  // FIX #10: Refresh expiry on activity (30-min sliding window)
+  s.expiry=Date.now()+30*60*1000;
+  localStorage.setItem("session",JSON.stringify(s));
   return true;
 }
+
+/* FIX #10: Auto 30-min session expiry — check every 60 seconds for inactivity */
+(function(){
+  // Track last activity
+  function _touchSession(){
+    let s=JSON.parse(localStorage.getItem("session")||"null");
+    if(!s) return;
+    s.expiry=Date.now()+30*60*1000;
+    localStorage.setItem("session",JSON.stringify(s));
+  }
+  ["click","keydown","touchstart","scroll"].forEach(evt=>{
+    document.addEventListener(evt, _touchSession, {passive:true});
+  });
+  // Poll every 60s — if expired and page is a protected page, redirect
+  setInterval(function(){
+    let s=JSON.parse(localStorage.getItem("session")||"null");
+    if(s && Date.now()>s.expiry){
+      const isProtected = window.location.pathname.includes("admin") ||
+                          window.location.pathname.includes("user");
+      if(isProtected){
+        localStorage.clear();
+        toast("⏰ Session expired after 30 minutes of inactivity.","warn");
+        setTimeout(()=>location.replace("login.html"),1800);
+      }
+    }
+  }, 60000);
+})();
 
 /* ═══ LOCAL UPDATE ═══ */
 function updateLocalData(category,id,newData){
@@ -381,17 +421,36 @@ function sendReceiptWhatsApp(rid){
 }
 
 function exportReceiptPDFForWhatsApp(rid){
-  // Download PDF first, then open WhatsApp so user can attach manually
+  // FIX #8: Download PDF AND open WhatsApp simultaneously
+  const stored = window._rcptStore[rid];
+  if(!stored){toast("Receipt data not found.","error");return;}
+  const {c,userName,typeName,occasionName} = stored;
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const genDate = new Date().toLocaleDateString("en-IN");
+  const msg =
+    `🕉️ *SHREE HANUMAN MANDIR*\n` +
+    `📍 Paliya, Sultanpur\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `✅ *CONTRIBUTION RECEIPT*\n\n` +
+    `🔖 Tracking ID: *${displayRID}*\n` +
+    `👤 Donor: *${userName}*\n` +
+    `💰 Amount: *₹ ${Number(c.Amount||0).toLocaleString("en-IN")}*\n` +
+    `📅 Month: ${c.ForMonth||"—"} ${c.Year||""}\n` +
+    `🏷️ Type: ${typeName||"Contribution"}\n` +
+    (occasionName && occasionName!=="—" ? `🎉 Occasion: ${occasionName}\n` : "") +
+    (c.Note ? `📝 Note: ${c.Note}\n` : "") +
+    `📆 Date: ${c.PaymentDate||"—"}\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `_🙏 Thank you for your generous contribution_\n` +
+    `_PDF Receipt also downloaded — please attach it_\n` +
+    `_System Generated — ${genDate}_`;
+  // Download PDF first
   exportReceiptPDF(rid);
+  // Then immediately open WhatsApp with full receipt text
   setTimeout(()=>{
-    const stored = window._rcptStore[rid];
-    if(!stored) return;
-    const {c,userName} = stored;
-    const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
-    const msg = `🕉️ *SHREE HANUMAN MANDIR* — Receipt *${displayRID}* for *${userName}* (₹${Number(c.Amount||0).toLocaleString("en-IN")}, ${c.ForMonth||""} ${c.Year||""})\nPlease find the attached PDF receipt.`;
-    toast("📥 PDF downloaded — now attach it in WhatsApp","");
+    toast("📥 PDF downloaded — attach it in WhatsApp along with this message","");
     window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
-  },1000);
+  }, 600);
 }
 
 function sendReceiptEmail(rid){
