@@ -428,6 +428,110 @@
           grid-template-columns: 1fr;
         }
       }
+
+      /* ── UI ENHANCEMENTS ── */
+
+      /* Sidebar active item: left accent bar */
+      .sidebar li.active-nav {
+        border-left: 4px solid #f7c35a;
+        background: linear-gradient(90deg, rgba(247,160,26,0.92) 0%, rgba(247,140,10,0.82) 100%);
+        padding-left: 26px;
+      }
+      .sidebar li:hover:not(.active-nav) {
+        background: rgba(247,160,26,0.18);
+        padding-left: 30px;
+        color: #f7c35a;
+      }
+
+      /* Card-box stat tiles: gradient accent + icon space */
+      .card-box {
+        position: relative;
+        overflow: hidden;
+      }
+      .card-box::after {
+        content: '';
+        position: absolute;
+        top: -18px;
+        right: -18px;
+        width: 72px;
+        height: 72px;
+        background: rgba(247,160,26,0.08);
+        border-radius: 50%;
+      }
+      .card-box h2 {
+        transition: transform 0.25s ease;
+      }
+      .card-box:hover h2 {
+        transform: scale(1.06);
+      }
+
+      /* Table rows: smooth highlight */
+      tbody tr {
+        transition: background 0.15s ease, box-shadow 0.15s ease;
+      }
+      tbody tr:hover {
+        background: #fffbf2 !important;
+        box-shadow: inset 3px 0 0 #f7a01a;
+      }
+
+      /* Cards: subtle hover lift */
+      .card {
+        transition: box-shadow 0.25s ease;
+      }
+      .card:hover {
+        box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+      }
+
+      /* Goal progress bar: smooth fill animation */
+      @keyframes goalFill {
+        from { width: 0%; }
+      }
+      .goal-bar-fill {
+        animation: goalFill 0.8s cubic-bezier(.4,0,.2,1) both;
+      }
+
+      /* Header: subtle bottom border glow on scroll */
+      .header {
+        border-bottom: 2px solid #f7a01a22;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      /* Sidebar logout item: red tint */
+      .sidebar li:last-child {
+        color: #f87171;
+        margin-top: auto;
+      }
+      .sidebar li:last-child:hover {
+        background: rgba(231,76,60,0.25) !important;
+        color: #fca5a5;
+      }
+
+      /* Skeleton shimmer for loading rows */
+      @keyframes shimmer {
+        0%   { background-position: -600px 0; }
+        100% { background-position: 600px 0; }
+      }
+      .shimmer-row td {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+        background-size: 600px 100%;
+        animation: shimmer 1.4s infinite linear;
+        color: transparent !important;
+        border-radius: 4px;
+      }
+
+      /* Badge: slight shadow for depth */
+      .badge {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        letter-spacing: 0.2px;
+      }
+
+      /* Scrollbar: thin, branded */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: #f4f6f9; }
+      ::-webkit-scrollbar-thumb { background: #d4a843; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #f7a01a; }
     </style>
   </head>
   <body>
@@ -1302,6 +1406,13 @@
         }
       }
 
+      function logout() {
+        localStorage.clear();
+        sessionStorage.clear();
+        history.replaceState(null, "", "login.html");
+        location.replace("login.html");
+      }
+
       function toggleAdminDropdown() {
         let d = document.getElementById("adminDropdown");
         d.style.display = d.style.display === "none" ? "block" : "none";
@@ -1492,6 +1603,14 @@
         document
           .getElementById("loadingOverlay")
           .classList.toggle("show", show);
+        // Show shimmer skeleton in tables while loading
+        const shimmerRow = `<tr class="shimmer-row">${'<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>'.repeat(9)}</tr>`.repeat(4);
+        if (show) {
+          ["tb", "expenseRecordsBody", "userTable"].forEach(id => {
+            let el = document.getElementById(id);
+            if (el && el.innerHTML.trim() === "") el.innerHTML = shimmerRow;
+          });
+        }
       }
 
       /* ── DATA ── */
@@ -2952,6 +3071,14 @@
 
       /* ── GOALS MANAGEMENT ── */
       let goals = [];
+      /* Safe goal ID registry — avoids inline-JS SyntaxError with special chars in GoalId */
+      window._goalStore = {};
+      let _goalIdx = 0;
+      function _storeGoalId(goalId) {
+        const k = "g" + (++_goalIdx);
+        window._goalStore[k] = String(goalId);
+        return k;
+      }
 
       function renderGoals() {
         document.getElementById("goalTableBody").innerHTML =
@@ -2969,6 +3096,7 @@
                       : 0;
                   let barColor =
                     pct >= 100 ? "#27ae60" : pct >= 50 ? "#f7a01a" : "#e74c3c";
+                  let _gk = _storeGoalId(g.GoalId);
                   return `<tr>
                 <td>${i + 1}</td>
                 <td><b>${escapeHtml(g.GoalName || "—")}</b></td>
@@ -2976,7 +3104,7 @@
                 <td class="amt-green">₹ ${fmt(collected)}</td>
                 <td style="min-width:120px;">
                   <div style="background:#eee;border-radius:10px;height:14px;overflow:hidden;">
-                    <div style="background:${barColor};width:${pct}%;height:100%;border-radius:10px;"></div>
+                    <div class="goal-bar-fill" style="background:${barColor};width:${pct}%;height:100%;border-radius:10px;"></div>
                   </div>
                   <span style="font-size:10px;color:#888;">${pct}%</span>
                 </td>
@@ -2985,12 +3113,8 @@
                 }">${g.Status || "Disabled"}</span></td>
                 <td onclick="event.stopPropagation()">
                   <div class="action-btns">
-                    <button class="btn-sm" onclick="openEditGoal('${
-                      g.GoalId
-                    }')"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-sm btn-danger" onclick="deleteGoal('${
-                      g.GoalId
-                    }')"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn-sm" onclick="openEditGoal(_goalStore['${_gk}'])"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-sm btn-danger" onclick="deleteGoal(_goalStore['${_gk}'])"><i class="fa-solid fa-trash"></i></button>
                   </div>
                 </td>
               </tr>`;
@@ -3029,6 +3153,7 @@
       function openEditGoal(id) {
         let g = goals.find((x) => String(x.GoalId) === String(id));
         if (!g) return;
+        const _gk = _storeGoalId(id);
         let html = `
           <div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Goal</h3><button class="_mcls" onclick="closeModal()">×</button></div>
           <div class="_mbdy">
@@ -3054,7 +3179,7 @@
           </div>
           <div class="_mft">
             <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
-            <button class="_mbtn" style="background:#f7a01a;" onclick="saveEditGoal('${id}')"><i class="fa-solid fa-check"></i> Save</button>
+            <button class="_mbtn" style="background:#f7a01a;" onclick="saveEditGoal(_goalStore['${_gk}'])"><i class="fa-solid fa-check"></i> Save</button>
           </div>`;
         openModal(html, "420px");
       }

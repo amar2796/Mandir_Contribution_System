@@ -366,6 +366,27 @@
         } catch(e) {}
       })();
 
+      // ── Security: block forward-navigation back to admin/user after logout
+      // Push a dummy state so the browser has a "back" target on the login page
+      history.pushState(null, "", location.href);
+      window.addEventListener("popstate", function() {
+        history.pushState(null, "", location.href);
+      });
+      // pageshow: catches bfcache-restored pages (back button with cache)
+      window.addEventListener("pageshow", function(e) {
+        if (e.persisted) {
+          try {
+            let s = JSON.parse(localStorage.getItem("session"));
+            if (!s || Date.now() > s.expiry) {
+              localStorage.clear();
+              sessionStorage.clear();
+            } else {
+              location.replace(s.role === "Admin" ? "admin.html" : "user.html");
+            }
+          } catch(err) { localStorage.clear(); }
+        }
+      });
+
       // ── inline toast for login page (before app.js loads)
       function toast(msg, type) {
         let wrap = document.getElementById("_tw");
