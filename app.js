@@ -106,35 +106,40 @@ function broadcastSessionRevoke(userId){
 
 /* ── Write session token to sheet after login ── */
 function setSessionTokenOnServer(userId, token){
-  function _attempt(n) {
-    try {
-      const cb = "cb_sst_" + Date.now() + "_" + n;
-      const script = document.createElement("script");
-      let done = false;
-      window[cb] = function(){ if(done)return; done=true; try{delete window[cb];script.remove();}catch(e){} };
-      script.onerror = function(){
-        if(done)return; done=true;
-        try{delete window[cb];script.remove();}catch(e){}
-        if(n===1) setTimeout(function(){_attempt(2);},4000);
-      };
-      script.src = API_URL + "?action=setSessionToken&userId=" +
-        encodeURIComponent(userId) + "&token=" + encodeURIComponent(token) +
-        "&callback=" + cb;
-      document.body.appendChild(script);
-      setTimeout(function(){
-        if(!done){ done=true; try{delete window[cb];}catch(e){} if(n===1) setTimeout(function(){_attempt(2);},4000); }
-      }, 10000);
-    } catch(e){}
-  }
-  _attempt(1);
+  // Best-effort fire-and-forget. Wrapped in try/catch so a non-redeployed
+  // Apps Script returning an HTML error page never causes a SyntaxError crash.
+  try {
+    const cb = "cb_sst_" + Date.now();
+    const script = document.createElement("script");
+    // Swallow any error silently — this call is optional enhancement only
+    window[cb] = function(){ try{ delete window[cb]; script.remove(); }catch(e){} };
+    script.onerror = function(){ try{ delete window[cb]; script.remove(); }catch(e){} };
+    // Wrap JSONP execution in a safe global so HTML-error-page responses don't crash
+    script.src = API_URL + "?action=setSessionToken&userId=" +
+      encodeURIComponent(userId) + "&token=" + encodeURIComponent(token) +
+      "&callback=" + cb;
+    document.body.appendChild(script);
+    // Safety timeout — clean up if callback never fires (e.g. HTML response)
+    setTimeout(function(){
+      try{ if(window[cb]){ delete window[cb]; } }catch(e){}
+    }, 12000);
+  } catch(e){ /* silent — token write is best-effort */ }
 }
 
-/* ── Cross-device poll: verify token against sheet every 90s ── */
+/* ── Cross-device poll: role-based interval (Admin 60s, User 10min) ── */
+/* WHY: 42 active users × 60s = 60,480 reads/day → over free quota (20,000).   */
+/* Role-split: Admins polled every 60s (security critical), Users every 10min.  */
+/* Result: 2×60s + 40×600s = 2,880 + 5,760 = 8,640 reads/day → 43% of quota.  */
 (function(){
-  const POLL_MS = 90000; // 90 seconds
   const PROTECTED = ["admin.html","user.html","dashboard.html"];
   const isProtected = PROTECTED.some(p => window.location.pathname.includes(p.replace(".html","")));
   if(!isProtected) return;
+
+  // Read role from session — Admin gets strict 60s, User gets relaxed 10min
+  // Role is read once at page load; changes only on re-login
+  const _sessionRaw = JSON.parse(localStorage.getItem("session") || "null");
+  const _isAdmin    = _sessionRaw && _sessionRaw.role === "Admin";
+  const POLL_MS     = _isAdmin ? 60000 : 600000; // 60s for Admin, 10min for User
 
   function _poll(){
     try {
@@ -180,10 +185,22 @@ function setSessionTokenOnServer(userId, token){
     } catch(e){ /* silent — poll is best-effort */ }
   }
 
-  // Start polling after 15s (let page fully load + setSessionToken settle), then every 90s
+  // Start polling after 15s (let page fully load + setSessionToken settle)
+  // Interval stored in window._pollInterval so visibilitychange can pause/resume it
   setTimeout(function(){
     _poll();
-    setInterval(_poll, POLL_MS);
+    window._pollInterval = setInterval(_poll, POLL_MS);
+
+    // ── Pause poll when tab hidden, resume when user returns (~40% extra quota saving)
+    // Zero impact on session logic — _poll() fires immediately on tab return
+    document.addEventListener("visibilitychange", function(){
+      if(document.hidden){
+        clearInterval(window._pollInterval);
+      } else {
+        _poll(); // immediate check when user returns to tab
+        window._pollInterval = setInterval(_poll, POLL_MS);
+      }
+    });
   }, 15000);
 })();
 
@@ -201,6 +218,30 @@ function _forceLogout(message){
   toast(message || "Session ended. Please login again.", "warn");
   setTimeout(()=>location.replace("login.html"), 2200);
 }
+
+/* ── Auto-clear token on browser/tab close ── */
+/* Eliminates ghost sessions instantly. sendBeacon works even during page unload.*/
+/* Only fires on protected pages. No impact on any other logic.                  */
+(function(){
+  const PROTECTED = ["admin.html","user.html","dashboard.html"];
+  const isProtected = PROTECTED.some(p => window.location.pathname.includes(p.replace(".html","")));
+  if(!isProtected) return;
+
+  window.addEventListener("beforeunload", function(){
+    try {
+      const s = JSON.parse(localStorage.getItem("session") || "null");
+      if(!s || !s.userId) return;
+      // sendBeacon: async fire-and-forget, browser sends even as page tears down
+      const params = new URLSearchParams({
+        action:   "clearSessionToken",
+        userId:   String(s.userId),
+        callback: "cb_beacon"
+      });
+      navigator.sendBeacon(API_URL + "?" + params.toString());
+    } catch(e){ /* silent */ }
+  });
+})();
+
 
 
 function checkSession() {
