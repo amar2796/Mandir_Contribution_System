@@ -21,27 +21,27 @@
       body {
         margin: 0;
         font-family: "Poppins", sans-serif;
-        height: 100vh;
+        min-height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
         background: linear-gradient(135deg, #fdfbf7 0%, #f4f6f9 100%);
+        padding: 20px 16px;
       }
       .container {
         width: 100%;
         display: flex;
         justify-content: center;
         align-items: center;
-        padding: 20px;
       }
       .card {
         background: #fff;
         padding: 40px 35px;
-        border-radius: 16px;
+        border-radius: 18px;
         width: 100%;
-        max-width: 400px;
+        max-width: 420px;
         text-align: center;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.09);
         border-top: 5px solid #f7a01a;
         animation: slideUp 0.5s ease-out;
         position: relative;
@@ -49,72 +49,95 @@
       @keyframes slideUp {
         from {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(24px);
         }
         to {
           opacity: 1;
           transform: translateY(0);
         }
       }
+      /* Mandir branding above card */
+      .login-brand {
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
+        color: #946c44;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+      .login-brand i {
+        color: #f7a01a;
+        margin-right: 5px;
+      }
       .card h2 {
         margin-top: 0;
-        margin-bottom: 20px;
+        margin-bottom: 6px;
         color: #946c44;
-        font-size: 1.8rem;
+        font-size: 1.75rem;
         font-weight: 700;
       }
       .card h2 i {
         color: #f7a01a;
         margin-right: 8px;
       }
+      .card-subtitle {
+        font-size: 0.82rem;
+        color: #aaa;
+        margin-bottom: 22px;
+        display: block;
+      }
       .input-group {
         position: relative;
-        margin-bottom: 18px;
+        margin-bottom: 16px;
       }
       .input-group i.icon {
         position: absolute;
         left: 15px;
         top: 50%;
         transform: translateY(-50%);
-        color: #aaa;
-        font-size: 1.1rem;
+        color: #bbb;
+        font-size: 1rem;
+        pointer-events: none;
       }
       .input-group input {
         width: 100%;
-        padding: 14px 15px 14px 45px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        padding: 13px 15px 13px 44px;
+        border: 1.5px solid #e8e8e8;
+        border-radius: 10px;
         outline: none;
-        font-size: 15px;
+        font-size: 14.5px;
         font-family: "Poppins", sans-serif;
-        transition: all 0.3s ease;
+        transition: all 0.25s ease;
         background: #fafafa;
+        color: #333;
       }
       .input-group input:focus {
         border-color: #f7a01a;
         background: #fff;
-        box-shadow: 0 0 8px rgba(247, 160, 26, 0.1);
+        box-shadow: 0 0 0 3px rgba(247, 160, 26, 0.1);
       }
       .forgot {
-        font-size: 0.85rem;
+        font-size: 0.83rem;
         text-align: right;
-        color: #888;
+        color: #999;
         cursor: pointer;
         display: block;
-        margin-top: -10px;
-        margin-bottom: 20px;
-        transition: color 0.3s;
+        margin-top: -8px;
+        margin-bottom: 18px;
+        transition: color 0.25s;
+        font-weight: 500;
       }
       .forgot:hover {
         color: #f7a01a;
       }
       .msg-box {
         padding: 10px 14px;
-        border-radius: 8px;
+        border-radius: 9px;
         font-size: 13px;
         font-weight: 600;
         margin-bottom: 14px;
         display: none;
+        text-align: left;
       }
       .msg-box.error {
         background: #fdedec;
@@ -130,20 +153,22 @@
         width: 100%;
         padding: 14px;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         color: white;
         font-family: "Poppins", sans-serif;
-        font-size: 1.05rem;
-        font-weight: 600;
+        font-size: 1rem;
+        font-weight: 700;
         cursor: pointer;
-        background: #f7a01a;
-        box-shadow: 0 4px 15px rgba(247, 160, 26, 0.3);
-        transition: all 0.3s ease;
-        margin-bottom: 20px;
+        background: linear-gradient(135deg, #f7a01a, #e08e12);
+        box-shadow: 0 5px 18px rgba(247, 160, 26, 0.35);
+        transition: all 0.25s ease;
+        margin-bottom: 18px;
+        letter-spacing: 0.3px;
       }
       button.main-btn:hover {
-        background: #d35400;
+        background: linear-gradient(135deg, #d35400, #b84600);
         transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(211, 84, 0, 0.38);
       }
       button.main-btn:disabled {
         background: #ccc;
@@ -152,18 +177,22 @@
         box-shadow: none;
       }
       .back-home {
-        display: inline-block;
-        font-size: 0.9rem;
-        color: #555;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.88rem;
+        color: #888;
         text-decoration: none;
         font-weight: 600;
-        transition: color 0.3s;
-      }
-      .back-home i {
-        margin-right: 5px;
+        transition: color 0.25s;
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1.5px solid #e8e8e8;
       }
       .back-home:hover {
         color: #f7a01a;
+        border-color: #f7a01a;
+        background: #fff8ee;
       }
       .modal-overlay {
         display: none;
@@ -177,6 +206,7 @@
         z-index: 1000;
         justify-content: center;
         align-items: center;
+        padding: 20px;
       }
       .modal-card {
         width: 90%;
@@ -185,19 +215,35 @@
       }
       .close-btn {
         position: absolute;
-        right: 20px;
-        top: 15px;
-        font-size: 24px;
+        right: 16px;
+        top: 12px;
+        font-size: 22px;
         color: #aaa;
         cursor: pointer;
         background: none;
         border: none;
         box-shadow: none;
-        padding: 0;
+        padding: 4px 8px;
         width: auto;
+        border-radius: 6px;
+        transition: background 0.2s, color 0.2s;
       }
       .close-btn:hover {
+        background: #f5f5f5;
         color: #333;
+      }
+      @media (max-width: 480px) {
+        .card {
+          padding: 30px 20px;
+          border-radius: 14px;
+        }
+        .card h2 {
+          font-size: 1.5rem;
+        }
+        button.main-btn {
+          font-size: 0.95rem;
+          padding: 13px;
+        }
       }
       /* Toast */
       #_tw {
@@ -270,6 +316,13 @@
     <div class="container">
       <div class="card">
         <h2><i class="fa-solid fa-om"></i> Mandir Login</h2>
+        <span class="card-subtitle"
+          ><i
+            class="fa-solid fa-place-of-worship"
+            style="color: #f7a01a; margin-right: 4px"
+          ></i
+          >Shree Hanuman Mandir, Paliya</span
+        >
         <div class="msg-box" id="loginMsg"></div>
         <div class="input-group">
           <i class="icon fa-solid fa-phone"></i>
@@ -402,10 +455,17 @@
         let item = document.createElement("div");
         item.className = "ti";
         item.style.background = bg;
-        let iconSpan = document.createElement("span"); iconSpan.style.fontSize = "16px"; iconSpan.textContent = icon;
-        let msgSpan = document.createElement("span"); msgSpan.style.flex = "1"; msgSpan.textContent = msg;
-        let bar = document.createElement("div"); bar.className = "tb";
-        item.appendChild(iconSpan); item.appendChild(msgSpan); item.appendChild(bar);
+        let iconSpan = document.createElement("span");
+        iconSpan.style.fontSize = "16px";
+        iconSpan.textContent = icon;
+        let msgSpan = document.createElement("span");
+        msgSpan.style.flex = "1";
+        msgSpan.textContent = msg;
+        let bar = document.createElement("div");
+        bar.className = "tb";
+        item.appendChild(iconSpan);
+        item.appendChild(msgSpan);
+        item.appendChild(bar);
         wrap.appendChild(item);
         setTimeout(() => {
           item.classList.add("to_");

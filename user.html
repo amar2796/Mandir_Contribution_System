@@ -321,16 +321,33 @@
         background: white;
         padding: 14px 16px;
         border-radius: 14px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
         border-left: 4px solid #f7a01a;
         margin-bottom: 12px;
         animation: fadeIn 0.4s ease;
       }
-      .broadcast-card.urgent { border-left-color: #e74c3c; }
-      .broadcast-card.important { border-left-color: #f7a01a; }
-      .broadcast-card.poll { border-left-color: #8e44ad; }
-      .broadcast-card.innovation { border-left-color: #27ae60; }
-      @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+      .broadcast-card.urgent {
+        border-left-color: #e74c3c;
+      }
+      .broadcast-card.important {
+        border-left-color: #f7a01a;
+      }
+      .broadcast-card.poll {
+        border-left-color: #8e44ad;
+      }
+      .broadcast-card.innovation {
+        border-left-color: #27ae60;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
       /* ══ SUMMARY ITEMS ══ */
       .summary-item {
@@ -384,6 +401,22 @@
         gap: 10px;
         align-items: end;
       }
+      @media (max-width: 860px) {
+        .filter-row {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 480px) {
+        .filter-row {
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+      }
+      @media (max-width: 360px) {
+        .filter-row {
+          grid-template-columns: 1fr;
+        }
+      }
       .filter-actions {
         display: flex;
         gap: 8px;
@@ -394,6 +427,10 @@
         flex: 1;
         min-width: 80px;
         justify-content: center;
+      }
+      /* scroll padding so sticky header never hides section tops */
+      html {
+        scroll-padding-top: 70px;
       }
 
       /* ══ TABLE ══ */
@@ -843,12 +880,18 @@
               action: "logout",
               userId: s.userId,
               userName: s.name || "User",
-              callback: "cb_logout"
+              callback: "cb_logout",
             });
-            try { navigator.sendBeacon(API_URL + "?" + params.toString()); } catch(e) {}
-            postData({ action: "logout", userId: s.userId, userName: s.name || "User" }).catch(() => {});
+            try {
+              navigator.sendBeacon(API_URL + "?" + params.toString());
+            } catch (e) {}
+            postData({
+              action: "logout",
+              userId: s.userId,
+              userName: s.name || "User",
+            }).catch(() => {});
           }
-        } catch(e) {}
+        } catch (e) {}
         localStorage.clear();
         sessionStorage.clear();
         setTimeout(() => {
@@ -1137,7 +1180,9 @@
         try {
           const res = await getData({ action: "getBroadcasts" });
           broadcasts = Array.isArray(res) ? res : [];
-        } catch(e) { broadcasts = []; }
+        } catch (e) {
+          broadcasts = [];
+        }
         if (!broadcasts || broadcasts.length === 0) {
           container.innerHTML = "";
           return;
@@ -1145,26 +1190,64 @@
         // Only show last 5, newest first
         const recent = broadcasts.slice(0, 5);
         const typeIcons = { announcement: "📢", poll: "🗳️", innovation: "💡" };
-        const typeLabels = { announcement: "Announcement", poll: "Poll", innovation: "New Idea" };
-        const prioColors = { urgent: "#e74c3c", important: "#f7a01a", normal: "#334155" };
+        const typeLabels = {
+          announcement: "Announcement",
+          poll: "Poll",
+          innovation: "New Idea",
+        };
+        const prioColors = {
+          urgent: "#e74c3c",
+          important: "#f7a01a",
+          normal: "#334155",
+        };
         container.innerHTML = `
           <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
             <i class="fa-solid fa-bullhorn" style="color:#f7a01a;"></i>
             <span style="font-weight:700;font-size:0.95rem;color:#334155;">Announcements</span>
           </div>
-          ${recent.map(b => `
-          <div class="broadcast-card ${b.type === 'poll' ? 'poll' : b.type === 'innovation' ? 'innovation' : b.priority === 'urgent' ? 'urgent' : b.priority === 'important' ? 'important' : ''}">
+          ${recent
+            .map(
+              (b) => `
+          <div class="broadcast-card ${
+            b.type === "poll"
+              ? "poll"
+              : b.type === "innovation"
+              ? "innovation"
+              : b.priority === "urgent"
+              ? "urgent"
+              : b.priority === "important"
+              ? "important"
+              : ""
+          }">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
               <div style="display:flex;align-items:center;gap:6px;">
-                <span style="font-size:1.1rem;">${typeIcons[b.type] || "📢"}</span>
-                <span style="font-size:11px;font-weight:700;color:${prioColors[b.priority]||'#334155'};text-transform:uppercase;letter-spacing:0.5px;">${typeLabels[b.type] || b.type}${b.priority !== 'normal' ? ' · ' + b.priority.toUpperCase() : ''}</span>
+                <span style="font-size:1.1rem;">${
+                  typeIcons[b.type] || "📢"
+                }</span>
+                <span style="font-size:11px;font-weight:700;color:${
+                  prioColors[b.priority] || "#334155"
+                };text-transform:uppercase;letter-spacing:0.5px;">${
+                typeLabels[b.type] || b.type
+              }${
+                b.priority !== "normal" ? " · " + b.priority.toUpperCase() : ""
+              }</span>
               </div>
               <span style="font-size:11px;color:#aaa;">${b.time || ""}</span>
             </div>
-            <div style="font-weight:700;font-size:0.95rem;color:#334155;margin-bottom:4px;">${escapeHtml(b.title)}</div>
-            <div style="font-size:13px;color:#555;line-height:1.6;">${escapeHtml(b.message)}</div>
-            ${b.type === 'poll' ? '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><span style="background:#eafaf1;color:#27ae60;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">✅ Yes</span><span style="background:#fdedec;color:#e74c3c;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">❌ No</span><span style="background:#fef9e7;color:#f7a01a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">💬 Suggestion</span></div>' : ''}
-          </div>`).join("")}`;
+            <div style="font-weight:700;font-size:0.95rem;color:#334155;margin-bottom:4px;">${escapeHtml(
+              b.title
+            )}</div>
+            <div style="font-size:13px;color:#555;line-height:1.6;">${escapeHtml(
+              b.message
+            )}</div>
+            ${
+              b.type === "poll"
+                ? '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><span style="background:#eafaf1;color:#27ae60;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">✅ Yes</span><span style="background:#fdedec;color:#e74c3c;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">❌ No</span><span style="background:#fef9e7;color:#f7a01a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">💬 Suggestion</span></div>'
+                : ""
+            }
+          </div>`
+            )
+            .join("")}`;
       }
 
       // ── SUMMARY YEAR SELECTOR

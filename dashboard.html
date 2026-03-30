@@ -22,17 +22,20 @@
       }
       body {
         margin: 0;
-        padding: 10px 8px;
+        padding: 12px 10px;
         font-family: "Poppins", sans-serif;
         background: #f4f6f9;
         color: #333;
+      }
+      html {
+        scroll-padding-top: 12px;
       }
       h2 {
         text-align: center;
         color: #946c44;
         font-weight: 700;
         margin-bottom: 16px;
-        font-size: 1.4rem;
+        font-size: 1.35rem;
       }
       button {
         padding: 10px 18px;
@@ -678,398 +681,400 @@
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script>
-        // ── Session (security: back-button + copied URL protection)
-        (function () {
+      // ── Session (security: back-button + copied URL protection)
+      (function () {
+        let s = JSON.parse(localStorage.getItem("session"));
+        if (!s || Date.now() > s.expiry || s.role !== "Admin") {
+          localStorage.clear();
+          history.replaceState(null, "", "login.html");
+          location.replace("login.html");
+          return;
+        }
+        s.expiry = Date.now() + 30 * 60 * 1000;
+        localStorage.setItem("session", JSON.stringify(s));
+      })();
+      window.addEventListener("pageshow", function () {
+        let s = JSON.parse(localStorage.getItem("session"));
+        if (!s || Date.now() > s.expiry || s.role !== "Admin") {
+          localStorage.clear();
+          history.replaceState(null, "", "login.html");
+          location.replace("login.html");
+        }
+      });
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) {
           let s = JSON.parse(localStorage.getItem("session"));
           if (!s || Date.now() > s.expiry || s.role !== "Admin") {
             localStorage.clear();
             history.replaceState(null, "", "login.html");
             location.replace("login.html");
-            return;
           }
-          s.expiry = Date.now() + 30 * 60 * 1000;
-          localStorage.setItem("session", JSON.stringify(s));
-        })();
-        window.addEventListener("pageshow", function () {
-          let s = JSON.parse(localStorage.getItem("session"));
-          if (!s || Date.now() > s.expiry || s.role !== "Admin") {
-            localStorage.clear();
-            history.replaceState(null, "", "login.html");
-            location.replace("login.html");
-          }
-        });
-        document.addEventListener("visibilitychange", function () {
-          if (!document.hidden) {
-            let s = JSON.parse(localStorage.getItem("session"));
-            if (!s || Date.now() > s.expiry || s.role !== "Admin") {
-              localStorage.clear();
-              history.replaceState(null, "", "login.html");
-              location.replace("login.html");
-            }
-          }
-        });
+        }
+      });
 
-        // ── Globals
-        let users = [],
-          contributions = [],
-          expenses = [],
-          types = [],
-          expenseTypes = [],
-          occasions = [];
-        let filteredC = [],
-          filteredE = [];
-        const months = [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "August",
-          "September",
-          "October",
-          "November",
-          "December",
-        ];
+      // ── Globals
+      let users = [],
+        contributions = [],
+        expenses = [],
+        types = [],
+        expenseTypes = [],
+        occasions = [];
+      let filteredC = [],
+        filteredE = [];
+      const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
 
-        // ── Calendar Picker (FIX #7 — no manual typing)
-        let _calTarget = "start",
-          _calYear = new Date().getFullYear(),
-          _calMonth = new Date().getMonth();
-        function openCal(target) {
-          _calTarget = target;
-          let pop = document.getElementById("calPop");
-          let inp = document.getElementById(
-            target === "start" ? "dashStart" : "dashEnd"
-          );
-          let rect = inp.getBoundingClientRect();
-          pop.style.display = "block";
-          let top = rect.bottom + window.scrollY + 4;
-          let left = rect.left + window.scrollX;
-          if (left + 270 > window.innerWidth) left = window.innerWidth - 276;
-          pop.style.top = top + "px";
-          pop.style.left = left + "px";
-          renderCal();
-          setTimeout(
-            () => document.addEventListener("click", closeCal, { once: true }),
-            10
-          );
-        }
-        function closeCal(e) {
-          if (!document.getElementById("calPop").contains(e.target))
-            document.getElementById("calPop").style.display = "none";
-        }
-        function calNav(dir) {
-          _calMonth += dir;
-          if (_calMonth > 11) {
-            _calMonth = 0;
-            _calYear++;
-          }
-          if (_calMonth < 0) {
-            _calMonth = 11;
-            _calYear--;
-          }
-          renderCal();
-        }
-        function renderCal() {
-          document.getElementById("calTitle").textContent =
-            months[_calMonth].substring(0, 3) + " " + _calYear;
-          const today = new Date();
-          const firstDay = new Date(_calYear, _calMonth, 1).getDay();
-          const daysInMonth = new Date(_calYear, _calMonth + 1, 0).getDate();
-          const startVal = document.getElementById("dashStart").dataset.val || "";
-          const endVal = document.getElementById("dashEnd").dataset.val || "";
-          let g = document.getElementById("calGrid");
-          g.innerHTML = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
-            .map((d) => `<div class="day-hdr">${d}</div>`)
-            .join("");
-          for (let i = 0; i < firstDay; i++)
-            g.innerHTML += `<div class="cal-day empty"></div>`;
-          for (let d = 1; d <= daysInMonth; d++) {
-            let dateStr =
-              _calYear +
-              "-" +
-              String(_calMonth + 1).padStart(2, "0") +
-              "-" +
-              String(d).padStart(2, "0");
-            let isToday =
-              d === today.getDate() &&
-              _calMonth === today.getMonth() &&
-              _calYear === today.getFullYear();
-            let isSel = dateStr === startVal || dateStr === endVal;
-            g.innerHTML += `<div class="cal-day${isToday ? " today" : ""}${
-              isSel ? " selected" : ""
-            }" onclick="pickDate('${dateStr}')">${d}</div>`;
-          }
-        }
-        function pickDate(dateStr) {
-          const parts = dateStr.split("-");
-          const display = parts[2] + "-" + parts[1] + "-" + parts[0];
-          let el = document.getElementById(
-            _calTarget === "start" ? "dashStart" : "dashEnd"
-          );
-          el.value = display;
-          el.dataset.val = dateStr;
+      // ── Calendar Picker (FIX #7 — no manual typing)
+      let _calTarget = "start",
+        _calYear = new Date().getFullYear(),
+        _calMonth = new Date().getMonth();
+      function openCal(target) {
+        _calTarget = target;
+        let pop = document.getElementById("calPop");
+        let inp = document.getElementById(
+          target === "start" ? "dashStart" : "dashEnd"
+        );
+        let rect = inp.getBoundingClientRect();
+        pop.style.display = "block";
+        let top = rect.bottom + window.scrollY + 4;
+        let left = rect.left + window.scrollX;
+        if (left + 270 > window.innerWidth) left = window.innerWidth - 276;
+        pop.style.top = top + "px";
+        pop.style.left = left + "px";
+        renderCal();
+        setTimeout(
+          () => document.addEventListener("click", closeCal, { once: true }),
+          10
+        );
+      }
+      function closeCal(e) {
+        if (!document.getElementById("calPop").contains(e.target))
           document.getElementById("calPop").style.display = "none";
-          applyFilter();
+      }
+      function calNav(dir) {
+        _calMonth += dir;
+        if (_calMonth > 11) {
+          _calMonth = 0;
+          _calYear++;
         }
-        function clearDates() {
-          let s = document.getElementById("dashStart"),
-            e = document.getElementById("dashEnd");
-          s.value = "";
-          s.dataset.val = "";
-          e.value = "";
-          e.dataset.val = "";
-          let us = document.getElementById("dashUserSearch");
-          if (us) us.value = "";
-          let ts = document.getElementById("dashTrackingSearch");
-          if (ts) ts.value = "";
-          applyFilter();
+        if (_calMonth < 0) {
+          _calMonth = 11;
+          _calYear--;
         }
+        renderCal();
+      }
+      function renderCal() {
+        document.getElementById("calTitle").textContent =
+          months[_calMonth].substring(0, 3) + " " + _calYear;
+        const today = new Date();
+        const firstDay = new Date(_calYear, _calMonth, 1).getDay();
+        const daysInMonth = new Date(_calYear, _calMonth + 1, 0).getDate();
+        const startVal = document.getElementById("dashStart").dataset.val || "";
+        const endVal = document.getElementById("dashEnd").dataset.val || "";
+        let g = document.getElementById("calGrid");
+        g.innerHTML = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+          .map((d) => `<div class="day-hdr">${d}</div>`)
+          .join("");
+        for (let i = 0; i < firstDay; i++)
+          g.innerHTML += `<div class="cal-day empty"></div>`;
+        for (let d = 1; d <= daysInMonth; d++) {
+          let dateStr =
+            _calYear +
+            "-" +
+            String(_calMonth + 1).padStart(2, "0") +
+            "-" +
+            String(d).padStart(2, "0");
+          let isToday =
+            d === today.getDate() &&
+            _calMonth === today.getMonth() &&
+            _calYear === today.getFullYear();
+          let isSel = dateStr === startVal || dateStr === endVal;
+          g.innerHTML += `<div class="cal-day${isToday ? " today" : ""}${
+            isSel ? " selected" : ""
+          }" onclick="pickDate('${dateStr}')">${d}</div>`;
+        }
+      }
+      function pickDate(dateStr) {
+        const parts = dateStr.split("-");
+        const display = parts[2] + "-" + parts[1] + "-" + parts[0];
+        let el = document.getElementById(
+          _calTarget === "start" ? "dashStart" : "dashEnd"
+        );
+        el.value = display;
+        el.dataset.val = dateStr;
+        document.getElementById("calPop").style.display = "none";
+        applyFilter();
+      }
+      function clearDates() {
+        let s = document.getElementById("dashStart"),
+          e = document.getElementById("dashEnd");
+        s.value = "";
+        s.dataset.val = "";
+        e.value = "";
+        e.dataset.val = "";
+        let us = document.getElementById("dashUserSearch");
+        if (us) us.value = "";
+        let ts = document.getElementById("dashTrackingSearch");
+        if (ts) ts.value = "";
+        applyFilter();
+      }
 
-        // ── Opening balance
-        function getOpeningBalance(year, yearConfig, contribs, exps) {
-          if (!yearConfig || yearConfig.length === 0) return 0;
-          let found = yearConfig.find((y) => Number(y.Year) === Number(year));
-          if (
-            found &&
-            found.OpeningBalance !== "" &&
-            found.OpeningBalance !== undefined
-          )
-            return Number(found.OpeningBalance);
-          let minYear = Math.min(...yearConfig.map((y) => Number(y.Year)));
-          if (year <= minYear) return 0;
-          let prevY = year - 1;
-          let prevO = getOpeningBalance(prevY, yearConfig, contribs, exps);
-          let prevC = contribs
-            .filter((c) => Number(c.Year) === prevY)
-            .reduce((s, c) => s + Number(c.Amount || 0), 0);
-          let prevE = exps
-            .filter((e) => Number(e.Year) === prevY)
-            .reduce((s, e) => s + Number(e.Amount || 0), 0);
-          return prevO + prevC - prevE;
-        }
+      // ── Opening balance
+      function getOpeningBalance(year, yearConfig, contribs, exps) {
+        if (!yearConfig || yearConfig.length === 0) return 0;
+        let found = yearConfig.find((y) => Number(y.Year) === Number(year));
+        if (
+          found &&
+          found.OpeningBalance !== "" &&
+          found.OpeningBalance !== undefined
+        )
+          return Number(found.OpeningBalance);
+        let minYear = Math.min(...yearConfig.map((y) => Number(y.Year)));
+        if (year <= minYear) return 0;
+        let prevY = year - 1;
+        let prevO = getOpeningBalance(prevY, yearConfig, contribs, exps);
+        let prevC = contribs
+          .filter((c) => Number(c.Year) === prevY)
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        let prevE = exps
+          .filter((e) => Number(e.Year) === prevY)
+          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+        return prevO + prevC - prevE;
+      }
 
-        // ── INIT
-        async function init() {
-          document.getElementById("loadingMsg").style.display = "block";
-          try {
-            let allData = await getData("getAllData");
-            if (!allData) return;
-            users = allData.users || [];
-            contributions = allData.contributions || [];
-            expenses = allData.expenses || [];
-            types = allData.types || [];
-            expenseTypes = allData.expenseTypes || [];
-            occasions = allData.occasions || [];
-            window.yearConfig = allData.yearConfig || [];
-            loadYearDropdown();
-            applyFilter();
-          } catch (err) {
-            document.getElementById("loadingMsg").innerText =
-              "Failed to load: " + err.message;
-          } finally {
-            document.getElementById("loadingMsg").style.display = "none";
+      // ── INIT
+      async function init() {
+        document.getElementById("loadingMsg").style.display = "block";
+        try {
+          let allData = await getData("getAllData");
+          if (!allData) return;
+          users = allData.users || [];
+          contributions = allData.contributions || [];
+          expenses = allData.expenses || [];
+          types = allData.types || [];
+          expenseTypes = allData.expenseTypes || [];
+          occasions = allData.occasions || [];
+          window.yearConfig = allData.yearConfig || [];
+          loadYearDropdown();
+          applyFilter();
+        } catch (err) {
+          document.getElementById("loadingMsg").innerText =
+            "Failed to load: " + err.message;
+        } finally {
+          document.getElementById("loadingMsg").style.display = "none";
+        }
+      }
+
+      // ── APPLY FILTERS with tracking ID support
+      function applyFilter() {
+        const txt = (
+          document.getElementById("dashUserSearch")?.value || ""
+        ).toLowerCase();
+        const trackTxt = (
+          document.getElementById("dashTrackingSearch")?.value || ""
+        ).toLowerCase();
+        const startRaw =
+          document.getElementById("dashStart")?.dataset.val || "";
+        const endRaw = document.getElementById("dashEnd")?.dataset.val || "";
+        const targetYear = Number(selectedYear);
+
+        filteredC = contributions.filter((c) => {
+          if (Number(c.Year) !== targetYear) return false;
+          const user = users.find((u) => String(u.UserId) === String(c.UserId));
+          const uMatch =
+            !txt ||
+            (user?.Name.toLowerCase() || "").includes(txt) ||
+            String(user?.Mobile || "").includes(txt);
+          const displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+          const trkMatch =
+            !trackTxt ||
+            (c.ReceiptID || "").toLowerCase().includes(trackTxt) ||
+            displayRID.toLowerCase().includes(trackTxt);
+          let dMatch = true;
+          if ((startRaw || endRaw) && c.PaymentDate) {
+            const parts = String(c.PaymentDate).split(" ")[0].split("-");
+            if (parts.length === 3) {
+              const cd = `${parts[2]}-${parts[1]}-${parts[0]}`;
+              dMatch =
+                (!startRaw || cd >= startRaw) && (!endRaw || cd <= endRaw);
+            }
           }
-        }
+          return uMatch && trkMatch && dMatch;
+        });
 
-        // ── APPLY FILTERS with tracking ID support
-        function applyFilter() {
-          const txt = (
-            document.getElementById("dashUserSearch")?.value || ""
-          ).toLowerCase();
-          const trackTxt = (
-            document.getElementById("dashTrackingSearch")?.value || ""
-          ).toLowerCase();
-          const startRaw =
-            document.getElementById("dashStart")?.dataset.val || "";
-          const endRaw = document.getElementById("dashEnd")?.dataset.val || "";
-          const targetYear = Number(selectedYear);
-
-          filteredC = contributions.filter((c) => {
-            if (Number(c.Year) !== targetYear) return false;
-            const user = users.find((u) => String(u.UserId) === String(c.UserId));
-            const uMatch =
-              !txt ||
-              (user?.Name.toLowerCase() || "").includes(txt) ||
-              String(user?.Mobile || "").includes(txt);
-            const displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
-            const trkMatch =
-              !trackTxt ||
-              (c.ReceiptID || "").toLowerCase().includes(trackTxt) ||
-              displayRID.toLowerCase().includes(trackTxt);
-            let dMatch = true;
-            if ((startRaw || endRaw) && c.PaymentDate) {
-              const parts = String(c.PaymentDate).split(" ")[0].split("-");
-              if (parts.length === 3) {
-                const cd = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                dMatch =
-                  (!startRaw || cd >= startRaw) && (!endRaw || cd <= endRaw);
-              }
+        filteredE = expenses.filter((e) => {
+          if (Number(e.Year) !== targetYear) return false;
+          let dMatch = true;
+          if ((startRaw || endRaw) && e.PaymentDate) {
+            const parts = String(e.PaymentDate).split(" ")[0].split("-");
+            if (parts.length === 3) {
+              const ed = `${parts[2]}-${parts[1]}-${parts[0]}`;
+              dMatch =
+                (!startRaw || ed >= startRaw) && (!endRaw || ed <= endRaw);
             }
-            return uMatch && trkMatch && dMatch;
-          });
+          }
+          return dMatch;
+        });
+        renderAll();
+      }
 
-          filteredE = expenses.filter((e) => {
-            if (Number(e.Year) !== targetYear) return false;
-            let dMatch = true;
-            if ((startRaw || endRaw) && e.PaymentDate) {
-              const parts = String(e.PaymentDate).split(" ")[0].split("-");
-              if (parts.length === 3) {
-                const ed = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                dMatch =
-                  (!startRaw || ed >= startRaw) && (!endRaw || ed <= endRaw);
-              }
-            }
-            return dMatch;
-          });
-          renderAll();
+      function summary() {
+        let yr = selectedYear;
+        document.getElementById(
+          "yearTitle"
+        ).innerHTML = `<i class="fa-solid fa-wallet"></i> Year Summary (${yr})`;
+        let totalC = filteredC.reduce((s, c) => s + Number(c.Amount || 0), 0);
+        let totalE = filteredE.reduce((s, e) => s + Number(e.Amount || 0), 0);
+        let opening = getOpeningBalance(
+          yr,
+          window.yearConfig,
+          contributions,
+          expenses
+        );
+        let yrAllC = contributions
+          .filter((c) => Number(c.Year) === yr)
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        let yrAllE = expenses
+          .filter((e) => Number(e.Year) === yr)
+          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+        let closing = opening + yrAllC - yrAllE;
+        let oldest = [...window.yearConfig].sort(
+          (a, b) => Number(a.Year) - Number(b.Year)
+        )[0];
+        let initO = oldest ? Number(oldest.OpeningBalance) : 0;
+        let grandTotal =
+          initO +
+          contributions.reduce((s, c) => s + Number(c.Amount || 0), 0) -
+          expenses.reduce((s, e) => s + Number(e.Amount || 0), 0);
+        // Full year collection (unfiltered, all contributions for the year)
+        let fullYearC = contributions
+          .filter((c) => Number(c.Year) === yr)
+          .reduce((s, c) => s + Number(c.Amount || 0), 0);
+        document.getElementById("opening").innerText = fmt(opening);
+        document.getElementById("yearFullC").innerText = fmt(fullYearC);
+        document.getElementById("yearTotalC").innerText = fmt(totalC);
+        document.getElementById("yearTotalE").innerText = fmt(totalE);
+        document.getElementById("closing").innerText = fmt(closing);
+        document.getElementById("grandTotal").innerText = fmt(grandTotal);
+        // Update filtered count label
+        let filtLabel = document.getElementById("filteredCountLabel");
+        if (filtLabel) {
+          let countTxt =
+            filteredC.length > 0
+              ? filteredC.length +
+                " Filtered Contribution" +
+                (filteredC.length !== 1 ? "s" : "")
+              : "Filtered Contributions";
+          filtLabel.textContent = "↳ " + countTxt + ":";
         }
+      }
 
-        function summary() {
-          let yr = selectedYear;
-          document.getElementById(
-            "yearTitle"
-          ).innerHTML = `<i class="fa-solid fa-wallet"></i> Year Summary (${yr})`;
-          let totalC = filteredC.reduce((s, c) => s + Number(c.Amount || 0), 0);
-          let totalE = filteredE.reduce((s, e) => s + Number(e.Amount || 0), 0);
-          let opening = getOpeningBalance(
-            yr,
-            window.yearConfig,
-            contributions,
-            expenses
+      function renderMonthWise() {
+        let mapC = {},
+          mapE = {};
+        filteredC.forEach((c) => {
+          mapC[c.ForMonth] = (mapC[c.ForMonth] || 0) + Number(c.Amount || 0);
+        });
+        filteredE.forEach((e) => {
+          let mn = e.ForMonth || e.Note;
+          if (!mn && e.PaymentDate) {
+            let p = String(e.PaymentDate).split(" ")[0].split("-");
+            if (p.length >= 2) {
+              let mi = parseInt(p[1]) - 1;
+              if (months[mi]) mn = months[mi];
+            }
+          }
+          mn = mn || "Unknown";
+          mapE[mn] = (mapE[mn] || 0) + Number(e.Amount || 0);
+        });
+        let html = months
+          .map((m) => {
+            let cA = mapC[m] || 0,
+              eA = mapE[m] || 0;
+            if (cA === 0 && eA === 0) return "";
+            return `<tr><td><b>${m}</b></td><td class="amount-col">₹ ${fmt(
+              cA
+            )}</td><td class="expense-col">₹ ${fmt(eA)}</td></tr>`;
+          })
+          .join("");
+        document.getElementById("monthWiseBody").innerHTML =
+          html ||
+          `<tr><td colspan="3" style="text-align:center;color:#aaa;">No data</td></tr>`;
+      }
+
+      // FIX #5 & #12: Helper to get display name for any UserId (including walk-in)
+      function getDisplayName(uid, note) {
+        if (!String(uid).startsWith("WALKIN_")) {
+          return (
+            users.find((x) => String(x.UserId) === String(uid))?.Name ||
+            "Unknown"
           );
-          let yrAllC = contributions
-            .filter((c) => Number(c.Year) === yr)
-            .reduce((s, c) => s + Number(c.Amount || 0), 0);
-          let yrAllE = expenses
-            .filter((e) => Number(e.Year) === yr)
-            .reduce((s, e) => s + Number(e.Amount || 0), 0);
-          let closing = opening + yrAllC - yrAllE;
-          let oldest = [...window.yearConfig].sort(
-            (a, b) => Number(a.Year) - Number(b.Year)
-          )[0];
-          let initO = oldest ? Number(oldest.OpeningBalance) : 0;
-          let grandTotal =
-            initO +
-            contributions.reduce((s, c) => s + Number(c.Amount || 0), 0) -
-            expenses.reduce((s, e) => s + Number(e.Amount || 0), 0);
-          // Full year collection (unfiltered, all contributions for the year)
-          let fullYearC = contributions
-            .filter((c) => Number(c.Year) === yr)
-            .reduce((s, c) => s + Number(c.Amount || 0), 0);
-          document.getElementById("opening").innerText = fmt(opening);
-          document.getElementById("yearFullC").innerText = fmt(fullYearC);
-          document.getElementById("yearTotalC").innerText = fmt(totalC);
-          document.getElementById("yearTotalE").innerText = fmt(totalE);
-          document.getElementById("closing").innerText = fmt(closing);
-          document.getElementById("grandTotal").innerText = fmt(grandTotal);
-          // Update filtered count label
-          let filtLabel = document.getElementById("filteredCountLabel");
-          if (filtLabel) {
-            let countTxt =
-              filteredC.length > 0
-                ? filteredC.length +
-                  " Filtered Contribution" +
-                  (filteredC.length !== 1 ? "s" : "")
-                : "Filtered Contributions";
-            filtLabel.textContent = "↳ " + countTxt + ":";
-          }
         }
+        // Walk-in: extract name from Note field "Walk-in: Name | mobile"
+        const match = String(note || "").match(/Walk-in:\s*([^|]+)/);
+        return match ? match[1].trim() : "Walk-in Donor";
+      }
 
-        function renderMonthWise() {
-          let mapC = {},
-            mapE = {};
-          filteredC.forEach((c) => {
-            mapC[c.ForMonth] = (mapC[c.ForMonth] || 0) + Number(c.Amount || 0);
-          });
-          filteredE.forEach((e) => {
-            let mn = e.ForMonth || e.Note;
-            if (!mn && e.PaymentDate) {
-              let p = String(e.PaymentDate).split(" ")[0].split("-");
-              if (p.length >= 2) {
-                let mi = parseInt(p[1]) - 1;
-                if (months[mi]) mn = months[mi];
-              }
-            }
-            mn = mn || "Unknown";
-            mapE[mn] = (mapE[mn] || 0) + Number(e.Amount || 0);
-          });
-          let html = months
-            .map((m) => {
-              let cA = mapC[m] || 0,
-                eA = mapE[m] || 0;
-              if (cA === 0 && eA === 0) return "";
-              return `<tr><td><b>${m}</b></td><td class="amount-col">₹ ${fmt(
-                cA
-              )}</td><td class="expense-col">₹ ${fmt(eA)}</td></tr>`;
-            })
-            .join("");
-          document.getElementById("monthWiseBody").innerHTML =
-            html ||
-            `<tr><td colspan="3" style="text-align:center;color:#aaa;">No data</td></tr>`;
-        }
+      // Returns HTML with WALK-IN badge (same style as contribution section)
+      function getDisplayHTML(uid, note) {
+        const name = getDisplayName(uid, note);
+        const isWalkIn = String(uid).startsWith("WALKIN_");
+        const badge = isWalkIn
+          ? `<span style="font-size:9px;background:#946c44;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">WALK-IN</span>`
+          : "";
+        return `<b>${escapeHtml(name)}</b>${badge}`;
+      }
 
-        // FIX #5 & #12: Helper to get display name for any UserId (including walk-in)
-        function getDisplayName(uid, note) {
-          if (!String(uid).startsWith("WALKIN_")) {
-            return (
-              users.find((x) => String(x.UserId) === String(uid))?.Name ||
-              "Unknown"
-            );
-          }
-          // Walk-in: extract name from Note field "Walk-in: Name | mobile"
-          const match = String(note || "").match(/Walk-in:\s*([^|]+)/);
-          return (match ? match[1].trim() : "Walk-in Donor");
-        }
+      function renderUserWise() {
+        let map = {},
+          noteMap = {};
+        filteredC.forEach((c) => {
+          map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
+          if (!noteMap[c.UserId]) noteMap[c.UserId] = c.Note || "";
+        });
+        let sortedU = Object.keys(map).sort((a, b) => map[b] - map[a]);
+        let html = sortedU
+          .map((uid) => {
+            let uName = getDisplayName(uid, noteMap[uid]);
+            let uHTML = getDisplayHTML(uid, noteMap[uid]);
+            return `<tr><td>${uHTML}</td><td class="amount-col">₹ ${fmt(
+              map[uid]
+            )}</td></tr>`;
+          })
+          .join("");
+        document.getElementById("userWiseBody").innerHTML =
+          html ||
+          `<tr><td colspan="2" style="text-align:center;color:#aaa;">No data</td></tr>`;
+      }
 
-        // Returns HTML with WALK-IN badge (same style as contribution section)
-        function getDisplayHTML(uid, note) {
-          const name = getDisplayName(uid, note);
-          const isWalkIn = String(uid).startsWith("WALKIN_");
-          const badge = isWalkIn
-            ? `<span style="font-size:9px;background:#946c44;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">WALK-IN</span>`
-            : "";
-          return `<b>${escapeHtml(name)}</b>${badge}`;
-        }
-
-        function renderUserWise() {
-          let map = {},
-            noteMap = {};
-          filteredC.forEach((c) => {
-            map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
-            if (!noteMap[c.UserId]) noteMap[c.UserId] = c.Note || "";
-          });
-          let sortedU = Object.keys(map).sort((a, b) => map[b] - map[a]);
-          let html = sortedU
-            .map((uid) => {
-              let uName = getDisplayName(uid, noteMap[uid]);
-              let uHTML = getDisplayHTML(uid, noteMap[uid]);
-              return `<tr><td>${uHTML}</td><td class="amount-col">₹ ${fmt(map[uid])}</td></tr>`;
-            })
-            .join("");
-          document.getElementById("userWiseBody").innerHTML =
-            html ||
-            `<tr><td colspan="2" style="text-align:center;color:#aaa;">No data</td></tr>`;
-        }
-
-        function renderDetails() {
-          let rows = [];
-          filteredC.forEach((c) => {
-            // FIX #12: Walk-in shows actual name with WALK-IN badge (same as contribution section)
-            let uName = getDisplayName(c.UserId, c.Note);
-            let uHTML = getDisplayHTML(c.UserId, c.Note);
-            let tName =
-              types.find((x) => String(x.TypeId) === String(c.TypeId))
-                ?.TypeName || "Contribution";
-            let oName =
-              occasions.find((x) => String(x.OccasionId) === String(c.OccasionId))
-                ?.OccasionName || "—";
-            const _drid = _storeReceipt(c, uName, tName, oName);
-            rows.push({
-              date: c.PaymentDate || "0",
-              html: `<tr style="cursor:pointer;" onclick="viewDashboardEntry('${_drid}')">
+      function renderDetails() {
+        let rows = [];
+        filteredC.forEach((c) => {
+          // FIX #12: Walk-in shows actual name with WALK-IN badge (same as contribution section)
+          let uName = getDisplayName(c.UserId, c.Note);
+          let uHTML = getDisplayHTML(c.UserId, c.Note);
+          let tName =
+            types.find((x) => String(x.TypeId) === String(c.TypeId))
+              ?.TypeName || "Contribution";
+          let oName =
+            occasions.find((x) => String(x.OccasionId) === String(c.OccasionId))
+              ?.OccasionName || "—";
+          const _drid = _storeReceipt(c, uName, tName, oName);
+          rows.push({
+            date: c.PaymentDate || "0",
+            html: `<tr style="cursor:pointer;" onclick="viewDashboardEntry('${_drid}')">
         <td>${c.PaymentDate || "N/A"}</td>
         <td><i class="fa-solid fa-user" style="color:#aaa;margin-right:4px;font-size:11px;"></i>${uHTML}</td>
         <td><span class="badge badge-green">${escapeHtml(tName)}</span></td>
@@ -1077,16 +1082,16 @@
         <td class="amount-col">+ ₹ ${fmt(c.Amount)}</td>
         <td><button class="btn-blue" style="padding:3px 8px;font-size:11px;box-shadow:none;" onclick="event.stopPropagation();showReceiptById('${_drid}')"><i class="fa-solid fa-receipt"></i> Receipt</button></td>
       </tr>`,
-            });
           });
-          filteredE.forEach((e) => {
-            let tName =
-              expenseTypes.find(
-                (x) => String(x.ExpenseTypeId) === String(e.ExpenseTypeId)
-              )?.Name || "Expense";
-            rows.push({
-              date: e.PaymentDate || "0",
-              html: `<tr>
+        });
+        filteredE.forEach((e) => {
+          let tName =
+            expenseTypes.find(
+              (x) => String(x.ExpenseTypeId) === String(e.ExpenseTypeId)
+            )?.Name || "Expense";
+          rows.push({
+            date: e.PaymentDate || "0",
+            html: `<tr>
         <td>${e.PaymentDate || "N/A"}</td>
         <td><i class="fa-solid fa-file-invoice-dollar" style="color:#aaa;margin-right:4px;font-size:11px;"></i>${escapeHtml(
           e.Title || ""
@@ -1096,103 +1101,103 @@
         <td class="expense-col">- ₹ ${fmt(e.Amount)}</td>
         <td>—</td>
       </tr>`,
-            });
           });
-          rows.sort((a, b) => {
-            let p1 = String(a.date).split(" ")[0].split("-");
-            let p2 = String(b.date).split(" ")[0].split("-");
-            let d1 = p1.length === 3 ? `${p1[2]}-${p1[1]}-${p1[0]}` : "0";
-            let d2 = p2.length === 3 ? `${p2[2]}-${p2[1]}-${p2[0]}` : "0";
-            return d2.localeCompare(d1);
+        });
+        rows.sort((a, b) => {
+          let p1 = String(a.date).split(" ")[0].split("-");
+          let p2 = String(b.date).split(" ")[0].split("-");
+          let d1 = p1.length === 3 ? `${p1[2]}-${p1[1]}-${p1[0]}` : "0";
+          let d2 = p2.length === 3 ? `${p2[2]}-${p2[1]}-${p2[0]}` : "0";
+          return d2.localeCompare(d1);
+        });
+        document.getElementById("detailBody").innerHTML =
+          rows.map((r) => r.html).join("") ||
+          `<tr><td colspan="7" style="text-align:center;color:#aaa;">No records</td></tr>`;
+      }
+
+      function renderAll() {
+        summary();
+        renderMonthWise();
+        renderUserWise();
+        renderDetails();
+      }
+
+      function exportDashboardPDF() {
+        const { jsPDF } = window.jspdf;
+        let doc = new jsPDF("p", "mm", "a4");
+        let w = doc.internal.pageSize.getWidth();
+        doc.setFillColor(51, 65, 85);
+        doc.rect(0, 0, w, 22, "F");
+        doc.setTextColor(247, 160, 26);
+        doc.setFontSize(14);
+        doc.setFont(undefined, "bold");
+        doc.text(
+          "SHREE HANUMAN MANDIR — FINANCIAL REPORT " + selectedYear,
+          w / 2,
+          13,
+          { align: "center" }
+        );
+        let totalC = document.getElementById("yearTotalC").innerText;
+        let totalE = document.getElementById("yearTotalE").innerText;
+        doc.setFontSize(8);
+        doc.setTextColor(50, 50, 50);
+        doc.setFont(undefined, "normal");
+        doc.text(
+          `Contributions: Rs. ${totalC}   |   Expenses: Rs. ${totalE}   |   Generated: ${new Date().toLocaleDateString(
+            "en-IN"
+          )}`,
+          14,
+          30
+        );
+        let rows = [];
+        document.querySelectorAll("#detailTable tbody tr").forEach((tr) => {
+          let r = [];
+          tr.querySelectorAll("td").forEach((td, i) => {
+            if (i < 6) r.push(td.innerText.replace("₹", "Rs.").trim());
           });
-          document.getElementById("detailBody").innerHTML =
-            rows.map((r) => r.html).join("") ||
-            `<tr><td colspan="7" style="text-align:center;color:#aaa;">No records</td></tr>`;
-        }
-
-        function renderAll() {
-          summary();
-          renderMonthWise();
-          renderUserWise();
-          renderDetails();
-        }
-
-        function exportDashboardPDF() {
-          const { jsPDF } = window.jspdf;
-          let doc = new jsPDF("p", "mm", "a4");
-          let w = doc.internal.pageSize.getWidth();
-          doc.setFillColor(51, 65, 85);
-          doc.rect(0, 0, w, 22, "F");
-          doc.setTextColor(247, 160, 26);
-          doc.setFontSize(14);
-          doc.setFont(undefined, "bold");
+          if (r.length > 0 && r[0] !== "No records") rows.push(r);
+        });
+        doc.autoTable({
+          head: [
+            ["Date", "Name / Title", "Type", "Month", "Occasion", "Amount"],
+          ],
+          body: rows,
+          startY: 35,
+          theme: "grid",
+          headStyles: { fillColor: [51, 65, 85], fontStyle: "bold" },
+          styles: { fontSize: 8 },
+          alternateRowStyles: { fillColor: [253, 251, 247] },
+        });
+        // System generated footer on every page
+        let pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          let ph = doc.internal.pageSize.getHeight();
+          doc.setFontSize(7);
+          doc.setTextColor(170, 170, 170);
           doc.text(
-            "SHREE HANUMAN MANDIR — FINANCIAL REPORT " + selectedYear,
+            "SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  |  System Generated — Not Manually Signed",
             w / 2,
-            13,
+            ph - 5,
             { align: "center" }
           );
-          let totalC = document.getElementById("yearTotalC").innerText;
-          let totalE = document.getElementById("yearTotalE").innerText;
-          doc.setFontSize(8);
-          doc.setTextColor(50, 50, 50);
-          doc.setFont(undefined, "normal");
-          doc.text(
-            `Contributions: Rs. ${totalC}   |   Expenses: Rs. ${totalE}   |   Generated: ${new Date().toLocaleDateString(
-              "en-IN"
-            )}`,
-            14,
-            30
-          );
-          let rows = [];
-          document.querySelectorAll("#detailTable tbody tr").forEach((tr) => {
-            let r = [];
-            tr.querySelectorAll("td").forEach((td, i) => {
-              if (i < 6) r.push(td.innerText.replace("₹", "Rs.").trim());
-            });
-            if (r.length > 0 && r[0] !== "No records") rows.push(r);
+          doc.text(`Page ${i} of ${pageCount}`, w - 14, ph - 5, {
+            align: "right",
           });
-          doc.autoTable({
-            head: [
-              ["Date", "Name / Title", "Type", "Month", "Occasion", "Amount"],
-            ],
-            body: rows,
-            startY: 35,
-            theme: "grid",
-            headStyles: { fillColor: [51, 65, 85], fontStyle: "bold" },
-            styles: { fontSize: 8 },
-            alternateRowStyles: { fillColor: [253, 251, 247] },
-          });
-          // System generated footer on every page
-          let pageCount = doc.internal.getNumberOfPages();
-          for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            let ph = doc.internal.pageSize.getHeight();
-            doc.setFontSize(7);
-            doc.setTextColor(170, 170, 170);
-            doc.text(
-              "SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  |  System Generated — Not Manually Signed",
-              w / 2,
-              ph - 5,
-              { align: "center" }
-            );
-            doc.text(`Page ${i} of ${pageCount}`, w - 14, ph - 5, {
-              align: "right",
-            });
-          }
-          doc.save(`Mandir_Report_${selectedYear}_${Date.now()}.pdf`);
         }
+        doc.save(`Mandir_Report_${selectedYear}_${Date.now()}.pdf`);
+      }
 
-        // FIX #13: Click row shows detail popup, not auto receipt
-        function viewDashboardEntry(rid) {
-          const d = window._rcptStore ? window._rcptStore[rid] : null;
-          if (!d) {
-            showReceiptById(rid);
-            return;
-          }
-          const { c, userName, typeName, occasionName } = d;
-          const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, "MNR-");
-          const html = `
+      // FIX #13: Click row shows detail popup, not auto receipt
+      function viewDashboardEntry(rid) {
+        const d = window._rcptStore ? window._rcptStore[rid] : null;
+        if (!d) {
+          showReceiptById(rid);
+          return;
+        }
+        const { c, userName, typeName, occasionName } = d;
+        const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, "MNR-");
+        const html = `
             <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Contribution Details</h3><button class="_mcls" onclick="closeModal()">×</button></div>
             <div class="_mbdy">
               <div style="border:1px solid #f0f0f0;border-radius:10px;padding:4px 16px;">
@@ -1223,84 +1228,84 @@
               <button class="_mbtn" style="background:#999;" onclick="closeModal()">Close</button>
               <button class="_mbtn" style="background:#27ae60;" onclick="closeModal();showReceiptById('${rid}')"><i class="fa-solid fa-receipt"></i> View Receipt</button>
             </div>`;
-          openModal(html, "480px");
-        }
+        openModal(html, "480px");
+      }
 
-        function showReceiptById(rid) {
-          const d = window._rcptStore[rid];
-          if (!d) return;
-          showReceipt(d.c, d.userName, d.typeName, d.occasionName);
-        }
+      function showReceiptById(rid) {
+        const d = window._rcptStore[rid];
+        if (!d) return;
+        showReceipt(d.c, d.userName, d.typeName, d.occasionName);
+      }
 
-        function dashboardWhatsApp() {
-          const genDate = new Date().toLocaleDateString("en-IN");
-          const totalC = document.getElementById("yearFullC").innerText;
-          const totalE = document.getElementById("yearTotalE").innerText;
-          const closing = document.getElementById("closing").innerText;
-          const grandTotal = document.getElementById("grandTotal").innerText;
-          // Member wise
-          let map = {};
-          filteredC.forEach((c) => {
-            map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
-          });
-          let memberLines =
-            Object.keys(map)
-              .map((uid) => {
-                let u = users.find((x) => String(x.UserId) === String(uid));
-                return u
-                  ? `  ✅ ${u.Name}: ₹${Number(map[uid]).toLocaleString("en-IN")}`
-                  : "";
-              })
-              .filter(Boolean)
-              .join("\n") || "  No contributions found";
-          const msg =
-            `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n` +
-            `📊 *Financial Report — ${selectedYear}*\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `💰 Year Collection: ₹${totalC}\n` +
-            `💸 Expenses: ₹${totalE}\n` +
-            `🏦 Closing Balance: ₹${closing}\n` +
-            `💎 Overall Balance: ₹${grandTotal}\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `👥 *Member Contributions:*\n${memberLines}\n` +
-            `━━━━━━━━━━━━━━━━━━━━\n` +
-            `_System Generated — ${genDate}_`;
-          window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
-        }
+      function dashboardWhatsApp() {
+        const genDate = new Date().toLocaleDateString("en-IN");
+        const totalC = document.getElementById("yearFullC").innerText;
+        const totalE = document.getElementById("yearTotalE").innerText;
+        const closing = document.getElementById("closing").innerText;
+        const grandTotal = document.getElementById("grandTotal").innerText;
+        // Member wise
+        let map = {};
+        filteredC.forEach((c) => {
+          map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
+        });
+        let memberLines =
+          Object.keys(map)
+            .map((uid) => {
+              let u = users.find((x) => String(x.UserId) === String(uid));
+              return u
+                ? `  ✅ ${u.Name}: ₹${Number(map[uid]).toLocaleString("en-IN")}`
+                : "";
+            })
+            .filter(Boolean)
+            .join("\n") || "  No contributions found";
+        const msg =
+          `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n` +
+          `📊 *Financial Report — ${selectedYear}*\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `💰 Year Collection: ₹${totalC}\n` +
+          `💸 Expenses: ₹${totalE}\n` +
+          `🏦 Closing Balance: ₹${closing}\n` +
+          `💎 Overall Balance: ₹${grandTotal}\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `👥 *Member Contributions:*\n${memberLines}\n` +
+          `━━━━━━━━━━━━━━━━━━━━\n` +
+          `_System Generated — ${genDate}_`;
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+      }
 
-        function dashboardEmail() {
-          const genDate = new Date().toLocaleDateString("en-IN");
-          const totalC = document.getElementById("yearFullC").innerText;
-          const totalE = document.getElementById("yearTotalE").innerText;
-          const closing = document.getElementById("closing").innerText;
-          const grandTotal = document.getElementById("grandTotal").innerText;
-          const subject = encodeURIComponent(
-            `Financial Report ${selectedYear} — Shree Hanuman Mandir`
-          );
-          let map = {};
-          filteredC.forEach((c) => {
-            map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
-          });
-          let memberLines =
-            Object.keys(map)
-              .map((uid) => {
-                let u = users.find((x) => String(x.UserId) === String(uid));
-                return u
-                  ? `  ${u.Name}: Rs.${Number(map[uid]).toLocaleString("en-IN")}`
-                  : "";
-              })
-              .filter(Boolean)
-              .join("\n") || "  No contributions found";
-          const body = encodeURIComponent(
-            `SHREE HANUMAN MANDIR — FINANCIAL REPORT ${selectedYear}\nPaliya, Sultanpur\n\n` +
-              `Year Collection : Rs.${totalC}\nExpenses        : Rs.${totalE}\nClosing Balance : Rs.${closing}\nOverall Balance : Rs.${grandTotal}\n\n` +
-              `MEMBER-WISE CONTRIBUTIONS:\n${memberLines}\n\n` +
-              `System Generated — ${genDate}\nNot Manually Signed`
-          );
-          window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
-        }
+      function dashboardEmail() {
+        const genDate = new Date().toLocaleDateString("en-IN");
+        const totalC = document.getElementById("yearFullC").innerText;
+        const totalE = document.getElementById("yearTotalE").innerText;
+        const closing = document.getElementById("closing").innerText;
+        const grandTotal = document.getElementById("grandTotal").innerText;
+        const subject = encodeURIComponent(
+          `Financial Report ${selectedYear} — Shree Hanuman Mandir`
+        );
+        let map = {};
+        filteredC.forEach((c) => {
+          map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
+        });
+        let memberLines =
+          Object.keys(map)
+            .map((uid) => {
+              let u = users.find((x) => String(x.UserId) === String(uid));
+              return u
+                ? `  ${u.Name}: Rs.${Number(map[uid]).toLocaleString("en-IN")}`
+                : "";
+            })
+            .filter(Boolean)
+            .join("\n") || "  No contributions found";
+        const body = encodeURIComponent(
+          `SHREE HANUMAN MANDIR — FINANCIAL REPORT ${selectedYear}\nPaliya, Sultanpur\n\n` +
+            `Year Collection : Rs.${totalC}\nExpenses        : Rs.${totalE}\nClosing Balance : Rs.${closing}\nOverall Balance : Rs.${grandTotal}\n\n` +
+            `MEMBER-WISE CONTRIBUTIONS:\n${memberLines}\n\n` +
+            `System Generated — ${genDate}\nNot Manually Signed`
+        );
+        window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+      }
 
-        init();
+      init();
     </script>
   </body>
 </html>
