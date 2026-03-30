@@ -103,6 +103,7 @@ function doGet(e) {
       // Return user but never return the password hash
       let safeUser = Object.assign({}, user);
       delete safeUser.Password;
+      logAction(safeUser.Name || "User", "Login", "Mobile: " + mobile + ", Role: " + (safeUser.Role || "User"));
       result = { status: "success", user: safeUser };
     }
   }
@@ -182,6 +183,88 @@ function doGet(e) {
       delete safe.Password;
       return safe;
     });
+  }
+
+  // ── GET AUDIT LOG
+  else if (action === "getAuditLog") {
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.AUDIT);
+      if (!sheet) { result = []; }
+      else {
+        const data = sheet.getDataRange().getValues();
+        if (data.length < 2) { result = []; }
+        else {
+          // Reverse so newest first; skip header row
+          const rows = data.slice(1).reverse();
+          result = rows.map(r => ({
+            Timestamp: r[0] || "",
+            UserAdmin: r[1] || "",
+            Action: r[2] || "",
+            Details: r[3] || ""
+          }));
+        }
+      }
+    } catch(e) { result = []; }
+  }
+
+  // ── GET FEEDBACK
+  else if (action === "getFeedback") {
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("FEEDBACK");
+      if (!sheet) { result = []; }
+      else {
+        const data = sheet.getDataRange().getValues();
+        if (data.length < 2) { result = []; }
+        else {
+          const rows = data.slice(1).reverse();
+          result = rows.map(r => ({
+            Timestamp: r[0] || "",
+            Name: r[1] || "",
+            Mobile: r[2] || "",
+            Address: r[3] || "",
+            Message: r[4] || ""
+          }));
+        }
+      }
+    } catch(e) { result = []; }
+  }
+
+  // ── SUBMIT FEEDBACK (from Home page)
+  else if (action === "submitFeedback") {
+    try {
+      let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("FEEDBACK");
+      if (!sheet) {
+        // Auto-create FEEDBACK sheet if it doesn't exist
+        sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("FEEDBACK");
+        sheet.appendRow(["Timestamp","Name","Mobile","Address","Message"]);
+      }
+      sheet.appendRow([
+        formatDate(),
+        sanitize(e.parameter.Name, 100),
+        sanitize(e.parameter.Mobile, 15),
+        sanitize(e.parameter.Address, 200),
+        sanitize(e.parameter.Message, 1000)
+      ]);
+      result = { status: "success" };
+    } catch(err) {
+      result = { status: "error", message: err.message };
+    }
+  }
+
+  // ── LOG AUDIT (from broadcast etc.)
+  else if (action === "logAudit") {
+    logAction(
+      sanitize(e.parameter.adminName, 100),
+      sanitize(e.parameter.action2, 100),
+      sanitize(e.parameter.details, 500)
+    );
+    result = { status: "ok" };
+  }
+
+  // ── LOGOUT (log logout time)
+  else if (action === "logout") {
+    logAction(sanitize(e.parameter.userName, 100) || "User", "Logout", "UserId: " + sanitize(e.parameter.userId, 30));
+    result = { status: "ok" };
   }
 
   // ── ADD USER

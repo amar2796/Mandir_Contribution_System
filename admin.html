@@ -33,6 +33,7 @@
       .layout {
         display: flex;
         min-height: 100vh;
+        align-items: flex-start;
       }
       .sidebar {
         width: 260px;
@@ -82,9 +83,9 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        overflow-y: auto;
         min-width: 0;
         scroll-behavior: smooth;
+        min-height: 100vh;
       }
       .header {
         background: white;
@@ -93,12 +94,12 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        flex-wrap: wrap;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        flex-wrap: nowrap;
         position: sticky;
         top: 0;
-        z-index: 100;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        z-index: 200;
+        border-bottom: 2px solid #f7a01a22;
       }
       /* FIX #4: hdr-hidden removed — header always sticky */
       .header h3 {
@@ -296,6 +297,9 @@
         background: #334155;
         color: white;
       }
+      thead th {
+        white-space: nowrap;
+      }
       th,
       td {
         padding: 11px 14px;
@@ -303,6 +307,17 @@
         border-bottom: 1px solid #eee;
         font-size: 13px;
         white-space: nowrap;
+      }
+      /* Allow data cells to wrap for long content columns */
+      td.wrap, td[style*="white-space:normal"], td[style*="white-space: normal"] {
+        white-space: normal;
+      }
+      /* Broadcast, Feedback, Audit tables — allow wrapping in body cells */
+      #auditTableBody td,
+      #fbAdminTableBody td,
+      #broadcastHistory td {
+        white-space: normal;
+        word-break: break-word;
       }
       tbody tr:hover {
         background: #fdfbf7;
@@ -454,11 +469,25 @@
         color: #f7c35a;
       }
       .sidebar li:last-child {
-        color: #f87171;
+        color: inherit;
       }
       .sidebar li:last-child:hover {
+        background: rgba(247, 160, 26, 0.18) !important;
+        color: #f7c35a;
+      }
+      #nav_audit {
+        color: #f87171;
+      }
+      #nav_audit:hover, #nav_audit.active-nav {
         background: rgba(231, 76, 60, 0.25) !important;
-        color: #fca5a5;
+        color: #fca5a5 !important;
+      }
+      #nav_feedback {
+        color: #86efac;
+      }
+      #nav_feedback:hover, #nav_feedback.active-nav {
+        background: rgba(34, 197, 94, 0.18) !important;
+        color: #bbf7d0 !important;
       }
       .card-box {
         position: relative;
@@ -586,7 +615,10 @@
           <li onclick="showPage('broadcastPage',this)">
             <i class="fa-solid fa-bullhorn"></i> Broadcast
           </li>
-          <li onclick="showPage('auditPage',this)">
+          <li id="nav_feedback" onclick="showPage('feedbackAdminPage',this)" style="color:#86efac;">
+            <i class="fa-solid fa-comment-dots"></i> Feedback
+          </li>
+          <li id="nav_audit" onclick="showPage('auditPage',this)" style="color:#f87171;">
             <i class="fa-solid fa-scroll"></i> Audit Log
           </li>
         </ul>
@@ -933,7 +965,7 @@
               <h2 id="totalUsers" style="color: #334155">0</h2>
             </div>
             <div class="card-box">
-              <h4>Total Contributions</h4>
+              <h4>Total Contributions <span style="font-size:11px;font-weight:400;color:#aaa;">(All Time)</span></h4>
               <h2
                 id="totalContribution"
                 style="color: #27ae60; font-size: 1.5rem"
@@ -942,13 +974,13 @@
               </h2>
             </div>
             <div class="card-box">
-              <h4>Total Expenses</h4>
+              <h4>Total Expenses <span style="font-size:11px;font-weight:400;color:#aaa;">(All Time)</span></h4>
               <h2 id="totalExpense" style="color: #e74c3c; font-size: 1.5rem">
                 ₹0
               </h2>
             </div>
             <div class="card-box">
-              <h4>Net Balance</h4>
+              <h4>Overall Net Balance <span style="font-size:11px;font-weight:400;color:#aaa;">(All Time)</span></h4>
               <h2 id="netBalance" style="color: #f7a01a; font-size: 1.5rem">
                 ₹0
               </h2>
@@ -1404,7 +1436,7 @@
         </div>
       </div>
 
-        <!-- FIX #7: BROADCAST PAGE -->
+        <!-- BROADCAST PAGE -->
         <div id="broadcastPage" class="page">
           <div class="card">
             <h3><i class="fa-solid fa-bullhorn"></i> Send Broadcast Message</h3>
@@ -1494,8 +1526,40 @@
           </div>
         </div>
 
-    </div>
-    </div>
+        <!-- FEEDBACK ADMIN PAGE -->
+        <div id="feedbackAdminPage" class="page">
+          <div class="card">
+            <h3><i class="fa-solid fa-comment-dots" style="color:#a3e635;"></i> Member Feedback
+              <span style="font-size:11px;font-weight:400;color:#999;">(submitted from Home page)</span>
+            </h3>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+              <input class="search-bar" id="fbAdminSearch" placeholder="🔍 Search by name, mobile or message..." onkeyup="filterFeedbackAdmin()" style="margin:0;flex:1;min-width:200px;" />
+              <button onclick="loadFeedbackAdmin()" style="background:#334155;box-shadow:none;padding:9px 14px;">
+                <i class="fa-solid fa-rotate"></i> Refresh
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Timestamp</th>
+                    <th>Name</th>
+                    <th>Mobile</th>
+                    <th>Address</th>
+                    <th>Message</th>
+                  </tr>
+                </thead>
+                <tbody id="fbAdminTableBody">
+                  <tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">Click Refresh to load feedback</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /.main -->
+    </div><!-- /.layout -->
 
     <script src="config.js"></script>
     <script src="app.js"></script>
@@ -1544,17 +1608,29 @@
       }
 
       function logout() {
-        // FIX #11: Log logout time before clearing session
+        // Log logout before clearing session
         try {
           const s = JSON.parse(localStorage.getItem("session") || "{}");
-          if(s && s.userId) {
-            postData({action:"logout", userId:s.userId, userName:s.name||"Admin"}).catch(()=>{});
+          if (s && s.userId) {
+            // Use sendBeacon for reliable fire-and-forget logging
+            const params = new URLSearchParams({
+              action: "logout",
+              userId: s.userId,
+              userName: s.name || "Admin",
+              callback: "cb_logout"
+            });
+            try { navigator.sendBeacon(API_URL + "?" + params.toString()); } catch(e) {}
+            // Also try JSONP as fallback
+            postData({ action: "logout", userId: s.userId, userName: s.name || "Admin" }).catch(() => {});
           }
         } catch(e) {}
         localStorage.clear();
         sessionStorage.clear();
-        history.replaceState(null, "", "login.html");
-        location.replace("login.html");
+        // Small delay to allow logout log to be sent before redirect
+        setTimeout(() => {
+          history.replaceState(null, "", "login.html");
+          location.replace("login.html");
+        }, 150);
       }
 
       function toggleAdminDropdown() {
@@ -1741,7 +1817,8 @@
       function openDashboard(el) {
         showPage("dashboardPage", el);
         let f = document.getElementById("dashboardFrame");
-        if (!f.src || f.src === window.location.href) f.src = "dashboard.html";
+        // Always reload dashboard so new contributions/expenses reflect immediately
+        f.src = "dashboard.html?" + Date.now();
       }
       function setLoading(show) {
         document
@@ -1795,7 +1872,7 @@
         document.getElementById("totalExpense").innerText = "₹" + fmt(totalE);
         let net = totalC - totalE;
         document.getElementById("netBalance").innerText =
-          "₹" + fmt(Math.abs(net));
+          (net < 0 ? "−" : "") + "₹" + fmt(Math.abs(net));
         document.getElementById("netBalance").style.color =
           net >= 0 ? "#27ae60" : "#e74c3c";
         updateSidebarSummary();
@@ -2184,6 +2261,8 @@
       }
 
       async function init() {
+        // Preserve scroll position so saves don't jump user to top
+        const _scrollY = window.scrollY;
         setLoading(true);
         try {
           let allData = (await getData("getAllData")) || {};
@@ -2214,6 +2293,8 @@
           toast("Failed to load data: " + err.message, "error");
         } finally {
           setLoading(false);
+          // Restore scroll position after re-render
+          requestAnimationFrame(() => window.scrollTo(0, _scrollY));
         }
       }
 
@@ -2255,7 +2336,7 @@
       }
       function loadUsers() {
         document.getElementById("user").innerHTML = users
-          .filter((u) => u.Status !== "Inactive")
+          .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
           .map((u) => `<option value="${u.UserId}">${u.Name}</option>`)
           .join("");
       }
@@ -2307,9 +2388,7 @@
             let walkInBadge = String(c.UserId).startsWith("WALKIN_")
               ? `<span style="font-size:9px;background:#946c44;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">WALK-IN</span>`
               : "";
-            return `<tr onclick="viewContribution('${
-              c.Id
-            }')" title="Click to view details">
+            return `<tr style="cursor:default;">
         <td>${n}</td>
         <td><b>${escapeHtml(name)}</b>${walkInBadge}</td>
         <td class="amt-green">₹ ${fmt(c.Amount)}</td>
@@ -2320,9 +2399,9 @@
           displayRID || "—"
         )}</td>
         <td style="font-size:12px;color:#888;">${c.PaymentDate || "—"}</td>
-        <td onclick="event.stopPropagation()">
+        <td>
           <div class="action-btns">
-            <button class="btn-sm btn-info" onclick="event.stopPropagation();viewContrib_receipt('${_rid}')" title="View Receipt"><i class="fa-solid fa-receipt"></i></button>
+            <button class="btn-sm btn-info" onclick="viewContrib_receipt('${_rid}')" title="View Receipt"><i class="fa-solid fa-receipt"></i></button>
             <button class="btn-sm" onclick="openEditContrib('${
               c.Id
             }')" title="Edit"><i class="fa-solid fa-pen"></i></button>
@@ -3297,7 +3376,7 @@
         }
       }
       async function del(id) {
-        if (!confirm("Delete this contribution?")) return;
+        confirmModal("Delete this contribution?", async () => {
         try {
           let res = await postData({ action: "deleteContribution", Id: id });
           toast(
@@ -3308,6 +3387,7 @@
         } catch (err) {
           toast("❌ " + err.message, "error");
         }
+        });
       }
       async function addExpense() {
         if (!checkSession()) return;
@@ -3338,17 +3418,18 @@
         }
       }
       async function deleteExpense(id) {
-        if (!confirm("Delete this expense?")) return;
-        try {
-          let res = await postData({ action: "deleteExpense", Id: id });
-          toast(
-            res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            res.status === "deleted" ? "" : "error"
-          );
-          init();
-        } catch (err) {
-          toast("❌ " + err.message, "error");
-        }
+        confirmModal("Delete this expense?", async () => {
+          try {
+            let res = await postData({ action: "deleteExpense", Id: id });
+            toast(
+              res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+              res.status === "deleted" ? "" : "error"
+            );
+            init();
+          } catch (err) {
+            toast("❌ " + err.message, "error");
+          }
+        });
       }
       async function addUser() {
         if (!checkSession()) return;
@@ -3387,17 +3468,18 @@
         }
       }
       async function deleteUser(id) {
-        if (!confirm("Delete this user?")) return;
-        try {
-          let res = await postData({ action: "deleteUser", UserId: id });
-          toast(
-            res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            res.status === "deleted" ? "" : "error"
-          );
-          init();
-        } catch (err) {
-          toast("❌ " + err.message, "error");
-        }
+        confirmModal("Delete this user? This cannot be undone.", async () => {
+          try {
+            let res = await postData({ action: "deleteUser", UserId: id });
+            toast(
+              res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+              res.status === "deleted" ? "" : "error"
+            );
+            init();
+          } catch (err) {
+            toast("❌ " + err.message, "error");
+          }
+        });
       }
       async function addType() {
         let v = document.getElementById("t_name").value.trim();
@@ -3415,17 +3497,18 @@
         }
       }
       async function deleteType(id) {
-        if (!confirm("Delete?")) return;
-        try {
-          let r = await postData({ action: "deleteType", TypeId: id });
-          toast(
-            r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            r.status === "deleted" ? "" : "error"
-          );
-          init();
-        } catch (e) {
-          toast("❌ " + e.message, "error");
-        }
+        confirmModal("Delete this contribution type?", async () => {
+          try {
+            let r = await postData({ action: "deleteType", TypeId: id });
+            toast(
+              r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+              r.status === "deleted" ? "" : "error"
+            );
+            init();
+          } catch (e) {
+            toast("❌ " + e.message, "error");
+          }
+        });
       }
       async function addOccasion() {
         let v = document.getElementById("o_name").value.trim();
@@ -3443,17 +3526,18 @@
         }
       }
       async function deleteOccasion(id) {
-        if (!confirm("Delete?")) return;
-        try {
-          let r = await postData({ action: "deleteOccasion", OccasionId: id });
-          toast(
-            r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            r.status === "deleted" ? "" : "error"
-          );
-          init();
-        } catch (e) {
-          toast("❌ " + e.message, "error");
-        }
+        confirmModal("Delete this occasion?", async () => {
+          try {
+            let r = await postData({ action: "deleteOccasion", OccasionId: id });
+            toast(
+              r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+              r.status === "deleted" ? "" : "error"
+            );
+            init();
+          } catch (e) {
+            toast("❌ " + e.message, "error");
+          }
+        });
       }
       async function addExpenseType() {
         let v = document.getElementById("e_name").value.trim();
@@ -3471,20 +3555,21 @@
         }
       }
       async function deleteExpenseType(id) {
-        if (!confirm("Delete?")) return;
-        try {
-          let r = await postData({
-            action: "deleteExpenseType",
-            ExpenseTypeId: id,
-          });
-          toast(
-            r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            r.status === "deleted" ? "" : "error"
-          );
-          init();
-        } catch (e) {
-          toast("❌ " + e.message, "error");
-        }
+        confirmModal("Delete this expense type?", async () => {
+          try {
+            let r = await postData({
+              action: "deleteExpenseType",
+              ExpenseTypeId: id,
+            });
+            toast(
+              r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+              r.status === "deleted" ? "" : "error"
+            );
+            init();
+          } catch (e) {
+            toast("❌ " + e.message, "error");
+          }
+        });
       }
 
       /* ── GOALS MANAGEMENT ── */
@@ -3504,6 +3589,15 @@
             : goals
                 .map((g, i) => {
                   let collected = Number(g.CurrentAmount || 0);
+                  // Auto-calculate actual contributions for this goal name
+                  let autoCalc = data.reduce((sum, c) => {
+                    let tName = (types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "").toLowerCase();
+                    let gName = (g.GoalName || "").toLowerCase();
+                    return sum + (tName === gName || (c.Note || "").toLowerCase().includes(gName) ? Number(c.Amount || 0) : 0);
+                  }, 0);
+                  let syncWarning = autoCalc > 0 && Math.abs(autoCalc - collected) > 1
+                    ? `<span title="Auto-calculated from contributions: ₹${fmt(autoCalc)}" style="cursor:help;font-size:10px;color:#e67e22;margin-left:4px;">⚠️ Auto: ₹${fmt(autoCalc)}</span>`
+                    : "";
                   let pct =
                     g.TargetAmount > 0
                       ? Math.min(
@@ -3512,13 +3606,13 @@
                         )
                       : 0;
                   let barColor =
-                    pct >= 100 ? "#27ae60" : pct >= 50 ? "#f7a01a" : "#e74c3c";
+                    pct >= 100 ? "#27ae60" : pct >= 60 ? "#f7a01a" : "#e74c3c";
                   let _gk = _storeGoalId(g.GoalId);
                   return `<tr>
                 <td>${i + 1}</td>
                 <td><b>${escapeHtml(g.GoalName || "—")}</b></td>
                 <td>₹ ${fmt(g.TargetAmount)}</td>
-                <td class="amt-green">₹ ${fmt(collected)}</td>
+                <td class="amt-green">₹ ${fmt(collected)}${syncWarning}</td>
                 <td style="min-width:120px;">
                   <div style="background:#eee;border-radius:10px;height:14px;overflow:hidden;">
                     <div class="goal-bar-fill" style="background:${barColor};width:${pct}%;height:100%;border-radius:10px;"></div>
@@ -3650,17 +3744,18 @@
       }
 
       async function deleteGoal(id) {
-        if (!confirm("Delete this goal?")) return;
-        try {
-          let res = await postData({ action: "deleteGoal", GoalId: id });
-          toast(
-            res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            res.status === "deleted" ? "" : "error"
-          );
-          init();
-        } catch (e) {
-          toast("❌ " + e.message, "error");
-        }
+        confirmModal("Delete this goal?", async () => {
+          try {
+            let res = await postData({ action: "deleteGoal", GoalId: id });
+            toast(
+              res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
+              res.status === "deleted" ? "" : "error"
+            );
+            init();
+          } catch (e) {
+            toast("❌ " + e.message, "error");
+          }
+        });
       }
 
       function showReceiptById(rid) {
@@ -3671,6 +3766,196 @@
       // FIX #13: viewContrib_receipt — only show receipt when explicitly requested
       function viewContrib_receipt(rid) {
         showReceiptById(rid);
+      }
+
+      /* ═══ BROADCAST FUNCTIONS ═══ */
+      let _bcHistory = [];
+
+      (function() {
+        const bcTypeEl = document.getElementById("bc_type");
+        if (bcTypeEl) bcTypeEl.addEventListener("change", function() {
+          const pollOpts = document.getElementById("bc_poll_options");
+          if (pollOpts) pollOpts.style.display = this.value === "poll" ? "block" : "none";
+        });
+      })();
+
+      function previewBroadcast() {
+        const typeEl = document.getElementById("bc_type");
+        const prioEl = document.getElementById("bc_priority");
+        const titleEl = document.getElementById("bc_title");
+        const msgEl = document.getElementById("bc_message");
+        if (!typeEl || !titleEl || !msgEl) { toast("Broadcast form not found.", "error"); return; }
+        const type = typeEl.value;
+        const priority = prioEl ? prioEl.value : "normal";
+        const title = titleEl.value.trim();
+        const message = msgEl.value.trim();
+        if (!title && !message) { toast("Please enter a title and message first.", "warn"); return; }
+        const typeLabels = { announcement: "📢 Announcement", poll: "🗳️ Poll", innovation: "💡 New Idea" };
+        const prioLabels = { normal: "", important: "⚠️ IMPORTANT — ", urgent: "🚨 URGENT — " };
+        const preview = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n━━━━━━━━━━━━━━━━━━━━\n${prioLabels[priority]}${typeLabels[type] || type}\n\n*${title}*\n\n${message}\n━━━━━━━━━━━━━━━━━━━━\n_${new Date().toLocaleDateString("en-IN")}_`;
+        openModal(`<div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Broadcast Preview</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy">
+            <div style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.7;">${escapeHtml(preview)}</div>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Close</button>
+            <button class="_mbtn" style="background:#25d366;" onclick="closeModal();sendBroadcast()"><i class="fa-brands fa-whatsapp"></i> Send Now</button>
+          </div>`, "540px");
+      }
+
+      async function sendBroadcast() {
+        const typeEl = document.getElementById("bc_type");
+        const prioEl = document.getElementById("bc_priority");
+        const titleEl = document.getElementById("bc_title");
+        const msgEl = document.getElementById("bc_message");
+        if (!typeEl || !titleEl || !msgEl) { toast("Broadcast form not found.", "error"); return; }
+        const type = typeEl.value;
+        const priority = prioEl ? prioEl.value : "normal";
+        const title = titleEl.value.trim();
+        const message = msgEl.value.trim();
+        if (!title) { toast("Please enter a title/subject.", "warn"); return; }
+        if (!message) { toast("Please enter a message.", "warn"); return; }
+        const typeLabels = { announcement: "📢 Announcement", poll: "🗳️ Poll", innovation: "💡 New Idea" };
+        const prioLabels = { normal: "", important: "⚠️ IMPORTANT — ", urgent: "🚨 URGENT — " };
+        const pollBlock = type === "poll" ? "\n\nRespond with:\n✅ Yes  |  ❌ No  |  💬 Suggestion" : "";
+        const msg = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n━━━━━━━━━━━━━━━━━━━━\n${prioLabels[priority]}${typeLabels[type] || type}\n\n*${title}*\n\n${message}${pollBlock}\n━━━━━━━━━━━━━━━━━━━━\n_${new Date().toLocaleDateString("en-IN")}_`;
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+        // Add to session history
+        _bcHistory.unshift({ type, priority, title, message, time: new Date().toLocaleString("en-IN") });
+        renderBroadcastHistory();
+        // Store broadcast in backend sheet so all users can read it
+        try {
+          await postData({
+            action: "saveBroadcast",
+            type, priority, title, message,
+            time: new Date().toLocaleString("en-IN")
+          });
+        } catch(e) { console.warn("Broadcast save failed:", e); }
+        titleEl.value = "";
+        msgEl.value = "";
+        toast("✅ WhatsApp opened with broadcast message!");
+      }
+
+      function renderBroadcastHistory() {
+        const container = document.getElementById("broadcastHistory");
+        if (!container) return;
+        if (_bcHistory.length === 0) {
+          container.innerHTML = '<div style="font-size:13px;color:#888;text-align:center;padding:20px;">No broadcasts sent yet in this session.</div>';
+          return;
+        }
+        const typeColors = { announcement: "#2980b9", poll: "#8e44ad", innovation: "#27ae60" };
+        container.innerHTML = _bcHistory.map(b =>
+          `<div style="background:#f8fafc;border-radius:10px;padding:12px 16px;margin-bottom:10px;border-left:4px solid ${typeColors[b.type] || '#ccc'};">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+              <b style="font-size:13px;">${escapeHtml(b.title)}</b>
+              <span style="font-size:11px;color:#aaa;">${b.time}</span>
+            </div>
+            <div style="font-size:12px;color:#555;">${escapeHtml(b.message.substring(0,120))}${b.message.length>120?"…":""}</div>
+          </div>`
+        ).join("");
+      }
+
+      /* ═══ AUDIT LOG FUNCTIONS ═══ */
+      let _auditData = [];
+
+      async function loadAuditLog() {
+        const tbody = document.getElementById("auditTableBody");
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;"><div class="spinner" style="margin:0 auto;width:28px;height:28px;"></div><br>Loading audit log...</td></tr>';
+        try {
+          const res = await getData("getAuditLog");
+          _auditData = Array.isArray(res) ? res : [];
+          renderAuditTable(_auditData);
+          if (_auditData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No audit log entries found.</td></tr>';
+          }
+        } catch (e) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#e74c3c;padding:20px;">Failed to load audit log: ${escapeHtml(e.message)}</td></tr>`;
+        }
+      }
+
+      function renderAuditTable(list) {
+        const tbody = document.getElementById("auditTableBody");
+        if (!tbody) return;
+        if (!list || list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map((row, i) => {
+          const ts = String(row.Timestamp || row[0] || "—");
+          const user = String(row.UserAdmin || row[1] || "—");
+          const action = String(row.Action || row[2] || "—");
+          const details = String(row.Details || row[3] || "—");
+          const isLogin = action.toLowerCase().includes("login");
+          const isLogout = action.toLowerCase().includes("logout");
+          return `<tr style="background:${isLogin ? '#f0fdf4' : isLogout ? '#fef9ee' : ''};">
+            <td style="color:#888;">${i + 1}</td>
+            <td style="font-size:12px;color:#888;font-family:monospace;">${escapeHtml(ts)}</td>
+            <td style="font-weight:600;">${escapeHtml(user)}</td>
+            <td><span class="badge ${isLogin ? 'badge-green' : isLogout ? '' : ''}" style="${isLogout ? 'background:#fef3c7;color:#d97706;' : !isLogin ? 'background:#f0f4f8;color:#334155;' : ''}">${escapeHtml(action)}</span></td>
+            <td style="font-size:12px;color:#666;white-space:normal;max-width:220px;">${escapeHtml(details)}</td>
+          </tr>`;
+        }).join("");
+      }
+
+      function filterAuditLog() {
+        const txt = (document.getElementById("auditSearch")?.value || "").toLowerCase();
+        if (!txt) { renderAuditTable(_auditData); return; }
+        renderAuditTable(_auditData.filter(r =>
+          [r.Timestamp||r[0], r.UserAdmin||r[1], r.Action||r[2], r.Details||r[3]]
+            .some(v => String(v||"").toLowerCase().includes(txt))
+        ));
+      }
+
+      /* ═══ FEEDBACK ADMIN FUNCTIONS ═══ */
+      let _fbAdminData = [];
+
+      async function loadFeedbackAdmin() {
+        const tbody = document.getElementById("fbAdminTableBody");
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">Loading...</td></tr>';
+        try {
+          const res = await getData("getFeedback");
+          _fbAdminData = Array.isArray(res) ? res : [];
+          renderFeedbackAdmin(_fbAdminData);
+          if (_fbAdminData.length === 0)
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No feedback yet.<br><small style="font-size:11px;">Feedback from the Home page will appear here.</small></td></tr>';
+        } catch (e) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#e74c3c;padding:20px;">Could not load feedback. Make sure FEEDBACK sheet exists.</td></tr>';
+        }
+      }
+
+      function renderFeedbackAdmin(list) {
+        const tbody = document.getElementById("fbAdminTableBody");
+        if (!tbody) return;
+        if (!list || list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map((row, i) => {
+          const ts = String(row.Timestamp || row[0] || "—");
+          const name = String(row.Name || row[1] || "—");
+          const mobile = String(row.Mobile || row[2] || "—");
+          const address = String(row.Address || row[3] || "—");
+          const message = String(row.Message || row[4] || "—");
+          return `<tr>
+            <td style="color:#888;">${i + 1}</td>
+            <td style="font-size:12px;color:#888;font-family:monospace;">${escapeHtml(ts)}</td>
+            <td style="font-weight:600;">${escapeHtml(name)}</td>
+            <td>${escapeHtml(mobile)}</td>
+            <td style="font-size:12px;color:#666;">${escapeHtml(address)}</td>
+            <td style="font-size:12px;color:#333;white-space:normal;max-width:250px;">${escapeHtml(message)}</td>
+          </tr>`;
+        }).join("");
+      }
+
+      function filterFeedbackAdmin() {
+        const txt = (document.getElementById("fbAdminSearch")?.value || "").toLowerCase();
+        if (!txt) { renderFeedbackAdmin(_fbAdminData); return; }
+        renderFeedbackAdmin(_fbAdminData.filter(r =>
+          [r.Name||r[1], r.Mobile||r[2], r.Message||r[4]]
+            .some(v => String(v||"").toLowerCase().includes(txt))
+        ));
       }
 
       init();

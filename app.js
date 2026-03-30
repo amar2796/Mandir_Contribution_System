@@ -27,7 +27,10 @@ function toast(msg, type) {
   const bg   = type==="error"?"#e74c3c":type==="warn"?"#e67e22":"#27ae60";
   const icon = type==="error"?"✕":type==="warn"?"⚠":"✓";
   let item = document.createElement("div"); item.className = "ti"; item.style.background = bg;
-  item.innerHTML = `<span style="font-size:16px;">${icon}</span><span style="flex:1;">${msg}</span><div class="tb"></div>`;
+  let iconSpan = document.createElement("span"); iconSpan.style.fontSize = "16px"; iconSpan.textContent = icon;
+  let msgSpan = document.createElement("span"); msgSpan.style.flex = "1"; msgSpan.textContent = msg;
+  let bar = document.createElement("div"); bar.className = "tb";
+  item.appendChild(iconSpan); item.appendChild(msgSpan); item.appendChild(bar);
   wrap.appendChild(item);
   setTimeout(()=>{ item.classList.add("to"); setTimeout(()=>item.remove(),320); },3500);
 }
@@ -201,6 +204,26 @@ function openModal(html, maxWidth){
 function closeModal(){
   let m=document.getElementById("_uniModal");
   if(m){m.style.opacity="0";m.style.transition="opacity .2s";setTimeout(()=>{m.remove();document.body.style.overflow="";},200);}
+}
+/* ═══ CONFIRM MODAL ═══ */
+// Usage: confirmModal("Delete this item?", () => { /* confirmed */ });
+function confirmModal(message, onConfirm, confirmLabel, confirmColor) {
+  let label = confirmLabel || "Delete";
+  let color = confirmColor || "#e74c3c";
+  let html = `
+    <div class="_mhdr"><h3><i class="fa-solid fa-triangle-exclamation" style="color:${color};"></i> Confirm</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+    <div class="_mbdy" style="text-align:center;padding:20px 16px 10px;">
+      <p style="font-size:15px;color:#333;margin:0 0 20px;">${message}</p>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="_mbtn" style="background:#999;min-width:90px;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Cancel</button>
+        <button class="_mbtn" style="background:${color};min-width:90px;" id="_confirmOkBtn"><i class="fa-solid fa-check"></i> ${label}</button>
+      </div>
+    </div>`;
+  openModal(html, "360px");
+  setTimeout(() => {
+    let btn = document.getElementById("_confirmOkBtn");
+    if (btn) btn.addEventListener("click", () => { closeModal(); onConfirm(); });
+  }, 50);
 }
 
 /* ═══ PHOTO CROP SYSTEM ═══ */

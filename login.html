@@ -402,7 +402,10 @@
         let item = document.createElement("div");
         item.className = "ti";
         item.style.background = bg;
-        item.innerHTML = `<span style="font-size:16px;">${icon}</span><span style="flex:1;">${msg}</span><div class="tb"></div>`;
+        let iconSpan = document.createElement("span"); iconSpan.style.fontSize = "16px"; iconSpan.textContent = icon;
+        let msgSpan = document.createElement("span"); msgSpan.style.flex = "1"; msgSpan.textContent = msg;
+        let bar = document.createElement("div"); bar.className = "tb";
+        item.appendChild(iconSpan); item.appendChild(msgSpan); item.appendChild(bar);
         wrap.appendChild(item);
         setTimeout(() => {
           item.classList.add("to_");

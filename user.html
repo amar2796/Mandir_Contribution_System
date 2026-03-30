@@ -316,6 +316,22 @@
         color: #f7a01a;
       }
 
+      /* ══ BROADCAST CARD ══ */
+      .broadcast-card {
+        background: white;
+        padding: 14px 16px;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        border-left: 4px solid #f7a01a;
+        margin-bottom: 12px;
+        animation: fadeIn 0.4s ease;
+      }
+      .broadcast-card.urgent { border-left-color: #e74c3c; }
+      .broadcast-card.important { border-left-color: #f7a01a; }
+      .broadcast-card.poll { border-left-color: #8e44ad; }
+      .broadcast-card.innovation { border-left-color: #27ae60; }
+      @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
       /* ══ SUMMARY ITEMS ══ */
       .summary-item {
         display: flex;
@@ -651,6 +667,8 @@
       <!-- All enabled Goals -->
       <div id="goalsContainer"></div>
 
+      <!-- Broadcast Announcements (shown when there are active broadcasts) -->
+      <div id="broadcastContainer"></div>
       <!-- Month + Type summaries: year-filtered -->
       <div class="grid-layout">
         <div class="card">
@@ -818,9 +836,25 @@
         }
       });
       function logout() {
+        try {
+          const s = JSON.parse(localStorage.getItem("session") || "{}");
+          if (s && s.userId) {
+            const params = new URLSearchParams({
+              action: "logout",
+              userId: s.userId,
+              userName: s.name || "User",
+              callback: "cb_logout"
+            });
+            try { navigator.sendBeacon(API_URL + "?" + params.toString()); } catch(e) {}
+            postData({ action: "logout", userId: s.userId, userName: s.name || "User" }).catch(() => {});
+          }
+        } catch(e) {}
         localStorage.clear();
-        history.replaceState(null, "", "login.html");
-        location.replace("login.html");
+        sessionStorage.clear();
+        setTimeout(() => {
+          history.replaceState(null, "", "login.html");
+          location.replace("login.html");
+        }, 150);
       }
 
       // ── Avatar dropdown
@@ -1039,6 +1073,7 @@
           calculateTotal();
           renderSummaries();
           renderGoals(allGoals);
+          await renderBroadcasts();
         } catch (err) {
           toast("Failed to load: " + err.message, "error");
         }
@@ -1092,6 +1127,44 @@
           </div>`;
           })
           .join("");
+      }
+
+      // ── BROADCAST ANNOUNCEMENTS (fetched from backend sheet)
+      async function renderBroadcasts() {
+        const container = document.getElementById("broadcastContainer");
+        if (!container) return;
+        let broadcasts = [];
+        try {
+          const res = await getData({ action: "getBroadcasts" });
+          broadcasts = Array.isArray(res) ? res : [];
+        } catch(e) { broadcasts = []; }
+        if (!broadcasts || broadcasts.length === 0) {
+          container.innerHTML = "";
+          return;
+        }
+        // Only show last 5, newest first
+        const recent = broadcasts.slice(0, 5);
+        const typeIcons = { announcement: "📢", poll: "🗳️", innovation: "💡" };
+        const typeLabels = { announcement: "Announcement", poll: "Poll", innovation: "New Idea" };
+        const prioColors = { urgent: "#e74c3c", important: "#f7a01a", normal: "#334155" };
+        container.innerHTML = `
+          <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-bullhorn" style="color:#f7a01a;"></i>
+            <span style="font-weight:700;font-size:0.95rem;color:#334155;">Announcements</span>
+          </div>
+          ${recent.map(b => `
+          <div class="broadcast-card ${b.type === 'poll' ? 'poll' : b.type === 'innovation' ? 'innovation' : b.priority === 'urgent' ? 'urgent' : b.priority === 'important' ? 'important' : ''}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:1.1rem;">${typeIcons[b.type] || "📢"}</span>
+                <span style="font-size:11px;font-weight:700;color:${prioColors[b.priority]||'#334155'};text-transform:uppercase;letter-spacing:0.5px;">${typeLabels[b.type] || b.type}${b.priority !== 'normal' ? ' · ' + b.priority.toUpperCase() : ''}</span>
+              </div>
+              <span style="font-size:11px;color:#aaa;">${b.time || ""}</span>
+            </div>
+            <div style="font-weight:700;font-size:0.95rem;color:#334155;margin-bottom:4px;">${escapeHtml(b.title)}</div>
+            <div style="font-size:13px;color:#555;line-height:1.6;">${escapeHtml(b.message)}</div>
+            ${b.type === 'poll' ? '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;"><span style="background:#eafaf1;color:#27ae60;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">✅ Yes</span><span style="background:#fdedec;color:#e74c3c;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">❌ No</span><span style="background:#fef9e7;color:#f7a01a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">💬 Suggestion</span></div>' : ''}
+          </div>`).join("")}`;
       }
 
       // ── SUMMARY YEAR SELECTOR
@@ -1257,17 +1330,10 @@
       }
 
       function applyFilter() {
-        let y = document.getElementById("filterYear").value;
-        let m = document.getElementById("filterMonth").value;
-        let t = document.getElementById("filterType").value;
-        renderTable(
-          data.filter(
-            (c) =>
-              (!y || String(c.Year) === y) &&
-              (!m || c.ForMonth === m) &&
-              (!t || String(c.TypeId) === String(t))
-          )
-        );
+        _applyAllFilters();
+      }
+      function searchData() {
+        _applyAllFilters();
       }
       function resetFilter() {
         ["filterYear", "filterMonth", "filterType"].forEach(
@@ -1276,23 +1342,34 @@
         document.getElementById("searchInput").value = "";
         renderTable(data);
       }
-      function searchData() {
+      function _applyAllFilters() {
+        let y = document.getElementById("filterYear").value;
+        let m = document.getElementById("filterMonth").value;
+        let t = document.getElementById("filterType").value;
         let txt = document.getElementById("searchInput").value.toLowerCase();
         renderTable(
           data.filter((c) => {
-            let t =
-              types.find((x) => String(x.TypeId) === String(c.TypeId))
-                ?.TypeName || "";
-            let displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
-            return (
-              t.toLowerCase().includes(txt) ||
-              (c.ForMonth || "").toLowerCase().includes(txt) ||
-              String(c.Amount).includes(txt) ||
-              (c.PaymentDate || "").toLowerCase().includes(txt) ||
-              String(c.Year || "").includes(txt) ||
-              displayRID.toLowerCase().includes(txt) ||
-              (c.ReceiptID || "").toLowerCase().includes(txt)
-            );
+            // Dropdown filters
+            if (y && String(c.Year) !== y) return false;
+            if (m && c.ForMonth !== m) return false;
+            if (t && String(c.TypeId) !== String(t)) return false;
+            // Search text
+            if (txt) {
+              let typeName =
+                types.find((x) => String(x.TypeId) === String(c.TypeId))
+                  ?.TypeName || "";
+              let displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+              return (
+                typeName.toLowerCase().includes(txt) ||
+                (c.ForMonth || "").toLowerCase().includes(txt) ||
+                String(c.Amount).includes(txt) ||
+                (c.PaymentDate || "").toLowerCase().includes(txt) ||
+                String(c.Year || "").includes(txt) ||
+                displayRID.toLowerCase().includes(txt) ||
+                (c.ReceiptID || "").toLowerCase().includes(txt)
+              );
+            }
+            return true;
           })
         );
       }
@@ -1377,8 +1454,6 @@
           );
         });
         let total = filtered.reduce((s, c) => s + Number(c.Amount || 0), 0);
-        doc.setFont(undefined, "bold");
-        doc.setFontSize(10);
         doc.setFont(undefined, "bold");
         doc.setFontSize(10);
         doc.text(
@@ -1547,23 +1622,6 @@
       }
 
       init();
-
-      /* ═══ FIX 8: SCROLL HIDE/SHOW HEADER ═══ */
-      (function () {
-        const hdr = document.querySelector(".header");
-        if (!hdr) return;
-        let lastY = 0;
-        window.addEventListener(
-          "scroll",
-          function () {
-            const y = window.scrollY;
-            if (y > lastY && y > 60) hdr.style.transform = "translateY(-100%)";
-            else hdr.style.transform = "";
-            lastY = y;
-          },
-          { passive: true }
-        );
-      })();
 
       /* ═══ FIX 3: BROADCAST SESSION REVOKE TO OTHER TABS ═══ */
       (function () {
