@@ -205,6 +205,11 @@
         align-items: center;
         gap: 10px;
         font-size: 1rem;
+        flex-wrap: wrap;
+      }
+      /* Prevent anchor scroll from hiding under sticky header */
+      html {
+        scroll-padding-top: 70px;
       }
       .card h3 i {
         color: #f7a01a;
@@ -385,15 +390,18 @@
           left: 0;
         }
         .page {
-          padding: 8px 6px;
+          padding: 10px 8px 20px;
         }
         .card {
-          padding: 12px 10px;
+          padding: 14px 12px;
           margin-bottom: 12px;
           border-radius: 10px;
         }
         .header {
           padding: 8px 10px;
+          position: sticky;
+          top: 0;
+          z-index: 200;
         }
         .grid-layout {
           gap: 10px;
@@ -404,6 +412,23 @@
         }
         .form-row {
           gap: 10px;
+        }
+        /* Mobile: search+refresh stack vertically so refresh is never clipped */
+        .search-refresh-row {
+          flex-direction: column !important;
+          align-items: stretch !important;
+        }
+        .search-refresh-row input.search-bar {
+          min-width: 0 !important;
+          width: 100% !important;
+        }
+        .search-refresh-row button {
+          width: 100% !important;
+          justify-content: center;
+        }
+        /* Card title font size on mobile */
+        .card h3 {
+          font-size: 0.92rem;
         }
       }
       .badge {
@@ -1434,7 +1459,6 @@
             </div>
           </div>
         </div>
-      </div>
 
         <!-- BROADCAST PAGE -->
         <div id="broadcastPage" class="page">
@@ -1501,9 +1525,9 @@
             <h3><i class="fa-solid fa-scroll"></i> Audit Log
               <span style="font-size:11px;font-weight:400;color:#999;">(Login/Logout times, all actions)</span>
             </h3>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;" class="search-refresh-row">
               <input class="search-bar" id="auditSearch" placeholder="🔍 Search by user or action..." onkeyup="filterAuditLog()" style="margin:0;flex:1;min-width:200px;" />
-              <button onclick="loadAuditLog()" style="background:#334155;box-shadow:none;padding:9px 14px;">
+              <button onclick="loadAuditLog()" style="background:#334155;box-shadow:none;padding:9px 14px;flex-shrink:0;">
                 <i class="fa-solid fa-rotate"></i> Refresh
               </button>
             </div>
@@ -1532,9 +1556,9 @@
             <h3><i class="fa-solid fa-comment-dots" style="color:#a3e635;"></i> Member Feedback
               <span style="font-size:11px;font-weight:400;color:#999;">(submitted from Home page)</span>
             </h3>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;" class="search-refresh-row">
               <input class="search-bar" id="fbAdminSearch" placeholder="🔍 Search by name, mobile or message..." onkeyup="filterFeedbackAdmin()" style="margin:0;flex:1;min-width:200px;" />
-              <button onclick="loadFeedbackAdmin()" style="background:#334155;box-shadow:none;padding:9px 14px;">
+              <button onclick="loadFeedbackAdmin()" style="background:#334155;box-shadow:none;padding:9px 14px;flex-shrink:0;">
                 <i class="fa-solid fa-rotate"></i> Refresh
               </button>
             </div>

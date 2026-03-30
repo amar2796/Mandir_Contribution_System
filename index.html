@@ -116,16 +116,16 @@
         transform: translateY(0);
       }
 
-      /* ══ HEADER — Desktop inline nav, no hamburger ══ */
+      /* ══ HEADER — Desktop inline nav | Mobile hamburger ══ */
       .header {
         position: sticky;
         top: 0;
         z-index: 1000;
-        background: rgba(148, 108, 68, 0.97);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+        background: rgba(120, 80, 40, 0.97);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
         color: white;
         padding: 0 28px;
         display: flex;
@@ -133,104 +133,150 @@
         align-items: center;
         width: 100%;
         box-sizing: border-box;
-        height: 60px;
+        height: 62px;
         animation: fadeIn 1s ease-out 1.7s both;
         gap: 16px;
       }
-      .header h2 {
+      .header-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        flex-shrink: 1;
+      }
+      .header-brand h2 {
         margin: 0;
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         font-weight: 700;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        flex-shrink: 1;
-        min-width: 0;
+        color: white;
+        line-height: 1.2;
       }
-      .header h2 i {
+      .header-brand h2 i {
         color: #f7a01a;
         margin-right: 6px;
-        filter: drop-shadow(0 0 5px rgba(247, 160, 26, 0.5));
+        filter: drop-shadow(0 0 6px rgba(247,160,26,0.6));
       }
 
-      /* Desktop inline nav links */
+      /* ── Desktop nav (hidden on mobile) ── */
       .nav-links {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 2px;
         flex-shrink: 0;
       }
       .nav-links a {
         color: rgba(255,255,255,0.88);
         text-decoration: none;
-        font-size: 0.875rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        padding: 7px 14px;
+        padding: 7px 13px;
         border-radius: 8px;
         transition: background 0.2s, color 0.2s;
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: 6px;
         white-space: nowrap;
       }
       .nav-links a:hover {
-        background: rgba(247, 160, 26, 0.25);
+        background: rgba(247,160,26,0.22);
         color: #f7c35a;
       }
-      .nav-links a i {
-        color: #f7a01a;
-        font-size: 0.85rem;
-      }
+      .nav-links a i { color: #f7a01a; font-size: 0.82rem; }
       .nav-links a.login-btn {
         background: #f7a01a;
         color: white;
-        padding: 7px 16px;
+        padding: 7px 18px;
         border-radius: 8px;
-        margin-left: 4px;
+        margin-left: 6px;
+        box-shadow: 0 3px 10px rgba(247,160,26,0.35);
       }
-      .nav-links a.login-btn:hover {
-        background: #d35400;
-        color: white;
-      }
-      .nav-links a.login-btn i {
-        color: white;
-      }
+      .nav-links a.login-btn:hover { background: #d35400; color: white; }
+      .nav-links a.login-btn i { color: white; }
 
-      /* Hamburger — hidden always (desktop nav used everywhere) */
+      /* ── Hamburger button (hidden on desktop) ── */
       .hamburger-btn {
-        display: none !important;
+        display: none;
+        background: rgba(255,255,255,0.1);
+        border: 1.5px solid rgba(255,255,255,0.25);
+        color: white;
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 7px 11px;
+        border-radius: 8px;
+        transition: background 0.2s;
+        box-shadow: none;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        line-height: 1;
       }
+      .hamburger-btn:hover { background: rgba(247,160,26,0.3); }
 
-      /* Mobile nav: stack links for small screens */
-      @media (max-width: 600px) {
-        .header {
-          padding: 0 14px;
-          height: auto;
-          min-height: 56px;
-          flex-wrap: wrap;
-          gap: 6px;
-          padding-top: 8px;
-          padding-bottom: 8px;
-        }
-        .header h2 {
-          font-size: 0.95rem;
-          flex: 1 1 100%;
-        }
-        .nav-links {
-          flex: 1 1 100%;
-          flex-wrap: wrap;
-          gap: 4px;
-        }
-        .nav-links a {
-          font-size: 0.78rem;
-          padding: 5px 10px;
-          gap: 5px;
-        }
-      }
-
-      /* Slide-down nav menu — keep for backward compat but hidden */
+      /* ── Slide-down mobile nav menu ── */
       .nav-menu {
-        display: none !important;
+        position: fixed;
+        top: 62px;
+        right: 0;
+        left: 0;
+        background: rgba(90, 55, 20, 0.98);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        display: none;
+        flex-direction: column;
+        padding: 8px 0 12px;
+        z-index: 999;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+        border-bottom: 2px solid rgba(247,160,26,0.3);
+        animation: slideDown 0.22s ease;
+      }
+      .nav-menu.open { display: flex; }
+      @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .nav-menu a {
+        color: rgba(255,255,255,0.9);
+        text-decoration: none;
+        font-weight: 600;
+        padding: 13px 24px;
+        font-size: 0.95rem;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: background 0.18s, color 0.18s;
+      }
+      .nav-menu a:last-child { border-bottom: none; }
+      .nav-menu a:hover { background: rgba(247,160,26,0.2); color: #f7c35a; }
+      .nav-menu a i { color: #f7a01a; width: 20px; text-align: center; }
+      .nav-menu a.menu-login {
+        background: rgba(247,160,26,0.15);
+        color: #f7c35a;
+        font-weight: 700;
+        margin: 8px 16px 0;
+        border-radius: 10px;
+        border-bottom: none;
+        justify-content: center;
+        border: 1.5px solid rgba(247,160,26,0.4);
+      }
+      .nav-menu a.menu-login:hover { background: #f7a01a; color: white; }
+      .nav-menu a.menu-login i { color: inherit; width: auto; }
+
+      /* ── Responsive breakpoint ── */
+      @media (max-width: 700px) {
+        .header { padding: 0 16px; height: 58px; }
+        .header-brand h2 { font-size: 0.92rem; }
+        .nav-links { display: none; }       /* hide desktop nav */
+        .hamburger-btn { display: flex; }   /* show hamburger */
+        .nav-menu { top: 58px; }
+      }
+      @media (min-width: 701px) {
+        .nav-links { display: flex; }
+        .hamburger-btn { display: none !important; }
+        .nav-menu { display: none !important; }
       }
 
       /* HERO */
@@ -572,12 +618,12 @@
       <i class="fa-solid fa-volume-high"></i>
     </button>
 
-    <!-- Header with inline desktop nav -->
+    <!-- Header: desktop inline nav + mobile hamburger -->
     <div class="header" id="mainHeader">
-      <h2>
-        <i class="fa-solid fa-place-of-worship"></i> Shree Hanuman Mandir,
-        Paliya
-      </h2>
+      <div class="header-brand">
+        <h2><i class="fa-solid fa-place-of-worship"></i> Shree Hanuman Mandir, Paliya</h2>
+      </div>
+      <!-- Desktop nav -->
       <nav class="nav-links">
         <a href="#about"><i class="fa-solid fa-house"></i> Home</a>
         <a href="#about"><i class="fa-solid fa-info-circle"></i> About</a>
@@ -585,6 +631,19 @@
         <a href="#feedbackSection"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
         <a href="login.html" class="login-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
       </nav>
+      <!-- Mobile hamburger -->
+      <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
+        <i class="fa-solid fa-bars" id="hamburgerIcon"></i>
+      </button>
+    </div>
+
+    <!-- Mobile slide-down nav menu -->
+    <div class="nav-menu" id="navMenu">
+      <a href="#about" onclick="closeNavMenu()"><i class="fa-solid fa-house"></i> Home</a>
+      <a href="#about" onclick="closeNavMenu()"><i class="fa-solid fa-info-circle"></i> About</a>
+      <a href="#gallery" onclick="closeNavMenu()"><i class="fa-solid fa-images"></i> Gallery</a>
+      <a href="#feedbackSection" onclick="closeNavMenu()"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
+      <a href="login.html" class="menu-login"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
     </div>
 
     <div class="hero">
@@ -761,20 +820,25 @@
         if (isPlaying) toggleAudio();
       }, 12000);
 
-      /* FIX #2: Hamburger nav menu */
+      /* Hamburger nav menu toggle */
       function toggleNavMenu() {
         const menu = document.getElementById("navMenu");
-        menu.classList.toggle("open");
+        const icon = document.getElementById("hamburgerIcon");
+        const isOpen = menu.classList.toggle("open");
+        icon.className = isOpen ? "fa-solid fa-xmark" : "fa-solid fa-bars";
       }
       function closeNavMenu() {
-        document.getElementById("navMenu").classList.remove("open");
+        const menu = document.getElementById("navMenu");
+        const icon = document.getElementById("hamburgerIcon");
+        menu.classList.remove("open");
+        icon.className = "fa-solid fa-bars";
       }
       // Close menu when clicking outside
       document.addEventListener("click", function (e) {
         const menu = document.getElementById("navMenu");
-        const btn = document.querySelector(".hamburger-btn");
-        if (!menu.contains(e.target) && !btn.contains(e.target)) {
-          menu.classList.remove("open");
+        const btn = document.getElementById("hamburgerBtn");
+        if (btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+          closeNavMenu();
         }
       });
 
