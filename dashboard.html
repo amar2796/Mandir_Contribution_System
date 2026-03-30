@@ -575,18 +575,13 @@
               <i class="fa-solid fa-calendar-days cal-icon"></i>
             </div>
           </div>
-          <div style="display: flex; align-items: flex-end">
-            <button
-              style="width: 100%; padding: 10px; font-size: 12px"
-              onclick="clearDates()"
-            >
-              <i class="fa-solid fa-xmark"></i> Clear All Filters
-            </button>
-          </div>
         </div>
         <div class="actions">
           <button onclick="applyFilter()">
-            <i class="fa-solid fa-magnifying-glass"></i> Apply
+            <i class="fa-solid fa-filter"></i> Filter
+          </button>
+          <button onclick="clearDates()">
+            <i class="fa-solid fa-xmark"></i> Clear
           </button>
           <button class="btn-green" onclick="exportDashboardPDF()">
             <i class="fa-solid fa-file-pdf"></i> Export PDF
