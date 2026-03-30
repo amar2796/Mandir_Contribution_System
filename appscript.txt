@@ -108,6 +108,61 @@ function doGet(e) {
     }
   }
 
+  // ── SET SESSION TOKEN (called right after successful login)
+  // Writes a unique token into the USERS sheet Col9 (SessionToken).
+  // Any previous session on another device will fail checkSession.
+  else if (action === "setSessionToken") {
+    const userId = sanitize(e.parameter.userId, 30);
+    const token  = sanitize(e.parameter.token,  64);
+    if (!userId || !token) {
+      result = { status: "error", message: "Missing userId or token" };
+    } else {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+      const data  = sheet.getDataRange().getValues();
+      const headers = data[0];
+      // Find or create SessionToken column
+      let tokenCol = headers.indexOf("SessionToken");
+      if (tokenCol === -1) {
+        tokenCol = headers.length;
+        sheet.getRange(1, tokenCol + 1).setValue("SessionToken");
+      }
+      let found = false;
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === userId) {
+          sheet.getRange(i + 1, tokenCol + 1).setValue(token);
+          found = true;
+          break;
+        }
+      }
+      result = found ? { status: "ok" } : { status: "error", message: "User not found" };
+    }
+  }
+
+  // ── CHECK SESSION TOKEN (polled every ~60s from client)
+  // Returns { valid: true } if token matches, { valid: false } if not.
+  else if (action === "checkSession") {
+    const userId = sanitize(e.parameter.userId, 30);
+    const token  = sanitize(e.parameter.token,  64);
+    if (!userId || !token) {
+      result = { valid: false };
+    } else {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+      const data  = sheet.getDataRange().getValues();
+      const headers = data[0];
+      const tokenCol = headers.indexOf("SessionToken");
+      let valid = false;
+      if (tokenCol !== -1) {
+        for (let i = 1; i < data.length; i++) {
+          if (String(data[i][0]) === userId) {
+            valid = String(data[i][tokenCol]) === token;
+            break;
+          }
+        }
+      }
+      result = { valid: valid };
+    }
+  }
+
   // ── READ DATA
   else if (action === "getUsers")        result = getSheetData(SHEETS.USERS);
   else if (action === "getTypes")        result = getSheetData(SHEETS.TYPES);

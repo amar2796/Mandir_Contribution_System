@@ -489,6 +489,60 @@
           .join("");
       }
 
+      // ── Write session token to sheet (inline — app.js is NOT loaded on login page)
+      function setSessionTokenOnServer(userId, token) {
+        function _attempt(n) {
+          try {
+            var cb = "cb_sst_" + Date.now() + "_" + n;
+            var script = document.createElement("script");
+            var done = false;
+            window[cb] = function () {
+              if (done) return;
+              done = true;
+              try {
+                delete window[cb];
+                script.remove();
+              } catch (e2) {}
+            };
+            script.onerror = function () {
+              if (done) return;
+              done = true;
+              try {
+                delete window[cb];
+                script.remove();
+              } catch (e2) {}
+              if (n === 1)
+                setTimeout(function () {
+                  _attempt(2);
+                }, 4000);
+            };
+            script.src =
+              API_URL +
+              "?action=setSessionToken" +
+              "&userId=" +
+              encodeURIComponent(userId) +
+              "&token=" +
+              encodeURIComponent(token) +
+              "&callback=" +
+              cb;
+            document.body.appendChild(script);
+            setTimeout(function () {
+              if (!done) {
+                done = true;
+                try {
+                  delete window[cb];
+                } catch (e2) {}
+                if (n === 1)
+                  setTimeout(function () {
+                    _attempt(2);
+                  }, 4000);
+              }
+            }, 10000);
+          } catch (e) {}
+        }
+        _attempt(1);
+      }
+
       // ── LOGIN (FIX #1 — password hashed, no alert)
       async function login() {
         let mobile = document.getElementById("mobile").value.trim();
@@ -565,9 +619,7 @@
                 })
               );
               // Write token to sheet — invalidates any active session on other devices
-              if (typeof setSessionTokenOnServer === "function") {
-                setSessionTokenOnServer(String(user.UserId), sessionToken);
-              }
+              setSessionTokenOnServer(String(user.UserId), sessionToken);
               // FIX #6: Kick out OTHER tabs on same browser instantly
               const _myLoginToken =
                 Math.random().toString(36).slice(2) + Date.now();

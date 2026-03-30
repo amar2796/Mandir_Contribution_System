@@ -106,24 +106,27 @@ function broadcastSessionRevoke(userId){
 
 /* ── Write session token to sheet after login ── */
 function setSessionTokenOnServer(userId, token){
-  // Best-effort fire-and-forget. Wrapped in try/catch so a non-redeployed
-  // Apps Script returning an HTML error page never causes a SyntaxError crash.
-  try {
-    const cb = "cb_sst_" + Date.now();
-    const script = document.createElement("script");
-    // Swallow any error silently — this call is optional enhancement only
-    window[cb] = function(){ try{ delete window[cb]; script.remove(); }catch(e){} };
-    script.onerror = function(){ try{ delete window[cb]; script.remove(); }catch(e){} };
-    // Wrap JSONP execution in a safe global so HTML-error-page responses don't crash
-    script.src = API_URL + "?action=setSessionToken&userId=" +
-      encodeURIComponent(userId) + "&token=" + encodeURIComponent(token) +
-      "&callback=" + cb;
-    document.body.appendChild(script);
-    // Safety timeout — clean up if callback never fires (e.g. HTML response)
-    setTimeout(function(){
-      try{ if(window[cb]){ delete window[cb]; } }catch(e){}
-    }, 12000);
-  } catch(e){ /* silent — token write is best-effort */ }
+  function _attempt(n) {
+    try {
+      const cb = "cb_sst_" + Date.now() + "_" + n;
+      const script = document.createElement("script");
+      let done = false;
+      window[cb] = function(){ if(done)return; done=true; try{delete window[cb];script.remove();}catch(e){} };
+      script.onerror = function(){
+        if(done)return; done=true;
+        try{delete window[cb];script.remove();}catch(e){}
+        if(n===1) setTimeout(function(){_attempt(2);},4000);
+      };
+      script.src = API_URL + "?action=setSessionToken&userId=" +
+        encodeURIComponent(userId) + "&token=" + encodeURIComponent(token) +
+        "&callback=" + cb;
+      document.body.appendChild(script);
+      setTimeout(function(){
+        if(!done){ done=true; try{delete window[cb];}catch(e){} if(n===1) setTimeout(function(){_attempt(2);},4000); }
+      }, 10000);
+    } catch(e){}
+  }
+  _attempt(1);
 }
 
 /* ── Cross-device poll: verify token against sheet every 90s ── */
