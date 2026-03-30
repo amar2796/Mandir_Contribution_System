@@ -22,20 +22,17 @@
       }
       body {
         margin: 0;
-        padding: 12px 10px;
+        padding: 10px 8px;
         font-family: "Poppins", sans-serif;
         background: #f4f6f9;
         color: #333;
-      }
-      html {
-        scroll-padding-top: 12px;
       }
       h2 {
         text-align: center;
         color: #946c44;
         font-weight: 700;
         margin-bottom: 16px;
-        font-size: 1.35rem;
+        font-size: 1.4rem;
       }
       button {
         padding: 10px 18px;
@@ -1149,14 +1146,68 @@
           14,
           30
         );
+
+        // Build rows directly from filtered data (never from DOM) to keep names clean
         let rows = [];
-        document.querySelectorAll("#detailTable tbody tr").forEach((tr) => {
-          let r = [];
-          tr.querySelectorAll("td").forEach((td, i) => {
-            if (i < 6) r.push(td.innerText.replace("₹", "Rs.").trim());
-          });
-          if (r.length > 0 && r[0] !== "No records") rows.push(r);
+        // Contributions — sorted newest first same as table
+        let sortedC = [...filteredC].sort((a, b) => {
+          let p1 = String(a.PaymentDate || "")
+            .split(" ")[0]
+            .split("-");
+          let p2 = String(b.PaymentDate || "")
+            .split(" ")[0]
+            .split("-");
+          let d1 = p1.length === 3 ? `${p1[2]}-${p1[1]}-${p1[0]}` : "0";
+          let d2 = p2.length === 3 ? `${p2[2]}-${p2[1]}-${p2[0]}` : "0";
+          return d2.localeCompare(d1);
         });
+        sortedC.forEach((c) => {
+          // Clean display name — walk-in shows "Name (Walk-In)", registered shows name
+          const rawName = getDisplayName(c.UserId, c.Note);
+          const isWalkIn = String(c.UserId).startsWith("WALKIN_");
+          const displayName = isWalkIn ? `${rawName} (Walk-In)` : rawName;
+          const tName =
+            types.find((x) => String(x.TypeId) === String(c.TypeId))
+              ?.TypeName || "Contribution";
+          const oName =
+            occasions.find((x) => String(x.OccasionId) === String(c.OccasionId))
+              ?.OccasionName || "—";
+          rows.push([
+            c.PaymentDate || "N/A",
+            displayName,
+            tName,
+            c.ForMonth || "—",
+            oName,
+            "+ Rs." + Number(c.Amount || 0).toLocaleString("en-IN"),
+          ]);
+        });
+        // Expenses
+        let sortedE = [...filteredE].sort((a, b) => {
+          let p1 = String(a.PaymentDate || "")
+            .split(" ")[0]
+            .split("-");
+          let p2 = String(b.PaymentDate || "")
+            .split(" ")[0]
+            .split("-");
+          let d1 = p1.length === 3 ? `${p1[2]}-${p1[1]}-${p1[0]}` : "0";
+          let d2 = p2.length === 3 ? `${p2[2]}-${p2[1]}-${p2[0]}` : "0";
+          return d2.localeCompare(d1);
+        });
+        sortedE.forEach((e) => {
+          const tName =
+            expenseTypes.find(
+              (x) => String(x.ExpenseTypeId) === String(e.ExpenseTypeId)
+            )?.Name || "Expense";
+          rows.push([
+            e.PaymentDate || "N/A",
+            e.Title || "—",
+            tName,
+            e.ForMonth || "—",
+            "—",
+            "- Rs." + Number(e.Amount || 0).toLocaleString("en-IN"),
+          ]);
+        });
+
         doc.autoTable({
           head: [
             ["Date", "Name / Title", "Type", "Month", "Occasion", "Amount"],
@@ -1243,20 +1294,23 @@
         const totalE = document.getElementById("yearTotalE").innerText;
         const closing = document.getElementById("closing").innerText;
         const grandTotal = document.getElementById("grandTotal").innerText;
-        // Member wise
-        let map = {};
+        // Member-wise — include walk-in entries with clean name
+        let map = {},
+          noteMap = {};
         filteredC.forEach((c) => {
           map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
+          if (!noteMap[c.UserId]) noteMap[c.UserId] = c.Note || "";
         });
         let memberLines =
           Object.keys(map)
             .map((uid) => {
-              let u = users.find((x) => String(x.UserId) === String(uid));
-              return u
-                ? `  ✅ ${u.Name}: ₹${Number(map[uid]).toLocaleString("en-IN")}`
-                : "";
+              const name = getDisplayName(uid, noteMap[uid]);
+              const isWalkIn = String(uid).startsWith("WALKIN_");
+              const label = isWalkIn ? `${name} (Walk-In)` : name;
+              return `  ✅ ${label}: ₹${Number(map[uid]).toLocaleString(
+                "en-IN"
+              )}`;
             })
-            .filter(Boolean)
             .join("\n") || "  No contributions found";
         const msg =
           `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n` +
@@ -1282,19 +1336,23 @@
         const subject = encodeURIComponent(
           `Financial Report ${selectedYear} — Shree Hanuman Mandir`
         );
-        let map = {};
+        // Member-wise — include walk-in entries with clean name
+        let map = {},
+          noteMap = {};
         filteredC.forEach((c) => {
           map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
+          if (!noteMap[c.UserId]) noteMap[c.UserId] = c.Note || "";
         });
         let memberLines =
           Object.keys(map)
             .map((uid) => {
-              let u = users.find((x) => String(x.UserId) === String(uid));
-              return u
-                ? `  ${u.Name}: Rs.${Number(map[uid]).toLocaleString("en-IN")}`
-                : "";
+              const name = getDisplayName(uid, noteMap[uid]);
+              const isWalkIn = String(uid).startsWith("WALKIN_");
+              const label = isWalkIn ? `${name} (Walk-In)` : name;
+              return `  ${label}: Rs.${Number(map[uid]).toLocaleString(
+                "en-IN"
+              )}`;
             })
-            .filter(Boolean)
             .join("\n") || "  No contributions found";
         const body = encodeURIComponent(
           `SHREE HANUMAN MANDIR — FINANCIAL REPORT ${selectedYear}\nPaliya, Sultanpur\n\n` +
