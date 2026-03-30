@@ -1292,8 +1292,6 @@
         const genDate = new Date().toLocaleDateString("en-IN");
         const totalC = document.getElementById("yearFullC").innerText;
         const totalE = document.getElementById("yearTotalE").innerText;
-        const closing = document.getElementById("closing").innerText;
-        const grandTotal = document.getElementById("grandTotal").innerText;
         // Member-wise — include walk-in entries with clean name
         let map = {},
           noteMap = {};
@@ -1318,8 +1316,6 @@
           `━━━━━━━━━━━━━━━━━━━━\n` +
           `💰 Year Collection: ₹${totalC}\n` +
           `💸 Expenses: ₹${totalE}\n` +
-          `🏦 Closing Balance: ₹${closing}\n` +
-          `💎 Overall Balance: ₹${grandTotal}\n` +
           `━━━━━━━━━━━━━━━━━━━━\n` +
           `👥 *Member Contributions:*\n${memberLines}\n` +
           `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -1331,8 +1327,6 @@
         const genDate = new Date().toLocaleDateString("en-IN");
         const totalC = document.getElementById("yearFullC").innerText;
         const totalE = document.getElementById("yearTotalE").innerText;
-        const closing = document.getElementById("closing").innerText;
-        const grandTotal = document.getElementById("grandTotal").innerText;
         const subject = encodeURIComponent(
           `Financial Report ${selectedYear} — Shree Hanuman Mandir`
         );
@@ -1356,7 +1350,7 @@
             .join("\n") || "  No contributions found";
         const body = encodeURIComponent(
           `SHREE HANUMAN MANDIR — FINANCIAL REPORT ${selectedYear}\nPaliya, Sultanpur\n\n` +
-            `Year Collection : Rs.${totalC}\nExpenses        : Rs.${totalE}\nClosing Balance : Rs.${closing}\nOverall Balance : Rs.${grandTotal}\n\n` +
+            `Year Collection : Rs.${totalC}\nExpenses        : Rs.${totalE}\n\n` +
             `MEMBER-WISE CONTRIBUTIONS:\n${memberLines}\n\n` +
             `System Generated — ${genDate}\nNot Manually Signed`
         );
