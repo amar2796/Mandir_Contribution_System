@@ -106,15 +106,24 @@ function broadcastSessionRevoke(userId){
 
 /* ── Write session token to sheet after login ── */
 function setSessionTokenOnServer(userId, token){
-  // Best-effort — fire and forget via JSONP
-  const cb = "cb_sst_" + Date.now();
-  const script = document.createElement("script");
-  window[cb] = function(){ delete window[cb]; script.remove(); };
-  script.src = API_URL + "?action=setSessionToken&userId=" +
-    encodeURIComponent(userId) + "&token=" + encodeURIComponent(token) +
-    "&callback=" + cb;
-  script.onerror = function(){ delete window[cb]; script.remove(); };
-  document.body.appendChild(script);
+  // Best-effort fire-and-forget. Wrapped in try/catch so a non-redeployed
+  // Apps Script returning an HTML error page never causes a SyntaxError crash.
+  try {
+    const cb = "cb_sst_" + Date.now();
+    const script = document.createElement("script");
+    // Swallow any error silently — this call is optional enhancement only
+    window[cb] = function(){ try{ delete window[cb]; script.remove(); }catch(e){} };
+    script.onerror = function(){ try{ delete window[cb]; script.remove(); }catch(e){} };
+    // Wrap JSONP execution in a safe global so HTML-error-page responses don't crash
+    script.src = API_URL + "?action=setSessionToken&userId=" +
+      encodeURIComponent(userId) + "&token=" + encodeURIComponent(token) +
+      "&callback=" + cb;
+    document.body.appendChild(script);
+    // Safety timeout — clean up if callback never fires (e.g. HTML response)
+    setTimeout(function(){
+      try{ if(window[cb]){ delete window[cb]; } }catch(e){}
+    }, 12000);
+  } catch(e){ /* silent — token write is best-effort */ }
 }
 
 /* ── Cross-device poll: verify token against sheet every 90s ── */
@@ -125,43 +134,54 @@ function setSessionTokenOnServer(userId, token){
   if(!isProtected) return;
 
   function _poll(){
-    const s = JSON.parse(localStorage.getItem("session") || "null");
-    if(!s || !s.sessionToken || !s.userId) return;
-    if(Date.now() > s.expiry){
-      _forceLogout("⏰ Session expired. Please login again.");
-      return;
-    }
-    // Poll sheet for token match
-    const cb = "cb_cs_" + Date.now();
-    const script = document.createElement("script");
-    let done = false;
-    window[cb] = function(res){
-      if(done) return; done = true;
-      delete window[cb]; script.remove();
-      if(res && res.valid === false){
-        _forceLogout("⚠️ Your account was logged in from another device. This session has ended.");
-      }
-    };
-    const timer = setTimeout(()=>{
-      if(done) return; done = true;
-      delete window[cb]; script.remove();
-      // Timeout — don't log out, just skip this poll
-    }, 15000);
-    script.onerror = function(){
-      if(done) return; done = true;
-      clearTimeout(timer); delete window[cb]; script.remove();
-    };
-    script.src = API_URL + "?action=checkSession&userId=" +
-      encodeURIComponent(s.userId) + "&token=" +
-      encodeURIComponent(s.sessionToken) + "&callback=" + cb;
-    document.body.appendChild(script);
+    try {
+      const s = JSON.parse(localStorage.getItem("session") || "null");
+      // Skip poll entirely if session has no token (old session before redeployment,
+      // or Apps Script not yet updated — never log out in this case)
+      if(!s || !s.userId) return;
+      if(!s.sessionToken) return; // token not set yet — skip silently
+      if(Date.now() > s.expiry) return; // expiry timer handles this separately
+
+      const cb = "cb_cs_" + Date.now();
+      const script = document.createElement("script");
+      let done = false;
+
+      window[cb] = function(res){
+        if(done) return; done = true;
+        try{ delete window[cb]; script.remove(); }catch(e){}
+        // Only force logout on explicit { valid: false } — not on errors or missing fields
+        if(res && res.valid === false){
+          _forceLogout("⚠️ Your account was logged in from another device. This session has ended.");
+        }
+        // res.valid === true → do nothing, session is valid
+        // res is undefined/error → do nothing, skip this poll safely
+      };
+
+      const timer = setTimeout(function(){
+        if(done) return; done = true;
+        try{ delete window[cb]; script.remove(); }catch(e){}
+        // Timeout — network issue, skip this poll, never log out
+      }, 15000);
+
+      script.onerror = function(){
+        if(done) return; done = true;
+        clearTimeout(timer);
+        try{ delete window[cb]; script.remove(); }catch(e){}
+        // Script load error (e.g. HTML error page) — skip poll, never crash
+      };
+
+      script.src = API_URL + "?action=checkSession&userId=" +
+        encodeURIComponent(s.userId) + "&token=" +
+        encodeURIComponent(s.sessionToken) + "&callback=" + cb;
+      document.body.appendChild(script);
+    } catch(e){ /* silent — poll is best-effort */ }
   }
 
-  // Start polling after 10s (let page load finish), then every 90s
+  // Start polling after 15s (let page fully load + setSessionToken settle), then every 90s
   setTimeout(function(){
     _poll();
     setInterval(_poll, POLL_MS);
-  }, 10000);
+  }, 15000);
 })();
 
 /* ── Shared forced-logout helper ── */
