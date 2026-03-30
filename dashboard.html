@@ -388,88 +388,6 @@
     </div>
 
     <div class="grid-layout">
-      <div class="card">
-        <h3><i class="fa-solid fa-filter"></i> Advanced Data Filters</h3>
-        <label>Select Year</label>
-        <select id="yearSelect"></select>
-        <div class="filter-grid">
-          <div>
-            <label>User Search</label>
-            <input
-              type="text"
-              id="dashUserSearch"
-              placeholder="Name or Mobile"
-              onkeyup="applyFilter()"
-            />
-          </div>
-          <div>
-            <label>Tracking ID (MNR-)</label>
-            <input
-              type="text"
-              id="dashTrackingSearch"
-              placeholder="MNR-... or TRX-..."
-              onkeyup="applyFilter()"
-            />
-          </div>
-          <div>
-            <label>Start Date</label>
-            <div class="date-wrap">
-              <input
-                type="text"
-                id="dashStart"
-                placeholder="Select date"
-                readonly
-                onclick="openCal('start')"
-                style="cursor: pointer; padding-right: 32px"
-              />
-              <i class="fa-solid fa-calendar-days cal-icon"></i>
-            </div>
-          </div>
-          <div>
-            <label>End Date</label>
-            <div class="date-wrap">
-              <input
-                type="text"
-                id="dashEnd"
-                placeholder="Select date"
-                readonly
-                onclick="openCal('end')"
-                style="cursor: pointer; padding-right: 32px"
-              />
-              <i class="fa-solid fa-calendar-days cal-icon"></i>
-            </div>
-          </div>
-          <div style="display: flex; align-items: flex-end">
-            <button
-              style="width: 100%; padding: 10px; font-size: 12px"
-              onclick="clearDates()"
-            >
-              <i class="fa-solid fa-xmark"></i> Clear All Filters
-            </button>
-          </div>
-        </div>
-        <div class="actions">
-          <button onclick="applyFilter()">
-            <i class="fa-solid fa-magnifying-glass"></i> Apply
-          </button>
-          <button class="btn-green" onclick="exportDashboardPDF()">
-            <i class="fa-solid fa-file-pdf"></i> Export PDF
-          </button>
-          <button
-            style="background: #25d366; box-shadow: none"
-            onclick="dashboardWhatsApp()"
-          >
-            <i class="fa-brands fa-whatsapp"></i> WhatsApp
-          </button>
-          <button
-            style="background: #2980b9; box-shadow: none"
-            onclick="dashboardEmail()"
-          >
-            <i class="fa-solid fa-envelope"></i> Email
-          </button>
-        </div>
-      </div>
-
       <div class="card summary-text">
         <h3 id="yearTitle"><i class="fa-solid fa-wallet"></i> Year Summary</h3>
         <div
@@ -604,6 +522,87 @@
           <div style="font-size: 1.5rem; font-weight: 700; color: #f7a01a">
             ₹ <span id="grandTotal">0</span>
           </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3><i class="fa-solid fa-filter"></i> Advanced Data Filters</h3>
+        <label>Select Year</label>
+        <select id="yearSelect"></select>
+        <div class="filter-grid">
+          <div>
+            <label>User Search</label>
+            <input
+              type="text"
+              id="dashUserSearch"
+              placeholder="Name or Mobile"
+              onkeyup="applyFilter()"
+            />
+          </div>
+          <div>
+            <label>Tracking ID (MNR-)</label>
+            <input
+              type="text"
+              id="dashTrackingSearch"
+              placeholder="MNR-... or TRX-..."
+              onkeyup="applyFilter()"
+            />
+          </div>
+          <div>
+            <label>Start Date</label>
+            <div class="date-wrap">
+              <input
+                type="text"
+                id="dashStart"
+                placeholder="Select date"
+                readonly
+                onclick="openCal('start')"
+                style="cursor: pointer; padding-right: 32px"
+              />
+              <i class="fa-solid fa-calendar-days cal-icon"></i>
+            </div>
+          </div>
+          <div>
+            <label>End Date</label>
+            <div class="date-wrap">
+              <input
+                type="text"
+                id="dashEnd"
+                placeholder="Select date"
+                readonly
+                onclick="openCal('end')"
+                style="cursor: pointer; padding-right: 32px"
+              />
+              <i class="fa-solid fa-calendar-days cal-icon"></i>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-end">
+            <button
+              style="width: 100%; padding: 10px; font-size: 12px"
+              onclick="clearDates()"
+            >
+              <i class="fa-solid fa-xmark"></i> Clear All Filters
+            </button>
+          </div>
+        </div>
+        <div class="actions">
+          <button onclick="applyFilter()">
+            <i class="fa-solid fa-magnifying-glass"></i> Apply
+          </button>
+          <button class="btn-green" onclick="exportDashboardPDF()">
+            <i class="fa-solid fa-file-pdf"></i> Export PDF
+          </button>
+          <button
+            style="background: #25d366; box-shadow: none"
+            onclick="dashboardWhatsApp()"
+          >
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp
+          </button>
+          <button
+            style="background: #2980b9; box-shadow: none"
+            onclick="dashboardEmail()"
+          >
+            <i class="fa-solid fa-envelope"></i> Email
+          </button>
         </div>
       </div>
     </div>
