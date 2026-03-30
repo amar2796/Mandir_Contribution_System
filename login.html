@@ -548,6 +548,11 @@
             if (res.status === "success") {
               let user = res.user;
               delete user.Password;
+              // Generate a unique session token for cross-device single-session enforcement
+              const sessionToken =
+                Math.random().toString(36).slice(2) +
+                Math.random().toString(36).slice(2) +
+                Date.now();
               localStorage.setItem(
                 "session",
                 JSON.stringify({
@@ -556,9 +561,14 @@
                   role: user.Role,
                   email: user.Email || "",
                   expiry: Date.now() + 30 * 60 * 1000,
+                  sessionToken: sessionToken,
                 })
               );
-              // FIX #6: Kick out OTHER tabs — pass newTabToken so current tab keeps session
+              // Write token to sheet — invalidates any active session on other devices
+              if (typeof setSessionTokenOnServer === "function") {
+                setSessionTokenOnServer(String(user.UserId), sessionToken);
+              }
+              // FIX #6: Kick out OTHER tabs on same browser instantly
               const _myLoginToken =
                 Math.random().toString(36).slice(2) + Date.now();
               window._myTabToken = _myLoginToken;

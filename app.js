@@ -63,25 +63,31 @@ function postData(data) {
   });
 }
 
-/* ═══ ONE-SESSION-PER-USER (Broadcast across tabs) ═══ */
-/* FIX #6: Generate a unique tab token on load. When a new login happens,
-   the old tab receives SESSION_REVOKED. Current tab keeps its session.
-   On login, a new sessionToken is written to localStorage; old tab detects
-   token mismatch and logs out automatically. */
+/* ═══════════════════════════════════════════════════════════
+   ONE SESSION PER USER — Cross-device single session system
+   ═══════════════════════════════════════════════════════════
+   HOW IT WORKS:
+   1. On login: a random sessionToken is generated, saved to
+      localStorage AND written to the USERS sheet (setSessionToken).
+   2. Every 90 seconds: checkSession polls the sheet. If the token
+      stored on sheet no longer matches localStorage (because another
+      device logged in and overwrote it), this tab is logged out.
+   3. BroadcastChannel still handles same-browser/same-device tabs
+      instantly without waiting for the 90s poll.
+   ═══════════════════════════════════════════════════════════ */
+
 window._myTabToken = Math.random().toString(36).slice(2) + Date.now();
 
+/* ── Same-browser tab kick (instant) ── */
 (function(){
   if(typeof BroadcastChannel !== "undefined"){
     window._sessionBC = new BroadcastChannel("mandir_session");
     window._sessionBC.onmessage = function(e){
       if(e.data && e.data.type === "SESSION_REVOKED"){
         const s = JSON.parse(localStorage.getItem("session") || "null");
-        // Only log out if userId matches AND tab token doesn't match (not the new login tab)
         if(s && String(s.userId) === String(e.data.userId) &&
            e.data.newTabToken !== window._myTabToken){
-          localStorage.clear();
-          toast("⚠️ You logged in from another device/tab. This session has ended.", "warn");
-          setTimeout(()=>location.replace("login.html"), 2000);
+          _forceLogout("⚠️ Logged in from another tab. This session has ended.");
         }
       }
     };
@@ -93,24 +99,101 @@ function broadcastSessionRevoke(userId){
     window._sessionBC.postMessage({
       type:"SESSION_REVOKED",
       userId: String(userId),
-      newTabToken: window._myTabToken  // current tab keeps session, others log out
+      newTabToken: window._myTabToken
     });
   }
+}
+
+/* ── Write session token to sheet after login ── */
+function setSessionTokenOnServer(userId, token){
+  // Best-effort — fire and forget via JSONP
+  const cb = "cb_sst_" + Date.now();
+  const script = document.createElement("script");
+  window[cb] = function(){ delete window[cb]; script.remove(); };
+  script.src = API_URL + "?action=setSessionToken&userId=" +
+    encodeURIComponent(userId) + "&token=" + encodeURIComponent(token) +
+    "&callback=" + cb;
+  script.onerror = function(){ delete window[cb]; script.remove(); };
+  document.body.appendChild(script);
+}
+
+/* ── Cross-device poll: verify token against sheet every 90s ── */
+(function(){
+  const POLL_MS = 90000; // 90 seconds
+  const PROTECTED = ["admin.html","user.html","dashboard.html"];
+  const isProtected = PROTECTED.some(p => window.location.pathname.includes(p.replace(".html","")));
+  if(!isProtected) return;
+
+  function _poll(){
+    const s = JSON.parse(localStorage.getItem("session") || "null");
+    if(!s || !s.sessionToken || !s.userId) return;
+    if(Date.now() > s.expiry){
+      _forceLogout("⏰ Session expired. Please login again.");
+      return;
+    }
+    // Poll sheet for token match
+    const cb = "cb_cs_" + Date.now();
+    const script = document.createElement("script");
+    let done = false;
+    window[cb] = function(res){
+      if(done) return; done = true;
+      delete window[cb]; script.remove();
+      if(res && res.valid === false){
+        _forceLogout("⚠️ Your account was logged in from another device. This session has ended.");
+      }
+    };
+    const timer = setTimeout(()=>{
+      if(done) return; done = true;
+      delete window[cb]; script.remove();
+      // Timeout — don't log out, just skip this poll
+    }, 15000);
+    script.onerror = function(){
+      if(done) return; done = true;
+      clearTimeout(timer); delete window[cb]; script.remove();
+    };
+    script.src = API_URL + "?action=checkSession&userId=" +
+      encodeURIComponent(s.userId) + "&token=" +
+      encodeURIComponent(s.sessionToken) + "&callback=" + cb;
+    document.body.appendChild(script);
+  }
+
+  // Start polling after 10s (let page load finish), then every 90s
+  setTimeout(function(){
+    _poll();
+    setInterval(_poll, POLL_MS);
+  }, 10000);
+})();
+
+/* ── Shared forced-logout helper ── */
+function _forceLogout(message){
+  const s = JSON.parse(localStorage.getItem("session") || "null");
+  try {
+    if(s && s.userId){
+      // Log the forced logout in audit
+      postData({ action:"logout", userId:s.userId, userName:s.name||"User" }).catch(()=>{});
+    }
+  } catch(e){}
+  localStorage.clear();
+  sessionStorage.clear();
+  toast(message || "Session ended. Please login again.", "warn");
+  setTimeout(()=>location.replace("login.html"), 2200);
 }
 
 
 function checkSession() {
   let s=JSON.parse(localStorage.getItem("session"));
-  if(!s||Date.now()>s.expiry){localStorage.clear();toast("Session expired. Please login again.","error");setTimeout(()=>location.replace("login.html"),1500);return false;}
-  // FIX #10: Refresh expiry on activity (30-min sliding window)
+  if(!s||Date.now()>s.expiry){
+    _forceLogout("Session expired. Please login again.");
+    return false;
+  }
+  // Refresh sliding expiry window on activity
   s.expiry=Date.now()+30*60*1000;
   localStorage.setItem("session",JSON.stringify(s));
   return true;
 }
 
-/* FIX #10: Auto 30-min session expiry — check every 60 seconds for inactivity */
+/* ── Auto 30-min session expiry — activity-based sliding window ── */
 (function(){
-  // Track last activity
   function _touchSession(){
     let s=JSON.parse(localStorage.getItem("session")||"null");
     if(!s) return;
@@ -120,16 +203,14 @@ function checkSession() {
   ["click","keydown","touchstart","scroll"].forEach(evt=>{
     document.addEventListener(evt, _touchSession, {passive:true});
   });
-  // Poll every 60s — if expired and page is a protected page, redirect
+  // Poll every 60s — if expired on a protected page, force logout
   setInterval(function(){
     let s=JSON.parse(localStorage.getItem("session")||"null");
     if(s && Date.now()>s.expiry){
       const isProtected = window.location.pathname.includes("admin") ||
                           window.location.pathname.includes("user");
       if(isProtected){
-        localStorage.clear();
-        toast("⏰ Session expired after 30 minutes of inactivity.","warn");
-        setTimeout(()=>location.replace("login.html"),1800);
+        _forceLogout("⏰ Session expired after 30 minutes of inactivity.");
       }
     }
   }, 60000);
