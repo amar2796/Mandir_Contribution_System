@@ -10,7 +10,8 @@ const SHEETS = {
   CONTRIBUTIONS: "CONTRIBUTIONS",
   EXPENSES: "EXPENSES",
   AUDIT: "AUDIT_LOGS",
-  GOALS: "GOALS"
+  GOALS: "GOALS",
+  GALLERY: "GALLERY"
 };
 
 // ── Hash password (SHA-256, matches client-side sha256())
@@ -256,6 +257,67 @@ function doGet(e) {
     const idx = rows.findIndex(r => String(r.GoalId) === rid);
     if (idx === -1) { result = { status: "error", message: "Goal not found" }; }
     else { sheet.deleteRow(idx + 2); logAction("Admin", "deleteGoal", rid); result = { status: "deleted" }; }
+  }
+
+  // ── GET GALLERY PHOTOS
+  else if (action === "getGallery") {
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.GALLERY);
+      if (!sheet) { result = []; }
+      else {
+        const data = sheet.getDataRange().getValues();
+        if (data.length < 2) { result = []; }
+        else {
+          const headers = data[0];
+          const rows = data.slice(1);
+          result = rows
+            .filter(r => String(r[headers.indexOf("Status")] || "Active") !== "Deleted")
+            .map(r => ({
+              PhotoId:  r[headers.indexOf("ImageId")]  || "",
+              Caption:  r[headers.indexOf("Title")]    || "",
+              PhotoURL: r[headers.indexOf("PhotoURL")] || "",
+              Priority: r[headers.indexOf("Priority")] || "",
+              Status:   r[headers.indexOf("Status")]   || "",
+              AddedAt:  r[headers.indexOf("CreatedAt")]|| ""
+            }))
+            .sort((a, b) => (Number(a.Priority) || 999) - (Number(b.Priority) || 999));
+        }
+      }
+    } catch(err) { result = []; }
+  }
+
+  // ── DELETE GALLERY PHOTO (via JSONP GET)
+  else if (action === "deleteGalleryPhoto") {
+    const photoId = sanitize(e.parameter.PhotoId, 50);
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.GALLERY);
+      if (!sheet) { result = { status: "error", message: "GALLERY sheet not found" }; }
+      else {
+        const data = sheet.getDataRange().getValues();
+        const headers = data[0];
+        const idCol = headers.indexOf("ImageId");
+        const urlCol = headers.indexOf("PhotoURL");
+        let found = false;
+        for (let i = 1; i < data.length; i++) {
+          if (String(data[i][idCol]) === photoId) {
+            // Try to delete from Drive
+            try {
+              const url = String(data[i][urlCol] || "");
+              if (url.includes("lh3.googleusercontent.com/d/")) {
+                const fileId = url.split("/d/")[1].split("?")[0].trim();
+                if (fileId && fileId.length > 10) DriveApp.getFileById(fileId).setTrashed(true);
+              }
+            } catch(driveErr) { /* non-fatal */ }
+            sheet.deleteRow(i + 1);
+            logAction(sanitize(e.parameter.AdminName, 100) || "Admin", "deleteGalleryPhoto", "PhotoId: " + photoId);
+            found = true;
+            result = { status: "deleted" };
+            break;
+          }
+        }
+        if (!found) result = { status: "error", message: "Photo not found" };
+      }
+    } catch(err) { result = { status: "error", message: err.message }; }
   }
 
   // ── GET ALL DATA IN ONE REQUEST
@@ -723,6 +785,39 @@ function doPost(e) {
 
       logAction(data.AdminName || "User", "Upload Photo", "UserId: " + data.UserId); // FIX #30
       result = { status: "success", photoUrl: photoUrl };
+    } else if (data.action === "uploadGalleryPhoto") {
+      // Upload photo to Drive and save record to GALLERY sheet
+      if (!data.base64 || !data.fileName) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Missing base64 or fileName." }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // Upload the file to Drive
+      const photoUrl = uploadUserPhoto(data.base64, sanitize(data.fileName, 100));
+
+      // Ensure GALLERY sheet exists with correct headers
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let galSheet = ss.getSheetByName(SHEETS.GALLERY);
+      if (!galSheet) {
+        galSheet = ss.insertSheet(SHEETS.GALLERY);
+        galSheet.appendRow(["ImageId", "Title", "PhotoURL", "Priority", "Status", "CreatedAt"]);
+      }
+
+      const headers = galSheet.getRange(1, 1, 1, galSheet.getLastColumn()).getValues()[0];
+      const newId = generateId();
+      const row = headers.map(h => {
+        if (h === "ImageId")   return newId;
+        if (h === "Title")     return sanitize(data.caption || data.Caption || "", 200);
+        if (h === "PhotoURL")  return photoUrl;
+        if (h === "Priority")  return Number(data.priority || 999);
+        if (h === "Status")    return "Active";
+        if (h === "CreatedAt") return formatDate();
+        return "";
+      });
+      galSheet.appendRow(row);
+      logAction(sanitize(data.AdminName, 100) || "Admin", "uploadGalleryPhoto", "Id: " + newId);
+      result = { status: "success", photoUrl: photoUrl, photoId: newId };
+
     } else {
       result = { status: "error", message: "Unknown action." };
     }
