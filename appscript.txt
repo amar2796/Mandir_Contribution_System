@@ -138,32 +138,70 @@ function doGet(e) {
     }
   }
 
-  // ── CHECK SESSION TOKEN (polled every ~60s from client)
-  // Returns { valid: true } if token matches, { valid: false } if not.
+  // ── CHECK SESSION TOKEN (polled by client — Admin every 60s, User every 10min)
+  // Returns { valid: true }  if token matches, OR if stored token is blank
+  //                          (manual row / first login race — never false-logout).
+  // Returns { valid: false } ONLY when a real non-empty token exists AND mismatches.
   else if (action === "checkSession") {
     const userId = sanitize(e.parameter.userId, 30);
     const token  = sanitize(e.parameter.token,  64);
     if (!userId || !token) {
-      result = { valid: false };
+      result = { valid: true }; // Missing params — safe default, never force logout
     } else {
-      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
-      const data  = sheet.getDataRange().getValues();
-      const headers = data[0];
-      const tokenCol = headers.indexOf("SessionToken");
-      let valid = false;
-      if (tokenCol !== -1) {
-        for (let i = 1; i < data.length; i++) {
-          if (String(data[i][0]) === userId) {
-            valid = String(data[i][tokenCol]) === token;
-            break;
+      try {
+        const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+        const allData = sheet.getDataRange().getValues();
+        const headers = allData[0];
+        const tokenCol = headers.indexOf("SessionToken");
+        if (tokenCol === -1) {
+          result = { valid: true }; // Column not created yet — session system inactive
+        } else {
+          let isValid = true; // safe default
+          for (let i = 1; i < allData.length; i++) {
+            if (String(allData[i][0]) === userId) {
+              const stored = String(allData[i][tokenCol] || "").trim();
+              if (stored === "") {
+                isValid = true;  // Empty cell = manual row / token not written yet
+              } else {
+                isValid = (stored === token); // Real token — compare strictly
+              }
+              break;
+            }
           }
+          result = { valid: isValid };
         }
+      } catch(err) {
+        result = { valid: true }; // Exception — never force logout
       }
-      result = { valid: valid };
     }
   }
 
-  // ── READ DATA
+  // ── CLEAR SESSION TOKEN (called by beforeunload beacon on browser/tab close)
+  // Blanks the token so the next login starts clean. sendBeacon sends as GET.
+  // Safe default: if userId missing or user not found, returns ok silently.
+  else if (action === "clearSessionToken") {
+    const userId = sanitize(e.parameter.userId, 30);
+    if (userId) {
+      try {
+        const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+        const allData = sheet.getDataRange().getValues();
+        const headers = allData[0];
+        const tokenCol = headers.indexOf("SessionToken");
+        if (tokenCol !== -1) {
+          for (let i = 1; i < allData.length; i++) {
+            if (String(allData[i][0]) === userId) {
+              sheet.getRange(i + 1, tokenCol + 1).setValue("");
+              SpreadsheetApp.flush();
+              break;
+            }
+          }
+        }
+      } catch(e) { /* silent — beacon clear is best-effort */ }
+    }
+    result = { status: "ok" };
+  }
+
+    // ── READ DATA
   else if (action === "getUsers")        result = getSheetData(SHEETS.USERS);
   else if (action === "getTypes")        result = getSheetData(SHEETS.TYPES);
   else if (action === "getExpenseTypes") result = getSheetData(SHEETS.EXPENSE_TYPES);

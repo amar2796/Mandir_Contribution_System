@@ -641,6 +641,9 @@
           <li onclick="showPage('goalsPage',this)">
             <i class="fa-solid fa-bullseye"></i> Manage Goals
           </li>
+          <li onclick="showPage('galleryAdminPage',this)">
+            <i class="fa-solid fa-images"></i> Gallery
+          </li>
           <li onclick="showPage('broadcastPage',this)">
             <i class="fa-solid fa-bullhorn"></i> Broadcast
           </li>
@@ -1487,6 +1490,42 @@
           </div>
         </div>
 
+        <!-- GALLERY MANAGEMENT PAGE -->
+        <div id="galleryAdminPage" class="page">
+          <div class="card">
+            <h3><i class="fa-solid fa-images" style="color:#f7a01a;"></i> Manage Gallery</h3>
+            <p style="color:#666;margin-bottom:24px;font-size:14px;">Upload photos to appear in the home page slideshow carousel.</p>
+
+            <!-- Upload Form -->
+            <div style="background:rgba(247,160,26,0.07);border:1px solid rgba(247,160,26,0.25);border-radius:14px;padding:22px;max-width:520px;margin-bottom:30px;">
+              <h4 style="margin-top:0;color:#946c44;font-size:15px;">Add New Photo</h4>
+              <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+                <div id="glryPreviewWrap" style="width:90px;height:90px;border-radius:10px;overflow:hidden;background:#f0e8d8;border:2px solid #f7a01a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                  <img id="glryPreviewImg" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;">
+                  <i class="fa-solid fa-image" style="color:#ccc;font-size:2rem;" id="glryPreviewIcon"></i>
+                </div>
+                <div style="flex:1;">
+                  <label style="display:block;font-size:12px;color:#888;margin-bottom:6px;">Select Photo (max 5MB)</label>
+                  <input type="file" id="glryFileInput" accept="image/*" onchange="handleGlryFileSelect(this)" style="width:100%;font-size:13px;">
+                </div>
+              </div>
+              <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">Caption (optional)</label>
+              <input id="glryCaptionInput" placeholder="e.g. Ram Navami 2025" maxlength="200"
+                style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
+              <button onclick="uploadGalleryPhoto()"
+                style="background:#f7a01a;color:#fff;border:none;padding:11px 28px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;width:100%;transition:background 0.2s;"
+                onmouseover="this.style.background='#d35400'" onmouseout="this.style.background='#f7a01a'">
+                <i class="fa-solid fa-upload"></i>&nbsp; Upload to Gallery
+              </button>
+            </div>
+
+            <!-- Current Photos Grid -->
+            <h4 style="color:#946c44;font-size:15px;margin-bottom:14px;">Current Gallery Photos</h4>
+            <div id="glryPhotoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;"></div>
+            <p id="glryNoPhotos" style="color:#aaa;font-size:14px;display:none;"><i class="fa-solid fa-images"></i> No photos in gallery yet.</p>
+          </div>
+        </div>
+
         <!-- BROADCAST PAGE -->
         <div id="broadcastPage" class="page">
           <div class="card">
@@ -2028,7 +2067,121 @@
           document.querySelector(".overlay").classList.remove("active");
           document.body.style.overflow = "auto";
         }
+        // Load gallery when that page is opened
+        if (id === "galleryAdminPage") loadGalleryAdmin();
       }
+
+      /* ══════════════════════════════
+         GALLERY ADMIN FUNCTIONS
+         ══════════════════════════════ */
+      var _glryB64 = null, _glryFileName = "";
+
+      function handleGlryFileSelect(input) {
+        var file = input.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+          toast("Photo must be under 5MB.", "error");
+          input.value = "";
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          _glryB64 = ev.target.result;
+          _glryFileName = file.name;
+          var img = document.getElementById("glryPreviewImg");
+          img.src = _glryB64;
+          img.style.display = "block";
+          document.getElementById("glryPreviewIcon").style.display = "none";
+        };
+        reader.readAsDataURL(file);
+      }
+
+      async function uploadGalleryPhoto() {
+        if (!_glryB64) { toast("Please select a photo first.", "warn"); return; }
+        var caption = document.getElementById("glryCaptionInput").value.trim();
+        var session = JSON.parse(localStorage.getItem("session") || "{}");
+        toast("Uploading photo...", "warn");
+        try {
+          var response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+              action: "uploadGalleryPhoto",
+              base64: _glryB64,
+              fileName: _glryFileName,
+              caption: caption,
+              AdminName: session.name || "Admin"
+            })
+          });
+          var res = await response.json();
+          if (res.status === "success") {
+            toast("Photo uploaded to gallery!", "success");
+            _glryB64 = null; _glryFileName = "";
+            document.getElementById("glryFileInput").value = "";
+            document.getElementById("glryCaptionInput").value = "";
+            var img = document.getElementById("glryPreviewImg");
+            img.src = ""; img.style.display = "none";
+            document.getElementById("glryPreviewIcon").style.display = "";
+            loadGalleryAdmin();
+          } else {
+            toast("Upload failed: " + (res.message || "Unknown error"), "error");
+          }
+        } catch(err) { toast("Upload error: " + err.message, "error"); }
+      }
+
+      async function loadGalleryAdmin() {
+        var grid = document.getElementById("glryPhotoGrid");
+        var noPhotos = document.getElementById("glryNoPhotos");
+        if (!grid) return;
+        grid.innerHTML = "<p style='color:#aaa;font-size:13px;'><i class='fa-solid fa-spinner fa-spin'></i> Loading...</p>";
+        noPhotos.style.display = "none";
+        try {
+          var photos = await getData("getGallery");
+          grid.innerHTML = "";
+          if (!Array.isArray(photos) || photos.length === 0) {
+            noPhotos.style.display = "block";
+            return;
+          }
+          photos.forEach(function(p) {
+            var card = document.createElement("div");
+            card.style.cssText = "border-radius:10px;overflow:hidden;border:1px solid #eee;box-shadow:0 2px 8px rgba(0,0,0,0.07);background:#fff;position:relative;";
+            card.innerHTML =
+              '<img src="' + escapeHtml(p.PhotoURL) + '" alt="' + escapeHtml(p.Caption || "") + '" ' +
+              'style="width:100%;height:130px;object-fit:cover;display:block;" loading="lazy">' +
+              '<div style="padding:8px 10px 10px;">' +
+                '<div style="font-size:12px;font-weight:600;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+                  escapeHtml(p.Caption || "—") +
+                '</div>' +
+                '<div style="font-size:11px;color:#bbb;margin-top:3px;">' + escapeHtml(p.AddedAt) + '</div>' +
+              '</div>' +
+              '<button onclick="deleteGalleryPhoto(\'' + escapeHtml(p.PhotoId) + '\')" ' +
+              'title="Delete photo" ' +
+              'style="position:absolute;top:6px;right:6px;background:rgba(231,76,60,0.85);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;cursor:pointer;">' +
+              '<i class="fa-solid fa-trash"></i></button>';
+            grid.appendChild(card);
+          });
+        } catch(err) {
+          grid.innerHTML = "<p style='color:#e74c3c;font-size:13px;'>Error loading gallery.</p>";
+        }
+      }
+
+      async function deleteGalleryPhoto(photoId) {
+        if (!confirm("Delete this photo from the gallery? This cannot be undone.")) return;
+        var session = JSON.parse(localStorage.getItem("session") || "{}");
+        try {
+          var res = await postData({
+            action: "deleteGalleryPhoto",
+            PhotoId: photoId,
+            AdminName: session.name || "Admin"
+          });
+          if (res.status === "deleted") {
+            toast("Photo deleted from gallery.", "success");
+            loadGalleryAdmin();
+          } else {
+            toast("Delete failed: " + (res.message || "Not found"), "error");
+          }
+        } catch(err) { toast("Error: " + err.message, "error"); }
+      }
+
       function openDashboard(el) {
         showPage("dashboardPage", el);
         let f = document.getElementById("dashboardFrame");

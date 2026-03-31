@@ -466,6 +466,92 @@
         margin: 0;
       }
 
+      /* ── GALLERY CAROUSEL ── */
+      .gallery-carousel-wrap {
+        position: relative;
+        max-width: 720px;
+        margin: 32px auto 0;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        background: #000;
+      }
+      .gallery-carousel {
+        display: flex;
+        transition: transform 0.5s cubic-bezier(.4,0,.2,1);
+        will-change: transform;
+      }
+      .gc-slide {
+        min-width: 100%;
+        position: relative;
+      }
+      .gc-slide img {
+        width: 100%;
+        height: 400px;
+        object-fit: cover;
+        display: block;
+      }
+      .gc-caption {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,0.68));
+        color: #fff;
+        padding: 28px 20px 16px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        text-align: left;
+        pointer-events: none;
+      }
+      .gc-btn {
+        position: absolute;
+        top: 50%; transform: translateY(-50%);
+        background: rgba(255,255,255,0.18);
+        border: none; color: #fff;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        font-size: 1.2rem;
+        cursor: pointer;
+        backdrop-filter: blur(4px);
+        transition: background 0.2s;
+        z-index: 10;
+      }
+      .gc-btn:hover { background: rgba(247,160,26,0.75); }
+      .gc-prev { left: 12px; }
+      .gc-next { right: 12px; }
+      .gc-dots {
+        position: absolute;
+        bottom: 12px; left: 50%;
+        transform: translateX(-50%);
+        display: flex; gap: 7px; z-index: 10;
+      }
+      .gc-dot {
+        width: 9px; height: 9px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.45);
+        cursor: pointer;
+        transition: background 0.25s, transform 0.2s;
+        border: none;
+        padding: 0;
+      }
+      .gc-dot.active {
+        background: #f7a01a;
+        transform: scale(1.25);
+      }
+      .gallery-loading-msg {
+        margin-top: 32px;
+        color: #b89060;
+        font-size: 1rem;
+      }
+      .gallery-empty-msg {
+        margin-top: 32px;
+        color: #999;
+        font-size: 1rem;
+        display: none;
+      }
+      @media(max-width:600px) {
+        .gc-slide img { height: 220px; }
+      }
+
       /* ══ FEEDBACK SECTION — FIX #1 ══ */
       .feedback-section {
         padding: 60px 20px;
@@ -823,26 +909,25 @@
 
     <div class="section reveal" id="gallery">
       <h2>Gallery</h2>
-      <div class="cards">
-        <div class="card">
-          <h3><i class="fa-solid fa-hand-holding-dollar"></i> Contributions</h3>
-          <p>Track all incoming donations seamlessly and view daily totals.</p>
-        </div>
-        <div class="card">
-          <h3><i class="fa-solid fa-chart-column"></i> Dashboard</h3>
-          <p>View visual analytics, expense reports, and balances.</p>
-        </div>
-        <div class="card">
-          <h3><i class="fa-solid fa-user-shield"></i> Admin Control</h3>
-          <p>Manage registered users, update records, and export data.</p>
-        </div>
-        <div class="card">
-          <h3><i class="fa-solid fa-users"></i> User Panel</h3>
-          <p>
-            Allow members to log in and securely view their personal
-            contributions.
-          </p>
-        </div>
+      <p>Moments from our Mandir events and celebrations</p>
+
+      <!-- Loading state -->
+      <div class="gallery-loading-msg" id="galleryLoading">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading gallery...
+      </div>
+
+      <!-- Empty state -->
+      <div class="gallery-empty-msg" id="galleryEmpty">
+        <i class="fa-solid fa-images" style="font-size:2rem;color:#f7a01a;display:block;margin-bottom:10px;"></i>
+        No photos yet. Check back soon! 🙏
+      </div>
+
+      <!-- Carousel (hidden until photos load) -->
+      <div class="gallery-carousel-wrap" id="galleryCarouselWrap" style="display:none;">
+        <div class="gallery-carousel" id="galleryCarousel"></div>
+        <button class="gc-btn gc-prev" onclick="gallerySlide(-1)" aria-label="Previous">&#10094;</button>
+        <button class="gc-btn gc-next" onclick="gallerySlide(1)" aria-label="Next">&#10095;</button>
+        <div class="gc-dots" id="gcDots"></div>
       </div>
     </div>
 
@@ -902,6 +987,68 @@
 
     <script src="config.js"></script>
     <script src="app.js"></script>
+    <script>
+      /* ── Gallery Carousel ── */
+      var _gcPhotos = [], _gcIdx = 0, _gcAuto = null;
+
+      function loadGallery() {
+        getData("getGallery").then(function(photos) {
+          document.getElementById("galleryLoading").style.display = "none";
+          if (!Array.isArray(photos) || photos.length === 0) {
+            document.getElementById("galleryEmpty").style.display = "block";
+            return;
+          }
+          _gcPhotos = photos;
+          var carousel = document.getElementById("galleryCarousel");
+          var dotsWrap = document.getElementById("gcDots");
+          carousel.innerHTML = "";
+          dotsWrap.innerHTML = "";
+          photos.forEach(function(p, i) {
+            var slide = document.createElement("div");
+            slide.className = "gc-slide";
+            var imgEl = document.createElement("img");
+            imgEl.src = p.PhotoURL;
+            imgEl.alt = p.Caption || "Gallery Photo";
+            imgEl.loading = "lazy";
+            slide.appendChild(imgEl);
+            if (p.Caption) {
+              var cap = document.createElement("div");
+              cap.className = "gc-caption";
+              cap.textContent = p.Caption;
+              slide.appendChild(cap);
+            }
+            carousel.appendChild(slide);
+            var dot = document.createElement("button");
+            dot.className = "gc-dot" + (i === 0 ? " active" : "");
+            dot.setAttribute("aria-label", "Go to slide " + (i+1));
+            (function(idx){ dot.onclick = function(){ galleryGoTo(idx); }; })(i);
+            dotsWrap.appendChild(dot);
+          });
+          document.getElementById("galleryCarouselWrap").style.display = "block";
+          galleryGoTo(0);
+          if (_gcAuto) clearInterval(_gcAuto);
+          _gcAuto = setInterval(function(){ gallerySlide(1); }, 4500);
+        }).catch(function() {
+          document.getElementById("galleryLoading").style.display = "none";
+          document.getElementById("galleryEmpty").style.display = "block";
+        });
+      }
+
+      function galleryGoTo(idx) {
+        _gcIdx = ((idx % _gcPhotos.length) + _gcPhotos.length) % _gcPhotos.length;
+        document.getElementById("galleryCarousel").style.transform = "translateX(-" + (_gcIdx * 100) + "%)";
+        var dots = document.querySelectorAll(".gc-dot");
+        dots.forEach(function(d, i){ d.classList.toggle("active", i === _gcIdx); });
+      }
+
+      function gallerySlide(dir) {
+        if (_gcAuto) clearInterval(_gcAuto);
+        galleryGoTo(_gcIdx + dir);
+        _gcAuto = setInterval(function(){ gallerySlide(1); }, 4500);
+      }
+
+      document.addEventListener("DOMContentLoaded", loadGallery);
+    </script>
     <script>
       /* Splash */
       window.addEventListener("load", () => {
