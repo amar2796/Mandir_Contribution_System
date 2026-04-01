@@ -14,6 +14,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.css" />
     <style>
       * {
         box-sizing: border-box;
@@ -465,90 +466,219 @@
         margin: 0;
       }
 
-      /* ── GALLERY CAROUSEL ── */
-      .gallery-carousel-wrap {
+      /* ── GALLERY — Swiper Section ── */
+      .gallery-swiper-section {
         position: relative;
-        max-width: 720px;
-        margin: 32px auto 0;
+        max-width: 1100px;
+        margin: 36px auto 0;
+        padding: 0 60px;
+      }
+      .swiper-gallery {
         border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        background: #000;
       }
-      .gallery-carousel {
-        display: flex;
-        transition: transform 0.5s cubic-bezier(.4,0,.2,1);
-        will-change: transform;
-      }
-      .gc-slide {
-        min-width: 100%;
+      .swiper-slide-gallery {
+        border-radius: 16px;
+        overflow: hidden;
         position: relative;
+        cursor: pointer;
+        background: #1a0e04;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+        transition: transform 0.35s ease, box-shadow 0.35s ease;
       }
-      .gc-slide img {
-        width: 100%;
-        height: 400px;
-        object-fit: cover;
+      .swiper-slide-gallery:hover {
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 18px 48px rgba(247,160,26,0.28), 0 0 0 1.5px rgba(247,160,26,0.45);
+      }
+      .swiper-slide-gallery img {
+        width: 100%; height: 280px;
+        object-fit: cover; object-position: center top;
         display: block;
+        transition: transform 0.55s ease;
       }
-      .gc-caption {
-        position: absolute;
-        bottom: 0; left: 0; right: 0;
-        background: linear-gradient(transparent, rgba(0,0,0,0.68));
-        color: #fff;
-        padding: 28px 20px 16px;
-        font-size: 0.95rem;
-        font-weight: 500;
-        text-align: left;
+      .swiper-slide-gallery:hover img { transform: scale(1.08); }
+      /* gradient overlay */
+      .swiper-slide-gallery .gc-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(to bottom, transparent 45%, rgba(0,0,0,0.72) 100%);
         pointer-events: none;
       }
-      .gc-btn {
-        position: absolute;
-        top: 50%; transform: translateY(-50%);
-        background: rgba(255,255,255,0.18);
-        border: none; color: #fff;
-        width: 44px; height: 44px;
-        border-radius: 50%;
-        font-size: 1.2rem;
+      /* caption */
+      .swiper-slide-gallery .gc-caption {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        padding: 28px 14px 13px;
+        color: #fff; font-size: 0.86rem; font-weight: 700;
+        pointer-events: none; z-index: 3;
+        text-shadow: 0 1px 6px rgba(0,0,0,0.95);
+        transform: translateY(5px); transition: transform 0.3s;
+      }
+      .swiper-slide-gallery:hover .gc-caption { transform: translateY(0); }
+      /* view icon */
+      .swiper-slide-gallery .gc-view-icon {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%,-50%) scale(0.4);
+        width: 52px; height: 52px; border-radius: 50%;
+        background: rgba(247,160,26,0.92);
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 1.1rem;
+        opacity: 0; transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+        pointer-events: none; z-index: 5;
+        box-shadow: 0 4px 20px rgba(247,160,26,0.6);
+      }
+      .swiper-slide-gallery:hover .gc-view-icon {
+        opacity: 1; transform: translate(-50%,-50%) scale(1);
+      }
+      /* gold border on hover */
+      .swiper-slide-gallery::after {
+        content: ''; position: absolute; inset: 0; border-radius: 16px;
+        border: 1.5px solid rgba(247,160,26,0);
+        transition: border-color 0.3s; pointer-events: none;
+      }
+      .swiper-slide-gallery:hover::after { border-color: rgba(247,160,26,0.5); }
+
+      /* custom nav arrows */
+      .swiper-button-prev-custom,
+      .swiper-button-next-custom {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: 44px; height: 44px; border-radius: 50%; z-index: 10;
+        border: 1.5px solid rgba(247,160,26,0.55);
+        background: rgba(255,255,255,0.92);
+        color: #f7a01a; font-size: 0.92rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.22s;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+      }
+      .swiper-button-prev-custom { left: 6px; }
+      .swiper-button-next-custom { right: 6px; }
+      .swiper-button-prev-custom:hover,
+      .swiper-button-next-custom:hover {
+        background: #f7a01a; color: #fff; border-color: #f7a01a;
+        transform: translateY(-50%) scale(1.1);
+        box-shadow: 0 6px 22px rgba(247,160,26,0.45);
+      }
+      /* Swiper pagination */
+      .swiper-pagination-gallery {
+        position: relative; margin-top: 22px;
+        display: flex; justify-content: center; gap: 8px; align-items: center;
+      }
+      .swiper-pagination-gallery .swiper-pagination-bullet {
+        width: 8px; height: 8px; border-radius: 4px;
+        background: rgba(148,108,68,0.25); opacity: 1;
+        transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
         cursor: pointer;
-        backdrop-filter: blur(4px);
-        transition: background 0.2s;
-        z-index: 10;
       }
-      .gc-btn:hover { background: rgba(247,160,26,0.75); }
-      .gc-prev { left: 12px; }
-      .gc-next { right: 12px; }
-      .gc-dots {
-        position: absolute;
-        bottom: 12px; left: 50%;
-        transform: translateX(-50%);
-        display: flex; gap: 7px; z-index: 10;
+      .swiper-pagination-gallery .swiper-pagination-bullet-active {
+        background: linear-gradient(90deg, #f7a01a, #ffd585);
+        width: 28px;
+        box-shadow: 0 0 8px rgba(247,160,26,0.6);
       }
-      .gc-dot {
-        width: 9px; height: 9px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.45);
-        cursor: pointer;
-        transition: background 0.25s, transform 0.2s;
-        border: none;
-        padding: 0;
+      .gallery-loading-msg { margin-top: 32px; color: #b89060; font-size: 1rem; }
+      .gallery-empty-msg   { margin-top: 32px; color: #999; font-size: 1rem; display: none; }
+
+      /* ── LIGHTBOX — image only, no extra text ── */
+      .gc-lightbox {
+        display: none; position: fixed; inset: 0; z-index: 99999;
+        align-items: center; justify-content: center;
       }
-      .gc-dot.active {
-        background: #f7a01a;
-        transform: scale(1.25);
+      .gc-lightbox.open { display: flex; }
+      .gc-lb-backdrop {
+        position: absolute; inset: 0;
+        background: rgba(8,3,0,0.97);
+        backdrop-filter: blur(24px);
+        animation: gcBdIn 0.3s ease forwards;
       }
-      .gallery-loading-msg {
-        margin-top: 32px;
-        color: #b89060;
-        font-size: 1rem;
+      @keyframes gcBdIn { from{opacity:0} to{opacity:1} }
+      .gc-lb-panel {
+        position: relative; z-index: 2;
+        display: flex; flex-direction: column; align-items: center;
+        animation: gcPanelIn 0.42s cubic-bezier(.34,1.56,.64,1) forwards;
+        max-width: 96vw;
       }
-      .gallery-empty-msg {
-        margin-top: 32px;
-        color: #999;
-        font-size: 1rem;
-        display: none;
+      @keyframes gcPanelIn {
+        from { opacity:0; transform: scale(0.72) translateY(36px); }
+        to   { opacity:1; transform: scale(1) translateY(0); }
       }
-      @media(max-width:600px) {
-        .gc-slide img { height: 220px; }
+      .gc-lb-panel.closing { animation: gcPanelOut 0.24s ease forwards; }
+      @keyframes gcPanelOut {
+        from { opacity:1; transform:scale(1); }
+        to   { opacity:0; transform:scale(0.84) translateY(20px); }
+      }
+      /* image frame */
+      .gc-lb-frame {
+        border-radius: 18px; overflow: hidden; position: relative;
+        box-shadow:
+          0 0 0 1.5px rgba(247,160,26,0.4),
+          0 40px 100px rgba(0,0,0,0.94),
+          0 0 60px rgba(247,160,26,0.1);
+      }
+      .gc-lb-frame::before {
+        content: '';
+        position: absolute; top: 0; left: 10%; right: 10%; height: 2px;
+        background: linear-gradient(90deg, transparent, #f7a01a, #ffd585, #f7a01a, transparent);
+        z-index: 2; pointer-events: none;
+      }
+      .gc-lb-frame img {
+        max-width: 90vw; max-height: 82vh;
+        display: block; object-fit: contain; border-radius: 18px;
+      }
+      /* slide animations */
+      .gc-lb-frame img.lb-out-l { animation: lbOutL 0.15s ease forwards; }
+      .gc-lb-frame img.lb-out-r { animation: lbOutR 0.15s ease forwards; }
+      .gc-lb-frame img.lb-in-l  { animation: lbInL  0.28s cubic-bezier(.34,1.56,.64,1) forwards; }
+      .gc-lb-frame img.lb-in-r  { animation: lbInR  0.28s cubic-bezier(.34,1.56,.64,1) forwards; }
+      @keyframes lbOutL { to { opacity:0; transform: translateX(-36px) scale(0.93); } }
+      @keyframes lbOutR { to { opacity:0; transform: translateX( 36px) scale(0.93); } }
+      @keyframes lbInL  { from { opacity:0; transform: translateX( 36px) scale(0.93); } to { opacity:1; transform:none; } }
+      @keyframes lbInR  { from { opacity:0; transform: translateX(-36px) scale(0.93); } to { opacity:1; transform:none; } }
+      /* lightbox arrows */
+      .gc-lb-prev, .gc-lb-next {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: 44px; height: 44px; border-radius: 50%;
+        border: 1.5px solid rgba(247,160,26,0.45);
+        background: rgba(8,3,0,0.78); color: #f7a01a; font-size: 0.92rem;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        transition: all 0.22s; z-index: 3; backdrop-filter: blur(6px);
+      }
+      .gc-lb-prev { left: -60px; } .gc-lb-next { right: -60px; }
+      .gc-lb-prev:hover, .gc-lb-next:hover {
+        background: #f7a01a; color: #fff; border-color: #f7a01a;
+        transform: translateY(-50%) scale(1.1);
+      }
+      /* counter */
+      .gc-lb-counter {
+        position: fixed; top: 16px; left: 16px;
+        color: rgba(247,160,26,0.9); font-size: 0.78rem; font-weight: 700;
+        background: rgba(8,3,0,0.72); padding: 4px 13px; border-radius: 20px;
+        z-index: 5; border: 1px solid rgba(247,160,26,0.2);
+        backdrop-filter: blur(6px); letter-spacing: 1px;
+      }
+      /* close */
+      .gc-lightbox-close {
+        position: fixed; top: 13px; right: 13px;
+        width: 44px; height: 44px; border-radius: 50%;
+        border: 1.5px solid rgba(247,160,26,0.35);
+        background: rgba(8,3,0,0.78); color: rgba(255,255,255,0.8);
+        font-size: 1rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.25s; z-index: 5; backdrop-filter: blur(6px);
+      }
+      .gc-lightbox-close:hover {
+        background: #f7a01a; color: #fff; border-color: #f7a01a;
+        transform: rotate(90deg) scale(1.1);
+      }
+      @media(max-width: 768px) {
+        .swiper-slide-gallery img { height: 210px; }
+        .gallery-swiper-section { padding: 0 48px; }
+        .gc-lb-prev { left: -8px; width: 36px; height: 36px; }
+        .gc-lb-next { right: -8px; width: 36px; height: 36px; }
+      }
+      @media(max-width: 520px) {
+        .swiper-slide-gallery img { height: 240px; }
+        .gallery-swiper-section { padding: 0 36px; }
+        .gc-lb-prev, .gc-lb-next { display: none; }
+        .swiper-button-prev-custom, .swiper-button-next-custom {
+          width: 36px; height: 36px; font-size: 0.78rem;
+        }
       }
 
       /* ══ FEEDBACK SECTION — FIX #1 ══ */
@@ -921,12 +1051,32 @@
         No photos yet. Check back soon! 🙏
       </div>
 
-      <!-- Carousel (hidden until photos load) -->
-      <div class="gallery-carousel-wrap" id="galleryCarouselWrap" style="display:none;">
-        <div class="gallery-carousel" id="galleryCarousel"></div>
-        <button class="gc-btn gc-prev" onclick="gallerySlide(-1)" aria-label="Previous">&#10094;</button>
-        <button class="gc-btn gc-next" onclick="gallerySlide(1)" aria-label="Next">&#10095;</button>
-        <div class="gc-dots" id="gcDots"></div>
+      <!-- Swiper Gallery -->
+      <div class="gallery-swiper-section" id="galleryCarouselWrap" style="display:none;">
+        <button class="swiper-button-prev-custom" id="gcPrev" aria-label="Previous">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button class="swiper-button-next-custom" id="gcNext" aria-label="Next">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <div class="swiper swiper-gallery" id="gallerySwiper">
+          <div class="swiper-wrapper" id="galleryCarousel"></div>
+        </div>
+        <div class="swiper-pagination swiper-pagination-gallery" id="gcDots"></div>
+      </div>
+
+      <!-- Lightbox — image only -->
+      <div class="gc-lightbox" id="gcLightbox">
+        <div class="gc-lb-backdrop" onclick="closeLightbox()"></div>
+        <span class="gc-lb-counter" id="gcLbCounter"></span>
+        <button class="gc-lightbox-close" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
+        <div class="gc-lb-panel" id="gcLbPanel">
+          <div class="gc-lb-frame">
+            <img id="gcLightboxImg" src="" alt="">
+            <button class="gc-lb-prev" onclick="lbNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="gc-lb-next" onclick="lbNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -984,11 +1134,13 @@
 
     <div class="footer">© 2026 Mandir System | Built with <span>❤️</span></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script>
-      /* ── Gallery Carousel ── */
-      var _gcPhotos = [], _gcIdx = 0, _gcAuto = null;
+      /* ── Gallery — Swiper.js ── */
+      var _gcPhotos = [], _gcLbIdx = 0;
+      var _swiperInstance = null;
 
       function loadGallery() {
         getData("getGallery").then(function(photos) {
@@ -998,54 +1150,103 @@
             return;
           }
           _gcPhotos = photos;
-          var carousel = document.getElementById("galleryCarousel");
-          var dotsWrap = document.getElementById("gcDots");
-          carousel.innerHTML = "";
-          dotsWrap.innerHTML = "";
-          photos.forEach(function(p, i) {
-            var slide = document.createElement("div");
-            slide.className = "gc-slide";
-            var imgEl = document.createElement("img");
-            imgEl.src = p.PhotoURL;
-            imgEl.alt = p.Caption || "Gallery Photo";
-            imgEl.loading = "lazy";
-            slide.appendChild(imgEl);
-            if (p.Caption) {
-              var cap = document.createElement("div");
-              cap.className = "gc-caption";
-              cap.textContent = p.Caption;
-              slide.appendChild(cap);
-            }
-            carousel.appendChild(slide);
-            var dot = document.createElement("button");
-            dot.className = "gc-dot" + (i === 0 ? " active" : "");
-            dot.setAttribute("aria-label", "Go to slide " + (i+1));
-            (function(idx){ dot.onclick = function(){ galleryGoTo(idx); }; })(i);
-            dotsWrap.appendChild(dot);
-          });
+          _buildSwiper();
           document.getElementById("galleryCarouselWrap").style.display = "block";
-          galleryGoTo(0);
-          if (_gcAuto) clearInterval(_gcAuto);
-          _gcAuto = setInterval(function(){ gallerySlide(1); }, 4500);
         }).catch(function() {
           document.getElementById("galleryLoading").style.display = "none";
           document.getElementById("galleryEmpty").style.display = "block";
         });
       }
 
-      function galleryGoTo(idx) {
-        _gcIdx = ((idx % _gcPhotos.length) + _gcPhotos.length) % _gcPhotos.length;
-        document.getElementById("galleryCarousel").style.transform = "translateX(-" + (_gcIdx * 100) + "%)";
-        var dots = document.querySelectorAll(".gc-dot");
-        dots.forEach(function(d, i){ d.classList.toggle("active", i === _gcIdx); });
+      function _buildSwiper() {
+        var track = document.getElementById("galleryCarousel");
+        track.innerHTML = "";
+
+        _gcPhotos.forEach(function(p, i) {
+          var slide = document.createElement("div");
+          slide.className = "swiper-slide swiper-slide-gallery";
+          slide.innerHTML =
+            '<img src="' + p.PhotoURL + '" alt="' + (p.Caption || "Photo") + '" loading="lazy">' +
+            '<div class="gc-overlay"></div>' +
+            '<div class="gc-view-icon"><i class="fa-solid fa-expand"></i></div>' +
+            (p.Caption ? '<div class="gc-caption">' + p.Caption + '</div>' : '');
+          (function(idx){ slide.onclick = function(){ openLightbox(idx); }; })(i);
+          track.appendChild(slide);
+        });
+
+        if (_swiperInstance) { _swiperInstance.destroy(true, true); }
+
+        _swiperInstance = new Swiper("#gallerySwiper", {
+          slidesPerView: 3,
+          spaceBetween: 20,
+          loop: true,
+          autoplay: { delay: 4000, disableOnInteraction: false, pauseOnMouseEnter: true },
+          pagination: {
+            el: "#gcDots",
+            clickable: true,
+          },
+          navigation: {
+            nextEl: "#gcNext",
+            prevEl: "#gcPrev",
+          },
+          breakpoints: {
+            0:   { slidesPerView: 1, spaceBetween: 14 },
+            521: { slidesPerView: 2, spaceBetween: 16 },
+            769: { slidesPerView: 3, spaceBetween: 20 },
+          },
+          grabCursor: true,
+          effect: "slide",
+        });
       }
 
-      function gallerySlide(dir) {
-        if (_gcAuto) clearInterval(_gcAuto);
-        galleryGoTo(_gcIdx + dir);
-        _gcAuto = setInterval(function(){ gallerySlide(1); }, 4500);
-      }
+      /* stubs kept so nothing else breaks */
+      function gallerySlide(dir) { if(_swiperInstance){ dir>0?_swiperInstance.slideNext():_swiperInstance.slidePrev(); } }
+      function galleryGoTo(idx) { if(_swiperInstance){ _swiperInstance.slideTo(idx); } }
 
+      /* ── Lightbox ── */
+      function openLightbox(idx) {
+        _gcLbIdx = idx; _lbRender();
+        document.getElementById("gcLightbox").classList.add("open");
+        document.getElementById("gcLbPanel").classList.remove("closing");
+        document.body.style.overflow = "hidden";
+        _stopAuto();
+      }
+      function closeLightbox() {
+        var p = document.getElementById("gcLbPanel");
+        p.classList.add("closing");
+        setTimeout(function(){
+          document.getElementById("gcLightbox").classList.remove("open");
+          p.classList.remove("closing");
+          document.body.style.overflow = "";
+          if (_gcPhotos.length) _startAuto();
+        }, 240);
+      }
+      function lbNav(dir) {
+        var img = document.getElementById("gcLightboxImg");
+        img.classList.remove("lb-out-l","lb-out-r","lb-in-l","lb-in-r");
+        img.classList.add(dir>0?"lb-out-l":"lb-out-r");
+        setTimeout(function(){
+          _gcLbIdx = ((_gcLbIdx+dir)+_gcPhotos.length)%_gcPhotos.length;
+          _lbRender();
+          img.classList.remove("lb-out-l","lb-out-r");
+          img.classList.add(dir>0?"lb-in-l":"lb-in-r");
+          setTimeout(function(){ img.classList.remove("lb-in-l","lb-in-r"); }, 300);
+        }, 150);
+      }
+      function _lbRender() {
+        var p = _gcPhotos[_gcLbIdx];
+        var img = document.getElementById("gcLightboxImg");
+        img.src = p.PhotoURL; img.alt = p.Caption||"Photo";
+        document.getElementById("gcLbCounter").textContent = (_gcLbIdx+1)+" / "+_gcPhotos.length;
+      }
+      document.addEventListener("keydown", function(e){
+        var lb = document.getElementById("gcLightbox");
+        if (!lb||!lb.classList.contains("open")) return;
+        if (e.key==="Escape") closeLightbox();
+        if (e.key==="ArrowRight") lbNav(1);
+        if (e.key==="ArrowLeft")  lbNav(-1);
+      });
+      window.addEventListener("resize", function(){ if(_swiperInstance) _swiperInstance.update(); });
       document.addEventListener("DOMContentLoaded", loadGallery);
     </script>
     <script>
