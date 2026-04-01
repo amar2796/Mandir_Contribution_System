@@ -601,6 +601,43 @@
         background: #f7a01a;
       }
 
+      /* ── ANNOUNCEMENT ADMIN ── */
+      #nav_announcement { color: #fbbf24; }
+      #nav_announcement:hover, #nav_announcement.active-nav {
+        background: rgba(251,191,36,0.18) !important;
+        color: #fde68a !important;
+      }
+      .ann-preview-bar {
+        display: flex; align-items: center; gap: 12px;
+        background: linear-gradient(90deg, #4c1a6e, #6b21a8, #4c1a6e);
+        border-radius: 10px; padding: 12px 18px;
+        color: #fff; font-size: 14px; margin-bottom: 18px;
+        font-family: Poppins, sans-serif;
+      }
+      .ann-preview-bar .ann-preview-icon { font-size: 1.3rem; animation: annBellAdmin 2s ease-in-out infinite; }
+      @keyframes annBellAdmin {
+        0%,100%{ transform: rotate(0); }
+        10%    { transform: rotate(12deg); }
+        20%    { transform: rotate(-10deg); }
+        30%    { transform: rotate(8deg); }
+        40%    { transform: rotate(-6deg); }
+        50%    { transform: rotate(0); }
+      }
+      .ann-history-item {
+        display: flex; align-items: flex-start; gap: 12px;
+        padding: 12px 14px; border-radius: 10px;
+        background: #f8fafc; border: 1px solid #e2e8f0;
+        margin-bottom: 10px; transition: box-shadow 0.2s;
+      }
+      .ann-history-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
+      .ann-history-item.active-ann {
+        background: #fef9ec; border-color: #f7a01a44;
+        box-shadow: inset 3px 0 0 #f7a01a;
+      }
+      .ann-status-dot {
+        width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
+      }
+
       /* ── GALLERY CROP MODAL ── */
       #glryCropOverlay {
         display: none; position: fixed; inset: 0; z-index: 9998;
@@ -783,6 +820,9 @@
           </li>
           <li onclick="showPage('galleryAdminPage',this)">
             <i class="fa-solid fa-images"></i> Gallery
+          </li>
+          <li onclick="showPage('announcementPage',this)" id="nav_announcement">
+            <i class="fa-solid fa-bullhorn"></i> Announcement
           </li>
           <li onclick="showPage('broadcastPage',this)">
             <i class="fa-solid fa-bullhorn"></i> Broadcast
@@ -1697,6 +1737,7 @@
             <div id="glryCropRatioBar">
               <span>Aspect:</span>
               <button class="gcr-ratio-btn active" onclick="glrySetRatio(4,3,this)">4:3</button>
+              <button class="gcr-ratio-btn" onclick="glrySetRatio(3,4,this)">3:4</button>
               <button class="gcr-ratio-btn" onclick="glrySetRatio(16,9,this)">16:9</button>
               <button class="gcr-ratio-btn" onclick="glrySetRatio(1,1,this)">1:1</button>
               <button class="gcr-ratio-btn" onclick="glrySetRatio(3,2,this)">3:2</button>
@@ -1722,6 +1763,90 @@
               <div id="glryCropInfo">Select crop area</div>
               <button id="glryCropCancelBtn" onclick="glryCloseCrop()">Cancel</button>
               <button id="glryCropConfirmBtn" onclick="glryConfirmCrop()"><i class="fa-solid fa-check"></i> Crop &amp; Use</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANNOUNCEMENT PAGE -->
+        <div id="announcementPage" class="page">
+          <div class="card">
+            <h3><i class="fa-solid fa-bullhorn" style="color:#f7a01a;"></i> Manage Announcement Banner</h3>
+            <p style="color:#666;font-size:14px;margin-bottom:20px;">
+              Set a banner that appears at the top of the home page. Members see it until they dismiss it.
+            </p>
+
+            <!-- Live preview -->
+            <div id="annAdminPreview" style="display:none;margin-bottom:22px;">
+              <div style="font-size:12px;font-weight:600;color:#888;margin-bottom:8px;">Live Preview</div>
+              <div class="ann-preview-bar">
+                <span class="ann-preview-icon" id="annPrevIcon">🔔</span>
+                <span id="annPrevText" style="flex:1;line-height:1.45;"></span>
+                <span id="annPrevBadge" style="display:none;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.35);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;"></span>
+              </div>
+            </div>
+
+            <!-- Form -->
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;max-width:600px;margin-bottom:28px;">
+              <h4 style="margin:0 0 16px;color:#334155;font-size:14px;"><i class="fa-solid fa-pen" style="color:#f7a01a;margin-right:6px;"></i>New / Update Announcement</h4>
+
+              <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Message <span style="color:#e74c3c">*</span></label>
+              <textarea id="ann_message" rows="3" placeholder="e.g. 🙏 Ram Navami Mahotsav on 6 April — All members are invited!"
+                style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;resize:vertical;outline:none;box-sizing:border-box;transition:border-color 0.2s;margin-bottom:12px;"
+                oninput="updateAnnPreview()" onfocus="this.style.borderColor='#f7a01a'" onblur="this.style.borderColor='#ddd'"></textarea>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                <div>
+                  <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Badge Label <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                  <input id="ann_badge" placeholder="e.g. Important" maxlength="20"
+                    style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;box-sizing:border-box;"
+                    oninput="updateAnnPreview()" onfocus="this.style.borderColor='#f7a01a'" onblur="this.style.borderColor='#ddd'">
+                </div>
+                <div>
+                  <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Icon Emoji <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                  <input id="ann_icon" placeholder="e.g. 🙏 or 📢" maxlength="4"
+                    style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;box-sizing:border-box;"
+                    oninput="updateAnnPreview()" onfocus="this.style.borderColor='#f7a01a'" onblur="this.style.borderColor='#ddd'">
+                </div>
+              </div>
+
+              <!-- Banner Color Picker -->
+              <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:8px;">Banner Color</label>
+              <div id="ann_color_picker" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+                <div onclick="selectAnnColor('purple',this)" data-color="purple"
+                  style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4c1a6e,#7c3aed);cursor:pointer;border:3px solid #7c3aed;box-shadow:0 0 0 2px #7c3aed;transition:transform 0.15s;" title="Purple"></div>
+                <div onclick="selectAnnColor('orange',this)" data-color="orange"
+                  style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f7a01a,#d35400);cursor:pointer;border:3px solid transparent;transition:transform 0.15s;" title="Orange"></div>
+                <div onclick="selectAnnColor('red',this)" data-color="red"
+                  style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#dc2626,#991b1b);cursor:pointer;border:3px solid transparent;transition:transform 0.15s;" title="Red"></div>
+                <div onclick="selectAnnColor('green',this)" data-color="green"
+                  style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#16a34a,#15803d);cursor:pointer;border:3px solid transparent;transition:transform 0.15s;" title="Green"></div>
+                <div onclick="selectAnnColor('blue',this)" data-color="blue"
+                  style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#1d4ed8);cursor:pointer;border:3px solid transparent;transition:transform 0.15s;" title="Blue"></div>
+                <div onclick="selectAnnColor('teal',this)" data-color="teal"
+                  style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#0f766e);cursor:pointer;border:3px solid transparent;transition:transform 0.15s;" title="Teal"></div>
+                <div onclick="selectAnnColor('pink',this)" data-color="pink"
+                  style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#db2777,#be185d);cursor:pointer;border:3px solid transparent;transition:transform 0.15s;" title="Pink"></div>
+                <div onclick="selectAnnColor('dark',this)" data-color="dark"
+                  style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#1e293b,#334155);cursor:pointer;border:3px solid transparent;transition:transform 0.15s;" title="Dark"></div>
+              </div>
+              <input type="hidden" id="ann_color" value="purple">
+
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button onclick="saveAnnouncement()"
+                  style="background:linear-gradient(135deg,#f7a01a,#d35400);color:#fff;border:none;padding:10px 26px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 3px 12px rgba(247,160,26,0.35);transition:all 0.2s;">
+                  <i class="fa-solid fa-bullhorn"></i>&nbsp; Publish Announcement
+                </button>
+                <button onclick="clearAnnouncement()"
+                  style="background:#f0f0f0;color:#555;border:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;box-shadow:none;transition:all 0.2s;">
+                  <i class="fa-solid fa-ban"></i>&nbsp; Remove Banner
+                </button>
+              </div>
+            </div>
+
+            <!-- Current + history -->
+            <h4 style="color:#946c44;font-size:14px;margin-bottom:12px;">Announcement History</h4>
+            <div id="annHistoryList">
+              <p style="color:#aaa;font-size:13px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</p>
             </div>
           </div>
         </div>
@@ -2269,6 +2394,8 @@
         }
         // Load gallery when that page is opened
         if (id === "galleryAdminPage") loadGalleryAdmin();
+        // Load announcement history when that page is opened
+        if (id === "announcementPage") loadAnnouncementAdmin();
       }
 
       /* ══════════════════════════════
@@ -2659,6 +2786,131 @@
           if(res.status==="deleted"){ toast("Photo deleted from gallery.","success"); loadGalleryAdmin(); }
           else toast("Delete failed: "+(res.message||"Not found"),"error");
         } catch(err){ toast("Error: "+err.message,"error"); }
+      }
+
+      /* ══════════════════════════════
+         ANNOUNCEMENT ADMIN
+         ══════════════════════════════ */
+      /* ── Announcement color map ── */
+      var _annColorMap = {
+        purple: "linear-gradient(90deg,#4c1a6e,#6b21a8,#4c1a6e)",
+        orange: "linear-gradient(90deg,#c2410c,#ea580c,#c2410c)",
+        red:    "linear-gradient(90deg,#991b1b,#dc2626,#991b1b)",
+        green:  "linear-gradient(90deg,#14532d,#16a34a,#14532d)",
+        blue:   "linear-gradient(90deg,#1e3a8a,#2563eb,#1e3a8a)",
+        teal:   "linear-gradient(90deg,#134e4a,#0d9488,#134e4a)",
+        pink:   "linear-gradient(90deg,#831843,#db2777,#831843)",
+        dark:   "linear-gradient(90deg,#0f172a,#334155,#0f172a)"
+      };
+      function selectAnnColor(color, el) {
+        document.getElementById("ann_color").value = color;
+        document.querySelectorAll("#ann_color_picker div").forEach(function(d) {
+          d.style.border = "3px solid transparent";
+          d.style.boxShadow = "none";
+          d.style.transform = "scale(1)";
+        });
+        el.style.border = "3px solid #fff";
+        el.style.boxShadow = "0 0 0 3px " + (el.style.background.includes("7c3aed") ? "#7c3aed" :
+          el.style.background.includes("d35400") ? "#f7a01a" :
+          el.style.background.includes("991b1b") ? "#dc2626" :
+          el.style.background.includes("15803d") ? "#16a34a" :
+          el.style.background.includes("1d4ed8") ? "#2563eb" :
+          el.style.background.includes("0f766e") ? "#0d9488" :
+          el.style.background.includes("be185d") ? "#db2777" : "#334155");
+        el.style.transform = "scale(1.18)";
+        updateAnnPreview();
+      }
+      function updateAnnPreview() {
+        var msg   = (document.getElementById("ann_message").value || "").trim();
+        var badge = (document.getElementById("ann_badge").value   || "").trim();
+        var icon  = (document.getElementById("ann_icon").value    || "").trim();
+        var color = (document.getElementById("ann_color")?.value  || "purple");
+        var prev  = document.getElementById("annAdminPreview");
+        if (!msg) { prev.style.display = "none"; return; }
+        prev.style.display = "block";
+        document.getElementById("annPrevText").textContent  = msg;
+        document.getElementById("annPrevIcon").textContent  = icon || "🔔";
+        // Apply selected color to preview bar
+        var bar = prev.querySelector(".ann-preview-bar");
+        if (bar) bar.style.background = _annColorMap[color] || _annColorMap["purple"];
+        var b = document.getElementById("annPrevBadge");
+        if (badge) { b.textContent = badge; b.style.display = "inline-block"; }
+        else        { b.style.display = "none"; }
+      }
+
+      async function saveAnnouncement() {
+        var msg   = (document.getElementById("ann_message").value || "").trim();
+        var badge = (document.getElementById("ann_badge").value   || "").trim();
+        var icon  = (document.getElementById("ann_icon").value    || "").trim();
+        var color = (document.getElementById("ann_color").value   || "purple");
+        if (!msg) { toast("Please enter an announcement message.", "error"); return; }
+        var session = JSON.parse(localStorage.getItem("session") || "{}");
+        try {
+          var res = await postData({
+            action:    "saveAnnouncement",
+            Message:   msg,
+            Badge:     badge,
+            Icon:      icon || "🔔",
+            Color:     color,
+            AdminName: session.name || "Admin"
+          });
+          if (res && (res.status === "success" || res.status === "saved")) {
+            toast("✅ Announcement published!", "success");
+            document.getElementById("ann_message").value = "";
+            document.getElementById("ann_badge").value   = "";
+            document.getElementById("ann_icon").value    = "";
+            document.getElementById("annAdminPreview").style.display = "none";
+            loadAnnouncementAdmin();
+          } else {
+            toast("Failed: " + (res && res.message ? res.message : "Unknown error"), "error");
+          }
+        } catch(e) { toast("Error: " + e.message, "error"); }
+      }
+
+      async function clearAnnouncement() {
+        if (!confirm("Remove the current announcement banner from the home page?")) return;
+        var session = JSON.parse(localStorage.getItem("session") || "{}");
+        try {
+          var res = await postData({ action: "clearAnnouncement", AdminName: session.name || "Admin" });
+          toast("Banner removed.", "success");
+          loadAnnouncementAdmin();
+        } catch(e) { toast("Error: " + e.message, "error"); }
+      }
+
+      async function loadAnnouncementAdmin() {
+        var list = document.getElementById("annHistoryList");
+        if (!list) return;
+        list.innerHTML = "<p style='color:#aaa;font-size:13px;'><i class='fa-solid fa-spinner fa-spin'></i> Loading...</p>";
+        try {
+          var data = await getData("getAnnouncementHistory");
+          if (!Array.isArray(data) || data.length === 0) {
+            list.innerHTML = "<p style='color:#aaa;font-size:13px;'><i class='fa-solid fa-inbox'></i> No announcements yet.</p>";
+            return;
+          }
+          list.innerHTML = data.map(function(a, i) {
+            var isActive = String(a.Status || "").toLowerCase() === "active" || i === 0 && !a.Status;
+            var dotColor = isActive ? "#22c55e" : "#94a3b8";
+            var dotTitle = isActive ? "Active" : "Past";
+            return '<div class="ann-history-item' + (isActive ? " active-ann" : "") + '">' +
+              '<div class="ann-status-dot" style="background:' + dotColor + ';" title="' + dotTitle + '"></div>' +
+              '<div style="flex:1;min-width:0;">' +
+                '<div style="font-size:13px;font-weight:600;color:#334155;line-height:1.4;">' +
+                  (a.Icon ? '<span style="margin-right:5px;">' + escapeHtml(a.Icon) + '</span>' : '') +
+                  escapeHtml(a.Message || "—") +
+                '</div>' +
+                (a.Badge ? '<span style="display:inline-block;margin-top:4px;background:#f0f4ff;color:#6366f1;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;">' + escapeHtml(a.Badge) + '</span>' : '') +
+                '<div style="font-size:11px;color:#aaa;margin-top:4px;">' +
+                  escapeHtml(a.AdminName || "Admin") + ' · ' + escapeHtml(a.CreatedAt || "—") +
+                '</div>' +
+              '</div>' +
+              (isActive ?
+                '<button onclick="clearAnnouncement()" title="Remove" style="background:rgba(231,76,60,0.1);color:#e74c3c;border:1px solid rgba(231,76,60,0.25);border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;box-shadow:none;flex-shrink:0;">' +
+                '<i class="fa-solid fa-ban"></i></button>' : '') +
+            '</div>';
+          }).join("");
+        } catch(e) {
+          list.innerHTML = "<p style='color:#e74c3c;font-size:13px;'>Error loading history. Make sure ANNOUNCEMENT sheet exists.</p>";
+        }
       }
 
       function openDashboard(el) {

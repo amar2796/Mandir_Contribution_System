@@ -116,16 +116,102 @@
         transform: translateY(0);
       }
 
-      /* ══ HEADER — Desktop inline nav | Mobile hamburger ══ */
+      /* ══ ANNOUNCEMENT BANNER ══ */
+      #announcementBanner {
+        display: none;
+        position: relative;
+        width: 100%;
+        background: linear-gradient(90deg, #4c1a6e 0%, #6b21a8 40%, #7c3aed 70%, #4c1a6e 100%);
+        background-size: 200% 100%;
+        animation: bannerShimmer 6s linear infinite, fadeIn 0.5s ease;
+        color: #fff;
+        font-family: "Poppins", sans-serif;
+        font-size: 0.82rem;
+        font-weight: 500;
+        z-index: 1100;
+        overflow: hidden;
+        border-bottom: 1px solid rgba(255,255,255,0.12);
+      }
+      @keyframes bannerShimmer {
+        0%   { background-position: 0% 0; }
+        100% { background-position: 200% 0; }
+      }
+      #announcementBanner.open { display: block; }
+      .ann-inner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 9px 52px 9px 16px;
+        min-height: 38px;
+        text-align: center;
+        flex-wrap: wrap;
+      }
+      .ann-icon {
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        animation: annBell 2s ease-in-out infinite;
+      }
+      @keyframes annBell {
+        0%,100%{ transform: rotate(0); }
+        10%    { transform: rotate(12deg); }
+        20%    { transform: rotate(-10deg); }
+        30%    { transform: rotate(8deg); }
+        40%    { transform: rotate(-6deg); }
+        50%    { transform: rotate(0); }
+      }
+      .ann-text {
+        line-height: 1.45;
+        letter-spacing: 0.1px;
+      }
+      .ann-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.35);
+        border-radius: 20px;
+        padding: 2px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        color: #fff;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .ann-close {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.7);
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 4px 7px;
+        border-radius: 6px;
+        line-height: 1;
+        transition: background 0.15s, color 0.15s;
+        box-shadow: none;
+      }
+      .ann-close:hover {
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        transform: translateY(-50%);
+      }
+      @media(max-width:600px){
+        .ann-inner { padding: 8px 44px 8px 10px; gap: 8px; font-size: 0.78rem; }
+      }
+
+      /* ══ HEADER — Enhanced with logo ══ */
       .header {
         position: sticky;
         top: 0;
         z-index: 1000;
-        background: rgba(120, 80, 40, 0.97);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+        background: linear-gradient(135deg, rgba(60,30,8,0.98) 0%, rgba(100,55,15,0.98) 50%, rgba(60,30,8,0.98) 100%);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border-bottom: 1px solid rgba(247,160,26,0.22);
+        box-shadow: 0 2px 0 rgba(247,160,26,0.18), 0 6px 32px rgba(0,0,0,0.28);
         color: white;
         padding: 0 28px;
         display: flex;
@@ -133,9 +219,18 @@
         align-items: center;
         width: 100%;
         box-sizing: border-box;
-        height: 62px;
+        height: 64px;
         animation: fadeIn 1s ease-out 1.7s both;
         gap: 16px;
+      }
+      /* subtle gold top line */
+      .header::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, transparent 0%, #f7a01a 30%, #ffd585 50%, #f7a01a 70%, transparent 100%);
+        opacity: 0.7;
+        pointer-events: none;
       }
       .header-brand {
         display: flex;
@@ -143,21 +238,42 @@
         gap: 10px;
         min-width: 0;
         flex-shrink: 1;
+        text-decoration: none;
       }
-      .header-brand h2 {
-        margin: 0;
-        font-size: 1.05rem;
+      .header-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(247,160,26,0.55);
+        box-shadow: 0 0 10px rgba(247,160,26,0.35);
+        flex-shrink: 0;
+        background: #78501e;
+      }
+      .header-brand-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .header-brand-text .brand-main {
+        font-size: 1rem;
         font-weight: 700;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        color: white;
-        line-height: 1.2;
+        color: #fff;
+        line-height: 1.15;
+        letter-spacing: 0.2px;
       }
-      .header-brand h2 i {
-        color: #f7a01a;
-        margin-right: 6px;
-        filter: drop-shadow(0 0 6px rgba(247, 160, 26, 0.6));
+      .header-brand-text .brand-sub {
+        font-size: 0.68rem;
+        font-weight: 400;
+        color: rgba(247,200,100,0.8);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: 0.3px;
+        line-height: 1.2;
       }
 
       /* ── Desktop nav (hidden on mobile) ── */
@@ -170,7 +286,7 @@
       .nav-links a {
         color: rgba(255, 255, 255, 0.88);
         text-decoration: none;
-        font-size: 0.85rem;
+        font-size: 0.84rem;
         font-weight: 600;
         padding: 7px 13px;
         border-radius: 8px;
@@ -179,30 +295,41 @@
         align-items: center;
         gap: 6px;
         white-space: nowrap;
+        position: relative;
       }
       .nav-links a:hover {
-        background: rgba(247, 160, 26, 0.22);
+        background: rgba(247, 160, 26, 0.18);
         color: #f7c35a;
       }
       .nav-links a i {
         color: #f7a01a;
-        font-size: 0.82rem;
+        font-size: 0.8rem;
+      }
+      .nav-links a.active-link {
+        color: #f7c35a;
+      }
+      .nav-links a.active-link::after {
+        content: '';
+        position: absolute; bottom: 2px; left: 13px; right: 13px;
+        height: 2px; border-radius: 2px;
+        background: #f7a01a;
       }
       .nav-links a.login-btn {
-        background: #f7a01a;
+        background: linear-gradient(135deg, #f7a01a, #d35400);
         color: white;
         padding: 7px 18px;
         border-radius: 8px;
         margin-left: 6px;
-        box-shadow: 0 3px 10px rgba(247, 160, 26, 0.35);
+        box-shadow: 0 3px 12px rgba(247, 160, 26, 0.4);
       }
       .nav-links a.login-btn:hover {
-        background: #d35400;
+        background: linear-gradient(135deg, #ffb833, #e56000);
         color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 18px rgba(247,160,26,0.55);
       }
-      .nav-links a.login-btn i {
-        color: white;
-      }
+      .nav-links a.login-btn i { color: white; }
+      .nav-links a.login-btn::after { display: none; }
 
       /* ── Hamburger button (hidden on desktop) ── */
       .hamburger-btn {
@@ -298,35 +425,22 @@
         width: auto;
       }
 
-      /* ── Responsive breakpoint ── */
       @media (max-width: 700px) {
         .header {
-          padding: 0 16px;
-          height: 58px;
+          padding: 0 14px;
+          height: 56px;
         }
-        .header-brand h2 {
-          font-size: 0.92rem;
-        }
-        .nav-links {
-          display: none;
-        } /* hide desktop nav */
-        .hamburger-btn {
-          display: flex;
-        } /* show hamburger */
-        .nav-menu {
-          top: 58px;
-        }
+        .header-logo { width: 34px; height: 34px; }
+        .header-brand-text .brand-main { font-size: 0.88rem; }
+        .header-brand-text .brand-sub  { display: none; }
+        .nav-links { display: none; }
+        .hamburger-btn { display: flex; }
+        .nav-menu { top: 56px; }
       }
       @media (min-width: 701px) {
-        .nav-links {
-          display: flex;
-        }
-        .hamburger-btn {
-          display: none !important;
-        }
-        .nav-menu {
-          display: none !important;
-        }
+        .nav-links    { display: flex; }
+        .hamburger-btn { display: none !important; }
+        .nav-menu      { display: none !important; }
       }
 
       /* HERO */
@@ -839,9 +953,8 @@
           height: 52px;
           padding: 0 12px;
         }
-        .header-brand h2 {
-          font-size: 0.9rem;
-        }
+        .header-logo { width: 32px; height: 32px; }
+        .header-brand-text .brand-main { font-size: 0.84rem; }
         .hamburger-btn {
           flex-shrink: 0;
           font-size: 1.2rem;
@@ -943,33 +1056,38 @@
       <i class="fa-solid fa-volume-high"></i>
     </button>
 
+    <!-- ══ ANNOUNCEMENT BANNER (loaded from API) ══ -->
+    <div id="announcementBanner">
+      <div class="ann-inner">
+        <span class="ann-icon">🔔</span>
+        <span class="ann-text" id="annText"></span>
+        <span class="ann-badge" id="annBadge" style="display:none;"></span>
+      </div>
+      <button class="ann-close" onclick="dismissBanner()" aria-label="Close">✕</button>
+    </div>
+
     <!-- Header: desktop inline nav + mobile hamburger -->
     <div class="header" id="mainHeader">
-      <div class="header-brand">
-        <h2>
-          <i class="fa-solid fa-place-of-worship"></i> Shree Hanuman Mandir,
-          Paliya
-        </h2>
-      </div>
+      <a class="header-brand" href="#about">
+        <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo"
+          onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
+        <i id="hdrIcon" class="fa-solid fa-place-of-worship"
+           style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
+        <div class="header-brand-text">
+          <span class="brand-main">Shree Hanuman Mandir</span>
+          <span class="brand-sub">Paliya · Ram Yagya Vishwakarma</span>
+        </div>
+      </a>
       <!-- Desktop nav -->
       <nav class="nav-links">
         <a href="#about"><i class="fa-solid fa-house"></i> Home</a>
         <a href="#about"><i class="fa-solid fa-info-circle"></i> About</a>
         <a href="#gallery"><i class="fa-solid fa-images"></i> Gallery</a>
-        <a href="#feedbackSection"
-          ><i class="fa-solid fa-comment-dots"></i> Feedback</a
-        >
-        <a href="login.html" class="login-btn"
-          ><i class="fa-solid fa-right-to-bracket"></i> Login</a
-        >
+        <a href="#feedbackSection"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
+        <a href="login.html" class="login-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
       </nav>
       <!-- Mobile hamburger -->
-      <button
-        class="hamburger-btn"
-        id="hamburgerBtn"
-        onclick="toggleNavMenu()"
-        aria-label="Menu"
-      >
+      <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
         <i class="fa-solid fa-bars" id="hamburgerIcon"></i>
       </button>
     </div>
@@ -1076,6 +1194,7 @@
             <button class="gc-lb-prev" onclick="lbNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
             <button class="gc-lb-next" onclick="lbNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
+          <div id="gcLbCaption" style="display:none;margin-top:14px;color:rgba(255,255,255,0.85);font-size:0.92rem;font-weight:500;text-align:center;max-width:80vw;padding:8px 20px;background:rgba(0,0,0,0.55);border-radius:30px;backdrop-filter:blur(6px);border:1px solid rgba(247,160,26,0.2);letter-spacing:0.3px;"></div>
         </div>
       </div>
     </div>
@@ -1165,12 +1284,12 @@
         _gcPhotos.forEach(function(p, i) {
           var slide = document.createElement("div");
           slide.className = "swiper-slide swiper-slide-gallery";
+          slide.setAttribute("data-idx", i);
           slide.innerHTML =
             '<img src="' + p.PhotoURL + '" alt="' + (p.Caption || "Photo") + '" loading="lazy">' +
             '<div class="gc-overlay"></div>' +
             '<div class="gc-view-icon"><i class="fa-solid fa-expand"></i></div>' +
             (p.Caption ? '<div class="gc-caption">' + p.Caption + '</div>' : '');
-          (function(idx){ slide.onclick = function(){ openLightbox(idx); }; })(i);
           track.appendChild(slide);
         });
 
@@ -1179,8 +1298,13 @@
         _swiperInstance = new Swiper("#gallerySwiper", {
           slidesPerView: 3,
           spaceBetween: 20,
-          loop: true,
-          autoplay: { delay: 4000, disableOnInteraction: false, pauseOnMouseEnter: true },
+          loop: _gcPhotos.length >= 3,
+          autoplay: {
+            delay: 4000,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true,
+            waitForTransition: true,
+          },
           pagination: {
             el: "#gcDots",
             clickable: true,
@@ -1196,7 +1320,22 @@
           },
           grabCursor: true,
           effect: "slide",
+          observer: true,
+          observeParents: true,
+          resizeObserver: true,
+          on: {
+            click: function(swiper, event) {
+              /* Find the slide element that was clicked */
+              var slideEl = event.target.closest(".swiper-slide-gallery");
+              if (!slideEl) return;
+              /* Get the real (non-duplicated) index from data-idx */
+              var idx = parseInt(slideEl.getAttribute("data-idx"), 10);
+              if (!isNaN(idx)) openLightbox(idx);
+            }
+          }
         });
+        /* Force autoplay restart after init to fix intermittent no-scroll bug */
+        setTimeout(function(){ if(_swiperInstance && _swiperInstance.autoplay) _swiperInstance.autoplay.start(); }, 400);
       }
 
       /* stubs kept so nothing else breaks */
@@ -1204,12 +1343,18 @@
       function galleryGoTo(idx) { if(_swiperInstance){ _swiperInstance.slideTo(idx); } }
 
       /* ── Lightbox ── */
+      var _lbScrollY = 0;
       function openLightbox(idx) {
         _gcLbIdx = idx; _lbRender();
         document.getElementById("gcLightbox").classList.add("open");
         document.getElementById("gcLbPanel").classList.remove("closing");
+        /* Lock body scroll without shifting layout */
+        _lbScrollY = window.scrollY;
         document.body.style.overflow = "hidden";
-        _stopAuto();
+        document.body.style.position = "fixed";
+        document.body.style.top = "-" + _lbScrollY + "px";
+        document.body.style.width = "100%";
+        if (_swiperInstance && _swiperInstance.autoplay) _swiperInstance.autoplay.stop();
       }
       function closeLightbox() {
         var p = document.getElementById("gcLbPanel");
@@ -1217,8 +1362,13 @@
         setTimeout(function(){
           document.getElementById("gcLightbox").classList.remove("open");
           p.classList.remove("closing");
+          /* Restore scroll position exactly */
           document.body.style.overflow = "";
-          if (_gcPhotos.length) _startAuto();
+          document.body.style.position = "";
+          document.body.style.top = "";
+          document.body.style.width = "";
+          window.scrollTo(0, _lbScrollY);
+          if (_gcPhotos.length && _swiperInstance && _swiperInstance.autoplay) _swiperInstance.autoplay.start();
         }, 240);
       }
       function lbNav(dir) {
@@ -1238,6 +1388,9 @@
         var img = document.getElementById("gcLightboxImg");
         img.src = p.PhotoURL; img.alt = p.Caption||"Photo";
         document.getElementById("gcLbCounter").textContent = (_gcLbIdx+1)+" / "+_gcPhotos.length;
+        // Show / update caption
+        var cap = document.getElementById("gcLbCaption");
+        if (cap) { cap.textContent = p.Caption || ""; cap.style.display = p.Caption ? "block" : "none"; }
       }
       document.addEventListener("keydown", function(e){
         var lb = document.getElementById("gcLightbox");
@@ -1247,6 +1400,34 @@
         if (e.key==="ArrowLeft")  lbNav(-1);
       });
       window.addEventListener("resize", function(){ if(_swiperInstance) _swiperInstance.update(); });
+      /* ── Announcement Banner ── */
+      var _annDismissedId = null;
+      function dismissBanner() {
+        var banner = document.getElementById("announcementBanner");
+        banner.style.transition = "max-height 0.35s ease, opacity 0.3s ease";
+        banner.style.opacity = "0";
+        banner.style.maxHeight = "0";
+        banner.style.overflow = "hidden";
+        setTimeout(function(){ banner.classList.remove("open"); banner.style = ""; }, 360);
+        try { sessionStorage.setItem("ann_dismissed", _annDismissedId || "1"); } catch(e){}
+      }
+      function loadAnnouncement() {
+        if (typeof getData !== "function") return;
+        getData("getAnnouncement").then(function(data) {
+          if (!data || !data.Message) return;
+          var dismissed = "";
+          try { dismissed = sessionStorage.getItem("ann_dismissed") || ""; } catch(e){}
+          var annId = String(data.Id || data.Message).substring(0, 40);
+          if (dismissed === annId) return;
+          _annDismissedId = annId;
+          document.getElementById("annText").textContent = data.Message;
+          var badge = document.getElementById("annBadge");
+          if (data.Badge) { badge.textContent = data.Badge; badge.style.display = "inline-block"; }
+          if (data.Icon) document.querySelector(".ann-icon").textContent = data.Icon;
+          document.getElementById("announcementBanner").classList.add("open");
+        }).catch(function(){});
+      }
+      document.addEventListener("DOMContentLoaded", function(){ setTimeout(loadAnnouncement, 600); });
       document.addEventListener("DOMContentLoaded", loadGallery);
     </script>
     <script>

@@ -11,7 +11,9 @@ const SHEETS = {
   EXPENSES: "EXPENSES",
   AUDIT: "AUDIT_LOGS",
   GOALS: "GOALS",
-  GALLERY: "GALLERY"
+  GALLERY: "GALLERY",
+  ANNOUNCEMENT: "ANNOUNCEMENT",
+  BROADCAST: "BROADCAST"
 };
 
 // ── Hash password (SHA-256, matches client-side sha256())
@@ -620,6 +622,184 @@ function doGet(e) {
   else if (action === "updateExpense") {
     result = updateExpenseRow(SHEETS.EXPENSES, e.parameter);
     if (result.status === "updated") logAction("Admin", "Update Expense", "Id: " + e.parameter.Id);
+  }
+
+  // ── GET ACTIVE ANNOUNCEMENT (shown on home page)
+  else if (action === "getAnnouncement") {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let sheet = ss.getSheetByName(SHEETS.ANNOUNCEMENT);
+      if (!sheet) { result = {}; }
+      else {
+        const data = sheet.getDataRange().getValues();
+        if (data.length < 2) { result = {}; }
+        else {
+          const headers = data[0];
+          // Find the most recent Active row
+          const rows = data.slice(1).reverse();
+          const active = rows.find(r => {
+            const statusIdx = headers.indexOf("Status");
+            return statusIdx === -1 || String(r[statusIdx] || "Active").toLowerCase() === "active";
+          });
+          if (!active) { result = {}; }
+          else {
+            result = {
+              Id:      active[headers.indexOf("AnnId")]    || "",
+              Message: active[headers.indexOf("Message")]  || "",
+              Badge:   active[headers.indexOf("Badge")]    || "",
+              Icon:    active[headers.indexOf("Icon")]     || "🔔",
+              Color:   active[headers.indexOf("Color")]    || "purple",
+              Status:  active[headers.indexOf("Status")]   || "Active",
+              CreatedAt: active[headers.indexOf("CreatedAt")] || ""
+            };
+          }
+        }
+      }
+    } catch(err) { result = {}; }
+  }
+
+  // ── GET ANNOUNCEMENT HISTORY (admin view — all rows, newest first)
+  else if (action === "getAnnouncementHistory") {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let sheet = ss.getSheetByName(SHEETS.ANNOUNCEMENT);
+      if (!sheet) { result = []; }
+      else {
+        const data = sheet.getDataRange().getValues();
+        if (data.length < 2) { result = []; }
+        else {
+          const headers = data[0];
+          result = data.slice(1).reverse().map(r => ({
+            AnnId:     r[headers.indexOf("AnnId")]     || "",
+            Message:   r[headers.indexOf("Message")]   || "",
+            Badge:     r[headers.indexOf("Badge")]     || "",
+            Icon:      r[headers.indexOf("Icon")]      || "🔔",
+            Color:     r[headers.indexOf("Color")]     || "purple",
+            Status:    r[headers.indexOf("Status")]    || "Active",
+            AdminName: r[headers.indexOf("AdminName")] || "Admin",
+            CreatedAt: r[headers.indexOf("CreatedAt")] || ""
+          }));
+        }
+      }
+    } catch(err) { result = []; }
+  }
+
+  // ── GET BROADCASTS (for home page / member view)
+  else if (action === "getBroadcasts") {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let sheet = ss.getSheetByName(SHEETS.BROADCAST);
+      if (!sheet) { result = []; }
+      else {
+        const data = sheet.getDataRange().getValues();
+        if (data.length < 2) { result = []; }
+        else {
+          const headers = data[0];
+          result = data.slice(1).reverse().slice(0, 20).map(r => ({
+            BcId:     r[headers.indexOf("BcId")]     || "",
+            Type:     r[headers.indexOf("Type")]     || "",
+            Priority: r[headers.indexOf("Priority")] || "normal",
+            Title:    r[headers.indexOf("Title")]    || "",
+            Message:  r[headers.indexOf("Message")]  || "",
+            Time:     r[headers.indexOf("Time")]     || ""
+          }));
+        }
+      }
+    } catch(err) { result = []; }
+  }
+
+  // ── SAVE ANNOUNCEMENT (called via postData = JSONP GET)
+  else if (action === "saveAnnouncement") {
+    try {
+      const msg = sanitize(e.parameter.Message, 500);
+      if (!msg) { result = { status: "error", message: "Missing Message." }; }
+      else {
+        const ss = SpreadsheetApp.getActiveSpreadsheet();
+        let annSheet = ss.getSheetByName(SHEETS.ANNOUNCEMENT);
+        if (!annSheet) {
+          annSheet = ss.insertSheet(SHEETS.ANNOUNCEMENT);
+          annSheet.appendRow(["AnnId","Message","Badge","Icon","Color","Status","AdminName","CreatedAt"]);
+        }
+        // Ensure Color column exists (for older sheets without it)
+        const hdrRow = annSheet.getRange(1,1,1,annSheet.getLastColumn()).getValues()[0];
+        if (hdrRow.indexOf("Color") === -1) {
+          annSheet.getRange(1, hdrRow.length + 1).setValue("Color");
+        }
+        // Mark existing Active rows as Past
+        const annData = annSheet.getDataRange().getValues();
+        const annHdrs = annData[0];
+        const stCol = annHdrs.indexOf("Status") + 1;
+        for (let i = 1; i < annData.length; i++) {
+          if (String(annData[i][annHdrs.indexOf("Status")]||"Active").toLowerCase() === "active") {
+            annSheet.getRange(i+1, stCol).setValue("Past");
+          }
+        }
+        const newId = generateId();
+        // Re-read headers after potential Color column addition
+        const freshHdrs = annSheet.getRange(1,1,1,annSheet.getLastColumn()).getValues()[0];
+        const newRow = freshHdrs.map(h => {
+          if (h === "AnnId")     return newId;
+          if (h === "Message")   return msg;
+          if (h === "Badge")     return sanitize(e.parameter.Badge || "", 50);
+          if (h === "Icon")      return sanitize(e.parameter.Icon  || "🔔", 10);
+          if (h === "Color")     return sanitize(e.parameter.Color || "purple", 20);
+          if (h === "Status")    return "Active";
+          if (h === "AdminName") return sanitize(e.parameter.AdminName || "Admin", 100);
+          if (h === "CreatedAt") return formatDate();
+          return "";
+        });
+        annSheet.appendRow(newRow);
+        SpreadsheetApp.flush();
+        logAction(e.parameter.AdminName || "Admin", "saveAnnouncement", "Id: " + newId);
+        result = { status: "success", annId: newId };
+      }
+    } catch(err) { result = { status: "error", message: err.message }; }
+  }
+
+  // ── CLEAR ANNOUNCEMENT (remove active banner)
+  else if (action === "clearAnnouncement") {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const annSheet = ss.getSheetByName(SHEETS.ANNOUNCEMENT);
+      if (annSheet) {
+        const annData = annSheet.getDataRange().getValues();
+        const annHdrs = annData[0];
+        const stCol = annHdrs.indexOf("Status") + 1;
+        for (let i = 1; i < annData.length; i++) {
+          if (String(annData[i][annHdrs.indexOf("Status")]||"").toLowerCase() === "active") {
+            annSheet.getRange(i+1, stCol).setValue("Past");
+          }
+        }
+        SpreadsheetApp.flush();
+      }
+      logAction(e.parameter.AdminName || "Admin", "clearAnnouncement", "Banner removed");
+      result = { status: "success" };
+    } catch(err) { result = { status: "error", message: err.message }; }
+  }
+
+  // ── SAVE BROADCAST MESSAGE
+  else if (action === "saveBroadcast") {
+    try {
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let bcSheet = ss.getSheetByName(SHEETS.BROADCAST);
+      if (!bcSheet) {
+        bcSheet = ss.insertSheet(SHEETS.BROADCAST);
+        bcSheet.appendRow(["BcId","Type","Priority","Title","Message","Time","AdminName"]);
+      }
+      const newBcId = generateId();
+      bcSheet.appendRow([
+        newBcId,
+        sanitize(e.parameter.type     || "announcement", 30),
+        sanitize(e.parameter.priority || "normal", 20),
+        sanitize(e.parameter.title    || "", 200),
+        sanitize(e.parameter.message  || "", 2000),
+        sanitize(e.parameter.time     || formatDate(), 50),
+        sanitize(e.parameter.AdminName || "Admin", 100)
+      ]);
+      SpreadsheetApp.flush();
+      logAction(e.parameter.AdminName || "Admin", "saveBroadcast", "Id: " + newBcId);
+      result = { status: "success", bcId: newBcId };
+    } catch(err) { result = { status: "error", message: err.message }; }
   }
 
   else {
