@@ -718,13 +718,15 @@
       }
       @keyframes gcBdIn { from{opacity:0} to{opacity:1} }
 
-      /* ── Top bar: counter left, close right — always visible ── */
+      /* ── Top bar: always fixed at very top of viewport ── */
       .gc-lb-topbar {
-        position: relative; z-index: 10;
+        position: fixed; top: 0; left: 0; right: 0;
+        z-index: 100001;
         display: flex; align-items: center; justify-content: space-between;
         padding: 10px 14px 8px;
-        flex-shrink: 0;
+        pointer-events: none; /* let clicks pass through gap */
       }
+      .gc-lb-topbar > * { pointer-events: all; }
       .gc-lb-counter {
         color: #f7c35a; font-size: 0.8rem; font-weight: 700;
         background: rgba(60,20,0,0.72); padding: 5px 14px; border-radius: 20px;
@@ -849,6 +851,106 @@
           max-height: calc(100dvh - 80px);
         }
       }
+
+      /* ══ COMMUNITY STATS SECTION ══ */
+      .community-stats-section {
+        padding: 56px 24px;
+        background: linear-gradient(180deg, #2a0f00 0%, #3c1a00 60%, #2a0f00 100%);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .community-stats-section::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(247,160,26,0.5) 50%, transparent 100%);
+      }
+      .community-stats-section::after {
+        content: '';
+        position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(247,160,26,0.3) 50%, transparent 100%);
+      }
+      .cs-eyebrow {
+        display: inline-flex; align-items: center; gap: 7px;
+        background: rgba(247,160,26,0.12);
+        border: 1px solid rgba(247,160,26,0.32);
+        border-radius: 20px; padding: 5px 16px;
+        font-size: 11px; font-weight: 600;
+        color: #f7a01a; letter-spacing: 0.8px;
+        text-transform: uppercase; margin-bottom: 28px;
+      }
+      .cs-eyebrow-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #f7a01a;
+        animation: csLivePulse 2s ease-in-out infinite;
+        flex-shrink: 0;
+      }
+      @keyframes csLivePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.65)} }
+      .cs-card {
+        max-width: 400px; margin: 0 auto;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(247,160,26,0.22);
+        border-radius: 22px; padding: 40px 32px 32px;
+        position: relative;
+      }
+      .cs-card::before {
+        content: '';
+        position: absolute; top: 0; left: 15%; right: 15%; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(247,160,26,0.6), transparent);
+        border-radius: 1px;
+      }
+      .cs-icon-wrap {
+        width: 58px; height: 58px; border-radius: 50%;
+        background: rgba(247,160,26,0.10);
+        border: 1px solid rgba(247,160,26,0.28);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 22px;
+      }
+      .cs-icon-wrap i { font-size: 22px; color: #f7a01a; }
+      .cs-count-row {
+        display: flex; align-items: baseline;
+        justify-content: center; gap: 3px;
+        margin-bottom: 10px;
+      }
+      .cs-big-num {
+        font-size: 68px; font-weight: 700;
+        color: #fff8e1; line-height: 1;
+        letter-spacing: -2px;
+        font-variant-numeric: tabular-nums;
+        font-family: "Poppins", sans-serif;
+      }
+      .cs-big-plus {
+        font-size: 38px; font-weight: 700;
+        color: #f7a01a; line-height: 1;
+        font-family: "Poppins", sans-serif;
+      }
+      .cs-label {
+        font-size: 15px; font-weight: 600;
+        color: rgba(255,220,140,0.9);
+        margin-bottom: 5px;
+        font-family: "Poppins", sans-serif;
+      }
+      .cs-sublabel {
+        font-size: 12px; color: rgba(247,160,26,0.45);
+        margin-bottom: 26px;
+        font-family: "Poppins", sans-serif;
+      }
+      .cs-divider {
+        height: 1px;
+        background: rgba(247,160,26,0.15);
+        margin-bottom: 20px; border-radius: 1px;
+      }
+      .cs-cta {
+        font-size: 13px; color: rgba(255,200,110,0.6);
+        font-family: "Poppins", sans-serif;
+      }
+      .cs-cta a {
+        color: #f7a01a; font-weight: 600; text-decoration: none;
+        border-bottom: 1px solid rgba(247,160,26,0.4);
+        padding-bottom: 1px;
+        transition: border-color 0.2s, color 0.2s;
+      }
+      .cs-cta a:hover { color: #ffd585; border-color: rgba(255,213,133,0.6); }
 
       /* ══ FEEDBACK SECTION — FIX #1 ══ */
       .feedback-section {
@@ -1238,24 +1340,48 @@
         <div class="swiper-pagination swiper-pagination-gallery" id="gcDots"></div>
       </div>
 
-      <!-- Lightbox -->
-      <div class="gc-lightbox" id="gcLightbox">
-        <div class="gc-lb-backdrop" onclick="closeLightbox()"></div>
-        <!-- Top bar: always visible, never scrolls away -->
+      <!-- Lightbox: click outside image area closes it -->
+      <div class="gc-lightbox" id="gcLightbox" onclick="_lbOutsideClick(event)">
+        <div class="gc-lb-backdrop"></div>
+        <!-- Top bar always visible -->
         <div class="gc-lb-topbar">
           <span class="gc-lb-counter" id="gcLbCounter"></span>
           <button class="gc-lightbox-close" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <!-- Image panel -->
+        <!-- Image panel — clicking the panel bg closes; clicking the frame/img does NOT -->
         <div class="gc-lb-panel" id="gcLbPanel">
-          <div class="gc-lb-frame">
+          <div class="gc-lb-frame" id="gcLbFrame">
             <img id="gcLightboxImg" src="" alt="">
-            <button class="gc-lb-prev" onclick="lbNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-            <button class="gc-lb-next" onclick="lbNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
+            <button class="gc-lb-prev" onclick="event.stopPropagation();lbNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="gc-lb-next" onclick="event.stopPropagation();lbNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
           <div id="gcLbCaption" style="display:none;"></div>
         </div>
       </div>
+    </div>
+
+    <!-- ══ COMMUNITY STATS SECTION ══ -->
+    <div class="community-stats-section reveal" id="communityStats">
+
+      <div class="cs-eyebrow">
+        <span class="cs-eyebrow-dot"></span>
+        Live count
+      </div>
+
+      <div class="cs-card">
+        <div class="cs-icon-wrap">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="cs-count-row">
+          <span class="cs-big-num" id="csMembers">0</span>
+          <span class="cs-big-plus">+</span>
+        </div>
+        <div class="cs-label">Registered Members</div>
+        <div class="cs-sublabel">Shree Hanuman Mandir family</div>
+        <div class="cs-divider"></div>
+        <div class="cs-cta">Be a part of this family — <a href="#feedbackSection">join us today 🙏</a></div>
+      </div>
+
     </div>
 
     <!-- FIX #1 & #3: Feedback Section -->
@@ -1427,6 +1553,11 @@
           if (_gcPhotos.length && _swiperInstance && _swiperInstance.autoplay) _swiperInstance.autoplay.start();
         }, 240);
       }
+      /* Close when clicking outside the image frame */
+      function _lbOutsideClick(e) {
+        var frame = document.getElementById("gcLbFrame");
+        if (frame && !frame.contains(e.target)) { closeLightbox(); }
+      }
       function lbNav(dir) {
         if (_lbNavBusy) return;
         _lbNavBusy = true;
@@ -1479,6 +1610,43 @@
         }, {passive: true});
       })();
       window.addEventListener("resize", function(){ if(_swiperInstance) _swiperInstance.update(); });
+      /* ── Community Stats — members only from getUsers ── */
+      function _animateMemberCount(el, target, duration) {
+        if (!el) return;
+        var frames = Math.max(60, Math.round(duration / 16));
+        var f = 0;
+        function tick() {
+          f++;
+          var ease = 1 - Math.pow(1 - f / frames, 3);
+          el.textContent = Math.round(ease * target).toLocaleString("en-IN");
+          if (f < frames) requestAnimationFrame(tick);
+          else el.textContent = target.toLocaleString("en-IN");
+        }
+        requestAnimationFrame(tick);
+      }
+      var _statsAnimated = false;
+      function loadCommunityStats() {
+        if (typeof getData !== "function") return;
+        getData("getUsers").then(function(users) {
+          var list = Array.isArray(users) ? users : [];
+          var members = list.filter(function(u) {
+            return !u.Status || String(u.Status).toLowerCase() !== "inactive";
+          }).length;
+          _animateMemberCount(document.getElementById("csMembers"), members, 1800);
+        }).catch(function() {});
+      }
+      function _checkStatsVisible() {
+        if (_statsAnimated) return;
+        var el = document.getElementById("communityStats");
+        if (!el) return;
+        if (el.getBoundingClientRect().top < window.innerHeight - 60) {
+          _statsAnimated = true;
+          loadCommunityStats();
+        }
+      }
+      window.addEventListener("scroll", _checkStatsVisible, { passive: true });
+      document.addEventListener("DOMContentLoaded", function(){ setTimeout(_checkStatsVisible, 800); });
+
       /* ── Announcement Banner ── */
       var _annDismissedId = null;
       function dismissBanner() {
