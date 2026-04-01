@@ -607,6 +607,11 @@
         background: rgba(251,191,36,0.18) !important;
         color: #fde68a !important;
       }
+      #nav_tracker { color: #a78bfa; }
+      #nav_tracker:hover, #nav_tracker.active-nav {
+        background: rgba(124,58,237,0.25) !important;
+        color: #c4b5fd !important;
+      }
       .ann-preview-bar {
         display: flex; align-items: center; gap: 12px;
         background: linear-gradient(90deg, #4c1a6e, #6b21a8, #4c1a6e);
@@ -821,6 +826,9 @@
           <li onclick="showPage('galleryAdminPage',this)">
             <i class="fa-solid fa-images"></i> Gallery
           </li>
+          <li onclick="showPage('trackerPage',this)" id="nav_tracker">
+            <i class="fa-solid fa-chart-pie"></i> Contribution Tracker
+          </li>
           <li onclick="showPage('announcementPage',this)" id="nav_announcement">
             <i class="fa-solid fa-bullhorn"></i> Announcement
           </li>
@@ -908,6 +916,17 @@
               border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             "
           >
+            <span style="color: #aaa; font-size: 11px">🚶 Walk-in Month</span>
+            <span id="sb_walkin_month" style="color: #fbbf24; font-weight: 600">—</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            "
+          >
             <span style="color: #aaa; font-size: 11px"
               >This Year Collected</span
             >
@@ -918,10 +937,32 @@
               display: flex;
               justify-content: space-between;
               padding: 5px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            "
+          >
+            <span style="color: #aaa; font-size: 11px">🚶 Walk-in Year</span>
+            <span id="sb_walkin_year" style="color: #fbbf24; font-weight: 600">—</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             "
           >
             <span style="color: #aaa; font-size: 11px">This Year Expense</span>
             <span id="sb_exp" style="color: #e74c3c; font-weight: 600">—</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+            "
+          >
+            <span style="color: #aaa; font-size: 11px">📧 Email Today</span>
+            <span id="sb_email_quota" style="color: #60a5fa; font-weight: 600; font-size: 10px;">—</span>
           </div>
           <!-- WhatsApp Report — Month/Year selectors -->
           <div
@@ -1273,6 +1314,17 @@
               <div style="grid-column: 1/-1">
                 <label>Note</label
                 ><input id="note" placeholder="Optional note" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div>
+                <label>Payment Mode</label>
+                <select id="paymentMode">
+                  <option value="UPI">UPI</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Online Transfer">Online Transfer</option>
+                </select>
               </div>
             </div>
             <div
@@ -1768,6 +1820,84 @@
         </div>
 
         <!-- ANNOUNCEMENT PAGE -->
+        <!-- ═══ CONTRIBUTION TRACKER PAGE (Improvement #6) ═══ -->
+        <div id="trackerPage" class="page">
+          <div class="card">
+            <h3><i class="fa-solid fa-chart-pie" style="color:#f7a01a;"></i> Contribution Tracker
+              <span style="font-size:11px;font-weight:400;color:#999;margin-left:8px;">Who paid · Who hasn't</span>
+            </h3>
+
+            <!-- Filter Row -->
+            <div class="filter-row" style="flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Type</label>
+                <select id="tr_type" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;min-width:160px;">
+                  <option value="">— All Types —</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Month</label>
+                <select id="tr_month" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;min-width:130px;"></select>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Year</label>
+                <select id="tr_year" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;min-width:100px;"></select>
+              </div>
+              <div style="align-self:flex-end;">
+                <button onclick="runTracker()" style="padding:9px 20px;">
+                  <i class="fa-solid fa-magnifying-glass"></i> Apply Filter
+                </button>
+              </div>
+            </div>
+
+            <!-- Summary Badges -->
+            <div id="tr_summary" style="display:none;gap:12px;flex-wrap:wrap;margin-bottom:18px;display:flex;">
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+                <div style="font-size:1.5rem;font-weight:700;color:#16a34a;" id="tr_paid_count">0</div>
+                <div style="font-size:11px;color:#166534;font-weight:600;">✅ Paid</div>
+                <div style="font-size:12px;color:#15803d;font-weight:700;" id="tr_paid_amt">₹0</div>
+              </div>
+              <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+                <div style="font-size:1.5rem;font-weight:700;color:#dc2626;" id="tr_pending_count">0</div>
+                <div style="font-size:11px;color:#991b1b;font-weight:600;">❌ Pending</div>
+                <div style="font-size:12px;color:#b91c1c;font-weight:600;" id="tr_pending_pct">0%</div>
+              </div>
+              <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+                <div style="font-size:1.5rem;font-weight:700;color:#2563eb;" id="tr_total_members">0</div>
+                <div style="font-size:11px;color:#1d4ed8;font-weight:600;">👥 Total Members</div>
+              </div>
+            </div>
+
+            <!-- Two-column lists -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="tr_lists">
+              <!-- Paid -->
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <h4 style="margin:0;color:#16a34a;font-size:13px;"><i class="fa-solid fa-circle-check"></i> Paid Members</h4>
+                  <button onclick="sendTrackerMsg('paid')" style="padding:5px 12px;font-size:11px;background:#16a34a;box-shadow:none;">
+                    <i class="fa-brands fa-whatsapp"></i> Send List
+                  </button>
+                </div>
+                <div id="tr_paid_list" style="max-height:380px;overflow-y:auto;border:1px solid #bbf7d0;border-radius:8px;"></div>
+              </div>
+              <!-- Pending -->
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <h4 style="margin:0;color:#dc2626;font-size:13px;"><i class="fa-solid fa-circle-xmark"></i> Pending Members</h4>
+                  <button onclick="sendTrackerMsg('pending')" style="padding:5px 12px;font-size:11px;background:#dc2626;box-shadow:none;">
+                    <i class="fa-brands fa-whatsapp"></i> Send Reminder
+                  </button>
+                </div>
+                <div id="tr_pending_list" style="max-height:380px;overflow-y:auto;border:1px solid #fecaca;border-radius:8px;"></div>
+              </div>
+            </div>
+            <div id="tr_empty" style="display:none;text-align:center;padding:40px;color:#aaa;">
+              <i class="fa-solid fa-filter" style="font-size:2rem;margin-bottom:10px;"></i>
+              <p>Apply a filter above to see contribution status.</p>
+            </div>
+          </div>
+        </div>
+
         <div id="announcementPage" class="page">
           <div class="card">
             <h3><i class="fa-solid fa-bullhorn" style="color:#f7a01a;"></i> Manage Announcement Banner</h3>
@@ -2134,6 +2264,7 @@
     </div>
     <!-- /.layout -->
 
+    <script src="constants.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script>
@@ -2981,42 +3112,54 @@
         const now = new Date();
         const curYear = now.getFullYear();
         const MOS = [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "August",
-          "September",
-          "October",
-          "November",
-          "December",
+          "January","February","March","April","May","June",
+          "July","August","September","October","November","December",
         ];
         const curMonth = MOS[now.getMonth()];
-        let monthC = data
-          .filter(
-            (c) => String(c.Year) === String(curYear) && c.ForMonth === curMonth
-          )
-          .reduce((s, c) => s + Number(c.Amount || 0), 0);
-        let yearC = data
-          .filter((c) => String(c.Year) === String(curYear))
-          .reduce((s, c) => s + Number(c.Amount || 0), 0);
-        let yearE = expenses
-          .filter((e) => String(e.Year) === String(curYear))
-          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+
+        // All contributions this month/year
+        const monthContribs = data.filter(c => String(c.Year) === String(curYear) && c.ForMonth === curMonth);
+        const yearContribs  = data.filter(c => String(c.Year) === String(curYear));
+
+        // Separate regular vs walk-in
+        const isWalkIn = c => String(c.UserId).startsWith("WALKIN_");
+        let monthC        = monthContribs.filter(c => !isWalkIn(c)).reduce((s,c) => s + Number(c.Amount||0), 0);
+        let monthWalkIn   = monthContribs.filter(c =>  isWalkIn(c)).reduce((s,c) => s + Number(c.Amount||0), 0);
+        let yearC         = yearContribs.filter(c  => !isWalkIn(c)).reduce((s,c) => s + Number(c.Amount||0), 0);
+        let yearWalkIn    = yearContribs.filter(c  =>  isWalkIn(c)).reduce((s,c) => s + Number(c.Amount||0), 0);
+        let yearE         = expenses.filter(e => String(e.Year) === String(curYear)).reduce((s,e) => s + Number(e.Amount||0), 0);
+
         let sb = document.getElementById("sb_members");
-        if (sb)
-          sb.innerText = users.filter(
-            (u) => u.Role !== "Admin" && u.Status !== "Inactive"
-          ).length;
+        if (sb) sb.innerText = users.filter(u => u.Role !== "Admin" && u.Status !== "Inactive").length;
+
         let sbm = document.getElementById("sb_month");
-        if (sbm) sbm.innerText = "₹" + fmt(monthC);
+        if (sbm) sbm.innerText = "₹" + fmt(monthC + monthWalkIn);
+
+        // Walk-in month
+        let sbwm = document.getElementById("sb_walkin_month");
+        if (sbwm) sbwm.innerText = monthWalkIn > 0 ? "₹" + fmt(monthWalkIn) : "—";
+
         let sby = document.getElementById("sb_year");
-        if (sby) sby.innerText = "₹" + fmt(yearC);
+        if (sby) sby.innerText = "₹" + fmt(yearC + yearWalkIn);
+
+        // Walk-in year
+        let sbwy = document.getElementById("sb_walkin_year");
+        if (sbwy) sbwy.innerText = yearWalkIn > 0 ? "₹" + fmt(yearWalkIn) : "—";
+
         let sbe = document.getElementById("sb_exp");
         if (sbe) sbe.innerText = "₹" + fmt(yearE);
+
+        // Email quota — fetch async, non-blocking
+        let sbEq = document.getElementById("sb_email_quota");
+        if (sbEq) {
+          getData("getEmailQuota").then(q => {
+            if (q && typeof q.used !== "undefined") {
+              const color = q.remaining < 10 ? "#f87171" : q.remaining < 30 ? "#fbbf24" : "#60a5fa";
+              sbEq.style.color = color;
+              sbEq.innerText = q.used + " / " + q.limit + " used";
+            }
+          }).catch(() => { if (sbEq) sbEq.innerText = "—"; });
+        }
         // Populate WA selectors
         let waMonth = document.getElementById("wa_month");
         let waYear = document.getElementById("wa_year");
@@ -4454,22 +4597,25 @@
           );
         try {
           let res = await postData({
-            action: "addContribution",
-            Id: Date.now(),
-            UserId: userId,
-            Amount: amount,
-            ForMonth: document.getElementById("month").value,
-            Year: year,
-            TypeId: document.getElementById("type").value,
-            OccasionId: document.getElementById("occasion").value,
-            Note: document.getElementById("note").value,
+            action:      "addContribution",
+            Id:          Date.now(),
+            UserId:      userId,
+            Amount:      amount,
+            ForMonth:    document.getElementById("month").value,
+            Year:        year,
+            TypeId:      document.getElementById("type").value,
+            OccasionId:  document.getElementById("occasion").value,
+            Note:        document.getElementById("note").value,
+            PaymentMode: document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "UPI",
           });
           if (res.status === "success") {
-            toast("✅ Contribution added! Receipt: " + res.receiptId);
+            const rid = res.receiptId;
+            let msg = "✅ Contribution saved! Receipt: " + rid;
+            if (res.emailSent)    msg += " · 📧 Receipt email sent";
+            if (res.emailSkipped) msg += " · ⚠️ Email quota reached";
+            toast(msg);
             document.getElementById("amount").value = "";
             document.getElementById("note").value = "";
-            // Keep user selected for bulk entry — only reset amount/note
-            // User can click Reset User to clear user selection
             init();
           } else toast("❌ Failed to add.", "error");
         } catch (err) {
@@ -5380,6 +5526,169 @@
             '<i class="fa-solid fa-check"></i> Save & Get Receipt';
         }
       }
+
+      /* ═══════════════════════════════════════════════════════
+         IMPROVEMENT #6 — CONTRIBUTION TRACKER
+         Shows paid vs pending members per type/month/year.
+         Walk-in donors are excluded from pending (anonymous).
+         ═══════════════════════════════════════════════════════ */
+      function initTrackerDropdowns() {
+        const MOS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+        const now = new Date();
+
+        // Type dropdown
+        const trType = document.getElementById("tr_type");
+        if (trType && trType.options.length <= 1) {
+          types.forEach(t => {
+            let o = document.createElement("option");
+            o.value = t.TypeId; o.textContent = t.TypeName;
+            trType.appendChild(o);
+          });
+        }
+
+        // Month dropdown
+        const trMonth = document.getElementById("tr_month");
+        if (trMonth && trMonth.options.length === 0) {
+          MOS.forEach((m, i) => {
+            let o = document.createElement("option");
+            o.value = m; o.textContent = m;
+            if (i === now.getMonth()) o.selected = true;
+            trMonth.appendChild(o);
+          });
+        }
+
+        // Year dropdown
+        const trYear = document.getElementById("tr_year");
+        if (trYear && trYear.options.length === 0) {
+          let years = new Set();
+          data.forEach(c => { let y = Number(c.Year); if (!isNaN(y) && y > 2000) years.add(y); });
+          let cur = now.getFullYear();
+          for (let y = 2023; y <= cur; y++) years.add(y);
+          Array.from(years).sort((a,b) => b-a).forEach(y => {
+            let o = document.createElement("option");
+            o.value = y; o.textContent = y;
+            if (y === cur) o.selected = true;
+            trYear.appendChild(o);
+          });
+        }
+      }
+
+      function runTracker() {
+        const trType  = document.getElementById("tr_type");
+        const trMonth = document.getElementById("tr_month");
+        const trYear  = document.getElementById("tr_year");
+        if (!trType || !trMonth || !trYear) return;
+
+        const selTypeId = trType.value;
+        const selMonth  = trMonth.value;
+        const selYear   = String(trYear.value);
+
+        // All active non-admin members (exclude walk-ins — they have no user record)
+        const members = users.filter(u => u.Role !== "Admin" && u.Status !== "Inactive");
+
+        // Filter contributions matching criteria
+        let contribs = data.filter(c =>
+          String(c.Year) === selYear &&
+          c.ForMonth === selMonth &&
+          !String(c.UserId).startsWith("WALKIN_")
+        );
+        if (selTypeId) contribs = contribs.filter(c => String(c.TypeId) === selTypeId);
+
+        // Paid member IDs (could have multiple contributions — count as paid)
+        const paidUserIds = new Set(contribs.map(c => String(c.UserId)));
+
+        const paidMembers    = members.filter(u => paidUserIds.has(String(u.UserId)));
+        const pendingMembers = members.filter(u => !paidUserIds.has(String(u.UserId)));
+        const paidAmt        = contribs.reduce((s,c) => s + Number(c.Amount||0), 0);
+        const pctComplete    = members.length > 0 ? Math.round((paidMembers.length / members.length) * 100) : 0;
+
+        // Update badges
+        document.getElementById("tr_summary").style.display = "flex";
+        document.getElementById("tr_paid_count").innerText   = paidMembers.length;
+        document.getElementById("tr_paid_amt").innerText     = "₹" + fmt(paidAmt);
+        document.getElementById("tr_pending_count").innerText= pendingMembers.length;
+        document.getElementById("tr_pending_pct").innerText  = pctComplete + "% complete";
+        document.getElementById("tr_total_members").innerText= members.length;
+
+        // Render paid list
+        const paidList = document.getElementById("tr_paid_list");
+        paidList.innerHTML = paidMembers.length === 0
+          ? '<div style="padding:16px;text-align:center;color:#aaa;font-size:12px;">No paid members</div>'
+          : paidMembers.map(u => {
+              const userContribs = contribs.filter(c => String(c.UserId) === String(u.UserId));
+              const total = userContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
+              return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid #f0fdf4;font-size:12px;">
+                <div>
+                  <div style="font-weight:600;color:#166534;">${escapeHtml(u.Name||"—")}</div>
+                  <div style="color:#aaa;font-size:10.5px;">${escapeHtml(u.Mobile||"")}</div>
+                </div>
+                <span style="background:#dcfce7;color:#16a34a;padding:2px 10px;border-radius:12px;font-weight:700;font-size:11px;">₹${fmt(total)}</span>
+              </div>`;
+            }).join("");
+
+        // Render pending list
+        const pendingList = document.getElementById("tr_pending_list");
+        pendingList.innerHTML = pendingMembers.length === 0
+          ? '<div style="padding:16px;text-align:center;color:#aaa;font-size:12px;">🎉 All members have paid!</div>'
+          : pendingMembers.map(u =>
+              `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid #fef2f2;font-size:12px;">
+                <div>
+                  <div style="font-weight:600;color:#991b1b;">${escapeHtml(u.Name||"—")}</div>
+                  <div style="color:#aaa;font-size:10.5px;">${escapeHtml(u.Mobile||"")}</div>
+                </div>
+                <span style="background:#fee2e2;color:#dc2626;padding:2px 10px;border-radius:12px;font-weight:700;font-size:11px;">Pending</span>
+              </div>`
+            ).join("");
+
+        document.getElementById("tr_empty").style.display = "none";
+
+        // Store for send functions
+        window._trackerState = { selTypeId, selMonth, selYear, paidMembers, pendingMembers, paidAmt, pctComplete };
+      }
+
+      function sendTrackerMsg(which) {
+        const state = window._trackerState;
+        if (!state) { toast("Run the filter first.", "warn"); return; }
+
+        const typeName = (() => {
+          if (!state.selTypeId) return "All Types";
+          const t = types.find(t => String(t.TypeId) === state.selTypeId);
+          return t ? t.TypeName : "—";
+        })();
+
+        let msg;
+        if (which === "paid") {
+          msg =
+            `${APP.symbol} *${APP.name}*\n📍 ${APP.location}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `✅ *PAID MEMBERS REPORT*\n` +
+            `📅 ${state.selMonth} ${state.selYear} | 🏷️ ${typeName}\n\n` +
+            state.paidMembers.map((u,i) => `${i+1}. ${u.Name}`).join("\n") +
+            `\n\n💰 Total Collected: ₹${fmt(state.paidAmt)}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n_${APP.tagline}_`;
+        } else {
+          msg =
+            `${APP.symbol} *${APP.name}*\n📍 ${APP.location}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `⚠️ *CONTRIBUTION REMINDER*\n` +
+            `📅 ${state.selMonth} ${state.selYear} | 🏷️ ${typeName}\n\n` +
+            `The following members have not yet submitted their contribution:\n\n` +
+            state.pendingMembers.map((u,i) => `${i+1}. ${u.Name} — ${u.Mobile||"—"}`).join("\n") +
+            `\n\n📊 Completion: ${state.pctComplete}% (${state.paidMembers.length}/${state.paidMembers.length+state.pendingMembers.length})\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n_Please submit at your earliest. ${APP.tagline}_`;
+        }
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+      }
+
+      // Hook tracker init to showPage
+      const _origShowPage = showPage;
+      window.showPage =  function(id, el) {
+        _origShowPage(id, el);
+        if (id === "trackerPage" && typeof initTrackerDropdowns === "function") {
+          setTimeout(initTrackerDropdowns, 100);
+        }
+      }
+
     </script>
   </body>
 </html>

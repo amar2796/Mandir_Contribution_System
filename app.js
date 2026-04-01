@@ -524,43 +524,83 @@ function _storeReceipt(c, userName, typeName, occasionName) {
   return id;
 }
 
-/* ═══ RECEIPT POPUP — PDF for user; all share options for admin ═══ */
+/* ═══ RECEIPT POPUP — Upgraded: PaymentMode, print, better layout ═══ */
 function showReceipt(c, userName, typeName, occasionName, isAdmin){
-  const rid = _storeReceipt(c, userName, typeName, occasionName);
+  const rid        = _storeReceipt(c, userName, typeName, occasionName);
   const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const payMode    = c.PaymentMode || "—";
   const shareButtons = isAdmin ? `
-      <button class="_mbtn" style="background:#27ae60;" onclick="exportReceiptPDF('${rid}')"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
-      <button class="_mbtn" style="background:#25d366;" onclick="sendReceiptWhatsApp('${rid}')"><i class="fa-brands fa-whatsapp"></i> WhatsApp Text</button>
-      <button class="_mbtn" style="background:#128c7e;" onclick="exportReceiptPDFForWhatsApp('${rid}')"><i class="fa-brands fa-whatsapp"></i> WhatsApp PDF</button>
-      <button class="_mbtn" style="background:#2980b9;" onclick="sendReceiptEmail('${rid}')"><i class="fa-solid fa-envelope"></i> Email</button>`
+      <button class="_mbtn" style="background:#27ae60;" onclick="exportReceiptPDF('${rid}')"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+      <button class="_mbtn" style="background:#25d366;" onclick="sendReceiptWhatsApp('${rid}')"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+      <button class="_mbtn" style="background:#128c7e;" onclick="exportReceiptPDFForWhatsApp('${rid}')"><i class="fa-brands fa-whatsapp"></i> WA+PDF</button>
+      <button class="_mbtn" style="background:#2980b9;" onclick="sendReceiptEmailDirect('${rid}')"><i class="fa-solid fa-envelope"></i> Email</button>
+      <button class="_mbtn" style="background:#7c3aed;" onclick="printReceipt('${rid}')"><i class="fa-solid fa-print"></i> Print</button>`
     : `<button class="_mbtn" style="background:#27ae60;" onclick="exportReceiptPDF('${rid}')"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>`;
+
   let html=`
     <div class="_mhdr"><h3><i class="fa-solid fa-receipt"></i> Contribution Receipt</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-    <div class="_mbdy">
-      <div style="text-align:center;padding:10px 0 14px;">
-        <div style="font-size:2.2rem;margin-bottom:6px;">🕉️</div>
-        <div style="font-size:1.25rem;font-weight:700;color:#946c44;">Shree Hanuman Mandir</div>
-        <div style="font-size:0.8rem;color:#999;margin-bottom:10px;">Paliya, Sultanpur</div>
-        <span style="background:#eafaf1;color:#1D9E75;border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;">✓ OFFICIAL RECEIPT</span>
+    <div class="_mbdy" style="padding:0;">
+
+      <!-- Header Band -->
+      <div style="background:#334155;padding:20px 24px;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:6px;">🕉️</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#f7a01a;letter-spacing:.5px;">${escapeHtml(APP.name.toUpperCase())}</div>
+        <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">${escapeHtml(APP.location)}</div>
+        <div style="margin-top:10px;">
+          <span style="background:#22c55e;color:#fff;border-radius:20px;padding:3px 14px;font-size:10.5px;font-weight:700;letter-spacing:.4px;">✓ OFFICIAL RECEIPT</span>
+        </div>
       </div>
-      <div style="border:1.5px dashed #e0e0e0;border-radius:12px;padding:4px 16px;margin-bottom:14px;">
-        <div class="_row"><span class="_rl">Tracking ID</span><span class="_rv" style="color:#f7a01a;font-family:monospace;">${escapeHtml(displayRID)}</span></div>
+
+      <!-- Receipt ID Band -->
+      <div style="background:#fef3c7;padding:10px 24px;text-align:center;border-bottom:1px solid #fde68a;">
+        <span style="color:#92400e;font-size:12px;font-weight:600;">Receipt No: </span>
+        <span style="color:#b45309;font-size:14px;font-weight:700;font-family:monospace;letter-spacing:1px;">${escapeHtml(displayRID)}</span>
+      </div>
+
+      <!-- Amount Hero -->
+      <div style="padding:18px 24px 12px;text-align:center;border-bottom:1px dashed #e2e8f0;">
+        <div style="color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Amount Received</div>
+        <div style="color:#16a34a;font-size:2rem;font-weight:700;margin:4px 0;">₹ ${fmt(c.Amount)}</div>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:4px 12px;font-size:12px;color:#166534;font-weight:600;">
+          <i class="fa-solid fa-${payMode==='Cash'?'money-bill-wave':payMode==='Cheque'?'file-invoice':'mobile-screen-button'}" style="color:#16a34a;"></i>
+          ${escapeHtml(payMode)}
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div style="padding:6px 24px 10px;">
         <div class="_row"><span class="_rl">Donor Name</span><span class="_rv">${escapeHtml(userName)}</span></div>
-        <div class="_row"><span class="_rl">Amount</span><span class="_rv" style="font-size:1.2rem;color:#27ae60;">₹ ${fmt(c.Amount)}</span></div>
-        <div class="_row"><span class="_rl">For Month</span><span class="_rv">${escapeHtml(c.ForMonth||"—")}</span></div>
-        <div class="_row"><span class="_rl">Year</span><span class="_rv">${escapeHtml(String(c.Year||"—"))}</span></div>
-        <div class="_row"><span class="_rl">Type</span><span class="_rv">${escapeHtml(typeName||"Contribution")}</span></div>
-        <div class="_row"><span class="_rl">Occasion</span><span class="_rv">${escapeHtml(occasionName||"—")}</span></div>
-        <div class="_row"><span class="_rl">Note</span><span class="_rv">${escapeHtml(c.Note||"—")}</span></div>
+        <div class="_row"><span class="_rl">For Month / Year</span><span class="_rv">${escapeHtml(c.ForMonth||"—")} ${escapeHtml(String(c.Year||""))}</span></div>
+        <div class="_row"><span class="_rl">Contribution Type</span><span class="_rv">${escapeHtml(typeName||"Contribution")}</span></div>
+        ${occasionName && occasionName!=="—" ? `<div class="_row"><span class="_rl">Occasion</span><span class="_rv">${escapeHtml(occasionName)}</span></div>` : ""}
+        ${c.Note ? `<div class="_row"><span class="_rl">Note</span><span class="_rv">${escapeHtml(c.Note)}</span></div>` : ""}
         <div class="_row"><span class="_rl">Date Recorded</span><span class="_rv">${escapeHtml(c.PaymentDate||"—")}</span></div>
       </div>
-      <div style="text-align:center;font-size:12px;color:#946c44;font-weight:600;padding:6px 0;border-top:1px dashed #e0e0e0;margin-top:4px;">~ Thank you for your generous contribution ~</div>
+
+      <!-- Signature -->
+      <div style="display:flex;justify-content:space-between;padding:12px 24px;border-top:1px solid #f1f5f9;background:#f8fafc;font-size:11px;">
+        <div>
+          <div style="font-weight:700;color:#334155;">${escapeHtml(APP.signatory)}</div>
+          <div style="color:#64748b;">${escapeHtml(APP.designation)}</div>
+        </div>
+        <div style="text-align:right;color:#94a3b8;font-size:10px;">
+          <div>System-generated receipt</div>
+          <div>No signature required</div>
+        </div>
+      </div>
+
+      <!-- Thank You -->
+      <div style="background:#fef9ee;padding:12px 24px;text-align:center;border-top:1px solid #fde68a;">
+        <div style="color:#92400e;font-size:12.5px;font-weight:600;">🙏 ${escapeHtml(APP.thankYouMsg)}</div>
+        <div style="color:#a16207;font-size:11px;margin-top:2px;">${escapeHtml(APP.tagline)}</div>
+      </div>
     </div>
+
     <div class="_mft" style="flex-wrap:wrap;gap:8px;">
       <button class="_mbtn" style="background:#999;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>
       ${shareButtons}
     </div>`;
-  openModal(html,"520px");
+  openModal(html,"540px");
 }
 
 function sendReceiptWhatsApp(rid){
@@ -568,83 +608,150 @@ function sendReceiptWhatsApp(rid){
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
   const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
-  const genDate = new Date().toLocaleDateString("en-IN");
+  const genDate    = new Date().toLocaleDateString("en-IN");
+  const payMode    = c.PaymentMode || "—";
   const msg =
-    `🕉️ *SHREE HANUMAN MANDIR*\n` +
-    `📍 Paliya, Sultanpur\n` +
+    `${APP.symbol} *${APP.name.toUpperCase()}*\n` +
+    `📍 ${APP.location}\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `✅ *CONTRIBUTION RECEIPT*\n\n` +
-    `🔖 Tracking ID: *${displayRID}*\n` +
+    `🔖 Receipt No: *${displayRID}*\n` +
     `👤 Donor: *${userName}*\n` +
     `💰 Amount: *₹ ${Number(c.Amount||0).toLocaleString("en-IN")}*\n` +
+    `💳 Payment: ${payMode}\n` +
     `📅 Month: ${c.ForMonth||"—"} ${c.Year||""}\n` +
     `🏷️ Type: ${typeName||"Contribution"}\n` +
     (occasionName && occasionName!=="—" ? `🎉 Occasion: ${occasionName}\n` : "") +
     (c.Note ? `📝 Note: ${c.Note}\n` : "") +
     `📆 Date: ${c.PaymentDate||"—"}\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `_🙏 Thank you for your generous contribution_\n` +
-    `_System Generated — ${genDate}_`;
+    `_🙏 ${APP.thankYouMsg}_\n` +
+    `_${APP.tagline} | System Generated — ${genDate}_`;
   window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
 
 function exportReceiptPDFForWhatsApp(rid){
-  // FIX #8: Download PDF AND open WhatsApp simultaneously
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
   const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
-  const genDate = new Date().toLocaleDateString("en-IN");
+  const genDate    = new Date().toLocaleDateString("en-IN");
+  const payMode    = c.PaymentMode || "—";
   const msg =
-    `🕉️ *SHREE HANUMAN MANDIR*\n` +
-    `📍 Paliya, Sultanpur\n` +
+    `${APP.symbol} *${APP.name.toUpperCase()}*\n` +
+    `📍 ${APP.location}\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `✅ *CONTRIBUTION RECEIPT*\n\n` +
-    `🔖 Tracking ID: *${displayRID}*\n` +
+    `🔖 Receipt No: *${displayRID}*\n` +
     `👤 Donor: *${userName}*\n` +
     `💰 Amount: *₹ ${Number(c.Amount||0).toLocaleString("en-IN")}*\n` +
+    `💳 Payment: ${payMode}\n` +
     `📅 Month: ${c.ForMonth||"—"} ${c.Year||""}\n` +
     `🏷️ Type: ${typeName||"Contribution"}\n` +
     (occasionName && occasionName!=="—" ? `🎉 Occasion: ${occasionName}\n` : "") +
     (c.Note ? `📝 Note: ${c.Note}\n` : "") +
     `📆 Date: ${c.PaymentDate||"—"}\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `_🙏 Thank you for your generous contribution_\n` +
+    `_🙏 ${APP.thankYouMsg}_\n` +
     `_PDF Receipt also downloaded — please attach it_\n` +
-    `_System Generated — ${genDate}_`;
-  // Download PDF first
+    `_${APP.tagline} | System Generated — ${genDate}_`;
   exportReceiptPDF(rid);
-  // Then immediately open WhatsApp with full receipt text
   setTimeout(()=>{
     toast("📥 PDF downloaded — attach it in WhatsApp along with this message","");
     window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
   }, 600);
 }
 
-function sendReceiptEmail(rid){
+/* sendReceiptEmailDirect — calls server-side MailApp (real delivery, quota-guarded) */
+async function sendReceiptEmailDirect(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
   const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
-  const subject = encodeURIComponent(`Contribution Receipt — ${displayRID} — Shree Hanuman Mandir`);
-  const body = encodeURIComponent(
-    `Dear ${userName},\n\n` +
-    `Thank you for your contribution to Shree Hanuman Mandir, Paliya, Sultanpur.\n\n` +
-    `CONTRIBUTION RECEIPT\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `Tracking ID : ${displayRID}\n` +
-    `Donor Name  : ${userName}\n` +
-    `Amount      : Rs. ${Number(c.Amount||0).toLocaleString("en-IN")}\n` +
-    `For Month   : ${c.ForMonth||"—"} ${c.Year||""}\n` +
-    `Type        : ${typeName||"Contribution"}\n` +
-    (occasionName && occasionName!=="—" ? `Occasion    : ${occasionName}\n` : "") +
-    (c.Note ? `Note        : ${c.Note}\n` : "") +
-    `Date Recorded: ${c.PaymentDate||"—"}\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n\n` +
-    `This is a system-generated receipt.\n\n` +
-    `Jai Shree Ram 🙏\nShree Hanuman Mandir`
-  );
-  window.open(`mailto:?subject=${subject}&body=${body}`,"_blank");
+  toast("📧 Sending receipt email...","");
+  try {
+    const res = await postData({
+      action:        "sendContribReceiptEmail",
+      receiptId:     c.ReceiptID||displayRID,
+      userName:      userName,
+      amount:        c.Amount||0,
+      forMonth:      c.ForMonth||"",
+      year:          c.Year||"",
+      typeName:      typeName||"",
+      occasionName:  occasionName||"",
+      note:          c.Note||"",
+      paymentDate:   c.PaymentDate||"",
+      paymentMode:   c.PaymentMode||"",
+      userId:        c.UserId||""
+    });
+    if(res && res.status==="sent")     toast("✅ Receipt email sent successfully!","");
+    else if(res && res.status==="no_email") toast("⚠️ No email address on record for this donor.","warn");
+    else if(res && res.status==="quota")    toast("⚠️ Daily email limit reached. Try again tomorrow.","warn");
+    else toast("❌ Email send failed.","error");
+  } catch(err){ toast("❌ "+err.message,"error"); }
+}
+
+/* Legacy alias kept for backward compatibility */
+function sendReceiptEmail(rid){
+  sendReceiptEmailDirect(rid);
+}
+
+/* printReceipt — opens print dialog for the receipt modal */
+function printReceipt(rid){
+  const stored = window._rcptStore[rid];
+  if(!stored){toast("Receipt data not found.","error");return;}
+  const {c,userName,typeName,occasionName} = stored;
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const payMode    = c.PaymentMode||"—";
+  const win = window.open("","_blank","width=600,height=700");
+  win.document.write(`<!DOCTYPE html><html><head><title>Receipt ${displayRID}</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#333;}
+    .header{background:#334155;color:#fff;padding:20px;text-align:center;border-radius:8px 8px 0 0;}
+    .header .om{font-size:2rem;}
+    .header h1{margin:4px 0;font-size:1.2rem;color:#f7a01a;}
+    .header p{margin:2px 0;font-size:0.8rem;color:#94a3b8;}
+    .receipt-badge{margin-top:10px;}
+    .receipt-badge span{background:#22c55e;color:#fff;padding:3px 14px;border-radius:20px;font-size:11px;font-weight:700;}
+    .rid-band{background:#fef3c7;padding:10px;text-align:center;border-bottom:1px solid #fde68a;}
+    .amount-section{padding:16px;text-align:center;border-bottom:1px dashed #e2e8f0;}
+    .amount{font-size:2rem;color:#16a34a;font-weight:700;}
+    .pay-mode{font-size:12px;color:#555;margin-top:4px;}
+    table{width:100%;border-collapse:collapse;margin:10px 0;}
+    td{padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px;}
+    td:first-child{color:#64748b;width:45%;}
+    td:last-child{font-weight:600;text-align:right;}
+    .sig{display:flex;justify-content:space-between;padding:12px;border-top:1px solid #e2e8f0;font-size:11px;}
+    .footer{background:#fef9ee;padding:12px;text-align:center;border-top:1px solid #fde68a;font-size:12px;color:#92400e;}
+    @media print{body{padding:0;}}
+  </style></head><body>
+  <div class="header">
+    <div class="om">🕉️</div>
+    <h1>${escapeHtml(APP.name.toUpperCase())}</h1>
+    <p>${escapeHtml(APP.location)}</p>
+    <div class="receipt-badge"><span>✓ OFFICIAL RECEIPT</span></div>
+  </div>
+  <div class="rid-band"><strong>Receipt No: </strong><code style="font-size:14px;">${escapeHtml(displayRID)}</code></div>
+  <div class="amount-section">
+    <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Amount Received</div>
+    <div class="amount">₹ ${fmt(c.Amount)}</div>
+    <div class="pay-mode">Payment Mode: <strong>${escapeHtml(payMode)}</strong></div>
+  </div>
+  <table>
+    <tr><td>Donor Name</td><td>${escapeHtml(userName)}</td></tr>
+    <tr><td>For Month / Year</td><td>${escapeHtml(c.ForMonth||"—")} ${escapeHtml(String(c.Year||""))}</td></tr>
+    <tr><td>Contribution Type</td><td>${escapeHtml(typeName||"—")}</td></tr>
+    ${occasionName&&occasionName!=="—"?`<tr><td>Occasion</td><td>${escapeHtml(occasionName)}</td></tr>`:""}
+    ${c.Note?`<tr><td>Note</td><td>${escapeHtml(c.Note)}</td></tr>`:""}
+    <tr><td>Date Recorded</td><td>${escapeHtml(c.PaymentDate||"—")}</td></tr>
+  </table>
+  <div class="sig">
+    <div><strong>${escapeHtml(APP.signatory)}</strong><br/>${escapeHtml(APP.designation)}<br/>${escapeHtml(APP.name)}</div>
+    <div style="text-align:right;color:#94a3b8;">System-generated receipt<br/>No signature required</div>
+  </div>
+  <div class="footer">🙏 ${escapeHtml(APP.thankYouMsg)} | ${escapeHtml(APP.tagline)}</div>
+  <script>window.print();<\/script></body></html>`);
+  win.document.close();
 }
 
 function exportReceiptPDF(rid){
@@ -653,33 +760,75 @@ function exportReceiptPDF(rid){
   const {c,userName,typeName,occasionName} = stored;
   if(typeof window.jspdf==="undefined"){toast("PDF library not loaded.","error");return;}
   const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
-  const {jsPDF}=window.jspdf;
-  let doc=new jsPDF({format:"a5",unit:"mm"});
-  let w=doc.internal.pageSize.getWidth();
-  let ph=doc.internal.pageSize.getHeight();
-  doc.setFillColor(51,65,85); doc.rect(0,0,w,32,"F");
-  doc.setTextColor(247,160,26); doc.setFontSize(14); doc.setFont(undefined,"bold");
-  doc.text("SHREE HANUMAN MANDIR",w/2,12,{align:"center"});
+  const payMode    = c.PaymentMode || "—";
+  const {jsPDF}    = window.jspdf;
+  let doc = new jsPDF({format:"a5",unit:"mm"});
+  const w  = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+
+  // ── Header band
+  doc.setFillColor(51,65,85); doc.rect(0,0,w,36,"F");
+  doc.setTextColor(247,160,26); doc.setFontSize(15); doc.setFont(undefined,"bold");
+  doc.text(APP.name.toUpperCase(), w/2, 11, {align:"center"});
   doc.setTextColor(255,255,255); doc.setFontSize(8.5); doc.setFont(undefined,"normal");
-  doc.text("PALIYA, SULTANPUR",w/2,19,{align:"center"});
-  doc.text("OFFICIAL CONTRIBUTION RECEIPT",w/2,25,{align:"center"});
+  doc.text(APP.location, w/2, 18, {align:"center"});
+  // OFFICIAL RECEIPT badge
+  doc.setFillColor(34,197,94); doc.roundedRect(w/2-28,21,56,8,2,2,"F");
+  doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont(undefined,"bold");
+  doc.text("✓  OFFICIAL RECEIPT", w/2, 26.5, {align:"center"});
+
+  // ── Receipt ID band
+  doc.setFillColor(254,243,199); doc.rect(0,36,w,10,"F");
+  doc.setTextColor(146,64,14); doc.setFontSize(8.5); doc.setFont(undefined,"normal");
+  doc.text("Receipt No:", 10, 42.5);
+  doc.setFont(undefined,"bold"); doc.setFontSize(9.5);
+  doc.text(displayRID, 35, 42.5);
+
+  // ── Amount hero
+  doc.setTextColor(22,163,74); doc.setFontSize(20); doc.setFont(undefined,"bold");
+  doc.text("Rs. "+Number(c.Amount||0).toLocaleString("en-IN"), w/2, 60, {align:"center"});
+  doc.setTextColor(100,116,139); doc.setFontSize(7.5); doc.setFont(undefined,"normal");
+  doc.text("Payment Mode: "+payMode, w/2, 66, {align:"center"});
+
+  // ── Details table
   doc.autoTable({
     body:[
-      ["Tracking ID", displayRID],["Donor Name",userName||"—"],
-      ["Amount (Rs.)", "Rs. "+Number(c.Amount||0).toLocaleString("en-IN")],
-      ["For Month",c.ForMonth||"—"],["Year",String(c.Year||"—")],
-      ["Type",typeName||"—"],["Occasion",occasionName||"—"],
-      ["Note",c.Note||"—"],["Date Recorded",c.PaymentDate||"—"]
+      ["Donor Name",    userName||"—"],
+      ["For Month/Year",(c.ForMonth||"—")+" "+(c.Year||"")],
+      ["Type",          typeName||"—"],
+      ["Occasion",      (occasionName&&occasionName!=="—")?occasionName:"—"],
+      ["Note",          c.Note||"—"],
+      ["Date Recorded", c.PaymentDate||"—"],
+      ["Receipt No",    displayRID],
     ],
-    startY:38, theme:"grid",
-    columnStyles:{0:{fontStyle:"bold",cellWidth:42,fillColor:[250,238,218],textColor:[99,56,6]},1:{cellWidth:w-60}},
-    styles:{fontSize:9,cellPadding:3}
+    startY: 70, theme:"grid",
+    columnStyles:{
+      0:{fontStyle:"bold",cellWidth:40,fillColor:[250,238,218],textColor:[99,56,6]},
+      1:{cellWidth:w-56}
+    },
+    styles:{fontSize:8.5,cellPadding:3}
   });
-  let fy=doc.lastAutoTable.finalY+6;
-  doc.setFontSize(8); doc.setTextColor(120,80,30); doc.setFont(undefined,"bold");
-  doc.text("~ Thank you for your generous contribution ~",w/2,fy,{align:"center"});
-  doc.setFont(undefined,"normal"); doc.setFontSize(7); doc.setTextColor(160,160,160);
-  doc.text("SHREE HANUMAN MANDIR  |  Paliya, Sultanpur  |  System Generated",w/2,ph-5,{align:"center"});
+
+  // ── Signature section
+  const fy = doc.lastAutoTable.finalY + 6;
+  doc.setDrawColor(226,232,240); doc.line(8, fy, w-8, fy);
+  doc.setFontSize(8); doc.setFont(undefined,"bold"); doc.setTextColor(51,65,85);
+  doc.text(APP.signatory, 10, fy+7);
+  doc.setFont(undefined,"normal"); doc.setFontSize(7); doc.setTextColor(100,116,139);
+  doc.text(APP.designation, 10, fy+12);
+  doc.text(APP.name, 10, fy+17);
+  // Right side
+  doc.setFontSize(7); doc.setTextColor(148,163,184);
+  doc.text("System-generated receipt", w-10, fy+7, {align:"right"});
+  doc.text("No signature required", w-10, fy+12, {align:"right"});
+
+  // ── Thank you footer
+  doc.setFillColor(254,249,238); doc.rect(0,ph-14,w,14,"F");
+  doc.setFontSize(7.5); doc.setTextColor(146,64,14); doc.setFont(undefined,"bold");
+  doc.text("🙏 "+APP.thankYouMsg, w/2, ph-7.5, {align:"center"});
+  doc.setFont(undefined,"normal"); doc.setFontSize(6.5); doc.setTextColor(161,98,7);
+  doc.text(APP.name+" | "+APP.location+" | "+APP.tagline, w/2, ph-3, {align:"center"});
+
   doc.save("Receipt_"+displayRID+".pdf");
 }
 
