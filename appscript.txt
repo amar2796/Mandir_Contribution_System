@@ -1,7 +1,8 @@
 // ════════════════════════════════════════════════════════════════
 //  MANDIR SYSTEM — APPS SCRIPT BACKEND
 //  IMPROVEMENTS: #1 Email Receipt, #3 Sequential Receipt ID,
-//                #4 Email Quota System, #7 Server-side Constants
+//                #4 Email Quota System, #7 Server-side Constants,
+//                #8 Email Automation Toggles, #9 Monthly End Reports
 // ════════════════════════════════════════════════════════════════
 
 // ── SERVER-SIDE CONSTANTS (mirror of constants.js — edit here too)
@@ -15,6 +16,11 @@ const CFG = {
   tagline:       "Jai Shree Ram",
   thankYouMsg:   "Thank you for your generous contribution",
   emailDailyLimit: 90,           // Gmail free = 100/day; keep 10 buffer for OTPs
+  // Logo: place your logo at Image/logo.PNG in your web app folder.
+  // For emails, host logo.PNG on Google Drive (share publicly) and paste the
+  // direct image URL below. Format: https://lh3.googleusercontent.com/d/FILE_ID
+  // Leave empty to use the Om symbol fallback in emails.
+  logoEmailUrl:  "",             // e.g. "https://lh3.googleusercontent.com/d/YOUR_FILE_ID"
 };
 
 const SHEETS = {
@@ -28,7 +34,8 @@ const SHEETS = {
   GOALS:         "GOALS",
   GALLERY:       "GALLERY",
   ANNOUNCEMENT:  "ANNOUNCEMENT",
-  BROADCAST:     "BROADCAST"
+  BROADCAST:     "BROADCAST",
+  SETTINGS:      "SETTINGS",      // NEW: stores email automation toggles
 };
 
 // ── Hash password (SHA-256, matches client-side sha256())
@@ -158,6 +165,225 @@ function getEmailQuotaStatus() {
 }
 
 // ════════════════════════════════════════════════════════════════
+//  #8 — EMAIL AUTOMATION SETTINGS (read/write toggles)
+//  Stored in SETTINGS sheet: key=auto_receipt/monthly_report, value=1/0
+// ════════════════════════════════════════════════════════════════
+function getEmailSettings() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet   = ss.getSheetByName(SHEETS.SETTINGS);
+  if (!sheet) return { auto_receipt: true, monthly_report: true };
+  const data  = sheet.getDataRange().getValues();
+  if (!data || data.length === 0) return { auto_receipt: true, monthly_report: true };
+  // Build map from ALL rows — works whether or not a header row exists.
+  // Skip any row whose col A is "Key" (that IS a header row).
+  const map = {};
+  data.forEach(r => {
+    const k = String(r[0]||"").trim();
+    if (k && k.toLowerCase() !== "key") map[k] = String(r[1]||"").trim();
+  });
+  return {
+    auto_receipt:   map["auto_receipt"]   !== "0",
+    monthly_report: map["monthly_report"] !== "0"
+  };
+}
+
+function saveEmailSettings(key, value) {
+  const ss  = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEETS.SETTINGS);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEETS.SETTINGS);
+  }
+  const data = sheet.getDataRange().getValues();
+  let found  = false;
+  // Search ALL rows (i=0) — handle both header and no-header sheet layouts
+  for (let i = 0; i < data.length; i++) {
+    const k = String(data[i][0]||"").trim();
+    if (k === key) {
+      sheet.getRange(i+1, 2).setValue(value);
+      sheet.getRange(i+1, 3).setValue(Utilities.formatDate(new Date(),"GMT+5:30","dd-MM-yyyy HH:mm:ss"));
+      found = true; break;
+    }
+  }
+  if (!found) {
+    // Append new row — no header needed, just key/value/timestamp
+    sheet.appendRow([key, value, Utilities.formatDate(new Date(),"GMT+5:30","dd-MM-yyyy HH:mm:ss")]);
+  }
+  SpreadsheetApp.flush();
+  logAction("Admin", "saveEmailSettings", key + " = " + value);
+  return { status: "ok" };
+}
+
+// ════════════════════════════════════════════════════════════════
+//  #9 — MONTHLY END-OF-MONTH REPORT
+//  Set up a Time-based trigger: Last day of month → sendMonthlyEndReports
+//  Each member gets ONLY their own data. Privacy guaranteed.
+// ════════════════════════════════════════════════════════════════
+function sendMonthlyEndReports(overrideMonth, overrideYear) {
+  const settings = getEmailSettings();
+  if (!settings.monthly_report) {
+    Logger.log("Monthly report is disabled. Skipping.");
+    return { status: "ok", sent: 0, skipped: 0, message: "Disabled" };
+  }
+  return _doSendMonthlyReports(overrideMonth, overrideYear);
+}
+
+// Internal — also called by triggerMonthlyReport (manual admin trigger)
+function _doSendMonthlyReports(overrideMonth, overrideYear) {
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const now    = new Date();
+  const month  = overrideMonth || MONTHS[now.getMonth()];
+  const year   = String(overrideYear || now.getFullYear());
+
+  const users         = getSheetData(SHEETS.USERS);
+  const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
+  const types         = getSheetData(SHEETS.TYPES);
+
+  const activeMembers = users.filter(u =>
+    String(u.Role||"").toLowerCase() !== "admin" &&
+    String(u.Status||"Active").toLowerCase() !== "inactive" &&
+    String(u.Email||"").trim() !== ""
+  );
+
+  let sent = 0, skipped = 0;
+
+  activeMembers.forEach(member => {
+    // Get ONLY this member's contributions for this month/year
+    const myContribs = contributions.filter(c =>
+      String(c.UserId) === String(member.UserId) &&
+      String(c.ForMonth) === month &&
+      String(c.Year) === year
+    );
+
+    if (!canSendEmail()) { skipped++; return; }
+
+    let htmlBody;
+    if (myContribs.length > 0) {
+      // Member contributed → send receipt summary
+      const totalAmt = myContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
+      htmlBody = _buildMonthlyReceiptEmail(member, myContribs, types, month, year, totalAmt);
+    } else {
+      // Member did not contribute → send reminder
+      htmlBody = _buildReminderEmail(member, month, year);
+    }
+
+    try {
+      MailApp.sendEmail({
+        to:       String(member.Email).trim(),
+        subject:  CFG.name + " — " + month + " " + year + " Monthly Update",
+        htmlBody: htmlBody
+      });
+      incrementEmailCount();
+      sent++;
+    } catch(e) {
+      Logger.log("Failed to send to " + member.Email + ": " + e.toString());
+      skipped++;
+    }
+  });
+
+  logAction("System", "Monthly Report Sent", month + " " + year + " — sent:" + sent + ", skipped:" + skipped);
+  const quota = getEmailQuotaStatus();
+  return { status: "ok", sent: sent, skipped: skipped, quotaRemaining: quota.remaining };
+}
+
+// ── Logo HTML helper for emails
+function _logoHtml() {
+  if (CFG.logoEmailUrl && CFG.logoEmailUrl.trim() !== "") {
+    return `<img src="${CFG.logoEmailUrl}" alt="${CFG.name}" width="60" height="60"
+              style="width:60px;height:60px;border-radius:50%;border:3px solid rgba(247,160,26,0.7);
+                     object-fit:cover;display:block;margin:0 auto 10px;">`;
+  }
+  return `<div style="font-size:36px;margin-bottom:10px;">🕉️</div>`;
+}
+
+// ── Monthly receipt summary email (member contributed)
+function _buildMonthlyReceiptEmail(member, contribs, types, month, year, totalAmt) {
+  const amountFmt = "Rs. " + Number(totalAmt).toLocaleString("en-IN");
+  const rowsHtml  = contribs.map(c => {
+    const typeName = (types.find(t => String(t.TypeId) === String(c.TypeId)) || {}).TypeName || "Contribution";
+    const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+    return _emailRow(typeName + " (" + displayRID + ")",
+      "Rs. " + Number(c.Amount||0).toLocaleString("en-IN") + " · " + (c.PaymentMode||"") + " · " + (c.PaymentDate||"").split(" ")[0]);
+  }).join("");
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+<tr><td align="center">
+<table width="580" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);max-width:580px;width:100%;">
+  <tr><td style="background:linear-gradient(135deg,#1e293b 0%,#334155 60%,#3d5068 100%);padding:28px 32px 22px;text-align:center;border-top:4px solid #f7a01a;">
+    ${_logoHtml()}
+    <div style="color:#f7a01a;font-size:20px;font-weight:700;letter-spacing:1px;">${CFG.name.toUpperCase()}</div>
+    <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${CFG.location}</div>
+    <div style="margin-top:12px;">
+      <span style="background:#22c55e;color:#fff;padding:4px 16px;border-radius:20px;font-size:11px;font-weight:700;">✓ MONTHLY CONTRIBUTION SUMMARY</span>
+    </div>
+  </td></tr>
+  <tr><td style="background:linear-gradient(90deg,#fef3c7,#fde68a,#fef3c7);padding:12px 32px;text-align:center;">
+    <span style="color:#78350f;font-size:12px;font-weight:600;">📅 ${month} ${year} — Personal Summary for </span>
+    <span style="color:#92400e;font-size:14px;font-weight:700;">${member.Name}</span>
+  </td></tr>
+  <tr><td style="padding:24px 32px 16px;text-align:center;border-bottom:1px dashed #e2e8f0;background:#fafffe;">
+    <div style="color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Total Contributed</div>
+    <div style="color:#15803d;font-size:38px;font-weight:800;">${amountFmt}</div>
+    <div style="color:#16a34a;font-size:12px;margin-top:4px;">in ${month} ${year}</div>
+  </td></tr>
+  <tr><td style="padding:16px 32px;">
+    <div style="font-weight:700;color:#334155;font-size:13px;margin-bottom:8px;">📋 Contribution Details</div>
+    <table width="100%" cellpadding="0" cellspacing="0">${rowsHtml}</table>
+  </td></tr>
+  <tr><td style="background:#fef9ee;padding:18px 32px;text-align:center;border-top:2px solid #fde68a;">
+    <div style="color:#92400e;font-size:14px;font-weight:700;">🙏 ${CFG.thankYouMsg}</div>
+    <div style="color:#a16207;font-size:12px;margin-top:4px;font-style:italic;">${CFG.tagline}</div>
+  </td></tr>
+  <tr><td style="background:#f8fafc;padding:12px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+    <div style="color:#94a3b8;font-size:10px;">${CFG.name} | ${CFG.address}</div>
+    <div style="color:#cbd5e1;font-size:10px;margin-top:2px;">This email was sent only to you — your data is private and not shared with others.</div>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+}
+
+// ── Monthly reminder email (member did NOT contribute)
+function _buildReminderEmail(member, month, year) {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+<tr><td align="center">
+<table width="580" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);max-width:580px;width:100%;">
+  <tr><td style="background:linear-gradient(135deg,#1e293b 0%,#334155 60%,#3d5068 100%);padding:28px 32px 22px;text-align:center;border-top:4px solid #f7a01a;">
+    ${_logoHtml()}
+    <div style="color:#f7a01a;font-size:20px;font-weight:700;letter-spacing:1px;">${CFG.name.toUpperCase()}</div>
+    <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${CFG.location}</div>
+    <div style="margin-top:12px;">
+      <span style="background:#f59e0b;color:#fff;padding:4px 16px;border-radius:20px;font-size:11px;font-weight:700;">📢 GENTLE REMINDER</span>
+    </div>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="color:#334155;font-size:15px;margin:0 0 12px;">Dear <strong>${member.Name}</strong>,</p>
+    <p style="color:#475569;font-size:13px;line-height:1.7;margin:0 0 16px;">
+      We hope this message finds you well. Our records show that your contribution for
+      <strong>${month} ${year}</strong> has not yet been recorded.
+    </p>
+    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:16px 20px;margin:16px 0;text-align:center;">
+      <div style="color:#92400e;font-size:13px;font-weight:600;">📅 ${month} ${year} — Contribution Pending</div>
+      <div style="color:#a16207;font-size:12px;margin-top:6px;">Please reach out to the temple admin to submit your contribution.</div>
+    </div>
+    <p style="color:#475569;font-size:13px;line-height:1.7;margin:16px 0 0;">
+      Your generous support helps maintain and grow our temple. Every contribution, big or small, is deeply appreciated.
+      <br/><br/>🙏 <em>${CFG.thankYouMsg}</em>
+    </p>
+  </td></tr>
+  <tr><td style="background:#fef9ee;padding:18px 32px;text-align:center;border-top:2px solid #fde68a;">
+    <div style="color:#92400e;font-size:14px;font-weight:700;">Jai Shree Ram 🕉️</div>
+    <div style="color:#a16207;font-size:12px;margin-top:4px;font-style:italic;">${CFG.tagline} | ${CFG.name}</div>
+  </td></tr>
+  <tr><td style="background:#f8fafc;padding:12px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+    <div style="color:#94a3b8;font-size:10px;">${CFG.name} | ${CFG.address}</div>
+    <div style="color:#cbd5e1;font-size:10px;margin-top:2px;">This is a private reminder sent only to you. Your information is not shared with others.</div>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+}
+
+// ════════════════════════════════════════════════════════════════
 //  IMPROVEMENT #1 — SEND HTML RECEIPT EMAIL
 //  Called after addContribution. Uses email quota guard.
 // ════════════════════════════════════════════════════════════════
@@ -178,10 +404,10 @@ function sendReceiptEmail(toEmail, donorName, receiptId, amount, forMonth, year,
 
   <!-- HEADER -->
   <tr>
-    <td style="background:#334155;padding:28px 32px;text-align:center;">
-      <div style="font-size:32px;margin-bottom:8px;">🕉️</div>
+    <td style="background:linear-gradient(135deg,#1e293b 0%,#334155 60%,#3d5068 100%);padding:28px 32px 22px;text-align:center;border-top:4px solid #f7a01a;">
+      ${_logoHtml()}
       <div style="color:#f7a01a;font-size:20px;font-weight:700;letter-spacing:1px;">${CFG.name.toUpperCase()}</div>
-      <div style="color:#cbd5e1;font-size:12px;margin-top:4px;">${CFG.location}</div>
+      <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${CFG.location}</div>
       <div style="margin-top:12px;">
         <span style="background:#22c55e;color:#fff;padding:4px 16px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px;">✓ OFFICIAL CONTRIBUTION RECEIPT</span>
       </div>
@@ -241,9 +467,9 @@ function sendReceiptEmail(toEmail, donorName, receiptId, amount, forMonth, year,
 
   <!-- THANK YOU -->
   <tr>
-    <td style="background:#fef9ee;padding:18px 32px;text-align:center;border-top:1px solid #fde68a;">
-      <div style="color:#92400e;font-size:14px;font-weight:600;">🙏 ${CFG.thankYouMsg}</div>
-      <div style="color:#a16207;font-size:12px;margin-top:4px;">${CFG.tagline}</div>
+    <td style="background:linear-gradient(135deg,#fef9ee,#fef3c7);padding:18px 32px;text-align:center;border-top:2px solid #fde68a;">
+      <div style="color:#92400e;font-size:14px;font-weight:700;">🙏 ${CFG.thankYouMsg}</div>
+      <div style="color:#a16207;font-size:12px;margin-top:4px;font-style:italic;">${CFG.tagline}</div>
     </td>
   </tr>
 
@@ -251,7 +477,7 @@ function sendReceiptEmail(toEmail, donorName, receiptId, amount, forMonth, year,
   <tr>
     <td style="background:#f8fafc;padding:14px 32px;text-align:center;border-top:1px solid #e2e8f0;">
       <div style="color:#94a3b8;font-size:10px;">${CFG.name} | ${CFG.address}</div>
-      <div style="color:#cbd5e1;font-size:10px;margin-top:2px;">System Generated Receipt — Do not reply to this email</div>
+      <div style="color:#cbd5e1;font-size:10px;margin-top:2px;">System Generated Receipt — This email was sent only to you. Do not reply.</div>
     </td>
   </tr>
 
@@ -416,6 +642,29 @@ function doGet(e) {
   // ── IMPROVEMENT #4: GET EMAIL QUOTA STATUS (for admin sidebar badge)
   else if (action === "getEmailQuota") {
     result = getEmailQuotaStatus();
+  }
+
+  // ── #8: EMAIL AUTOMATION SETTINGS
+  else if (action === "getEmailSettings") {
+    result = getEmailSettings();
+  }
+  else if (action === "saveEmailSettings") {
+    // Admin passes: action=saveEmailSettings&key=auto_receipt&value=1
+    const key   = sanitize(e.parameter.key   || "", 30);
+    const value = sanitize(e.parameter.value || "0", 2);
+    const allowed = ["auto_receipt", "monthly_report"];
+    if (allowed.indexOf(key) !== -1) {
+      result = saveEmailSettings(key, value);
+    } else {
+      result = { status: "error", message: "Unknown setting key: " + key };
+    }
+  }
+
+  // ── #9: MANUAL TRIGGER — Monthly End-of-Month Report (admin test)
+  else if (action === "triggerMonthlyReport") {
+    const month = sanitize(e.parameter.month, 20);
+    const year  = sanitize(e.parameter.year,  10);
+    result = _doSendMonthlyReports(month || null, year || null);
   }
 
   // ── GOAL MANAGEMENT
@@ -737,28 +986,29 @@ function doGet(e) {
     ]);
     logAction("Admin", "Add Contribution", "UserId: " + userId + ", Amount: " + amount + ", Receipt: " + receiptId);
 
-    // #1 — Send receipt email (quota-guarded)
+    // #1 — Send receipt email only if auto_receipt toggle is ON (quota-guarded)
     let emailSent = false;
     let emailSkipped = false;
     try {
-      const users = getSheetData(SHEETS.USERS);
-      const donor = users.find(u => String(u.UserId) === userId);
-      if (donor && donor.Email && String(donor.Email).trim() !== "") {
-        // Look up type name and occasion name for the email
-        const types     = getSheetData(SHEETS.TYPES);
-        const occasions = getSheetData(SHEETS.OCCASIONS);
-        const typeName     = (types.find(t => String(t.TypeId) === typeId) || {}).TypeName || "Contribution";
-        const occasionName = (occasions.find(o => String(o.OccasionId) === occasionId) || {}).OccasionName || "";
-
-        if (canSendEmail()) {
-          emailSent = sendReceiptEmail(
-            donor.Email, donor.Name, receiptId,
-            amount, forMonth, year,
-            typeName, occasionName, note,
-            formatDate(), paymentMode
-          );
-        } else {
-          emailSkipped = true; // quota hit — skip silently, receipt ID still returned
+      const emailSettings = getEmailSettings();
+      if (emailSettings.auto_receipt) {
+        const users = getSheetData(SHEETS.USERS);
+        const donor = users.find(u => String(u.UserId) === userId);
+        if (donor && donor.Email && String(donor.Email).trim() !== "") {
+          const types     = getSheetData(SHEETS.TYPES);
+          const occasions = getSheetData(SHEETS.OCCASIONS);
+          const typeName     = (types.find(t => String(t.TypeId) === typeId) || {}).TypeName || "Contribution";
+          const occasionName = (occasions.find(o => String(o.OccasionId) === occasionId) || {}).OccasionName || "";
+          if (canSendEmail()) {
+            emailSent = sendReceiptEmail(
+              donor.Email, donor.Name, receiptId,
+              amount, forMonth, year,
+              typeName, occasionName, note,
+              formatDate(), paymentMode
+            );
+          } else {
+            emailSkipped = true; // quota hit — skip silently
+          }
         }
       }
     } catch(emailErr) { /* non-fatal — contribution was already saved */ }
