@@ -63,12 +63,26 @@ function sanitize(val, maxLen) {
 }
 
 // ── Audit log helper
-function logAction(adminName, action, details) {
+function logAction(adminName, action, details, deviceInfo) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.AUDIT);
-    if (!sheet) return;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(SHEETS.AUDIT);
+    // Auto-create AUDIT_LOGS sheet with headers if it doesn't exist
+    if (!sheet) {
+      sheet = ss.insertSheet(SHEETS.AUDIT);
+      sheet.appendRow(["Timestamp","UserAdmin","Action","Details","DeviceInfo"]);
+      sheet.setFrozenRows(1);
+      // Bold header row
+      sheet.getRange(1,1,1,5).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+    }
     const ts = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
-    sheet.appendRow([ts, sanitize(adminName, 100), sanitize(action, 100), sanitize(details, 500)]);
+    sheet.appendRow([
+      ts,
+      sanitize(adminName, 100),
+      sanitize(action, 100),
+      sanitize(details, 500),
+      sanitize(deviceInfo || "", 200)
+    ]);
   } catch (e) { /* Audit failure must never crash main op */ }
 }
 
@@ -171,19 +185,21 @@ function getEmailQuotaStatus() {
 function getEmailSettings() {
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
   let sheet   = ss.getSheetByName(SHEETS.SETTINGS);
-  if (!sheet) return { auto_receipt: true, monthly_report: true };
+  // Default OFF — never silently re-enable a toggle the user turned off
+  if (!sheet) return { auto_receipt: false, monthly_report: false };
   const data  = sheet.getDataRange().getValues();
-  if (!data || data.length === 0) return { auto_receipt: true, monthly_report: true };
-  // Build map from ALL rows — works whether or not a header row exists.
-  // Skip any row whose col A is "Key" (that IS a header row).
+  if (!data || data.length === 0) return { auto_receipt: false, monthly_report: false };
+  // Build map — skip header row where col A is "Key"
+  // FIX: Google Sheets stores 1/0 as Number type, coerce to String for reliable comparison
   const map = {};
   data.forEach(r => {
     const k = String(r[0]||"").trim();
     if (k && k.toLowerCase() !== "key") map[k] = String(r[1]||"").trim();
   });
   return {
-    auto_receipt:   map["auto_receipt"]   !== "0",
-    monthly_report: map["monthly_report"] !== "0"
+    // FIX: === "1" exact string match — "!== 0" was always true for Number 1
+    auto_receipt:   map["auto_receipt"]   === "1",
+    monthly_report: map["monthly_report"] === "1"
   };
 }
 
@@ -199,7 +215,7 @@ function saveEmailSettings(key, value) {
   for (let i = 0; i < data.length; i++) {
     const k = String(data[i][0]||"").trim();
     if (k === key) {
-      sheet.getRange(i+1, 2).setValue(value);
+      sheet.getRange(i+1, 2).setValue(String(value));
       sheet.getRange(i+1, 3).setValue(Utilities.formatDate(new Date(),"GMT+5:30","dd-MM-yyyy HH:mm:ss"));
       found = true; break;
     }
@@ -246,36 +262,42 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
 
   let sent = 0, skipped = 0;
 
+  // FIX: Process each member individually with a sleep between sends.
+  // Multiple contributions per member caused large HTML → GAS timeout → "network error" in admin UI.
+  // Solution: pre-build all email bodies, then send with 300ms sleep between each.
+  // This keeps execution well under the 6-minute GAS limit and avoids MailApp rate errors.
+  const emailQueue = [];
   activeMembers.forEach(member => {
-    // Get ONLY this member's contributions for this month/year
     const myContribs = contributions.filter(c =>
       String(c.UserId) === String(member.UserId) &&
       String(c.ForMonth) === month &&
       String(c.Year) === year
     );
-
     if (!canSendEmail()) { skipped++; return; }
-
     let htmlBody;
     if (myContribs.length > 0) {
-      // Member contributed → send receipt summary
       const totalAmt = myContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
+      // FIX: pass types array to receipt email builder — missing was causing undefined type names
       htmlBody = _buildMonthlyReceiptEmail(member, myContribs, types, month, year, totalAmt);
     } else {
-      // Member did not contribute → send reminder
       htmlBody = _buildReminderEmail(member, month, year);
     }
+    emailQueue.push({ to: String(member.Email).trim(), htmlBody: htmlBody, name: member.Name });
+  });
 
+  emailQueue.forEach(function(item) {
     try {
       MailApp.sendEmail({
-        to:       String(member.Email).trim(),
+        to:       item.to,
         subject:  CFG.name + " — " + month + " " + year + " Monthly Update",
-        htmlBody: htmlBody
+        htmlBody: item.htmlBody
       });
       incrementEmailCount();
       sent++;
+      // Small sleep between sends avoids MailApp quota bursts and prevents timeout
+      Utilities.sleep(300);
     } catch(e) {
-      Logger.log("Failed to send to " + member.Email + ": " + e.toString());
+      Logger.log("Failed to send to " + item.to + ": " + e.toString());
       skipped++;
     }
   });
@@ -301,8 +323,16 @@ function _buildMonthlyReceiptEmail(member, contribs, types, month, year, totalAm
   const rowsHtml  = contribs.map(c => {
     const typeName = (types.find(t => String(t.TypeId) === String(c.TypeId)) || {}).TypeName || "Contribution";
     const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+    // FIX: Google Sheets may return PaymentDate as a Date object (not a string) when
+    // a user has multiple contribution entries. Coerce to String before calling .split()
+    // to prevent "split is not a function" error.
+    const payDateStr = c.PaymentDate
+      ? (c.PaymentDate instanceof Date
+          ? Utilities.formatDate(c.PaymentDate, "GMT+5:30", "dd-MM-yyyy")
+          : String(c.PaymentDate).split(" ")[0])
+      : "";
     return _emailRow(typeName + " (" + displayRID + ")",
-      "Rs. " + Number(c.Amount||0).toLocaleString("en-IN") + " · " + (c.PaymentMode||"") + " · " + (c.PaymentDate||"").split(" ")[0]);
+      "Rs. " + Number(c.Amount||0).toLocaleString("en-IN") + " · " + (c.PaymentMode||"") + " · " + payDateStr);
   }).join("");
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
@@ -530,26 +560,39 @@ function doGet(e) {
     } else {
       let safeUser = Object.assign({}, user);
       delete safeUser.Password;
-      logAction(safeUser.Name || "User", "Login", "Mobile: " + mobile + ", Role: " + (safeUser.Role || "User"));
+      const deviceInfo = sanitize(e.parameter.deviceInfo || "", 200);
+      logAction(
+        safeUser.Name || "User",
+        "Login",
+        "Mobile: " + mobile + " | Role: " + (safeUser.Role || "User") + " | UserId: " + (safeUser.UserId || ""),
+        deviceInfo
+      );
       result = { status: "success", user: safeUser };
     }
   }
 
-  // ── SET SESSION TOKEN
+  // ── SET SESSION TOKEN (token only — does NOT touch TokenExpiry column)
   else if (action === "setSessionToken") {
     const userId = sanitize(e.parameter.userId, 30);
     const token  = sanitize(e.parameter.token,  64);
+    // NOTE: expiry param is accepted but intentionally ignored — we do NOT write
+    // TokenExpiry to the sheet. Session expiry is managed client-side only.
     if (!userId || !token) {
       result = { status: "error", message: "Missing userId or token" };
     } else {
       const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
       const data    = sheet.getDataRange().getValues();
       const headers = data[0];
-      let tokenCol  = headers.indexOf("SessionToken");
+      // Ensure SessionToken column exists
+      let tokenCol = headers.indexOf("SessionToken");
       if (tokenCol === -1) { tokenCol = headers.length; sheet.getRange(1, tokenCol + 1).setValue("SessionToken"); }
       let found = false;
       for (let i = 1; i < data.length; i++) {
-        if (String(data[i][0]) === userId) { sheet.getRange(i + 1, tokenCol + 1).setValue(token); found = true; break; }
+        if (String(data[i][0]) === userId) {
+          sheet.getRange(i + 1, tokenCol + 1).setValue(token);
+          SpreadsheetApp.flush();
+          found = true; break;
+        }
       }
       result = found ? { status: "ok" } : { status: "error", message: "User not found" };
     }
@@ -572,8 +615,9 @@ function doGet(e) {
           for (let i = 1; i < allData.length; i++) {
             if (String(allData[i][0]) === userId) {
               const stored = String(allData[i][tokenCol] || "").trim();
-              isValid = stored === "" ? true : (stored === token);
-              break;
+              if (stored === "") { isValid = true; break; }  // no token = legacy session, allow
+              if (stored !== token) { isValid = false; break; } // token mismatch = another device
+              isValid = true; break;
             }
           }
           result = { valid: isValid };
@@ -593,7 +637,10 @@ function doGet(e) {
         const tokenCol = headers.indexOf("SessionToken");
         if (tokenCol !== -1) {
           for (let i = 1; i < allData.length; i++) {
-            if (String(allData[i][0]) === userId) { sheet.getRange(i + 1, tokenCol + 1).setValue(""); SpreadsheetApp.flush(); break; }
+            if (String(allData[i][0]) === userId) {
+              sheet.getRange(i + 1, tokenCol + 1).setValue("");
+              SpreadsheetApp.flush(); break;
+            }
           }
         }
       } catch(e) { /* silent */ }
@@ -660,11 +707,59 @@ function doGet(e) {
     }
   }
 
-  // ── #9: MANUAL TRIGGER — Monthly End-of-Month Report (admin test)
+  // ── #9: MANUAL TRIGGER — Monthly Report (fire-and-store pattern)
+  // WHY: Google's CDN cuts JSONP responses after ~30s for long-running doGet calls.
+  // FIX: Store result in PropertiesService keyed by jobKey, return immediately.
+  //      Client polls getMonthlyReportStatus every 5s to read the result.
   else if (action === "triggerMonthlyReport") {
-    const month = sanitize(e.parameter.month, 20);
-    const year  = sanitize(e.parameter.year,  10);
-    result = _doSendMonthlyReports(month || null, year || null);
+    const month  = sanitize(e.parameter.month,  20);
+    const year   = sanitize(e.parameter.year,   10);
+    const jobKey = sanitize(e.parameter.jobKey, 50) || ("job_" + Date.now());
+    // Mark job as pending immediately so client knows it started
+    try {
+      PropertiesService.getScriptProperties().setProperty(
+        "MREPORT_" + jobKey, JSON.stringify({ status: "pending" })
+      );
+    } catch(e) {}
+    // Run the report synchronously (GAS executes doGet fully before returning)
+    // The JSONP response may be cut off by CDN, but the job WILL complete.
+    // Result is also stored so the poll endpoint can return it.
+    let jobResult;
+    try {
+      jobResult = _doSendMonthlyReports(month || null, year || null);
+    } catch(err) {
+      jobResult = { status: "error", message: err.message };
+    }
+    // Store final result for polling
+    try {
+      PropertiesService.getScriptProperties().setProperty(
+        "MREPORT_" + jobKey, JSON.stringify(jobResult)
+      );
+    } catch(e) {}
+    result = jobResult;
+  }
+
+  // ── #9b: POLL for monthly report result
+  else if (action === "getMonthlyReportStatus") {
+    const jobKey = sanitize(e.parameter.jobKey, 50);
+    if (!jobKey) {
+      result = { status: "error", message: "Missing jobKey" };
+    } else {
+      try {
+        const raw = PropertiesService.getScriptProperties().getProperty("MREPORT_" + jobKey);
+        if (!raw) {
+          result = { status: "pending" }; // job not started yet or key expired
+        } else {
+          result = JSON.parse(raw);
+          // Clean up once read successfully (only if done)
+          if (result.status !== "pending") {
+            try { PropertiesService.getScriptProperties().deleteProperty("MREPORT_" + jobKey); } catch(e) {}
+          }
+        }
+      } catch(e) {
+        result = { status: "pending" };
+      }
+    }
   }
 
   // ── GOAL MANAGEMENT

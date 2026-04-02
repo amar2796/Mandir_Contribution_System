@@ -2221,44 +2221,63 @@
           </div>
         </div>
 
-        <!-- AUDIT LOG PAGE -->
+        <!-- AUDIT LOG PAGE — ENHANCED -->
         <div id="auditPage" class="page">
           <div class="card">
             <h3>
-              <i class="fa-solid fa-scroll"></i> Audit Log
-              <span style="font-size: 11px; font-weight: 400; color: #999"
-                >(Login/Logout times, all actions)</span
-              >
+              <i class="fa-solid fa-shield-halved" style="color:#f87171;"></i> Audit Log
+              <span style="font-size:11px;font-weight:400;color:#999;margin-left:6px;">All actions, logins &amp; device info</span>
+              <span id="audit_count_badge" style="margin-left:auto;font-size:11px;background:#334155;color:#fff;padding:3px 10px;border-radius:20px;font-weight:600;display:none;"></span>
             </h3>
-            <div
-              style="
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-                margin-bottom: 14px;
-                align-items: center;
-              "
-              class="search-refresh-row"
-            >
-              <input
-                class="search-bar"
-                id="auditSearch"
-                placeholder="🔍 Search by user or action..."
+
+            <!-- Stats Row -->
+            <div id="audit_stats" style="display:none;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;">
+              <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:22px;font-weight:800;color:#16a34a;" id="audit_stat_logins">—</div>
+                <div style="font-size:11px;color:#15803d;font-weight:600;">Logins Today</div>
+              </div>
+              <div style="background:#fef9ee;border:1px solid #fde68a;border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:22px;font-weight:800;color:#d97706;" id="audit_stat_actions">—</div>
+                <div style="font-size:11px;color:#92400e;font-weight:600;">Actions Today</div>
+              </div>
+              <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:22px;font-weight:800;color:#dc2626;" id="audit_stat_total">—</div>
+                <div style="font-size:11px;color:#991b1b;font-weight:600;">Total Entries</div>
+              </div>
+              <div style="background:#f0f4ff;border:1px solid #a5b4fc;border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:22px;font-weight:800;color:#4f46e5;" id="audit_stat_users">—</div>
+                <div style="font-size:11px;color:#3730a3;font-weight:600;">Unique Users</div>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;" class="search-refresh-row">
+              <input class="search-bar" id="auditSearch"
+                placeholder="🔍 Search user, action, device, location..."
                 onkeyup="filterAuditLog()"
-                style="margin: 0; flex: 1; min-width: 200px"
-              />
-              <button
-                onclick="loadAuditLog()"
-                style="
-                  background: #334155;
-                  box-shadow: none;
-                  padding: 9px 14px;
-                  flex-shrink: 0;
-                "
-              >
+                style="margin:0;flex:1;min-width:180px;"/>
+              <select id="auditFilterAction" onchange="filterAuditLog()"
+                style="padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;min-width:130px;background:#fff;">
+                <option value="">All Actions</option>
+                <option value="login">Login</option>
+                <option value="logout">Logout</option>
+                <option value="contribution">Contribution</option>
+                <option value="expense">Expense</option>
+                <option value="user">User</option>
+                <option value="email">Email / Receipt</option>
+                <option value="password">Password Reset</option>
+                <option value="goal">Goal</option>
+                <option value="gallery">Gallery</option>
+              </select>
+              <button onclick="loadAuditLog()" style="background:#334155;box-shadow:none;padding:9px 14px;flex-shrink:0;">
                 <i class="fa-solid fa-rotate"></i> Refresh
               </button>
+              <button onclick="exportAuditCSV()" style="background:#27ae60;box-shadow:none;padding:9px 14px;flex-shrink:0;font-size:12px;">
+                <i class="fa-solid fa-file-csv"></i> CSV
+              </button>
             </div>
+
+            <!-- Table -->
             <div class="table-responsive">
               <table>
                 <thead>
@@ -2268,20 +2287,19 @@
                     <th>User / Admin</th>
                     <th>Action</th>
                     <th>Details</th>
+                    <th>Device / Info</th>
                   </tr>
                 </thead>
                 <tbody id="auditTableBody">
                   <tr>
-                    <td
-                      colspan="5"
-                      style="text-align: center; color: #aaa; padding: 20px"
-                    >
+                    <td colspan="6" style="text-align:center;color:#aaa;padding:20px;">
                       Click Refresh to load audit log
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
+            <div id="audit_pagination" style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>
           </div>
         </div>
 
@@ -2509,31 +2527,27 @@
         try {
           const s = JSON.parse(localStorage.getItem("session") || "{}");
           if (s && s.userId) {
-            // Use sendBeacon for reliable fire-and-forget logging
+            const devInfo = typeof window._getDeviceInfo==="function" ? window._getDeviceInfo() : "";
             const params = new URLSearchParams({
               action: "logout",
               userId: s.userId,
               userName: s.name || "Admin",
+              deviceInfo: devInfo,
               callback: "cb_logout",
             });
-            try {
-              navigator.sendBeacon(API_URL + "?" + params.toString());
-            } catch (e) {}
-            // Also try JSONP as fallback
-            postData({
-              action: "logout",
-              userId: s.userId,
-              userName: s.name || "Admin",
-            }).catch(() => {});
+            try { navigator.sendBeacon(API_URL + "?" + params.toString()); } catch(e) {}
+            postData({ action:"logout", userId:s.userId, userName:s.name||"Admin", deviceInfo:devInfo }).catch(()=>{});
           }
-        } catch (e) {}
+        } catch(e) {}
+        // Set _navFlag so beforeunload skips the beacon (logout already handled token clear above)
+        window._navFlag = true;
         localStorage.clear();
         sessionStorage.clear();
-        // Small delay to allow logout log to be sent before redirect
         setTimeout(() => {
+          window._navFlag = false;
           history.replaceState(null, "", "login.html");
           location.replace("login.html");
-        }, 150);
+        }, 300);
       }
 
       function toggleAdminDropdown() {
@@ -5402,92 +5416,181 @@
           .join("");
       }
 
-      /* ═══ AUDIT LOG FUNCTIONS ═══ */
+      /* ═══ AUDIT LOG FUNCTIONS — ENHANCED ═══ */
       let _auditData = [];
+      let _auditPage = 1;
+      const AUDIT_PAGE_SIZE = 50;
+
+      // ── Collect device/browser info for audit logging
+      function _getDeviceInfo() {
+        try {
+          const ua = navigator.userAgent || "";
+          let device = "Desktop";
+          if (/Android/i.test(ua))          device = "Android";
+          else if (/iPhone|iPad/i.test(ua))  device = "iOS";
+          else if (/Mobile/i.test(ua))       device = "Mobile";
+          let browser = "Unknown";
+          if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) browser = "Chrome";
+          else if (/Firefox\//.test(ua))     browser = "Firefox";
+          else if (/Edg\//.test(ua))         browser = "Edge";
+          else if (/Safari\//.test(ua))      browser = "Safari";
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+          const lang = navigator.language || "";
+          const sw   = window.screen ? window.screen.width + "x" + window.screen.height : "";
+          return device + " | " + browser + " | " + tz + " | " + lang + " | " + sw;
+        } catch(e) { return ""; }
+      }
+      window._getDeviceInfo = _getDeviceInfo;
 
       async function loadAuditLog() {
         const tbody = document.getElementById("auditTableBody");
         if (!tbody) return;
-        tbody.innerHTML =
-          '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;"><div class="spinner" style="margin:0 auto;width:28px;height:28px;"></div><br>Loading audit log...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;"><div class="spinner" style="margin:0 auto;width:28px;height:28px;"></div><br>Loading audit log...</td></tr>';
         try {
           const res = await getData("getAuditLog");
           _auditData = Array.isArray(res) ? res : [];
-          renderAuditTable(_auditData);
+          _auditPage = 1;
+          _renderAuditStats(_auditData);
+          _renderAuditPaged(_auditData, _auditPage);
           if (_auditData.length === 0) {
-            tbody.innerHTML =
-              '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No audit log entries found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No audit log entries found.</td></tr>';
           }
-        } catch (e) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#e74c3c;padding:20px;">Failed to load audit log: ${escapeHtml(
-            e.message
-          )}</td></tr>`;
+        } catch(e) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#e74c3c;padding:20px;">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
         }
       }
 
-      function renderAuditTable(list) {
-        const tbody = document.getElementById("auditTableBody");
+      function _renderAuditStats(list) {
+        const statsEl = document.getElementById("audit_stats");
+        const badge   = document.getElementById("audit_count_badge");
+        if (!statsEl) return;
+        if (!list || list.length === 0) {
+          statsEl.style.display = "none";
+          if (badge) badge.style.display = "none";
+          return;
+        }
+        statsEl.style.display = "grid";
+        if (badge) { badge.textContent = list.length + " entries"; badge.style.display = "inline-block"; }
+        const d = new Date();
+        const todayFmt = String(d.getDate()).padStart(2,"0") + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + d.getFullYear();
+        const todayE   = list.filter(r => String(r.Timestamp||"").startsWith(todayFmt));
+        const logins   = todayE.filter(r => /login/i.test(r.Action||"") && !/logout/i.test(r.Action||"")).length;
+        const actions  = todayE.filter(r => !/login/i.test(r.Action||"") && !/logout/i.test(r.Action||"")).length;
+        const uniqueU  = new Set(list.map(r => String(r.UserAdmin||""))).size;
+        const sl = document.getElementById("audit_stat_logins");
+        const sa = document.getElementById("audit_stat_actions");
+        const st = document.getElementById("audit_stat_total");
+        const su = document.getElementById("audit_stat_users");
+        if (sl) sl.textContent = logins;
+        if (sa) sa.textContent = actions;
+        if (st) st.textContent = list.length;
+        if (su) su.textContent = uniqueU;
+      }
+
+      function _getFilteredAudit() {
+        const txt = (document.getElementById("auditSearch")?.value || "").toLowerCase().trim();
+        const act = (document.getElementById("auditFilterAction")?.value || "").toLowerCase();
+        let list = _auditData;
+        if (txt) list = list.filter(r =>
+          [r.Timestamp, r.UserAdmin, r.Action, r.Details, r.DeviceInfo]
+            .some(v => String(v||"").toLowerCase().includes(txt))
+        );
+        if (act) list = list.filter(r => String(r.Action||"").toLowerCase().includes(act));
+        return list;
+      }
+
+      function _renderAuditPaged(list, page) {
+        const tbody  = document.getElementById("auditTableBody");
+        const pagEl  = document.getElementById("audit_pagination");
         if (!tbody) return;
         if (!list || list.length === 0) {
-          tbody.innerHTML =
-            '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
+          if (pagEl) pagEl.innerHTML = "";
           return;
         }
-        tbody.innerHTML = list
-          .map((row, i) => {
-            const ts = String(row.Timestamp || row[0] || "—");
-            const user = String(row.UserAdmin || row[1] || "—");
-            const action = String(row.Action || row[2] || "—");
-            const details = String(row.Details || row[3] || "—");
-            const isLogin = action.toLowerCase().includes("login");
-            const isLogout = action.toLowerCase().includes("logout");
-            return `<tr style="background:${
-              isLogin ? "#f0fdf4" : isLogout ? "#fef9ee" : ""
-            };">
-            <td style="color:#888;">${i + 1}</td>
-            <td style="font-size:12px;color:#888;font-family:monospace;">${escapeHtml(
-              ts
-            )}</td>
-            <td style="font-weight:600;">${escapeHtml(user)}</td>
-            <td><span class="badge ${
-              isLogin ? "badge-green" : isLogout ? "" : ""
-            }" style="${
-              isLogout
-                ? "background:#fef3c7;color:#d97706;"
-                : !isLogin
-                ? "background:#f0f4f8;color:#334155;"
-                : ""
-            }">${escapeHtml(action)}</span></td>
-            <td style="font-size:12px;color:#666;white-space:normal;max-width:220px;">${escapeHtml(
-              details
-            )}</td>
+        const totalPages = Math.ceil(list.length / AUDIT_PAGE_SIZE);
+        const start = (page - 1) * AUDIT_PAGE_SIZE;
+        const items = list.slice(start, start + AUDIT_PAGE_SIZE);
+        tbody.innerHTML = items.map((row, i) => {
+          const idx     = start + i + 1;
+          const ts      = String(row.Timestamp  || "—");
+          const user    = String(row.UserAdmin  || "—");
+          const action  = String(row.Action     || "—");
+          const details = String(row.Details    || "—");
+          const devRaw  = String(row.DeviceInfo || "");
+          const aLow    = action.toLowerCase();
+          const isLogin  = aLow.includes("login") && !aLow.includes("logout");
+          const isLogout = aLow.includes("logout");
+          const isEmail  = aLow.includes("email") || aLow.includes("receipt");
+          const isDelete = aLow.includes("delete");
+          const isPwd    = aLow.includes("password");
+          const badgeSt  = isLogin  ? "background:#dcfce7;color:#16a34a;border:1px solid #86efac;"
+                         : isLogout ? "background:#fef3c7;color:#d97706;border:1px solid #fde68a;"
+                         : isEmail  ? "background:#ede9fe;color:#7c3aed;border:1px solid #c4b5fd;"
+                         : isDelete ? "background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;"
+                         : isPwd    ? "background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;"
+                         :            "background:#f0f4f8;color:#334155;border:1px solid #cbd5e1;";
+          const rowBg = isLogin ? "#f0fdf4" : isLogout ? "#fefce8" : "";
+          // Parse device info
+          let devHtml = "<span style='color:#94a3b8;font-size:11px;'>—</span>";
+          if (devRaw) {
+            const parts = devRaw.split("|").map(s => s.trim()).filter(Boolean);
+            const dIcon = /android/i.test(parts[0]||"") ? "fa-android" :
+                          /ios|iphone|ipad/i.test(parts[0]||"") ? "fa-apple" :
+                          /mobile/i.test(parts[0]||"") ? "fa-mobile-screen-button" : "fa-desktop";
+            devHtml = `<div style="line-height:1.5;">
+              <div style="font-weight:600;color:#334155;font-size:11px;"><i class="fa-brands ${dIcon}" style="margin-right:3px;"></i>${escapeHtml(parts[0]||"")} ${parts[1] ? "· " + escapeHtml(parts[1]) : ""}</div>
+              ${parts[2] ? `<div style="font-size:10px;color:#64748b;">${escapeHtml(parts[2])}</div>` : ""}
+              ${parts[4] ? `<div style="font-size:10px;color:#94a3b8;">${escapeHtml(parts[4])}</div>` : ""}
+            </div>`;
+          }
+          return `<tr style="background:${rowBg};">
+            <td style="color:#94a3b8;font-size:11px;">${idx}</td>
+            <td style="font-size:11px;color:#64748b;font-family:monospace;white-space:nowrap;">${escapeHtml(ts)}</td>
+            <td style="font-weight:600;font-size:12px;color:#1e293b;">${escapeHtml(user)}</td>
+            <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;${badgeSt}">${escapeHtml(action)}</span></td>
+            <td style="font-size:11.5px;color:#475569;white-space:normal;max-width:200px;">${escapeHtml(details)}</td>
+            <td style="font-size:11px;min-width:140px;">${devHtml}</td>
           </tr>`;
-          })
-          .join("");
+        }).join("");
+        // Pagination
+        if (pagEl && totalPages > 1) {
+          let phtml = `<span style="font-size:12px;color:#888;align-self:center;">Page ${page}/${totalPages} &middot; ${list.length} entries</span>`;
+          for (let p = 1; p <= totalPages; p++) {
+            const ac = p === page;
+            phtml += `<button onclick="_goAuditPage(${p})" style="padding:5px 12px;border-radius:6px;border:1px solid ${ac?"#334155":"#ddd"};background:${ac?"#334155":"#fff"};color:${ac?"#fff":"#555"};font-size:12px;cursor:pointer;font-family:Poppins,sans-serif;">${p}</button>`;
+          }
+          pagEl.innerHTML = phtml;
+        } else if (pagEl) { pagEl.innerHTML = ""; }
       }
 
+      function _goAuditPage(p) {
+        _auditPage = p;
+        _renderAuditPaged(_getFilteredAudit(), p);
+        document.getElementById("auditPage")?.scrollIntoView({behavior:"smooth", block:"start"});
+      }
+
+      function renderAuditTable(list) { _auditPage=1; _renderAuditPaged(list,1); }
+
       function filterAuditLog() {
-        const txt = (
-          document.getElementById("auditSearch")?.value || ""
-        ).toLowerCase();
-        if (!txt) {
-          renderAuditTable(_auditData);
-          return;
-        }
-        renderAuditTable(
-          _auditData.filter((r) =>
-            [
-              r.Timestamp || r[0],
-              r.UserAdmin || r[1],
-              r.Action || r[2],
-              r.Details || r[3],
-            ].some((v) =>
-              String(v || "")
-                .toLowerCase()
-                .includes(txt)
-            )
-          )
+        _auditPage = 1;
+        _renderAuditPaged(_getFilteredAudit(), 1);
+      }
+
+      function exportAuditCSV() {
+        if (!_auditData || _auditData.length === 0) { toast("No audit data to export","warn"); return; }
+        const hdrs = ["#","Timestamp","User/Admin","Action","Details","Device Info"];
+        const rows = _auditData.map((r,i) =>
+          [i+1, r.Timestamp||"", r.UserAdmin||"", r.Action||"", r.Details||"", r.DeviceInfo||""]
+            .map(v => '"' + String(v).replace(/"/g,'""')+'"').join(",")
         );
+        const csv  = [hdrs.join(","), ...rows].join("\n");
+        const blob = new Blob([csv], {type:"text/csv"});
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement("a");
+        a.href = url; a.download = "audit_log_" + new Date().toISOString().slice(0,10) + ".csv";
+        a.click(); URL.revokeObjectURL(url);
+        toast("✅ Audit log exported as CSV","");
       }
 
       /* ═══ FEEDBACK ADMIN FUNCTIONS ═══ */
@@ -5911,26 +6014,31 @@
         });
 
         getData("getEmailSettings").then(function(s) {
-          var receiptOn  = s && !!s.auto_receipt;
-          var monthlyOn  = s && !!s.monthly_report;
-          var tReceipt   = document.getElementById("toggle_auto_receipt");
-          var tMonthly   = document.getElementById("toggle_monthly_report");
-          if(tReceipt) tReceipt.checked = receiptOn;
-          if(tMonthly) tMonthly.checked = monthlyOn;
+          // FIX: use strict === true (Apps Script now returns proper booleans)
+          var receiptOn  = s === true || (s && s.auto_receipt  === true);
+          var monthlyOn  = s === true || (s && s.monthly_report === true);
+          var tReceipt = document.getElementById("toggle_auto_receipt");
+          var tMonthly = document.getElementById("toggle_monthly_report");
+          if(tReceipt) { tReceipt.checked = receiptOn;  tReceipt.disabled = false; }
+          if(tMonthly) { tMonthly.checked = monthlyOn;  tMonthly.disabled = false; }
           _updateToggleStatus("auto_receipt",  receiptOn);
           _updateToggleStatus("monthly_report", monthlyOn);
           _updateCardStyle("ea_card_receipt",  receiptOn);
           _updateCardStyle("ea_card_monthly",  monthlyOn);
-          if(!s){
+          if(!s || typeof s !== "object"){
             var el=document.getElementById("ea_quota_display");
-            if(el) el.innerHTML="<span style='color:#f87171;'>Could not load settings — check Apps Script deployment</span>";
+            if(el) el.innerHTML="<span style='color:#f87171;'>Could not load settings — check Apps Script deployment &amp; redeploy</span>";
           }
         }).catch(function() {
-          // Fetch failed — show inactive state so toggles still appear, not stuck "loading"
+          // Fetch failed — show OFF state, re-enable toggles
+          ["toggle_auto_receipt","toggle_monthly_report"].forEach(function(id){
+            var el=document.getElementById(id);
+            if(el){ el.checked=false; el.disabled=false; }
+          });
           _updateToggleStatus("auto_receipt",  false);
           _updateToggleStatus("monthly_report", false);
           var el=document.getElementById("ea_quota_display");
-          if(el) el.innerHTML="<span style='color:#f87171;'>Cannot reach server — check Apps Script</span>";
+          if(el) el.innerHTML="<span style='color:#f87171;'>Cannot reach server — check Apps Script deployment</span>";
         });
 
         // Load quota
@@ -6026,22 +6134,94 @@
         const year  = document.getElementById("ea_test_year")?.value;
         if (!month || !year) { toast("Select month and year", "warn"); return; }
         const res = document.getElementById("ea_manual_result");
-        if (res) { res.style.display = "block"; res.innerHTML = "⏳ Sending... this may take a moment."; res.style.color = "#64748b"; }
-        postData({ action: "triggerMonthlyReport", month: month, year: year })
-          .then(function(r) {
-            if (res) {
-              if (r && r.status === "ok") {
-                res.innerHTML = `✅ Done — sent to <strong>${r.sent||0}</strong> members, skipped <strong>${r.skipped||0}</strong> (no email). Quota remaining: ${r.quotaRemaining ?? "—"}.`;
-                res.style.color = "#065f46";
-              } else {
-                res.innerHTML = "❌ Failed: " + (r && r.message ? r.message : "Unknown error");
-                res.style.color = "#991b1b";
-              }
+        const btn = document.querySelector("[onclick='triggerManualMonthlyReport()']");
+
+        // Disable button while running
+        if (btn) { btn.disabled = true; btn.textContent = "⏳ Sending..."; }
+        if (res) {
+          res.style.display = "block";
+          res.innerHTML = "⏳ Sending emails... this may take 1–3 minutes for large member lists. Please wait.";
+          res.style.color = "#64748b";
+        }
+
+        // FIX: Google Apps Script CDN cuts off JSONP responses >30s.
+        // Solution: fire-and-forget trigger, then poll getMonthlyReportStatus every 5s.
+        // Apps Script stores result in PropertiesService; poll reads it when ready.
+        const jobKey = "mreport_" + Date.now();
+        let pollCount = 0;
+        const MAX_POLLS = 36; // 36 × 5s = 3 minutes max wait
+
+        // Step 1 — Fire the job (fire-and-forget, ignore response)
+        (function(){
+          const cbFire = "cb_mrf_" + Date.now();
+          const script = document.createElement("script");
+          window[cbFire] = function(){ try{ delete window[cbFire]; script.remove(); }catch(e){} };
+          script.onerror = function(){ try{ delete window[cbFire]; script.remove(); }catch(e){} };
+          script.src = API_URL + "?action=triggerMonthlyReport&month=" + encodeURIComponent(month) +
+            "&year=" + encodeURIComponent(year) + "&jobKey=" + encodeURIComponent(jobKey) + "&callback=" + cbFire;
+          document.body.appendChild(script);
+        })();
+
+        // Step 2 — Poll every 5s for result
+        function _pollResult() {
+          pollCount++;
+          const cbPoll = "cb_mrp_" + Date.now();
+          const script = document.createElement("script");
+          const timer = setTimeout(function(){
+            try{ delete window[cbPoll]; script.remove(); }catch(e){}
+            if (pollCount < MAX_POLLS) {
+              setTimeout(_pollResult, 5000);
+            } else {
+              _reportDone(null, true);
             }
-          })
-          .catch(function(err) {
-            if (res) { res.innerHTML = "❌ Error: " + err.message; res.style.color = "#991b1b"; }
-          });
+          }, 8000);
+          window[cbPoll] = function(r){
+            clearTimeout(timer);
+            try{ delete window[cbPoll]; script.remove(); }catch(e){}
+            if (r && r.status === "ok") {
+              _reportDone(r, false);
+            } else if (r && r.status === "pending") {
+              // Still running — keep polling
+              if (pollCount < MAX_POLLS) setTimeout(_pollResult, 5000);
+              else _reportDone(null, true);
+            } else if (r && r.status === "error") {
+              _reportDone(r, false);
+            } else {
+              // No result yet — keep polling
+              if (pollCount < MAX_POLLS) setTimeout(_pollResult, 5000);
+              else _reportDone(null, true);
+            }
+          };
+          script.onerror = function(){
+            clearTimeout(timer);
+            try{ delete window[cbPoll]; script.remove(); }catch(e){}
+            if (pollCount < MAX_POLLS) setTimeout(_pollResult, 5000);
+            else _reportDone(null, true);
+          };
+          script.src = API_URL + "?action=getMonthlyReportStatus&jobKey=" + encodeURIComponent(jobKey) + "&callback=" + cbPoll;
+          document.body.appendChild(script);
+        }
+
+        function _reportDone(r, timedOut) {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Now';
+          }
+          if (!res) return;
+          if (timedOut) {
+            res.innerHTML = "⚠️ Still running in the background — check your Apps Script execution log. Emails may still be sent successfully.";
+            res.style.color = "#92400e";
+          } else if (r && r.status === "ok") {
+            res.innerHTML = "✅ Done — sent to <strong>" + (r.sent||0) + "</strong> members, skipped <strong>" + (r.skipped||0) + "</strong> (no email / quota). Quota remaining: " + (r.quotaRemaining ?? "—") + ".";
+            res.style.color = "#065f46";
+          } else {
+            res.innerHTML = "❌ Failed: " + (r && r.message ? r.message : "Unknown error. Check Apps Script logs.");
+            res.style.color = "#991b1b";
+          }
+        }
+
+        // Start polling after 8s (give the job time to start)
+        setTimeout(_pollResult, 8000);
       }
 
       // Hook tracker init AND email auto init to showPage

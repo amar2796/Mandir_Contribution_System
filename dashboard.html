@@ -1279,7 +1279,7 @@
       function showReceiptById(rid) {
         const d = window._rcptStore[rid];
         if (!d) return;
-        showReceipt(d.c, d.userName, d.typeName, d.occasionName);
+        showReceipt(d.c, d.userName, d.typeName, d.occasionName, false);
       }
 
       function dashboardWhatsApp() {

@@ -150,15 +150,13 @@ function setSessionTokenOnServer(userId, token){
   try {
     const cb = "cb_sst_" + Date.now();
     const script = document.createElement("script");
-    // Swallow any error silently — this call is optional enhancement only
     window[cb] = function(){ try{ delete window[cb]; script.remove(); }catch(e){} };
     script.onerror = function(){ try{ delete window[cb]; script.remove(); }catch(e){} };
-    // Wrap JSONP execution in a safe global so HTML-error-page responses don't crash
+    // Send token to sheet — no expiry written server-side (managed client-side only)
     script.src = API_URL + "?action=setSessionToken&userId=" +
       encodeURIComponent(userId) + "&token=" + encodeURIComponent(token) +
       "&callback=" + cb;
     document.body.appendChild(script);
-    // Safety timeout — clean up if callback never fires (e.g. HTML response)
     setTimeout(function(){
       try{ if(window[cb]){ delete window[cb]; } }catch(e){}
     }, 12000);
@@ -226,8 +224,7 @@ function setSessionTokenOnServer(userId, token){
     } catch(e){ /* silent — poll is best-effort */ }
   }
 
-  // Start polling after 30s — gives setSessionToken enough time to write to sheet
-  // even on slow connections, before the first poll fires.
+  // Start polling after 30s (extra time for setSessionToken to settle on slow connections)
   // Interval stored in window._pollInterval so visibilitychange can pause/resume it
   setTimeout(function(){
     _poll();
@@ -243,7 +240,7 @@ function setSessionTokenOnServer(userId, token){
         window._pollInterval = setInterval(_poll, POLL_MS);
       }
     });
-  }, 30000); // ← FIX: increased from 15s to 30s so token write settles before first poll
+  }, 30000);
 })();
 
 /* ── Shared forced-logout helper ── */
@@ -251,35 +248,45 @@ function _forceLogout(message){
   const s = JSON.parse(localStorage.getItem("session") || "null");
   try {
     if(s && s.userId){
-      // Log the forced logout in audit
-      postData({ action:"logout", userId:s.userId, userName:s.name||"User" }).catch(()=>{});
+      const devInfo = typeof window._getDeviceInfo==="function" ? window._getDeviceInfo() : "";
+      postData({ action:"logout", userId:s.userId, userName:s.name||"User", deviceInfo:devInfo }).catch(()=>{});
     }
   } catch(e){}
-  // ── FIX: Mark as explicit logout so beforeunload knows to clear the sheet token
-  try { sessionStorage.setItem("_explicitLogout","1"); } catch(e){}
+  // Set nav flag so beforeunload does NOT fire another clearSessionToken beacon
+  // (logout already handles token clearing via postData above)
+  window._navFlag = true;
   localStorage.clear();
   sessionStorage.clear();
   toast(message || "Session ended. Please login again.", "warn");
-  setTimeout(()=>location.replace("login.html"), 2200);
+  setTimeout(()=>{ window._navFlag=false; location.replace("login.html"); }, 2200);
 }
 
 /* ── Auto-clear token on browser/tab close ── */
-/* ── FIX: Only clears token on EXPLICIT logout, NOT on page navigation/refresh ──
-   Root cause of auto-logout bug: beforeunload fires on every page navigation
-   (admin→dashboard→admin), wiping SessionToken from sheet. Then the 60s poll
-   sees an empty token and forces logout. Fixed by checking _explicitLogout flag.  */
+/* FIX: ALWAYS clear on tab/browser close so sheet token never stays stale.      */
+/* In-page navigation (page reloads within the app) is detected by a flag set    */
+/* on every <a> click and programmatic navigation — those skip the beacon.       */
+/* Only fires on protected pages.                                                 */
 (function(){
   const PROTECTED = ["admin.html","user.html","dashboard.html"];
   const isProtected = PROTECTED.some(p => window.location.pathname.includes(p.replace(".html","")));
   if(!isProtected) return;
 
+  // _navFlag: set true for ~500ms when navigating within the app (not closing)
+  // Cleared immediately after beforeunload if navigation is within the same app.
+  window._navFlag = false;
+
+  // Intercept all in-app link clicks and programmatic navigations
+  document.addEventListener("click", function(e){
+    const a = e.target.closest("a[href]");
+    if(a && !a.getAttribute("target")) { window._navFlag = true; setTimeout(()=>{ window._navFlag=false; },500); }
+  }, true);
+
   window.addEventListener("beforeunload", function(){
     try {
+      // Skip if this is an in-app navigation (not a true close/refresh)
+      if(window._navFlag) return;
       const s = JSON.parse(localStorage.getItem("session") || "null");
       if(!s || !s.userId) return;
-      // ── FIX: Only clear token if user explicitly logged out
-      // Normal navigation/refresh must NOT clear the token — that caused auto-logout
-      if(!sessionStorage.getItem("_explicitLogout")) return;
       const params = new URLSearchParams({
         action:   "clearSessionToken",
         userId:   String(s.userId),
@@ -482,56 +489,87 @@ function initCrop(imgEl, origSrc, onDone) {
     // clamp so crop box is always fully inside image
     const minX=boxL+side-dW, maxX=boxL;
     const minY=boxT+side-dH, maxY=boxT;
-    imgX=Math.min(maxX,Math.max(minX,imgX));
-    imgY=Math.min(maxY,Math.max(minY,imgY));
+    imgX=Math.max(minX,Math.min(maxX,imgX));
+    imgY=Math.max(minY,Math.min(maxY,imgY));
   }
-  function applyTransform(){
-    imgEl.style.transform=`translate(${imgX}px,${imgY}px) scale(${baseScale*zoom})`;
-  }
-  function centerImg(){
+
+  function applyTransform() {
     const dW=iW*baseScale*zoom, dH=iH*baseScale*zoom;
-    imgX=boxL+(side-dW)/2; imgY=boxT+(side-dH)/2;
-    clampImg(); applyTransform();
+    imgEl.style.width=dW+"px"; imgEl.style.height=dH+"px";
+    imgEl.style.left=imgX+"px"; imgEl.style.top=imgY+"px";
   }
-  centerImg();
 
-  // Drag
-  let dragging=false,startX=0,startY=0,startImgX=0,startImgY=0;
-  wrap.addEventListener("mousedown",e=>{dragging=true;startX=e.clientX;startY=e.clientY;startImgX=imgX;startImgY=imgY;e.preventDefault();});
-  window.addEventListener("mousemove",e=>{if(!dragging)return;imgX=startImgX+(e.clientX-startX);imgY=startImgY+(e.clientY-startY);clampImg();applyTransform();});
-  window.addEventListener("mouseup",()=>{dragging=false;});
-
-  // Touch drag
-  let t0=null;
-  wrap.addEventListener("touchstart",e=>{if(e.touches.length===1){t0=e.touches[0];startImgX=imgX;startImgY=imgY;}},{passive:true});
-  wrap.addEventListener("touchmove",e=>{if(e.touches.length===1&&t0){imgX=startImgX+(e.touches[0].clientX-t0.clientX);imgY=startImgY+(e.touches[0].clientY-t0.clientY);clampImg();applyTransform();}},{passive:true});
+  // Init position: center image, crop box inside it
+  zoom=1;
+  imgX=(wW-iW*baseScale)/2; imgY=(wH-iH*baseScale)/2;
+  clampImg(); applyTransform();
 
   // Zoom slider
-  zoomSlider.addEventListener("input",function(){
-    zoom=Number(this.value)/100;
-    zoomLabel.textContent="Zoom: "+this.value+"%";
+  if(zoomSlider){
+    zoomSlider.addEventListener("input",function(){
+      zoom=Number(this.value)/100;
+      zoomLabel.textContent="Zoom: "+this.value+"%";
+      clampImg(); applyTransform();
+    });
+  }
+
+  // Mouse drag
+  let dragging=false, lastX, lastY;
+  wrap.addEventListener("mousedown",e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;e.preventDefault();});
+  window.addEventListener("mousemove",e=>{
+    if(!dragging)return;
+    imgX+=e.clientX-lastX; imgY+=e.clientY-lastY;
+    lastX=e.clientX; lastY=e.clientY;
     clampImg(); applyTransform();
   });
+  window.addEventListener("mouseup",()=>{dragging=false;});
 
-  // Confirm crop
-  window.confirmCrop=function(){
-    const canvas=document.createElement("canvas");
-    const OUT=300; canvas.width=OUT; canvas.height=OUT;
+  // Touch drag + pinch zoom
+  let lastDist=null, lastTX, lastTY;
+  wrap.addEventListener("touchstart",e=>{
+    if(e.touches.length===1){lastTX=e.touches[0].clientX;lastTY=e.touches[0].clientY;}
+    if(e.touches.length===2){lastDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+  },{passive:true});
+  wrap.addEventListener("touchmove",e=>{
+    if(e.touches.length===1){
+      imgX+=e.touches[0].clientX-lastTX; imgY+=e.touches[0].clientY-lastTY;
+      lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY;
+      clampImg(); applyTransform();
+    } else if(e.touches.length===2&&lastDist){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      const ratio=d/lastDist;
+      zoom=Math.max(1,Math.min(4,zoom*ratio));
+      if(zoomSlider){zoomSlider.value=Math.round(zoom*100);zoomLabel.textContent="Zoom: "+Math.round(zoom*100)+"%";}
+      lastDist=d;
+      clampImg(); applyTransform();
+    }
+  },{passive:true});
+  wrap.addEventListener("touchend",e=>{if(e.touches.length<2)lastDist=null;},{passive:true});
+
+  window._doCrop=function(){
+    // Convert screen crop box coords back to image natural coords
+    const dW=iW*baseScale*zoom;
+    const naturalScale=iW/dW; // px per natural pixel
+    const cropNatX=(boxL-imgX)*naturalScale;
+    const cropNatY=(boxT-imgY)*naturalScale;
+    const cropNatS=side*naturalScale;
+    const out=400;
+    const canvas=document.createElement("canvas"); canvas.width=out; canvas.height=out;
     const ctx=canvas.getContext("2d");
-    // cropBox top-left in image-pixel coords
-    const scale=baseScale*zoom;
-    const srcX=(boxL-imgX)/scale, srcY=(boxT-imgY)/scale;
-    const srcS=side/scale;
-    const tmpImg=new Image();
-    tmpImg.onload=function(){
-      ctx.drawImage(tmpImg,srcX,srcY,srcS,srcS,0,0,OUT,OUT);
-      closeModal();
-      onDone(canvas.toDataURL("image/png"));
+    const temp=new Image(); temp.src=origSrc;
+    temp.onload=function(){
+      ctx.drawImage(temp,cropNatX,cropNatY,cropNatS,cropNatS,0,0,out,out);
+      const b64=canvas.toDataURL("image/jpeg",0.80);
+      closeModal(); onDone(b64);
     };
-    tmpImg.src=origSrc;
   };
 }
 
+function confirmCrop(){
+  if(window._doCrop) window._doCrop();
+}
+
+/* ═══ RECEIPT DATA REGISTRY (FIX: avoids inline-JSON-in-onclick SyntaxError) ═══ */
 window._rcptStore = {};
 let _rcptIdx = 0;
 
