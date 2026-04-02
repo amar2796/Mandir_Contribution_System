@@ -823,6 +823,7 @@
       </div>
     </div>
 
+    <script src="constants.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script>
@@ -1355,7 +1356,7 @@
                     )}</span>
                   </td>
                   <td style="font-size:11px;color:#888;">${escapeHtml(
-                    c.PaymentDate || "N/A"
+                    formatPaymentDate(c.PaymentDate)
                   )}</td>
                   <td class="col-receipt-th"><button class="btn-blue btn-sm" onclick="event.stopPropagation();showReceiptById('${rid}')"><i class="fa-solid fa-receipt"></i></button></td>
                 </tr>`;
@@ -1547,7 +1548,7 @@
             String(c.Year || "—"),
             tName,
             dRID,
-            c.PaymentDate || "—",
+            formatPaymentDate(c.PaymentDate),
           ];
         });
         if (rows.length > 0) {

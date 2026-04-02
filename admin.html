@@ -481,6 +481,81 @@
         }
       }
 
+      /* ══ EMAIL AUTOMATION TOGGLE SWITCH ══ */
+      .ea-toggle {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 25px;
+        flex-shrink: 0;
+      }
+      .ea-toggle input { opacity: 0; width: 0; height: 0; }
+      .ea-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: #cbd5e1;
+        border-radius: 25px;
+        transition: 0.3s;
+      }
+      .ea-slider:before {
+        position: absolute;
+        content: "";
+        height: 19px; width: 19px;
+        left: 3px; bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: 0.3s;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+      }
+      .ea-toggle input:checked + .ea-slider { background: #10b981; }
+      .ea-toggle input:checked + .ea-slider:before { transform: translateX(21px); }
+
+      /* ══ TRACKER MOBILE IMPROVEMENTS ══ */
+      @media (max-width: 700px) {
+        /* Tracker two-col → single col */
+        #tr_lists {
+          grid-template-columns: 1fr !important;
+        }
+        /* Summary badges → horizontal scroll row */
+        #tr_summary {
+          flex-wrap: nowrap !important;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          padding-bottom: 6px;
+          gap: 10px !important;
+        }
+        #tr_summary > div {
+          min-width: 100px !important;
+          flex-shrink: 0;
+        }
+        /* Tracker list heights reduced on mobile */
+        #tr_paid_list, #tr_pending_list {
+          max-height: 260px !important;
+        }
+        /* Email automation two-col → one-col */
+        #ea_toggle_grid {
+          grid-template-columns: 1fr !important;
+        }
+        #ea_card_receipt, #ea_card_monthly {
+          padding: 14px !important;
+        }
+      }
+      @media (max-width: 500px) {
+        /* Tracker filter row buttons full width */
+        #trackerPage .filter-row > div,
+        #trackerPage .filter-row select {
+          width: 100%;
+        }
+        /* Tracker header row stack on mobile */
+        #tr_paid_list .tr-member-row,
+        #tr_pending_list .tr-member-row {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+        }
+      }
+
       /* ── UI ENHANCEMENTS ── */
       .sidebar li.active-nav {
         border-left: 4px solid #f7c35a;
@@ -606,6 +681,16 @@
       #nav_announcement:hover, #nav_announcement.active-nav {
         background: rgba(251,191,36,0.18) !important;
         color: #fde68a !important;
+      }
+      #nav_tracker { color: #a78bfa; }
+      #nav_tracker:hover, #nav_tracker.active-nav {
+        background: rgba(124,58,237,0.25) !important;
+        color: #c4b5fd !important;
+      }
+      #nav_emailauto { color: #34d399; }
+      #nav_emailauto:hover, #nav_emailauto.active-nav {
+        background: rgba(16,185,129,0.25) !important;
+        color: #6ee7b7 !important;
       }
       .ann-preview-bar {
         display: flex; align-items: center; gap: 12px;
@@ -821,6 +906,9 @@
           <li onclick="showPage('galleryAdminPage',this)">
             <i class="fa-solid fa-images"></i> Gallery
           </li>
+          <li onclick="showPage('trackerPage',this)" id="nav_tracker">
+            <i class="fa-solid fa-chart-pie"></i> Contribution Tracker
+          </li>
           <li onclick="showPage('announcementPage',this)" id="nav_announcement">
             <i class="fa-solid fa-bullhorn"></i> Announcement
           </li>
@@ -833,6 +921,13 @@
             style="color: #86efac"
           >
             <i class="fa-solid fa-comment-dots"></i> Feedback
+          </li>
+          <li
+            id="nav_emailauto"
+            onclick="showPage('emailAutoPage',this)"
+            style="color: #34d399"
+          >
+            <i class="fa-solid fa-envelope-circle-check"></i> Email Automation
           </li>
           <li
             id="nav_audit"
@@ -908,6 +1003,17 @@
               border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             "
           >
+            <span style="color: #aaa; font-size: 11px">🚶 Walk-in Month</span>
+            <span id="sb_walkin_month" style="color: #fbbf24; font-weight: 600">—</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            "
+          >
             <span style="color: #aaa; font-size: 11px"
               >This Year Collected</span
             >
@@ -918,10 +1024,32 @@
               display: flex;
               justify-content: space-between;
               padding: 5px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            "
+          >
+            <span style="color: #aaa; font-size: 11px">🚶 Walk-in Year</span>
+            <span id="sb_walkin_year" style="color: #fbbf24; font-weight: 600">—</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             "
           >
             <span style="color: #aaa; font-size: 11px">This Year Expense</span>
             <span id="sb_exp" style="color: #e74c3c; font-weight: 600">—</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+            "
+          >
+            <span style="color: #aaa; font-size: 11px">📧 Email Today</span>
+            <span id="sb_email_quota" style="color: #60a5fa; font-weight: 600; font-size: 10px;">—</span>
           </div>
           <!-- WhatsApp Report — Month/Year selectors -->
           <div
@@ -1273,6 +1401,17 @@
               <div style="grid-column: 1/-1">
                 <label>Note</label
                 ><input id="note" placeholder="Optional note" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div>
+                <label>Payment Mode</label>
+                <select id="paymentMode">
+                  <option value="UPI">UPI</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Online Transfer">Online Transfer</option>
+                </select>
               </div>
             </div>
             <div
@@ -1768,6 +1907,88 @@
         </div>
 
         <!-- ANNOUNCEMENT PAGE -->
+        <!-- ═══ CONTRIBUTION TRACKER PAGE (Improvement #6) ═══ -->
+        <div id="trackerPage" class="page">
+          <div class="card">
+            <h3><i class="fa-solid fa-chart-pie" style="color:#f7a01a;"></i> Contribution Tracker
+              <span style="font-size:11px;font-weight:400;color:#999;margin-left:8px;">Who paid · Who hasn't</span>
+            </h3>
+
+            <!-- Filter Row -->
+            <div class="filter-row" style="flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Type</label>
+                <select id="tr_type" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;min-width:160px;">
+                  <option value="">— All Types —</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Month</label>
+                <select id="tr_month" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;min-width:130px;"></select>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">Year</label>
+                <select id="tr_year" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:13px;min-width:100px;"></select>
+              </div>
+              <div style="align-self:flex-end;">
+                <button onclick="runTracker()" style="padding:9px 20px;">
+                  <i class="fa-solid fa-magnifying-glass"></i> Apply Filter
+                </button>
+              </div>
+            </div>
+
+            <!-- Summary Badges -->
+            <div id="tr_summary" style="display:none;gap:12px;flex-wrap:wrap;margin-bottom:14px;display:flex;">
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+                <div style="font-size:1.5rem;font-weight:700;color:#16a34a;" id="tr_paid_count">0</div>
+                <div style="font-size:11px;color:#166534;font-weight:600;">✅ Paid</div>
+                <div style="font-size:12px;color:#15803d;font-weight:700;" id="tr_paid_amt">₹0</div>
+              </div>
+              <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+                <div style="font-size:1.5rem;font-weight:700;color:#dc2626;" id="tr_pending_count">0</div>
+                <div style="font-size:11px;color:#991b1b;font-weight:600;">❌ Pending</div>
+                <div style="font-size:12px;color:#b91c1c;font-weight:600;" id="tr_pending_pct">0%</div>
+              </div>
+              <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+                <div style="font-size:1.5rem;font-weight:700;color:#2563eb;" id="tr_total_members">0</div>
+                <div style="font-size:11px;color:#1d4ed8;font-weight:600;">👥 Total Members</div>
+              </div>
+            </div>
+            <!-- Progress bar -->
+            <div style="background:#e2e8f0;border-radius:20px;height:8px;margin-bottom:18px;overflow:hidden;display:none;" id="tr_progress_wrap">
+              <div id="tr_progress_bar" style="height:100%;width:0%;border-radius:20px;transition:width 0.6s ease,background 0.4s;"></div>
+            </div>
+
+            <!-- Two-column lists -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="tr_lists">
+              <!-- Paid -->
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <h4 style="margin:0;color:#16a34a;font-size:13px;"><i class="fa-solid fa-circle-check"></i> Paid Members</h4>
+                  <button onclick="sendTrackerMsg('paid')" style="padding:5px 12px;font-size:11px;background:#16a34a;box-shadow:none;">
+                    <i class="fa-brands fa-whatsapp"></i> Send List
+                  </button>
+                </div>
+                <div id="tr_paid_list" style="max-height:380px;overflow-y:auto;border:1px solid #bbf7d0;border-radius:8px;"></div>
+              </div>
+              <!-- Pending -->
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <h4 style="margin:0;color:#dc2626;font-size:13px;"><i class="fa-solid fa-circle-xmark"></i> Pending Members</h4>
+                  <button onclick="sendTrackerMsg('pending')" style="padding:5px 12px;font-size:11px;background:#dc2626;box-shadow:none;">
+                    <i class="fa-brands fa-whatsapp"></i> Send Reminder
+                  </button>
+                </div>
+                <div id="tr_pending_list" style="max-height:380px;overflow-y:auto;border:1px solid #fecaca;border-radius:8px;"></div>
+              </div>
+            </div>
+            <div id="tr_empty" style="display:none;text-align:center;padding:40px;color:#aaa;">
+              <i class="fa-solid fa-filter" style="font-size:2rem;margin-bottom:10px;"></i>
+              <p>Apply a filter above to see contribution status.</p>
+            </div>
+          </div>
+        </div>
+
         <div id="announcementPage" class="page">
           <div class="card">
             <h3><i class="fa-solid fa-bullhorn" style="color:#f7a01a;"></i> Manage Announcement Banner</h3>
@@ -2000,44 +2221,63 @@
           </div>
         </div>
 
-        <!-- AUDIT LOG PAGE -->
+        <!-- AUDIT LOG PAGE — ENHANCED -->
         <div id="auditPage" class="page">
           <div class="card">
             <h3>
-              <i class="fa-solid fa-scroll"></i> Audit Log
-              <span style="font-size: 11px; font-weight: 400; color: #999"
-                >(Login/Logout times, all actions)</span
-              >
+              <i class="fa-solid fa-shield-halved" style="color:#f87171;"></i> Audit Log
+              <span style="font-size:11px;font-weight:400;color:#999;margin-left:6px;">All actions, logins &amp; device info</span>
+              <span id="audit_count_badge" style="margin-left:auto;font-size:11px;background:#334155;color:#fff;padding:3px 10px;border-radius:20px;font-weight:600;display:none;"></span>
             </h3>
-            <div
-              style="
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-                margin-bottom: 14px;
-                align-items: center;
-              "
-              class="search-refresh-row"
-            >
-              <input
-                class="search-bar"
-                id="auditSearch"
-                placeholder="🔍 Search by user or action..."
+
+            <!-- Stats Row -->
+            <div id="audit_stats" style="display:none;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;">
+              <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:22px;font-weight:800;color:#16a34a;" id="audit_stat_logins">—</div>
+                <div style="font-size:11px;color:#15803d;font-weight:600;">Logins Today</div>
+              </div>
+              <div style="background:#fef9ee;border:1px solid #fde68a;border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:22px;font-weight:800;color:#d97706;" id="audit_stat_actions">—</div>
+                <div style="font-size:11px;color:#92400e;font-weight:600;">Actions Today</div>
+              </div>
+              <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:22px;font-weight:800;color:#dc2626;" id="audit_stat_total">—</div>
+                <div style="font-size:11px;color:#991b1b;font-weight:600;">Total Entries</div>
+              </div>
+              <div style="background:#f0f4ff;border:1px solid #a5b4fc;border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:22px;font-weight:800;color:#4f46e5;" id="audit_stat_users">—</div>
+                <div style="font-size:11px;color:#3730a3;font-weight:600;">Unique Users</div>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;" class="search-refresh-row">
+              <input class="search-bar" id="auditSearch"
+                placeholder="🔍 Search user, action, device, location..."
                 onkeyup="filterAuditLog()"
-                style="margin: 0; flex: 1; min-width: 200px"
-              />
-              <button
-                onclick="loadAuditLog()"
-                style="
-                  background: #334155;
-                  box-shadow: none;
-                  padding: 9px 14px;
-                  flex-shrink: 0;
-                "
-              >
+                style="margin:0;flex:1;min-width:180px;"/>
+              <select id="auditFilterAction" onchange="filterAuditLog()"
+                style="padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;min-width:130px;background:#fff;">
+                <option value="">All Actions</option>
+                <option value="login">Login</option>
+                <option value="logout">Logout</option>
+                <option value="contribution">Contribution</option>
+                <option value="expense">Expense</option>
+                <option value="user">User</option>
+                <option value="email">Email / Receipt</option>
+                <option value="password">Password Reset</option>
+                <option value="goal">Goal</option>
+                <option value="gallery">Gallery</option>
+              </select>
+              <button onclick="loadAuditLog()" style="background:#334155;box-shadow:none;padding:9px 14px;flex-shrink:0;">
                 <i class="fa-solid fa-rotate"></i> Refresh
               </button>
+              <button onclick="exportAuditCSV()" style="background:#27ae60;box-shadow:none;padding:9px 14px;flex-shrink:0;font-size:12px;">
+                <i class="fa-solid fa-file-csv"></i> CSV
+              </button>
             </div>
+
+            <!-- Table -->
             <div class="table-responsive">
               <table>
                 <thead>
@@ -2047,20 +2287,19 @@
                     <th>User / Admin</th>
                     <th>Action</th>
                     <th>Details</th>
+                    <th>Device / Info</th>
                   </tr>
                 </thead>
                 <tbody id="auditTableBody">
                   <tr>
-                    <td
-                      colspan="5"
-                      style="text-align: center; color: #aaa; padding: 20px"
-                    >
+                    <td colspan="6" style="text-align:center;color:#aaa;padding:20px;">
                       Click Refresh to load audit log
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
+            <div id="audit_pagination" style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>
           </div>
         </div>
 
@@ -2129,11 +2368,114 @@
             </div>
           </div>
         </div>
-      </div>
-      <!-- /.main -->
-    </div>
-    <!-- /.layout -->
+        <!-- ══ EMAIL AUTOMATION PAGE ══ -->
+        <div id="emailAutoPage" class="page">
+          <div class="card">
+            <h3><i class="fa-solid fa-envelope-circle-check" style="color:#34d399;"></i> Email Automation
+              <span style="font-size:11px;font-weight:400;color:#999;margin-left:8px;">Control automatic emails sent to members</span>
+            </h3>
 
+            <!-- Info Banner -->
+            <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #6ee7b7;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px;">
+              <i class="fa-solid fa-circle-info" style="color:#059669;font-size:1.2rem;margin-top:2px;flex-shrink:0;"></i>
+              <div style="font-size:12.5px;color:#065f46;line-height:1.7;">
+                <strong>Privacy guaranteed:</strong> Each email is sent only to that member — no other member's data is shared. Monthly reports are user-wise and private.
+                <br/><span style="color:#047857;">📧 Daily email quota: <strong id="ea_quota_display">Loading...</strong></span>
+              </div>
+            </div>
+
+            <!-- Toggle Cards -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;" id="ea_toggle_grid">
+
+              <!-- Toggle 1: Auto Receipt on Contribution -->
+              <div style="border:1.5px solid #e2e8f0;border-radius:12px;padding:18px;background:#fff;transition:border-color 0.2s;" id="ea_card_receipt">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                  <div style="flex:1;">
+                    <div style="font-weight:700;color:#1e293b;font-size:14px;margin-bottom:4px;">
+                      <i class="fa-solid fa-receipt" style="color:#f7a01a;margin-right:6px;"></i>Auto Receipt Email
+                    </div>
+                    <div style="font-size:11.5px;color:#64748b;line-height:1.6;">Automatically sends a receipt email to the member right after a contribution is saved. Only sent if member has an email address.</div>
+                  </div>
+                  <!-- Toggle Switch -->
+                  <label class="ea-toggle" style="flex-shrink:0;">
+                    <input type="checkbox" id="toggle_auto_receipt" onchange="saveEmailToggle('auto_receipt', this.checked)">
+                    <span class="ea-slider"></span>
+                  </label>
+                </div>
+                <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:11px;color:#94a3b8;" id="ea_receipt_status">
+                  <i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px;color:#94a3b8;"></i> Loading status...
+                </div>
+              </div>
+
+              <!-- Toggle 2: Monthly End-of-Month Report -->
+              <div style="border:1.5px solid #e2e8f0;border-radius:12px;padding:18px;background:#fff;transition:border-color 0.2s;" id="ea_card_monthly">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                  <div style="flex:1;">
+                    <div style="font-weight:700;color:#1e293b;font-size:14px;margin-bottom:4px;">
+                      <i class="fa-solid fa-calendar-check" style="color:#6366f1;margin-right:6px;"></i>Monthly End-of-Month Report
+                    </div>
+                    <div style="font-size:11.5px;color:#64748b;line-height:1.6;">On the last day of each month, sends each member a personal email — receipt summary if they contributed, or a friendly reminder if they haven't.</div>
+                  </div>
+                  <label class="ea-toggle" style="flex-shrink:0;">
+                    <input type="checkbox" id="toggle_monthly_report" onchange="saveEmailToggle('monthly_report', this.checked)">
+                    <span class="ea-slider"></span>
+                  </label>
+                </div>
+                <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:11px;color:#94a3b8;" id="ea_monthly_status">
+                  <i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px;color:#94a3b8;"></i> Loading status...
+                </div>
+              </div>
+            </div>
+
+            <!-- How It Works -->
+            <div style="background:#f8fafc;border-radius:10px;padding:16px 20px;border:1px solid #e2e8f0;">
+              <div style="font-weight:700;color:#334155;font-size:13px;margin-bottom:12px;"><i class="fa-solid fa-circle-question" style="color:#6366f1;margin-right:6px;"></i>How It Works</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px;color:#475569;">
+                <div>
+                  <div style="font-weight:600;color:#1e293b;margin-bottom:4px;">📧 Auto Receipt Email</div>
+                  <ul style="margin:0;padding-left:16px;line-height:1.8;color:#64748b;">
+                    <li>Triggers when admin adds a contribution</li>
+                    <li>Sent to that member's email only</li>
+                    <li>Includes receipt number, amount, date</li>
+                    <li>Skipped if daily email quota is full</li>
+                  </ul>
+                </div>
+                <div>
+                  <div style="font-weight:600;color:#1e293b;margin-bottom:4px;">📅 Monthly Report Email</div>
+                  <ul style="margin:0;padding-left:16px;line-height:1.8;color:#64748b;">
+                    <li>Runs on last day of the month (Apps Script trigger)</li>
+                    <li>Contributed → receives their payment summary</li>
+                    <li>Not contributed → receives a reminder email</li>
+                    <li>Each member gets only their own data</li>
+                  </ul>
+                </div>
+              </div>
+              <div style="margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11.5px;color:#94a3b8;">
+                <i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i>
+                Monthly report requires a <strong>Time-based trigger</strong> set up in Apps Script. Go to Apps Script → Triggers → Add trigger → <code>sendMonthlyEndReports</code> → Month timer → End of month.
+              </div>
+            </div>
+
+            <!-- Manual Send Test -->
+            <div style="margin-top:16px;background:linear-gradient(135deg,#fef9ee,#fef3c7);border:1px solid #fde68a;border-radius:10px;padding:16px 20px;">
+              <div style="font-weight:700;color:#92400e;font-size:13px;margin-bottom:8px;"><i class="fa-solid fa-flask" style="color:#d97706;margin-right:6px;"></i>Manual Monthly Report (Test)</div>
+              <div style="font-size:12px;color:#78350f;margin-bottom:12px;">Send the current month's report to all members right now (for testing or immediate dispatch).</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                <select id="ea_test_month" style="padding:8px 12px;border:1px solid #fcd34d;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;background:#fff;min-width:130px;"></select>
+                <select id="ea_test_year" style="padding:8px 12px;border:1px solid #fcd34d;border-radius:8px;font-family:Poppins,sans-serif;font-size:12px;background:#fff;min-width:90px;"></select>
+                <button onclick="triggerManualMonthlyReport()" style="background:linear-gradient(135deg,#d97706,#f7a01a);padding:9px 18px;font-size:12px;box-shadow:0 2px 8px rgba(247,160,26,0.3);">
+                  <i class="fa-solid fa-paper-plane"></i> Send Now
+                </button>
+              </div>
+              <div id="ea_manual_result" style="margin-top:10px;font-size:12px;display:none;"></div>
+            </div>
+          </div>
+        </div>
+        <!-- ══ END EMAIL AUTOMATION PAGE ══ -->
+      </div><!-- end .main -->
+    </div><!-- end .layout -->
+
+    <script src="constants.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script>
@@ -2185,31 +2527,27 @@
         try {
           const s = JSON.parse(localStorage.getItem("session") || "{}");
           if (s && s.userId) {
-            // Use sendBeacon for reliable fire-and-forget logging
+            const devInfo = typeof window._getDeviceInfo==="function" ? window._getDeviceInfo() : "";
             const params = new URLSearchParams({
               action: "logout",
               userId: s.userId,
               userName: s.name || "Admin",
+              deviceInfo: devInfo,
               callback: "cb_logout",
             });
-            try {
-              navigator.sendBeacon(API_URL + "?" + params.toString());
-            } catch (e) {}
-            // Also try JSONP as fallback
-            postData({
-              action: "logout",
-              userId: s.userId,
-              userName: s.name || "Admin",
-            }).catch(() => {});
+            try { navigator.sendBeacon(API_URL + "?" + params.toString()); } catch(e) {}
+            postData({ action:"logout", userId:s.userId, userName:s.name||"Admin", deviceInfo:devInfo }).catch(()=>{});
           }
-        } catch (e) {}
+        } catch(e) {}
+        // Set _navFlag so beforeunload skips the beacon (logout already handled token clear above)
+        window._navFlag = true;
         localStorage.clear();
         sessionStorage.clear();
-        // Small delay to allow logout log to be sent before redirect
         setTimeout(() => {
+          window._navFlag = false;
           history.replaceState(null, "", "login.html");
           location.replace("login.html");
-        }, 150);
+        }, 300);
       }
 
       function toggleAdminDropdown() {
@@ -2981,42 +3319,54 @@
         const now = new Date();
         const curYear = now.getFullYear();
         const MOS = [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "August",
-          "September",
-          "October",
-          "November",
-          "December",
+          "January","February","March","April","May","June",
+          "July","August","September","October","November","December",
         ];
         const curMonth = MOS[now.getMonth()];
-        let monthC = data
-          .filter(
-            (c) => String(c.Year) === String(curYear) && c.ForMonth === curMonth
-          )
-          .reduce((s, c) => s + Number(c.Amount || 0), 0);
-        let yearC = data
-          .filter((c) => String(c.Year) === String(curYear))
-          .reduce((s, c) => s + Number(c.Amount || 0), 0);
-        let yearE = expenses
-          .filter((e) => String(e.Year) === String(curYear))
-          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+
+        // All contributions this month/year
+        const monthContribs = data.filter(c => String(c.Year) === String(curYear) && c.ForMonth === curMonth);
+        const yearContribs  = data.filter(c => String(c.Year) === String(curYear));
+
+        // Separate regular vs walk-in
+        const isWalkIn = c => String(c.UserId).startsWith("WALKIN_");
+        let monthC        = monthContribs.filter(c => !isWalkIn(c)).reduce((s,c) => s + Number(c.Amount||0), 0);
+        let monthWalkIn   = monthContribs.filter(c =>  isWalkIn(c)).reduce((s,c) => s + Number(c.Amount||0), 0);
+        let yearC         = yearContribs.filter(c  => !isWalkIn(c)).reduce((s,c) => s + Number(c.Amount||0), 0);
+        let yearWalkIn    = yearContribs.filter(c  =>  isWalkIn(c)).reduce((s,c) => s + Number(c.Amount||0), 0);
+        let yearE         = expenses.filter(e => String(e.Year) === String(curYear)).reduce((s,e) => s + Number(e.Amount||0), 0);
+
         let sb = document.getElementById("sb_members");
-        if (sb)
-          sb.innerText = users.filter(
-            (u) => u.Role !== "Admin" && u.Status !== "Inactive"
-          ).length;
+        if (sb) sb.innerText = users.filter(u => u.Role !== "Admin" && u.Status !== "Inactive").length;
+
         let sbm = document.getElementById("sb_month");
-        if (sbm) sbm.innerText = "₹" + fmt(monthC);
+        if (sbm) sbm.innerText = "₹" + fmt(monthC + monthWalkIn);
+
+        // Walk-in month
+        let sbwm = document.getElementById("sb_walkin_month");
+        if (sbwm) sbwm.innerText = monthWalkIn > 0 ? "₹" + fmt(monthWalkIn) : "—";
+
         let sby = document.getElementById("sb_year");
-        if (sby) sby.innerText = "₹" + fmt(yearC);
+        if (sby) sby.innerText = "₹" + fmt(yearC + yearWalkIn);
+
+        // Walk-in year
+        let sbwy = document.getElementById("sb_walkin_year");
+        if (sbwy) sbwy.innerText = yearWalkIn > 0 ? "₹" + fmt(yearWalkIn) : "—";
+
         let sbe = document.getElementById("sb_exp");
         if (sbe) sbe.innerText = "₹" + fmt(yearE);
+
+        // Email quota — fetch async, non-blocking
+        let sbEq = document.getElementById("sb_email_quota");
+        if (sbEq) {
+          getEmailQuotaCached().then(q => {
+            if (q && typeof q.used !== "undefined") {
+              const color = q.remaining < 10 ? "#f87171" : q.remaining < 30 ? "#fbbf24" : "#60a5fa";
+              sbEq.style.color = color;
+              sbEq.innerText = q.used + " / " + q.limit + " used";
+            }
+          }).catch(() => { if (sbEq) sbEq.innerText = "—"; });
+        }
         // Populate WA selectors
         let waMonth = document.getElementById("wa_month");
         let waYear = document.getElementById("wa_year");
@@ -3232,118 +3582,132 @@
           toast("PDF library not loaded.", "error");
           return;
         }
+
+        // Data for report
+        const yearContribs  = data.filter(c => String(c.Year) === String(selYear));
+        const monthContribs = data.filter(c => String(c.Year) === String(selYear) && c.ForMonth === selMonth);
+        const yrTotal = yearContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
+        const yrExp   = expenses.filter(e => String(e.Year) === String(selYear)).reduce((s,e) => s + Number(e.Amount||0), 0);
+        const moTotal = monthContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
+        const moExp   = expenses.filter(e => String(e.Year) === String(selYear) && e.ForMonth === selMonth).reduce((s,e) => s + Number(e.Amount||0), 0);
         const { jsPDF } = window.jspdf;
         let doc = new jsPDF("p", "mm", "a4");
         let w = doc.internal.pageSize.getWidth();
         let ph = doc.internal.pageSize.getHeight();
-        // Header
-        doc.setFillColor(51, 65, 85);
-        doc.rect(0, 0, w, 26, "F");
-        doc.setTextColor(247, 160, 26);
-        doc.setFontSize(14);
-        doc.setFont(undefined, "bold");
-        doc.text("SHREE HANUMAN MANDIR", w / 2, 11, { align: "center" });
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
-        doc.setFont(undefined, "normal");
-        doc.text("PALIYA, SULTANPUR  |  FINANCIAL REPORT", w / 2, 18, {
-          align: "center",
+
+        // ── Gold top accent bar
+        doc.setFillColor(247,160,26); doc.rect(0,0,w,3,"F");
+
+        // ── Header band
+        doc.setFillColor(30,41,59); doc.rect(0,3,w,34,"F");
+        doc.setFillColor(51,65,85); doc.rect(0,20,w,17,"F");
+
+        // Logo in header
+        let logoPlaced = false;
+        if(typeof window._logoB64 !== "undefined" && window._logoB64) {
+          try {
+            doc.setFillColor(255,255,255); doc.circle(20, 14, 8, "F");
+            doc.addImage(window._logoB64, "PNG", 12, 6, 16, 16);
+            logoPlaced = true;
+          } catch(e) {}
+        }
+
+        // Mandir name
+        doc.setTextColor(247,160,26); doc.setFontSize(16); doc.setFont(undefined,"bold");
+        doc.text("SHREE HANUMAN MANDIR", w/2, 14, {align:"center"});
+        doc.setTextColor(200,215,230); doc.setFontSize(8); doc.setFont(undefined,"normal");
+        doc.text("PALIYA, SULTANPUR  |  CONFIDENTIAL FINANCIAL REPORT", w/2, 21, {align:"center"});
+        // Report title bar
+        doc.setFillColor(247,160,26); doc.roundedRect(w/2-45, 24, 90, 8, 2, 2, "F");
+        doc.setTextColor(30,41,59); doc.setFontSize(8); doc.setFont(undefined,"bold");
+        doc.text(`FINANCIAL REPORT — ${selMonth.toUpperCase()} ${selYear}`, w/2, 29.2, {align:"center"});
+        doc.setTextColor(180,195,210); doc.setFontSize(7); doc.setFont(undefined,"normal");
+        doc.text("Generated: " + genDate, w/2, 35.5, {align:"center"});
+
+        // ── Summary cards row
+        const cardY = 42;
+        const cardH = 22;
+        const cardW = (w - 20) / 4;
+        const cards = [
+          { label:"Month Collected", value:"Rs."+moTotal.toLocaleString("en-IN"), color:[240,253,244], border:[134,239,172], text:[21,128,61] },
+          { label:"Month Expenses",  value:"Rs."+moExp.toLocaleString("en-IN"),   color:[254,242,242], border:[252,165,165], text:[185,28,28]  },
+          { label:"Year Collected",  value:"Rs."+yrTotal.toLocaleString("en-IN"), color:[239,246,255], border:[147,197,253], text:[37,99,235]  },
+          { label:"Net Balance",     value:"Rs."+(yrTotal-yrExp).toLocaleString("en-IN"), color:[254,249,238], border:[253,211,77], text:[146,64,14]  },
+        ];
+        cards.forEach((card, i) => {
+          const cx = 10 + i * (cardW + 2);
+          doc.setFillColor(...card.color); doc.roundedRect(cx, cardY, cardW, cardH, 2, 2, "F");
+          doc.setDrawColor(...card.border); doc.setLineWidth(0.4); doc.roundedRect(cx, cardY, cardW, cardH, 2, 2, "S");
+          doc.setTextColor(...card.text); doc.setFontSize(9); doc.setFont(undefined,"bold");
+          doc.text(card.value, cx + cardW/2, cardY+11, {align:"center"});
+          doc.setFontSize(6); doc.setFont(undefined,"normal"); doc.setTextColor(100,116,139);
+          doc.text(card.label, cx + cardW/2, cardY+17.5, {align:"center"});
         });
-        doc.text("Generated: " + genDate, w / 2, 23, { align: "center" });
-        // Year summary rows
-        let yearContribs = data.filter(
-          (c) => String(c.Year) === String(selYear)
-        );
-        let monthContribs = data.filter(
-          (c) => String(c.Year) === String(selYear) && c.ForMonth === selMonth
-        );
-        let yrTotal = yearContribs.reduce(
-          (s, c) => s + Number(c.Amount || 0),
-          0
-        );
-        let yrExp = expenses
-          .filter((e) => String(e.Year) === String(selYear))
-          .reduce((s, e) => s + Number(e.Amount || 0), 0);
-        let moTotal = monthContribs.reduce(
-          (s, c) => s + Number(c.Amount || 0),
-          0
-        );
-        let moExp = expenses
-          .filter(
-            (e) => String(e.Year) === String(selYear) && e.ForMonth === selMonth
-          )
-          .reduce((s, e) => s + Number(e.Amount || 0), 0);
+
+        // ── Period summary table
         doc.autoTable({
-          head: [
-            ["Period", "Contributions (Rs.)", "Expenses (Rs.)", "Net (Rs.)"],
-          ],
+          head: [["Period", "Contributions (Rs.)", "Expenses (Rs.)", "Net (Rs.)"]],
           body: [
-            [
-              selMonth + " " + selYear,
-              moTotal.toLocaleString("en-IN"),
-              moExp.toLocaleString("en-IN"),
-              (moTotal - moExp).toLocaleString("en-IN"),
-            ],
-            [
-              "Full Year " + selYear,
-              yrTotal.toLocaleString("en-IN"),
-              yrExp.toLocaleString("en-IN"),
-              (yrTotal - yrExp).toLocaleString("en-IN"),
-            ],
+            [selMonth + " " + selYear, moTotal.toLocaleString("en-IN"), moExp.toLocaleString("en-IN"), (moTotal-moExp).toLocaleString("en-IN")],
+            ["Full Year " + selYear,   yrTotal.toLocaleString("en-IN"), yrExp.toLocaleString("en-IN"), (yrTotal-yrExp).toLocaleString("en-IN")],
           ],
-          startY: 30,
+          startY: cardY + cardH + 6,
           theme: "grid",
-          headStyles: {
-            fillColor: [51, 65, 85],
-            fontStyle: "bold",
-            fontSize: 9,
-          },
-          styles: { fontSize: 9, cellPadding: 3 },
+          headStyles: { fillColor:[51,65,85], textColor:[247,160,26], fontStyle:"bold", fontSize:9 },
+          styles: { fontSize:9, cellPadding:3.5, halign:"center" },
+          columnStyles: { 0: {halign:"left", fontStyle:"bold"} },
+          alternateRowStyles: { fillColor:[248,250,252] },
         });
-        // Member-wise
+
+        // ── Member-wise table
         let memberRows = users
-          .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
+          .filter(u => u.Status !== "Inactive" && u.Role !== "Admin")
           .map((u, i) => {
-            let paid = yearContribs
-              .filter((c) => String(c.UserId) === String(u.UserId))
-              .reduce((s, c) => s + Number(c.Amount || 0), 0);
-            let moPaid = monthContribs
-              .filter((c) => String(c.UserId) === String(u.UserId))
-              .reduce((s, c) => s + Number(c.Amount || 0), 0);
+            let paid   = yearContribs.filter(c => String(c.UserId) === String(u.UserId)).reduce((s,c) => s+Number(c.Amount||0), 0);
+            let moPaid = monthContribs.filter(c => String(c.UserId) === String(u.UserId)).reduce((s,c) => s+Number(c.Amount||0), 0);
             return [
               String(i + 1),
               u.Name,
-              moPaid > 0 ? "Rs." + moPaid.toLocaleString("en-IN") : "—",
-              "Rs." + paid.toLocaleString("en-IN"),
+              moPaid > 0 ? "Rs."+moPaid.toLocaleString("en-IN") : "—",
+              "Rs."+paid.toLocaleString("en-IN"),
+              moPaid > 0 ? "✓ Paid" : "Pending"
             ];
           });
+
         doc.autoTable({
-          head: [["#", "Member", "This Month (Rs.)", "Year Total (Rs.)"]],
+          head: [["#","Member Name","This Month (Rs.)","Year Total (Rs.)","Status"]],
           body: memberRows,
           startY: doc.lastAutoTable.finalY + 6,
           theme: "grid",
-          headStyles: {
-            fillColor: [247, 160, 26],
-            fontStyle: "bold",
-            fontSize: 9,
+          headStyles: { fillColor:[247,160,26], textColor:[30,41,59], fontStyle:"bold", fontSize:9 },
+          styles: { fontSize:8.5, cellPadding:3 },
+          columnStyles: {
+            0: { cellWidth:10, halign:"center" },
+            2: { halign:"right" },
+            3: { halign:"right", fontStyle:"bold" },
+            4: { halign:"center", fontStyle:"bold" }
           },
-          styles: { fontSize: 8.5, cellPadding: 3 },
-          alternateRowStyles: { fillColor: [253, 251, 247] },
+          alternateRowStyles: { fillColor:[253,251,247] },
+          didParseCell: function(data) {
+            if (data.column.index === 4 && data.section === "body") {
+              const v = String(data.cell.raw||"");
+              if (v === "✓ Paid")    { data.cell.styles.textColor = [21,128,61]; }
+              if (v === "Pending")   { data.cell.styles.textColor = [185,28,28]; }
+            }
+          }
         });
-        // Footer
+
+        // ── Footer on every page
         let pages = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pages; i++) {
           doc.setPage(i);
-          doc.setFontSize(7);
-          doc.setTextColor(170, 170, 170);
-          doc.text(
-            "SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  |  System Generated — Not Manually Signed",
-            w / 2,
-            ph - 5,
-            { align: "center" }
-          );
-          doc.text(`Page ${i} of ${pages}`, w - 14, ph - 5, { align: "right" });
+          doc.setFillColor(51,65,85); doc.rect(0, ph-10, w, 10, "F");
+          doc.setFontSize(6.5); doc.setTextColor(180,195,210); doc.setFont(undefined,"normal");
+          doc.text("SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  |  Confidential — For Internal Use Only", w/2, ph-5.5, {align:"center"});
+          doc.setTextColor(247,160,26); doc.setFont(undefined,"bold");
+          doc.text(`Page ${i} of ${pages}`, w-8, ph-5.5, {align:"right"});
         }
+
         doc.save("Mandir_Report_" + selYear + "_" + selMonth + ".pdf");
         setTimeout(() => {
           let msg = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n📊 *Financial Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Month Collected: ₹${fmt(
@@ -3499,7 +3863,7 @@
         <td style="font-size:11px;color:#888;font-family:monospace;">${escapeHtml(
           displayRID || "—"
         )}</td>
-        <td style="font-size:12px;color:#888;">${c.PaymentDate || "—"}</td>
+        <td style="font-size:12px;color:#888;">${formatPaymentDate(c.PaymentDate)}</td>
         <td>
           <div class="action-btns">
             <button class="btn-sm btn-info" onclick="viewContrib_receipt('${_rid}')" title="View Receipt"><i class="fa-solid fa-receipt"></i></button>
@@ -3553,7 +3917,7 @@
             ],
             ["Occasion", escapeHtml(oName)],
             ["Note", escapeHtml(c.Note || "—")],
-            ["Date Recorded", escapeHtml(c.PaymentDate || "—")],
+            ["Date Recorded", escapeHtml(formatPaymentDate(c.PaymentDate))],
           ],
           `openEditContrib('${id}')`
         );
@@ -3663,9 +4027,9 @@
             (c.ReceiptID || "").toLowerCase().includes(txt);
           let dateMatch = true;
           if ((start || end) && c.PaymentDate) {
-            const parts = String(c.PaymentDate).split(" ")[0].split("-");
-            if (parts.length === 3) {
-              const cDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            const _fmtD = formatPaymentDate(c.PaymentDate).split(" ")[0].split("-");
+            if (_fmtD.length === 3) {
+              const cDate = `${_fmtD[2]}-${_fmtD[1]}-${_fmtD[0]}`;
               dateMatch = (!start || cDate >= start) && (!end || cDate <= end);
             }
           }
@@ -3695,7 +4059,7 @@
         <td>${escapeHtml(mn)}</td>
         <td>${escapeHtml(String(e.Year || "—"))}</td>
         <td class="amt-red">₹ ${fmt(e.Amount)}</td>
-        <td style="font-size:12px;color:#888;">${e.PaymentDate || "—"}</td>
+        <td style="font-size:12px;color:#888;">${formatPaymentDate(e.PaymentDate)}</td>
         <td onclick="event.stopPropagation()">
           <div class="action-btns">
             <button class="btn-sm" onclick="openEditExpense('${
@@ -3796,7 +4160,7 @@
             ["Type", escapeHtml(tName)],
             ["Month", escapeHtml(e.ForMonth || e.Note || "—")],
             ["Year", escapeHtml(String(e.Year || "—"))],
-            ["Date", escapeHtml(e.PaymentDate || "—")],
+            ["Date", escapeHtml(formatPaymentDate(e.PaymentDate))],
           ],
           `openEditExpense('${id}')`
         );
@@ -4454,22 +4818,25 @@
           );
         try {
           let res = await postData({
-            action: "addContribution",
-            Id: Date.now(),
-            UserId: userId,
-            Amount: amount,
-            ForMonth: document.getElementById("month").value,
-            Year: year,
-            TypeId: document.getElementById("type").value,
-            OccasionId: document.getElementById("occasion").value,
-            Note: document.getElementById("note").value,
+            action:      "addContribution",
+            Id:          Date.now(),
+            UserId:      userId,
+            Amount:      amount,
+            ForMonth:    document.getElementById("month").value,
+            Year:        year,
+            TypeId:      document.getElementById("type").value,
+            OccasionId:  document.getElementById("occasion").value,
+            Note:        document.getElementById("note").value,
+            PaymentMode: document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "UPI",
           });
           if (res.status === "success") {
-            toast("✅ Contribution added! Receipt: " + res.receiptId);
+            const rid = res.receiptId;
+            let msg = "✅ Contribution saved! Receipt: " + rid;
+            if (res.emailSent)    msg += " · 📧 Receipt email sent";
+            if (res.emailSkipped) msg += " · ⚠️ Email quota reached";
+            toast(msg);
             document.getElementById("amount").value = "";
             document.getElementById("note").value = "";
-            // Keep user selected for bulk entry — only reset amount/note
-            // User can click Reset User to clear user selection
             init();
           } else toast("❌ Failed to add.", "error");
         } catch (err) {
@@ -5049,92 +5416,181 @@
           .join("");
       }
 
-      /* ═══ AUDIT LOG FUNCTIONS ═══ */
+      /* ═══ AUDIT LOG FUNCTIONS — ENHANCED ═══ */
       let _auditData = [];
+      let _auditPage = 1;
+      const AUDIT_PAGE_SIZE = 50;
+
+      // ── Collect device/browser info for audit logging
+      function _getDeviceInfo() {
+        try {
+          const ua = navigator.userAgent || "";
+          let device = "Desktop";
+          if (/Android/i.test(ua))          device = "Android";
+          else if (/iPhone|iPad/i.test(ua))  device = "iOS";
+          else if (/Mobile/i.test(ua))       device = "Mobile";
+          let browser = "Unknown";
+          if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) browser = "Chrome";
+          else if (/Firefox\//.test(ua))     browser = "Firefox";
+          else if (/Edg\//.test(ua))         browser = "Edge";
+          else if (/Safari\//.test(ua))      browser = "Safari";
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+          const lang = navigator.language || "";
+          const sw   = window.screen ? window.screen.width + "x" + window.screen.height : "";
+          return device + " | " + browser + " | " + tz + " | " + lang + " | " + sw;
+        } catch(e) { return ""; }
+      }
+      window._getDeviceInfo = _getDeviceInfo;
 
       async function loadAuditLog() {
         const tbody = document.getElementById("auditTableBody");
         if (!tbody) return;
-        tbody.innerHTML =
-          '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;"><div class="spinner" style="margin:0 auto;width:28px;height:28px;"></div><br>Loading audit log...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;"><div class="spinner" style="margin:0 auto;width:28px;height:28px;"></div><br>Loading audit log...</td></tr>';
         try {
           const res = await getData("getAuditLog");
           _auditData = Array.isArray(res) ? res : [];
-          renderAuditTable(_auditData);
+          _auditPage = 1;
+          _renderAuditStats(_auditData);
+          _renderAuditPaged(_auditData, _auditPage);
           if (_auditData.length === 0) {
-            tbody.innerHTML =
-              '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No audit log entries found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No audit log entries found.</td></tr>';
           }
-        } catch (e) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#e74c3c;padding:20px;">Failed to load audit log: ${escapeHtml(
-            e.message
-          )}</td></tr>`;
+        } catch(e) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#e74c3c;padding:20px;">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
         }
       }
 
-      function renderAuditTable(list) {
-        const tbody = document.getElementById("auditTableBody");
+      function _renderAuditStats(list) {
+        const statsEl = document.getElementById("audit_stats");
+        const badge   = document.getElementById("audit_count_badge");
+        if (!statsEl) return;
+        if (!list || list.length === 0) {
+          statsEl.style.display = "none";
+          if (badge) badge.style.display = "none";
+          return;
+        }
+        statsEl.style.display = "grid";
+        if (badge) { badge.textContent = list.length + " entries"; badge.style.display = "inline-block"; }
+        const d = new Date();
+        const todayFmt = String(d.getDate()).padStart(2,"0") + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + d.getFullYear();
+        const todayE   = list.filter(r => String(r.Timestamp||"").startsWith(todayFmt));
+        const logins   = todayE.filter(r => /login/i.test(r.Action||"") && !/logout/i.test(r.Action||"")).length;
+        const actions  = todayE.filter(r => !/login/i.test(r.Action||"") && !/logout/i.test(r.Action||"")).length;
+        const uniqueU  = new Set(list.map(r => String(r.UserAdmin||""))).size;
+        const sl = document.getElementById("audit_stat_logins");
+        const sa = document.getElementById("audit_stat_actions");
+        const st = document.getElementById("audit_stat_total");
+        const su = document.getElementById("audit_stat_users");
+        if (sl) sl.textContent = logins;
+        if (sa) sa.textContent = actions;
+        if (st) st.textContent = list.length;
+        if (su) su.textContent = uniqueU;
+      }
+
+      function _getFilteredAudit() {
+        const txt = (document.getElementById("auditSearch")?.value || "").toLowerCase().trim();
+        const act = (document.getElementById("auditFilterAction")?.value || "").toLowerCase();
+        let list = _auditData;
+        if (txt) list = list.filter(r =>
+          [r.Timestamp, r.UserAdmin, r.Action, r.Details, r.DeviceInfo]
+            .some(v => String(v||"").toLowerCase().includes(txt))
+        );
+        if (act) list = list.filter(r => String(r.Action||"").toLowerCase().includes(act));
+        return list;
+      }
+
+      function _renderAuditPaged(list, page) {
+        const tbody  = document.getElementById("auditTableBody");
+        const pagEl  = document.getElementById("audit_pagination");
         if (!tbody) return;
         if (!list || list.length === 0) {
-          tbody.innerHTML =
-            '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
+          if (pagEl) pagEl.innerHTML = "";
           return;
         }
-        tbody.innerHTML = list
-          .map((row, i) => {
-            const ts = String(row.Timestamp || row[0] || "—");
-            const user = String(row.UserAdmin || row[1] || "—");
-            const action = String(row.Action || row[2] || "—");
-            const details = String(row.Details || row[3] || "—");
-            const isLogin = action.toLowerCase().includes("login");
-            const isLogout = action.toLowerCase().includes("logout");
-            return `<tr style="background:${
-              isLogin ? "#f0fdf4" : isLogout ? "#fef9ee" : ""
-            };">
-            <td style="color:#888;">${i + 1}</td>
-            <td style="font-size:12px;color:#888;font-family:monospace;">${escapeHtml(
-              ts
-            )}</td>
-            <td style="font-weight:600;">${escapeHtml(user)}</td>
-            <td><span class="badge ${
-              isLogin ? "badge-green" : isLogout ? "" : ""
-            }" style="${
-              isLogout
-                ? "background:#fef3c7;color:#d97706;"
-                : !isLogin
-                ? "background:#f0f4f8;color:#334155;"
-                : ""
-            }">${escapeHtml(action)}</span></td>
-            <td style="font-size:12px;color:#666;white-space:normal;max-width:220px;">${escapeHtml(
-              details
-            )}</td>
+        const totalPages = Math.ceil(list.length / AUDIT_PAGE_SIZE);
+        const start = (page - 1) * AUDIT_PAGE_SIZE;
+        const items = list.slice(start, start + AUDIT_PAGE_SIZE);
+        tbody.innerHTML = items.map((row, i) => {
+          const idx     = start + i + 1;
+          const ts      = String(row.Timestamp  || "—");
+          const user    = String(row.UserAdmin  || "—");
+          const action  = String(row.Action     || "—");
+          const details = String(row.Details    || "—");
+          const devRaw  = String(row.DeviceInfo || "");
+          const aLow    = action.toLowerCase();
+          const isLogin  = aLow.includes("login") && !aLow.includes("logout");
+          const isLogout = aLow.includes("logout");
+          const isEmail  = aLow.includes("email") || aLow.includes("receipt");
+          const isDelete = aLow.includes("delete");
+          const isPwd    = aLow.includes("password");
+          const badgeSt  = isLogin  ? "background:#dcfce7;color:#16a34a;border:1px solid #86efac;"
+                         : isLogout ? "background:#fef3c7;color:#d97706;border:1px solid #fde68a;"
+                         : isEmail  ? "background:#ede9fe;color:#7c3aed;border:1px solid #c4b5fd;"
+                         : isDelete ? "background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;"
+                         : isPwd    ? "background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;"
+                         :            "background:#f0f4f8;color:#334155;border:1px solid #cbd5e1;";
+          const rowBg = isLogin ? "#f0fdf4" : isLogout ? "#fefce8" : "";
+          // Parse device info
+          let devHtml = "<span style='color:#94a3b8;font-size:11px;'>—</span>";
+          if (devRaw) {
+            const parts = devRaw.split("|").map(s => s.trim()).filter(Boolean);
+            const dIcon = /android/i.test(parts[0]||"") ? "fa-android" :
+                          /ios|iphone|ipad/i.test(parts[0]||"") ? "fa-apple" :
+                          /mobile/i.test(parts[0]||"") ? "fa-mobile-screen-button" : "fa-desktop";
+            devHtml = `<div style="line-height:1.5;">
+              <div style="font-weight:600;color:#334155;font-size:11px;"><i class="fa-brands ${dIcon}" style="margin-right:3px;"></i>${escapeHtml(parts[0]||"")} ${parts[1] ? "· " + escapeHtml(parts[1]) : ""}</div>
+              ${parts[2] ? `<div style="font-size:10px;color:#64748b;">${escapeHtml(parts[2])}</div>` : ""}
+              ${parts[4] ? `<div style="font-size:10px;color:#94a3b8;">${escapeHtml(parts[4])}</div>` : ""}
+            </div>`;
+          }
+          return `<tr style="background:${rowBg};">
+            <td style="color:#94a3b8;font-size:11px;">${idx}</td>
+            <td style="font-size:11px;color:#64748b;font-family:monospace;white-space:nowrap;">${escapeHtml(ts)}</td>
+            <td style="font-weight:600;font-size:12px;color:#1e293b;">${escapeHtml(user)}</td>
+            <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;${badgeSt}">${escapeHtml(action)}</span></td>
+            <td style="font-size:11.5px;color:#475569;white-space:normal;max-width:200px;">${escapeHtml(details)}</td>
+            <td style="font-size:11px;min-width:140px;">${devHtml}</td>
           </tr>`;
-          })
-          .join("");
+        }).join("");
+        // Pagination
+        if (pagEl && totalPages > 1) {
+          let phtml = `<span style="font-size:12px;color:#888;align-self:center;">Page ${page}/${totalPages} &middot; ${list.length} entries</span>`;
+          for (let p = 1; p <= totalPages; p++) {
+            const ac = p === page;
+            phtml += `<button onclick="_goAuditPage(${p})" style="padding:5px 12px;border-radius:6px;border:1px solid ${ac?"#334155":"#ddd"};background:${ac?"#334155":"#fff"};color:${ac?"#fff":"#555"};font-size:12px;cursor:pointer;font-family:Poppins,sans-serif;">${p}</button>`;
+          }
+          pagEl.innerHTML = phtml;
+        } else if (pagEl) { pagEl.innerHTML = ""; }
       }
 
+      function _goAuditPage(p) {
+        _auditPage = p;
+        _renderAuditPaged(_getFilteredAudit(), p);
+        document.getElementById("auditPage")?.scrollIntoView({behavior:"smooth", block:"start"});
+      }
+
+      function renderAuditTable(list) { _auditPage=1; _renderAuditPaged(list,1); }
+
       function filterAuditLog() {
-        const txt = (
-          document.getElementById("auditSearch")?.value || ""
-        ).toLowerCase();
-        if (!txt) {
-          renderAuditTable(_auditData);
-          return;
-        }
-        renderAuditTable(
-          _auditData.filter((r) =>
-            [
-              r.Timestamp || r[0],
-              r.UserAdmin || r[1],
-              r.Action || r[2],
-              r.Details || r[3],
-            ].some((v) =>
-              String(v || "")
-                .toLowerCase()
-                .includes(txt)
-            )
-          )
+        _auditPage = 1;
+        _renderAuditPaged(_getFilteredAudit(), 1);
+      }
+
+      function exportAuditCSV() {
+        if (!_auditData || _auditData.length === 0) { toast("No audit data to export","warn"); return; }
+        const hdrs = ["#","Timestamp","User/Admin","Action","Details","Device Info"];
+        const rows = _auditData.map((r,i) =>
+          [i+1, r.Timestamp||"", r.UserAdmin||"", r.Action||"", r.Details||"", r.DeviceInfo||""]
+            .map(v => '"' + String(v).replace(/"/g,'""')+'"').join(",")
         );
+        const csv  = [hdrs.join(","), ...rows].join("\n");
+        const blob = new Blob([csv], {type:"text/csv"});
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement("a");
+        a.href = url; a.download = "audit_log_" + new Date().toISOString().slice(0,10) + ".csv";
+        a.click(); URL.revokeObjectURL(url);
+        toast("✅ Audit log exported as CSV","");
       }
 
       /* ═══ FEEDBACK ADMIN FUNCTIONS ═══ */
@@ -5380,6 +5836,406 @@
             '<i class="fa-solid fa-check"></i> Save & Get Receipt';
         }
       }
+
+      /* ═══════════════════════════════════════════════════════
+         IMPROVEMENT #6 — CONTRIBUTION TRACKER
+         Shows paid vs pending members per type/month/year.
+         Walk-in donors are excluded from pending (anonymous).
+         ═══════════════════════════════════════════════════════ */
+      function initTrackerDropdowns() {
+        const MOS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+        const now = new Date();
+
+        // Type dropdown
+        const trType = document.getElementById("tr_type");
+        if (trType && trType.options.length <= 1) {
+          types.forEach(t => {
+            let o = document.createElement("option");
+            o.value = t.TypeId; o.textContent = t.TypeName;
+            trType.appendChild(o);
+          });
+        }
+
+        // Month dropdown
+        const trMonth = document.getElementById("tr_month");
+        if (trMonth && trMonth.options.length === 0) {
+          MOS.forEach((m, i) => {
+            let o = document.createElement("option");
+            o.value = m; o.textContent = m;
+            if (i === now.getMonth()) o.selected = true;
+            trMonth.appendChild(o);
+          });
+        }
+
+        // Year dropdown
+        const trYear = document.getElementById("tr_year");
+        if (trYear && trYear.options.length === 0) {
+          let years = new Set();
+          data.forEach(c => { let y = Number(c.Year); if (!isNaN(y) && y > 2000) years.add(y); });
+          let cur = now.getFullYear();
+          for (let y = 2023; y <= cur; y++) years.add(y);
+          Array.from(years).sort((a,b) => b-a).forEach(y => {
+            let o = document.createElement("option");
+            o.value = y; o.textContent = y;
+            if (y === cur) o.selected = true;
+            trYear.appendChild(o);
+          });
+        }
+      }
+
+      function runTracker() {
+        const trType  = document.getElementById("tr_type");
+        const trMonth = document.getElementById("tr_month");
+        const trYear  = document.getElementById("tr_year");
+        if (!trType || !trMonth || !trYear) return;
+
+        const selTypeId = trType.value;
+        const selMonth  = trMonth.value;
+        const selYear   = String(trYear.value);
+
+        // All active non-admin members (exclude walk-ins — they have no user record)
+        const members = users.filter(u => u.Role !== "Admin" && u.Status !== "Inactive");
+
+        // Filter contributions matching criteria
+        let contribs = data.filter(c =>
+          String(c.Year) === selYear &&
+          c.ForMonth === selMonth &&
+          !String(c.UserId).startsWith("WALKIN_")
+        );
+        if (selTypeId) contribs = contribs.filter(c => String(c.TypeId) === selTypeId);
+
+        // Paid member IDs (could have multiple contributions — count as paid)
+        const paidUserIds = new Set(contribs.map(c => String(c.UserId)));
+
+        const paidMembers    = members.filter(u => paidUserIds.has(String(u.UserId)));
+        const pendingMembers = members.filter(u => !paidUserIds.has(String(u.UserId)));
+        const paidAmt        = contribs.reduce((s,c) => s + Number(c.Amount||0), 0);
+        const pctComplete    = members.length > 0 ? Math.round((paidMembers.length / members.length) * 100) : 0;
+
+        // Update badges
+        document.getElementById("tr_summary").style.display = "flex";
+        document.getElementById("tr_paid_count").innerText   = paidMembers.length;
+        document.getElementById("tr_paid_amt").innerText     = "₹" + fmt(paidAmt);
+        document.getElementById("tr_pending_count").innerText= pendingMembers.length;
+        document.getElementById("tr_pending_pct").innerText  = pctComplete + "% complete";
+        document.getElementById("tr_total_members").innerText= members.length;
+        const pw = document.getElementById("tr_progress_wrap");
+        if (pw) pw.style.display = "block";
+
+        // Render paid list
+        const paidList = document.getElementById("tr_paid_list");
+        paidList.innerHTML = paidMembers.length === 0
+          ? '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;"><i class="fa-solid fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px;"></i>No paid members</div>'
+          : paidMembers.map((u, i) => {
+              const userContribs = contribs.filter(c => String(c.UserId) === String(u.UserId));
+              const total = userContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
+              return `<div class="tr-member-row" style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #f0fdf4;font-size:12.5px;gap:8px;min-height:48px;">
+                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                  <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#dcfce7,#bbf7d0);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#16a34a;flex-shrink:0;">${i+1}</div>
+                  <div style="min-width:0;">
+                    <div style="font-weight:600;color:#166534;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.Name||"—")}</div>
+                    <div style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.Mobile||"")}</div>
+                  </div>
+                </div>
+                <span style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#15803d;padding:4px 12px;border-radius:20px;font-weight:700;font-size:11.5px;white-space:nowrap;flex-shrink:0;">₹${fmt(total)}</span>
+              </div>`;
+            }).join("");
+
+        // Render pending list
+        const pendingList = document.getElementById("tr_pending_list");
+        pendingList.innerHTML = pendingMembers.length === 0
+          ? '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;"><i class="fa-solid fa-party-horn" style="font-size:1.5rem;display:block;margin-bottom:6px;color:#22c55e;"></i>🎉 All members have paid!</div>'
+          : pendingMembers.map((u, i) =>
+              `<div class="tr-member-row" style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #fef2f2;font-size:12.5px;gap:8px;min-height:48px;">
+                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                  <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#fee2e2,#fecaca);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#dc2626;flex-shrink:0;">${i+1}</div>
+                  <div style="min-width:0;">
+                    <div style="font-weight:600;color:#991b1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.Name||"—")}</div>
+                    <div style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.Mobile||"")}</div>
+                  </div>
+                </div>
+                <span style="background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626;padding:4px 12px;border-radius:20px;font-weight:700;font-size:11px;white-space:nowrap;flex-shrink:0;">Pending</span>
+              </div>`
+            ).join("");
+
+        document.getElementById("tr_empty").style.display = "none";
+
+        // Progress bar
+        let pbEl = document.getElementById("tr_progress_bar");
+        if (pbEl) {
+          pbEl.style.width = pctComplete + "%";
+          pbEl.style.background = pctComplete >= 100 ? "#16a34a" : pctComplete >= 60 ? "#f7a01a" : "#dc2626";
+        }
+
+        // Store for send functions
+        window._trackerState = { selTypeId, selMonth, selYear, paidMembers, pendingMembers, paidAmt, pctComplete };
+      }
+
+      function sendTrackerMsg(which) {
+        const state = window._trackerState;
+        if (!state) { toast("Run the filter first.", "warn"); return; }
+
+        const typeName = (() => {
+          if (!state.selTypeId) return "All Types";
+          const t = types.find(t => String(t.TypeId) === state.selTypeId);
+          return t ? t.TypeName : "—";
+        })();
+
+        let msg;
+        if (which === "paid") {
+          msg =
+            `${APP.symbol} *${APP.name}*\n📍 ${APP.location}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `✅ *PAID MEMBERS REPORT*\n` +
+            `📅 ${state.selMonth} ${state.selYear} | 🏷️ ${typeName}\n\n` +
+            state.paidMembers.map((u,i) => `${i+1}. ${u.Name}`).join("\n") +
+            `\n\n💰 Total Collected: ₹${fmt(state.paidAmt)}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n_${APP.tagline}_`;
+        } else {
+          msg =
+            `${APP.symbol} *${APP.name}*\n📍 ${APP.location}\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `⚠️ *CONTRIBUTION REMINDER*\n` +
+            `📅 ${state.selMonth} ${state.selYear} | 🏷️ ${typeName}\n\n` +
+            `The following members have not yet submitted their contribution:\n\n` +
+            state.pendingMembers.map((u,i) => `${i+1}. ${u.Name} — ${u.Mobile||"—"}`).join("\n") +
+            `\n\n📊 Completion: ${state.pctComplete}% (${state.paidMembers.length}/${state.paidMembers.length+state.pendingMembers.length})\n` +
+            `━━━━━━━━━━━━━━━━━━━━\n_Please submit at your earliest. ${APP.tagline}_`;
+        }
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+      }
+
+      // ══ EMAIL AUTOMATION JS ══
+      function loadEmailSettings() {
+        // Show spinner immediately so toggles are visibly "loading"
+        ["ea_receipt_status","ea_monthly_status"].forEach(function(id){
+          var el=document.getElementById(id);
+          if(el) el.innerHTML="<span style='color:#94a3b8;'>Loading status...</span>";
+        });
+
+        getData("getEmailSettings").then(function(s) {
+          // FIX: use strict === true (Apps Script now returns proper booleans)
+          var receiptOn  = s === true || (s && s.auto_receipt  === true);
+          var monthlyOn  = s === true || (s && s.monthly_report === true);
+          var tReceipt = document.getElementById("toggle_auto_receipt");
+          var tMonthly = document.getElementById("toggle_monthly_report");
+          if(tReceipt) { tReceipt.checked = receiptOn;  tReceipt.disabled = false; }
+          if(tMonthly) { tMonthly.checked = monthlyOn;  tMonthly.disabled = false; }
+          _updateToggleStatus("auto_receipt",  receiptOn);
+          _updateToggleStatus("monthly_report", monthlyOn);
+          _updateCardStyle("ea_card_receipt",  receiptOn);
+          _updateCardStyle("ea_card_monthly",  monthlyOn);
+          if(!s || typeof s !== "object"){
+            var el=document.getElementById("ea_quota_display");
+            if(el) el.innerHTML="<span style='color:#f87171;'>Could not load settings — check Apps Script deployment &amp; redeploy</span>";
+          }
+        }).catch(function() {
+          // Fetch failed — show OFF state, re-enable toggles
+          ["toggle_auto_receipt","toggle_monthly_report"].forEach(function(id){
+            var el=document.getElementById(id);
+            if(el){ el.checked=false; el.disabled=false; }
+          });
+          _updateToggleStatus("auto_receipt",  false);
+          _updateToggleStatus("monthly_report", false);
+          var el=document.getElementById("ea_quota_display");
+          if(el) el.innerHTML="<span style='color:#f87171;'>Cannot reach server — check Apps Script deployment</span>";
+        });
+
+        // Load quota
+        getEmailQuotaCached().then(function(q) {
+          var el=document.getElementById("ea_quota_display");
+          if(el && q && q.limit){
+            var pct=Math.round((q.used/q.limit)*100);
+            var col=pct>80?"#f87171":pct>50?"#fbbf24":"#34d399";
+            el.innerHTML="<strong style='color:"+col+";'>"+q.used+"</strong> used of <strong>"+q.limit+"</strong> today &nbsp;&middot;&nbsp; <strong style='color:#34d399;'>"+q.remaining+" remaining</strong>";
+          }
+        }).catch(function(){});
+      }
+
+      function _updateToggleStatus(key, isOn) {
+        var statusMap = {
+          "auto_receipt":  "ea_receipt_status",
+          "monthly_report": "ea_monthly_status"
+        };
+        var el = document.getElementById(statusMap[key]);
+        if (!el) return;
+        var dot   = isOn
+          ? "<span style='display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:5px;vertical-align:middle;'></span>"
+          : "<span style='display:inline-block;width:10px;height:10px;border-radius:50%;background:#94a3b8;margin-right:5px;vertical-align:middle;'></span>";
+        var label = isOn
+          ? "<strong style='color:#059669;'>Active</strong> — emails will be sent automatically"
+          : "<strong style='color:#94a3b8;'>Inactive</strong> — no automatic emails";
+        el.innerHTML = dot + label;
+      }
+
+      function _updateCardStyle(cardId, isOn) {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        card.style.borderColor = isOn ? "#6ee7b7" : "#e2e8f0";
+        card.style.background  = isOn ? "#f0fdf9" : "#fff";
+      }
+
+      function saveEmailToggle(key, value) {
+        // Show saving indicator
+        const cardId = key === "auto_receipt" ? "ea_card_receipt" : "ea_card_monthly";
+        const card   = document.getElementById(cardId);
+        if (card) card.style.opacity = "0.6";
+
+        postData({ action: "saveEmailSettings", key: key, value: value ? "1" : "0" })
+          .then(function(res) {
+            if (card) card.style.opacity = "1";
+            if (res && res.status === "ok") {
+              toast(value ? "✅ " + (key === "auto_receipt" ? "Auto Receipt Email" : "Monthly Report") + " enabled" : "⭕ Disabled", "");
+              _updateToggleStatus(key, value);
+              _updateCardStyle(key === "auto_receipt" ? "ea_card_receipt" : "ea_card_monthly", value);
+            } else {
+              toast("❌ Save failed — check Apps Script deployment", "error");
+              // Revert toggle
+              const el = document.getElementById("toggle_" + key);
+              if (el) el.checked = !value;
+            }
+          })
+          .catch(function() {
+            if (card) card.style.opacity = "1";
+            toast("❌ Network error saving setting", "error");
+            const el = document.getElementById("toggle_" + key);
+            if (el) el.checked = !value;
+          });
+      }
+
+      function initEmailAutoPage() {
+        // Populate month/year dropdowns for manual send
+        const MOS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+        const now = new Date();
+        const mSel = document.getElementById("ea_test_month");
+        const ySel = document.getElementById("ea_test_year");
+        if (mSel && mSel.options.length === 0) {
+          MOS.forEach((m, i) => {
+            const o = document.createElement("option");
+            o.value = m; o.textContent = m;
+            if (i === now.getMonth()) o.selected = true;
+            mSel.appendChild(o);
+          });
+        }
+        if (ySel && ySel.options.length === 0) {
+          const cur = now.getFullYear();
+          for (let y = cur; y >= cur - 2; y--) {
+            const o = document.createElement("option");
+            o.value = y; o.textContent = y;
+            if (y === cur) o.selected = true;
+            ySel.appendChild(o);
+          }
+        }
+        loadEmailSettings();
+      }
+
+      function triggerManualMonthlyReport() {
+        const month = document.getElementById("ea_test_month")?.value;
+        const year  = document.getElementById("ea_test_year")?.value;
+        if (!month || !year) { toast("Select month and year", "warn"); return; }
+        const res = document.getElementById("ea_manual_result");
+        const btn = document.querySelector("[onclick='triggerManualMonthlyReport()']");
+
+        // Disable button while running
+        if (btn) { btn.disabled = true; btn.textContent = "⏳ Sending..."; }
+        if (res) {
+          res.style.display = "block";
+          res.innerHTML = "⏳ Sending emails... this may take 1–3 minutes for large member lists. Please wait.";
+          res.style.color = "#64748b";
+        }
+
+        // FIX: Google Apps Script CDN cuts off JSONP responses >30s.
+        // Solution: fire-and-forget trigger, then poll getMonthlyReportStatus every 5s.
+        // Apps Script stores result in PropertiesService; poll reads it when ready.
+        const jobKey = "mreport_" + Date.now();
+        let pollCount = 0;
+        const MAX_POLLS = 36; // 36 × 5s = 3 minutes max wait
+
+        // Step 1 — Fire the job (fire-and-forget, ignore response)
+        (function(){
+          const cbFire = "cb_mrf_" + Date.now();
+          const script = document.createElement("script");
+          window[cbFire] = function(){ try{ delete window[cbFire]; script.remove(); }catch(e){} };
+          script.onerror = function(){ try{ delete window[cbFire]; script.remove(); }catch(e){} };
+          script.src = API_URL + "?action=triggerMonthlyReport&month=" + encodeURIComponent(month) +
+            "&year=" + encodeURIComponent(year) + "&jobKey=" + encodeURIComponent(jobKey) + "&callback=" + cbFire;
+          document.body.appendChild(script);
+        })();
+
+        // Step 2 — Poll every 5s for result
+        function _pollResult() {
+          pollCount++;
+          const cbPoll = "cb_mrp_" + Date.now();
+          const script = document.createElement("script");
+          const timer = setTimeout(function(){
+            try{ delete window[cbPoll]; script.remove(); }catch(e){}
+            if (pollCount < MAX_POLLS) {
+              setTimeout(_pollResult, 5000);
+            } else {
+              _reportDone(null, true);
+            }
+          }, 8000);
+          window[cbPoll] = function(r){
+            clearTimeout(timer);
+            try{ delete window[cbPoll]; script.remove(); }catch(e){}
+            if (r && r.status === "ok") {
+              _reportDone(r, false);
+            } else if (r && r.status === "pending") {
+              // Still running — keep polling
+              if (pollCount < MAX_POLLS) setTimeout(_pollResult, 5000);
+              else _reportDone(null, true);
+            } else if (r && r.status === "error") {
+              _reportDone(r, false);
+            } else {
+              // No result yet — keep polling
+              if (pollCount < MAX_POLLS) setTimeout(_pollResult, 5000);
+              else _reportDone(null, true);
+            }
+          };
+          script.onerror = function(){
+            clearTimeout(timer);
+            try{ delete window[cbPoll]; script.remove(); }catch(e){}
+            if (pollCount < MAX_POLLS) setTimeout(_pollResult, 5000);
+            else _reportDone(null, true);
+          };
+          script.src = API_URL + "?action=getMonthlyReportStatus&jobKey=" + encodeURIComponent(jobKey) + "&callback=" + cbPoll;
+          document.body.appendChild(script);
+        }
+
+        function _reportDone(r, timedOut) {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Now';
+          }
+          if (!res) return;
+          if (timedOut) {
+            res.innerHTML = "⚠️ Still running in the background — check your Apps Script execution log. Emails may still be sent successfully.";
+            res.style.color = "#92400e";
+          } else if (r && r.status === "ok") {
+            res.innerHTML = "✅ Done — sent to <strong>" + (r.sent||0) + "</strong> members, skipped <strong>" + (r.skipped||0) + "</strong> (no email / quota). Quota remaining: " + (r.quotaRemaining ?? "—") + ".";
+            res.style.color = "#065f46";
+          } else {
+            res.innerHTML = "❌ Failed: " + (r && r.message ? r.message : "Unknown error. Check Apps Script logs.");
+            res.style.color = "#991b1b";
+          }
+        }
+
+        // Start polling after 8s (give the job time to start)
+        setTimeout(_pollResult, 8000);
+      }
+
+      // Hook tracker init AND email auto init to showPage
+      const _origShowPage = showPage;
+      window.showPage = function(id, el) {
+        _origShowPage(id, el);
+        if (id === "trackerPage" && typeof initTrackerDropdowns === "function") {
+          setTimeout(initTrackerDropdowns, 100);
+        }
+        if (id === "emailAutoPage" && typeof initEmailAutoPage === "function") {
+          setTimeout(initEmailAutoPage, 100);
+        }
+      }
+
     </script>
   </body>
 </html>

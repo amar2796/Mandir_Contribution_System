@@ -1225,7 +1225,7 @@
 
     <!-- Header: desktop inline nav + mobile hamburger -->
     <div class="header" id="mainHeader">
-      <a class="header-brand" href="#about">
+      <a class="header-brand" href="#home">
         <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo"
           onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
         <i id="hdrIcon" class="fa-solid fa-place-of-worship"
@@ -1237,10 +1237,11 @@
       </a>
       <!-- Desktop nav -->
       <nav class="nav-links">
-        <a href="#about"><i class="fa-solid fa-house"></i> Home</a>
-        <a href="#about"><i class="fa-solid fa-info-circle"></i> About</a>
-        <a href="#gallery"><i class="fa-solid fa-images"></i> Gallery</a>
-        <a href="#feedbackSection"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
+        <a href="#about">Home</a>
+        <a href="#about">About</a>
+        <a href="#features">Features</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#feedbackSection">Feedback</a>
         <a href="login.html" class="login-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
       </nav>
       <!-- Mobile hamburger -->
@@ -1251,17 +1252,26 @@
 
     <!-- Mobile slide-down nav menu -->
     <div class="nav-menu" id="navMenu">
-      <a href="#about" onclick="closeNavMenu()"
-        ><i class="fa-solid fa-house"></i> Home</a
+      <a href="#about" onclick="closeNavMenu()">
+        <i class="fa-solid fa-house"></i>
+         Home
+         </a
       >
-      <a href="#about" onclick="closeNavMenu()"
-        ><i class="fa-solid fa-info-circle"></i> About</a
+      <a href="#about" onclick="closeNavMenu()">
+        <i class="fa-solid fa-info-circle"></i>
+         About</a
       >
-      <a href="#gallery" onclick="closeNavMenu()"
-        ><i class="fa-solid fa-images"></i> Gallery</a
+      <a href="#features" onclick="closeNavMenu()">
+        <i class="fa-solid fa-info-circle"></i>
+         Features</a
       >
-      <a href="#feedbackSection" onclick="closeNavMenu()"
-        ><i class="fa-solid fa-comment-dots"></i> Feedback</a
+      <a href="#gallery" onclick="closeNavMenu()">
+        <i class="fa-solid fa-images"></i> 
+        Gallery</a
+      >
+      <a href="#feedbackSection" onclick="closeNavMenu()">
+        <i class="fa-solid fa-comment-dots"></i> 
+        Feedback</a
       >
       <a href="login.html" class="menu-login"
         ><i class="fa-solid fa-right-to-bracket"></i> Login</a
@@ -1286,7 +1296,7 @@
       </p>
     </div>
 
-    <div class="section reveal">
+    <div class="section reveal" id="features">
       <h2>System Features</h2>
       <div class="cards">
         <div class="card">
