@@ -15,300 +15,160 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <style>
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
       body {
-        margin: 0;
-        font-family: "Poppins", sans-serif;
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        margin: 0; font-family: "Poppins", sans-serif;
+        min-height: 100vh; display: flex;
+        justify-content: center; align-items: center;
         background: linear-gradient(135deg, #fdfbf7 0%, #f4f6f9 100%);
         padding: 20px 16px;
       }
-      .container {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
+      .container { width: 100%; display: flex; justify-content: center; align-items: center; }
       .card {
-        background: #fff;
-        padding: 40px 35px;
-        border-radius: 18px;
-        width: 100%;
-        max-width: 420px;
-        text-align: center;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.09);
+        background: #fff; padding: 40px 35px; border-radius: 18px;
+        width: 100%; max-width: 420px; text-align: center;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.09);
         border-top: 5px solid #f7a01a;
-        animation: slideUp 0.5s ease-out;
-        position: relative;
+        animation: slideUp 0.5s ease-out; position: relative;
       }
       @keyframes slideUp {
-        from {
-          opacity: 0;
-          transform: translateY(24px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0); }
       }
-      /* Mandir branding above card */
       .login-brand {
-        text-align: center;
-        margin-bottom: 10px;
-        font-size: 0.85rem;
-        color: #946c44;
-        font-weight: 600;
-        letter-spacing: 0.3px;
+        text-align: center; margin-bottom: 10px; font-size: 0.85rem;
+        color: #946c44; font-weight: 600; letter-spacing: 0.3px;
       }
-      .login-brand i {
-        color: #f7a01a;
-        margin-right: 5px;
-      }
-      .card h2 {
-        margin-top: 0;
-        margin-bottom: 6px;
-        color: #946c44;
-        font-size: 1.75rem;
-        font-weight: 700;
-      }
-      .card h2 i {
-        color: #f7a01a;
-        margin-right: 8px;
-      }
-      .card-subtitle {
-        font-size: 0.82rem;
-        color: #aaa;
-        margin-bottom: 22px;
-        display: block;
-      }
-      .input-group {
-        position: relative;
-        margin-bottom: 16px;
-      }
+      .login-brand i { color: #f7a01a; margin-right: 5px; }
+      .card h2 { margin-top: 0; margin-bottom: 6px; color: #946c44; font-size: 1.75rem; font-weight: 700; }
+      .card h2 i { color: #f7a01a; margin-right: 8px; }
+      .card-subtitle { font-size: 0.82rem; color: #aaa; margin-bottom: 22px; display: block; }
+      .input-group { position: relative; margin-bottom: 16px; }
       .input-group i.icon {
-        position: absolute;
-        left: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #bbb;
-        font-size: 1rem;
-        pointer-events: none;
+        position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+        color: #bbb; font-size: 1rem; pointer-events: none;
       }
       .input-group input {
-        width: 100%;
-        padding: 13px 15px 13px 44px;
-        border: 1.5px solid #e8e8e8;
-        border-radius: 10px;
-        outline: none;
-        font-size: 14.5px;
-        font-family: "Poppins", sans-serif;
-        transition: all 0.25s ease;
-        background: #fafafa;
-        color: #333;
+        width: 100%; padding: 13px 15px 13px 44px;
+        border: 1.5px solid #e8e8e8; border-radius: 10px; outline: none;
+        font-size: 14.5px; font-family: "Poppins", sans-serif;
+        transition: all 0.25s ease; background: #fafafa; color: #333;
       }
       .input-group input:focus {
-        border-color: #f7a01a;
-        background: #fff;
-        box-shadow: 0 0 0 3px rgba(247, 160, 26, 0.1);
+        border-color: #f7a01a; background: #fff;
+        box-shadow: 0 0 0 3px rgba(247,160,26,0.1);
       }
       .forgot {
-        font-size: 0.83rem;
-        text-align: right;
-        color: #999;
-        cursor: pointer;
-        display: block;
-        margin-top: -8px;
-        margin-bottom: 18px;
-        transition: color 0.25s;
-        font-weight: 500;
+        font-size: 0.83rem; text-align: right; color: #999;
+        cursor: pointer; display: block; margin-top: -8px;
+        margin-bottom: 18px; transition: color 0.25s; font-weight: 500;
       }
-      .forgot:hover {
-        color: #f7a01a;
-      }
+      .forgot:hover { color: #f7a01a; }
       .msg-box {
-        padding: 10px 14px;
-        border-radius: 9px;
-        font-size: 13px;
-        font-weight: 600;
-        margin-bottom: 14px;
-        display: none;
-        text-align: left;
+        padding: 10px 14px; border-radius: 9px; font-size: 13px;
+        font-weight: 600; margin-bottom: 14px; display: none; text-align: left;
       }
-      .msg-box.error {
-        background: #fdedec;
-        color: #c0392b;
-        display: block;
-      }
-      .msg-box.success {
-        background: #eafaf1;
-        color: #1e8449;
-        display: block;
-      }
+      .msg-box.error   { background: #fdedec; color: #c0392b; display: block; }
+      .msg-box.success { background: #eafaf1; color: #1e8449; display: block; }
       button.main-btn {
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 10px;
-        color: white;
-        font-family: "Poppins", sans-serif;
-        font-size: 1rem;
-        font-weight: 700;
-        cursor: pointer;
+        width: 100%; padding: 14px; border: none; border-radius: 10px;
+        color: white; font-family: "Poppins", sans-serif; font-size: 1rem;
+        font-weight: 700; cursor: pointer;
         background: linear-gradient(135deg, #f7a01a, #e08e12);
-        box-shadow: 0 5px 18px rgba(247, 160, 26, 0.35);
-        transition: all 0.25s ease;
-        margin-bottom: 18px;
-        letter-spacing: 0.3px;
+        box-shadow: 0 5px 18px rgba(247,160,26,0.35);
+        transition: all 0.25s ease; margin-bottom: 18px; letter-spacing: 0.3px;
       }
       button.main-btn:hover {
         background: linear-gradient(135deg, #d35400, #b84600);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 22px rgba(211, 84, 0, 0.38);
+        transform: translateY(-2px); box-shadow: 0 8px 22px rgba(211,84,0,0.38);
       }
-      button.main-btn:disabled {
-        background: #ccc;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-      }
+      button.main-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
       .back-home {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.88rem;
-        color: #888;
-        text-decoration: none;
-        font-weight: 600;
-        transition: color 0.25s;
-        padding: 6px 12px;
-        border-radius: 8px;
-        border: 1.5px solid #e8e8e8;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.88rem; color: #888; text-decoration: none;
+        font-weight: 600; transition: color 0.25s; padding: 6px 12px;
+        border-radius: 8px; border: 1.5px solid #e8e8e8;
       }
-      .back-home:hover {
-        color: #f7a01a;
-        border-color: #f7a01a;
-        background: #fff8ee;
+      .back-home:hover { color: #f7a01a; border-color: #f7a01a; background: #fff8ee; }
+
+      /* ── Register divider & button ── */
+      .reg-divider {
+        display: flex; align-items: center; gap: 10px;
+        margin: 4px 0 16px; color: #ccc; font-size: 12px;
       }
+      .reg-divider::before, .reg-divider::after {
+        content: ""; flex: 1; height: 1px; background: #eee;
+      }
+      button.reg-btn {
+        width: 100%; padding: 12px; border: 2px solid #f7a01a; border-radius: 10px;
+        color: #f7a01a; font-family: "Poppins", sans-serif; font-size: 0.92rem;
+        font-weight: 700; cursor: pointer; background: transparent;
+        transition: all 0.22s ease; margin-bottom: 18px; letter-spacing: 0.2px;
+      }
+      button.reg-btn:hover { background: #fff8ee; transform: translateY(-1px); }
+
+      /* ── Modals ── */
       .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
+        display: none; position: fixed; top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+        z-index: 1000; justify-content: center; align-items: center; padding: 16px;
       }
       .modal-card {
-        width: 90%;
-        max-width: 400px;
-        margin: auto;
+        background: #fff; border-radius: 18px; width: 100%;
+        max-width: 440px; max-height: 92vh; overflow-y: auto;
+        padding: 36px 30px 28px; border-top: 5px solid #f7a01a;
+        box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+        position: relative; animation: slideUp 0.3s ease-out;
       }
+      .modal-card h2 { margin-top: 0; margin-bottom: 6px; color: #946c44; font-size: 1.4rem; font-weight: 700; }
+      .modal-card h2 i { color: #f7a01a; margin-right: 8px; }
+      .modal-card .card-subtitle { font-size: 0.8rem; color: #aaa; margin-bottom: 20px; display: block; }
       .close-btn {
-        position: absolute;
-        right: 16px;
-        top: 12px;
-        font-size: 22px;
-        color: #aaa;
-        cursor: pointer;
-        background: none;
-        border: none;
-        box-shadow: none;
-        padding: 4px 8px;
-        width: auto;
-        border-radius: 6px;
+        position: absolute; right: 16px; top: 12px; font-size: 22px;
+        color: #aaa; cursor: pointer; background: none; border: none;
+        box-shadow: none; padding: 4px 8px; width: auto; border-radius: 6px;
         transition: background 0.2s, color 0.2s;
       }
-      .close-btn:hover {
-        background: #f5f5f5;
-        color: #333;
+      .close-btn:hover { background: #f5f5f5; color: #333; }
+
+      /* ── Register form specifics ── */
+      .reg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 400px) { .reg-row { grid-template-columns: 1fr; } }
+      .field-label { font-size: 11.5px; font-weight: 600; color: #666; margin-bottom: 5px; display: block; text-align: left; }
+      .reg-pending {
+        background: #eafaf1; border: 1.5px solid #a9dfbf; border-radius: 12px;
+        padding: 18px 20px; text-align: center; margin-top: 4px;
       }
-      @media (max-width: 480px) {
-        .card {
-          padding: 30px 20px;
-          border-radius: 14px;
-        }
-        .card h2 {
-          font-size: 1.5rem;
-        }
-        button.main-btn {
-          font-size: 0.95rem;
-          padding: 13px;
-        }
-      }
-      /* Toast */
+      .reg-pending .pend-icon { font-size: 32px; margin-bottom: 8px; }
+      .reg-pending h3 { margin: 0 0 6px; color: #1e8449; font-size: 1rem; }
+      .reg-pending p { margin: 0; color: #555; font-size: 12.5px; line-height: 1.6; }
+
+      /* ── Toast ── */
       #_tw {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        z-index: 999999;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        pointer-events: none;
-        max-width: 340px;
+        position: fixed; bottom: 24px; right: 24px; z-index: 999999;
+        display: flex; flex-direction: column; gap: 8px;
+        pointer-events: none; max-width: 340px;
       }
       .ti {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 13px 18px;
-        border-radius: 10px;
-        font-family: Poppins, sans-serif;
-        font-size: 13.5px;
-        font-weight: 600;
-        color: #fff;
-        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
-        min-width: 220px;
-        pointer-events: all;
-        animation: tUp 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) both;
-        position: relative;
-        overflow: hidden;
-        line-height: 1.4;
+        display: flex; align-items: center; gap: 10px; padding: 13px 18px;
+        border-radius: 10px; font-family: Poppins, sans-serif; font-size: 13.5px;
+        font-weight: 600; color: #fff; box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+        min-width: 220px; pointer-events: all;
+        animation: tUp 0.35s cubic-bezier(0.21,1.02,0.73,1) both;
+        position: relative; overflow: hidden; line-height: 1.4;
       }
-      .tb {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        height: 3px;
-        background: rgba(255, 255, 255, 0.4);
-        animation: tBar 3.5s linear forwards;
-      }
-      @keyframes tUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      @keyframes tBar {
-        from {
-          width: 100%;
-        }
-        to {
-          width: 0%;
-        }
-      }
-      .to_ {
-        animation: tDn 0.3s ease forwards !important;
-      }
-      @keyframes tDn {
-        to {
-          opacity: 0;
-          transform: translateY(12px);
-        }
+      .tb { position: absolute; bottom: 0; left: 0; height: 3px; background: rgba(255,255,255,0.4); animation: tBar 3.5s linear forwards; }
+      @keyframes tUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes tBar { from { width:100%; } to { width:0%; } }
+      .to_ { animation: tDn 0.3s ease forwards !important; }
+      @keyframes tDn { to { opacity:0; transform:translateY(12px); } }
+
+      @media (max-width: 480px) {
+        .card { padding: 30px 20px; border-radius: 14px; }
+        .card h2 { font-size: 1.5rem; }
+        button.main-btn { font-size: 0.95rem; padding: 13px; }
+        .modal-card { padding: 28px 18px 22px; }
       }
     </style>
   </head>
@@ -316,76 +176,53 @@
     <div class="container">
       <div class="card">
         <h2><i class="fa-solid fa-om"></i> Mandir Login</h2>
-        <span class="card-subtitle"
-          ><i
-            class="fa-solid fa-place-of-worship"
-            style="color: #f7a01a; margin-right: 4px"
-          ></i
-          >Shree Hanuman Mandir, Paliya</span
-        >
+        <span class="card-subtitle">
+          <i class="fa-solid fa-place-of-worship" style="color:#f7a01a;margin-right:4px;"></i>Shree Hanuman Mandir, Paliya
+        </span>
         <div class="msg-box" id="loginMsg"></div>
         <div class="input-group">
           <i class="icon fa-solid fa-phone"></i>
-          <input
-            type="text"
-            id="mobile"
-            placeholder="Mobile Number"
-            maxlength="10"
-          />
+          <input type="text" id="mobile" placeholder="Mobile Number" maxlength="10" />
         </div>
         <div class="input-group">
           <i class="icon fa-solid fa-lock"></i>
           <input type="password" id="password" placeholder="Password" />
-          <i
-            class="fa-solid fa-eye"
-            id="togglePassword"
-            style="
-              position: absolute;
-              right: 15px;
-              left: auto;
-              cursor: pointer;
-              color: #aaa;
-              top: 50%;
-              transform: translateY(-50%);
-            "
-          ></i>
+          <i class="fa-solid fa-eye" id="togglePassword"
+             style="position:absolute;right:15px;left:auto;cursor:pointer;color:#aaa;top:50%;transform:translateY(-50%);"></i>
         </div>
         <span class="forgot" onclick="openForgotModal()">Forgot password?</span>
         <button class="main-btn" id="loginBtn" onclick="login()">
           <i class="fa-solid fa-right-to-bracket"></i> Secure Login
         </button>
-        <a href="index.html" class="back-home"
-          ><i class="fa-solid fa-arrow-left"></i> Back to Home</a
-        >
+        <!-- ── Register section ── -->
+        <div class="reg-divider">Pls Join to Mandir System?</div>
+        <button class="reg-btn" onclick="openRegisterModal()">
+          <i class="fa-solid fa-user-plus"></i> New Registeration
+        </button>
+        <a href="index.html" class="back-home">
+          <i class="fa-solid fa-arrow-left"></i> Back to Home
+        </a>
       </div>
     </div>
 
-    <!-- FORGOT PASSWORD MODAL -->
+    <!-- ══ FORGOT PASSWORD MODAL ══ -->
     <div id="forgotModal" class="modal-overlay">
-      <div class="card modal-card">
+      <div class="modal-card" style="max-width:400px;">
         <button class="close-btn" onclick="closeForgotModal()">×</button>
         <div id="resetStep1">
-          <h2>
-            <i class="fa-solid fa-envelope-circle-check"></i> Verify Account
-          </h2>
+          <h2><i class="fa-solid fa-envelope-circle-check"></i> Verify Account</h2>
           <div class="msg-box" id="resetMsg1"></div>
           <div class="input-group">
             <i class="icon fa-solid fa-at"></i>
-            <input
-              type="email"
-              id="resetEmail"
-              placeholder="Registered Email ID"
-            />
+            <input type="email" id="resetEmail" placeholder="Registered Email ID" />
           </div>
           <button class="main-btn" onclick="sendOTP()">
             <i class="fa-solid fa-paper-plane"></i> Verify & Send OTP
           </button>
         </div>
-        <div id="resetStep2" style="display: none">
+        <div id="resetStep2" style="display:none;">
           <h2><i class="fa-solid fa-key"></i> New Password</h2>
-          <p style="font-size: 0.85rem; color: #666; margin-bottom: 16px">
-            Enter the 6-digit OTP sent to your email.
-          </p>
+          <p style="font-size:0.85rem;color:#666;margin-bottom:16px;">Enter the 6-digit OTP sent to your email.</p>
           <div class="msg-box" id="resetMsg2"></div>
           <div class="input-group">
             <i class="icon fa-solid fa-shield-halved"></i>
@@ -393,11 +230,7 @@
           </div>
           <div class="input-group">
             <i class="icon fa-solid fa-lock"></i>
-            <input
-              type="password"
-              id="newPassword"
-              placeholder="New Password (min 6 chars)"
-            />
+            <input type="password" id="newPassword" placeholder="New Password (min 6 chars)" />
           </div>
           <button class="main-btn" onclick="verifyAndReset()">
             <i class="fa-solid fa-check-circle"></i> Update Password
@@ -406,11 +239,104 @@
       </div>
     </div>
 
+    <!-- ══ REGISTER MODAL ══ -->
+    <div id="registerModal" class="modal-overlay">
+      <div class="modal-card">
+        <button class="close-btn" onclick="closeRegisterModal()">×</button>
+
+        <!-- Step 1: Form -->
+        <div id="regForm">
+          <h2><i class="fa-solid fa-user-plus"></i> Create Account</h2>
+          <span class="card-subtitle">Register to track your donations &amp; receipts</span>
+          <div class="msg-box" id="regMsg"></div>
+
+          <div class="reg-row">
+            <div>
+              <span class="field-label">Full Name *</span>
+              <div class="input-group" style="margin-bottom:14px;">
+                <i class="icon fa-solid fa-user"></i>
+                <input type="text" id="reg_name" placeholder="Your full name" maxlength="100" />
+              </div>
+            </div>
+            <div>
+              <span class="field-label">Mobile Number *</span>
+              <div class="input-group" style="margin-bottom:14px;">
+                <i class="icon fa-solid fa-phone"></i>
+                <input type="text" id="reg_mobile" placeholder="10-digit mobile" maxlength="10" />
+              </div>
+            </div>
+          </div>
+
+          <span class="field-label">Email Address *</span>
+          <div class="input-group" style="margin-bottom:14px;">
+            <i class="icon fa-solid fa-at"></i>
+            <input type="email" id="reg_email" placeholder="Your email address" maxlength="200" />
+          </div>
+
+          <div class="reg-row">
+            <div>
+              <span class="field-label">Password *</span>
+              <div class="input-group" style="margin-bottom:14px;">
+                <i class="icon fa-solid fa-lock"></i>
+                <input type="password" id="reg_password" placeholder="Min 6 chars" />
+              </div>
+            </div>
+            <div>
+              <span class="field-label">Confirm Password *</span>
+              <div class="input-group" style="margin-bottom:14px;">
+                <i class="icon fa-solid fa-lock"></i>
+                <input type="password" id="reg_confirm" placeholder="Re-enter password" />
+              </div>
+            </div>
+          </div>
+
+          <span class="field-label">Village / Town *</span>
+          <div class="input-group" style="margin-bottom:14px;">
+            <i class="icon fa-solid fa-house"></i>
+            <input type="text" id="reg_village" placeholder="Your village or town" maxlength="100" />
+          </div>
+
+          <span class="field-label">Full Address <span style="color:#bbb;font-weight:400;">(optional)</span></span>
+          <div class="input-group" style="margin-bottom:20px;">
+            <i class="icon fa-solid fa-map-pin" style="top:18px;transform:none;"></i>
+            <input type="text" id="reg_address" placeholder="Street, locality, district..." maxlength="300"
+                   style="padding-left:44px;" />
+          </div>
+
+          <button class="main-btn" id="regBtn" onclick="submitRegistration()" style="margin-bottom:8px;">
+            <i class="fa-solid fa-paper-plane"></i> Submit Registration
+          </button>
+          <p style="font-size:11.5px;color:#aaa;margin:0;line-height:1.5;">
+            <i class="fa-solid fa-shield-halved" style="color:#f7a01a;"></i>
+            Your account will be reviewed by the temple admin before activation.
+          </p>
+        </div>
+
+        <!-- Step 2: Pending confirmation -->
+        <div id="regSuccess" style="display:none;">
+          <div class="reg-pending">
+            <div class="pend-icon">🙏</div>
+            <h3>Registration Submitted!</h3>
+            <p>
+              Your registration request has been sent to the temple admin for review.<br/><br/>
+              <strong>What happens next?</strong><br/>
+              You will receive an email once your account is approved. You can then login with your mobile number and password.
+            </p>
+          </div>
+          <div style="margin-top:20px;text-align:center;">
+            <button class="main-btn" onclick="closeRegisterModal()" style="margin-bottom:0;">
+              <i class="fa-solid fa-check"></i> Got it, Back to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="_tw"></div>
     <script src="constants.js"></script>
     <script src="config.js"></script>
     <script>
-      // ── Redirect already-logged-in users away from login page
+      // ── Redirect already-logged-in users
       (function () {
         try {
           let s = JSON.parse(localStorage.getItem("session"));
@@ -420,288 +346,163 @@
         } catch (e) {}
       })();
 
-      // ── Security: block forward-navigation back to admin/user after logout
-      // Push a dummy state so the browser has a "back" target on the login page
+      // ── Block back navigation after logout
       history.pushState(null, "", location.href);
-      window.addEventListener("popstate", function () {
-        history.pushState(null, "", location.href);
-      });
-      // pageshow: catches bfcache-restored pages (back button with cache)
+      window.addEventListener("popstate", function () { history.pushState(null, "", location.href); });
       window.addEventListener("pageshow", function (e) {
         if (e.persisted) {
           try {
             let s = JSON.parse(localStorage.getItem("session"));
-            if (!s || Date.now() > s.expiry) {
-              localStorage.clear();
-              sessionStorage.clear();
-            } else {
-              location.replace(s.role === "Admin" ? "admin.html" : "user.html");
-            }
-          } catch (err) {
-            localStorage.clear();
-          }
+            if (!s || Date.now() > s.expiry) { localStorage.clear(); sessionStorage.clear(); }
+            else { location.replace(s.role === "Admin" ? "admin.html" : "user.html"); }
+          } catch (err) { localStorage.clear(); }
         }
       });
 
-      // ── inline toast for login page (before app.js loads)
+      // ── Toast
       function toast(msg, type) {
         let wrap = document.getElementById("_tw");
-        const bg =
-          type === "error"
-            ? "#e74c3c"
-            : type === "warn"
-            ? "#e67e22"
-            : "#27ae60";
+        const bg   = type === "error" ? "#e74c3c" : type === "warn" ? "#e67e22" : "#27ae60";
         const icon = type === "error" ? "✕" : type === "warn" ? "⚠" : "✓";
-        let item = document.createElement("div");
-        item.className = "ti";
-        item.style.background = bg;
-        let iconSpan = document.createElement("span");
-        iconSpan.style.fontSize = "16px";
-        iconSpan.textContent = icon;
-        let msgSpan = document.createElement("span");
-        msgSpan.style.flex = "1";
-        msgSpan.textContent = msg;
-        let bar = document.createElement("div");
-        bar.className = "tb";
-        item.appendChild(iconSpan);
-        item.appendChild(msgSpan);
-        item.appendChild(bar);
+        let item = document.createElement("div"); item.className = "ti"; item.style.background = bg;
+        let iconSpan = document.createElement("span"); iconSpan.style.fontSize = "16px"; iconSpan.textContent = icon;
+        let msgSpan = document.createElement("span"); msgSpan.style.flex = "1"; msgSpan.textContent = msg;
+        let bar = document.createElement("div"); bar.className = "tb";
+        item.appendChild(iconSpan); item.appendChild(msgSpan); item.appendChild(bar);
         wrap.appendChild(item);
-        setTimeout(() => {
-          item.classList.add("to_");
-          setTimeout(() => item.remove(), 320);
-        }, 3500);
+        setTimeout(() => { item.classList.add("to_"); setTimeout(() => item.remove(), 320); }, 3500);
       }
+
       function setMsg(id, text, type) {
         let el = document.getElementById(id);
-        el.textContent = text;
-        el.className = "msg-box " + (type || "");
+        el.textContent = text; el.className = "msg-box " + (type || "");
         if (!text) el.className = "msg-box";
       }
 
       async function sha256(str) {
-        const buf = await crypto.subtle.digest(
-          "SHA-256",
-          new TextEncoder().encode(str)
-        );
-        return Array.from(new Uint8Array(buf))
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
       }
 
-      // ── Write session token to sheet (inline — app.js is NOT loaded on login page)
+      // ── JSONP helpers
+      let _cbId = 0;
+      function getData(action) {
+        return new Promise((resolve, reject) => {
+          _cbId++; const cb = "cb_" + _cbId + "_" + Date.now();
+          const script = document.createElement("script"); let done = false;
+          window[cb] = function (data) { if(done)return; done=true; clearTimeout(timer); delete window[cb]; script.remove(); resolve(data); };
+          const timer = setTimeout(() => { if(done)return; done=true; window[cb]=function(){try{delete window[cb];script.remove();}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Request timed out.")); }, 20000);
+          script.onerror = function () { if(done)return; done=true; clearTimeout(timer); window[cb]=function(){try{delete window[cb];}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Network error.")); };
+          script.src = API_URL + "?action=" + action + "&callback=" + cb;
+          document.body.appendChild(script);
+        });
+      }
+      function postData(data) {
+        return new Promise((resolve, reject) => {
+          _cbId++; const cb = "cb_post_" + _cbId + "_" + Date.now();
+          const script = document.createElement("script"); let done = false;
+          window[cb] = function (res) { if(done)return; done=true; clearTimeout(timer); delete window[cb]; script.remove(); resolve(res); };
+          const timer = setTimeout(() => { if(done)return; done=true; window[cb]=function(){try{delete window[cb];script.remove();}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Request timed out.")); }, 20000);
+          script.onerror = function () { if(done)return; done=true; clearTimeout(timer); window[cb]=function(){try{delete window[cb];}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Network error.")); };
+          script.src = API_URL + "?" + new URLSearchParams(data).toString() + "&callback=" + cb;
+          document.body.appendChild(script);
+        });
+      }
+
+      // ── Session token
       function setSessionTokenOnServer(userId, token) {
         function _attempt(n) {
           try {
             var cb = "cb_sst_" + Date.now() + "_" + n;
-            var script = document.createElement("script");
-            var done = false;
-            window[cb] = function () {
-              if (done) return;
-              done = true;
-              try {
-                delete window[cb];
-                script.remove();
-              } catch (e2) {}
-            };
+            var script = document.createElement("script"); var done = false;
+            window[cb] = function () { if(done)return; done=true; try{delete window[cb];script.remove();}catch(e2){} };
             script.onerror = function () {
-              if (done) return;
-              done = true;
-              try {
-                delete window[cb];
-                script.remove();
-              } catch (e2) {}
-              if (n === 1)
-                setTimeout(function () {
-                  _attempt(2);
-                }, 4000);
+              if(done)return; done=true;
+              try{delete window[cb];script.remove();}catch(e2){}
+              if(n===1) setTimeout(function(){_attempt(2);},4000);
             };
-            script.src =
-              API_URL +
-              "?action=setSessionToken" +
-              "&userId=" +
-              encodeURIComponent(userId) +
-              "&token=" +
-              encodeURIComponent(token) +
-              "&callback=" +
-              cb;
+            script.src = API_URL + "?action=setSessionToken&userId=" + encodeURIComponent(userId) + "&token=" + encodeURIComponent(token) + "&callback=" + cb;
             document.body.appendChild(script);
-            setTimeout(function () {
+            setTimeout(function(){
               if (!done) {
-                done = true;
-                try {
-                  delete window[cb];
-                } catch (e2) {}
-                if (n === 1)
-                  setTimeout(function () {
-                    _attempt(2);
-                  }, 4000);
-              }
-            }, 10000);
-          } catch (e) {}
+              done = true;
+              console.warn("Session token request timeout");
+              cleanup();
+            }
+          }, 10000);
+          } catch(e){}
         }
         _attempt(1);
       }
 
-      // ── LOGIN (FIX #1 — password hashed, no alert)
+      // ── LOGIN
       async function login() {
-        let mobile = document.getElementById("mobile").value.trim();
+        let mobile   = document.getElementById("mobile").value.trim();
         let password = document.getElementById("password").value;
-        if (!mobile || !password) {
-          setMsg(
-            "loginMsg",
-            "Please enter both mobile number and password.",
-            "error"
-          );
-          return;
-        }
+        if (!mobile || !password) { setMsg("loginMsg","Please enter both mobile number and password.","error"); return; }
         let btn = document.getElementById("loginBtn");
-        btn.disabled = true;
-        btn.innerHTML =
-          '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
-        setMsg("loginMsg", "", "");
+        btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
+        setMsg("loginMsg","","");
         try {
           let hashedPwd = await sha256(password);
           await new Promise((resolve, reject) => {
-            let cbName = "handleLogin_" + Date.now();
-            let script = document.createElement("script");
-            let done = false;
-            window[cbName] = function (res) {
-              if (done) return;
-              done = true;
-              clearTimeout(timer);
-              delete window[cbName];
-              script.remove();
-              resolve(res);
-            };
-            let timer = setTimeout(() => {
-              if (done) return;
-              done = true;
-              delete window[cbName];
-              script.remove();
-              reject(new Error("Request timed out."));
-            }, 15000);
-            script.onerror = function () {
-              if (done) return;
-              done = true;
-              clearTimeout(timer);
-              delete window[cbName];
-              script.remove();
-              reject(new Error("Network error."));
-            };
-            script.src =
-              API_URL +
-              "?action=login&mobile=" +
-              encodeURIComponent(mobile) +
-              "&password=" +
-              hashedPwd +
-              "&callback=" +
-              cbName;
+            let cbName = "handleLogin_" + Date.now(); let script = document.createElement("script"); let done = false;
+            window[cbName] = function (res) { if(done)return; done=true; clearTimeout(timer); delete window[cbName]; script.remove(); resolve(res); };
+            let timer = setTimeout(() => { if(done)return; done=true; delete window[cbName]; script.remove(); reject(new Error("Request timed out.")); }, 15000);
+            script.onerror = function () { if(done)return; done=true; clearTimeout(timer); delete window[cbName]; script.remove(); reject(new Error("Network error.")); };
+            script.src = API_URL + "?action=login&mobile=" + encodeURIComponent(mobile) + "&password=" + hashedPwd + "&callback=" + cbName;
             document.body.appendChild(script);
           }).then((res) => {
             if (res.status === "success") {
-              let user = res.user;
-              delete user.Password;
-              // Generate a unique session token for cross-device single-session enforcement
-              const sessionToken =
-                Math.random().toString(36).slice(2) +
-                Math.random().toString(36).slice(2) +
-                Date.now();
-              localStorage.setItem(
-                "session",
-                JSON.stringify({
-                  userId: user.UserId,
-                  name: user.Name,
-                  role: user.Role,
-                  email: user.Email || "",
-                  expiry: Date.now() + 30 * 60 * 1000,
-                  sessionToken: sessionToken,
-                })
-              );
-              // Write token to sheet — invalidates any active session on other devices
+              let user = res.user; delete user.Password;
+              const sessionToken = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + Date.now();
+              localStorage.setItem("session", JSON.stringify({
+                userId: user.UserId, name: user.Name, role: user.Role,
+                email: user.Email || "", expiry: Date.now() + 30*60*1000, sessionToken
+              }));
               setSessionTokenOnServer(String(user.UserId), sessionToken);
-              // FIX #6: Kick out OTHER tabs on same browser instantly
-              const _myLoginToken =
-                Math.random().toString(36).slice(2) + Date.now();
-              window._myTabToken = _myLoginToken;
+              const _myLoginToken = Math.random().toString(36).slice(2) + Date.now();
               try {
                 const _bc = new BroadcastChannel("mandir_session");
-                _bc.postMessage({
-                  type: "SESSION_REVOKED",
-                  userId: String(user.UserId),
-                  newTabToken: _myLoginToken,
-                });
+                _bc.postMessage({ type:"SESSION_REVOKED", userId:String(user.UserId), newTabToken:_myLoginToken });
                 setTimeout(() => _bc.close(), 500);
-              } catch (e) {}
-              setMsg(
-                "loginMsg",
-                "✓ Login successful! Redirecting...",
-                "success"
-              );
-              setTimeout(() => {
-                location.href =
-                  user.Role === "Admin" ? "admin.html" : "user.html";
-              }, 600);
+              } catch(e){}
+              setMsg("loginMsg","✓ Login successful! Redirecting...","success");
+              setTimeout(() => { location.href = user.Role === "Admin" ? "admin.html" : "user.html"; }, 600);
+            } else if (res.status === "pending") {
+              setMsg("loginMsg","⏳ Your registration is pending admin approval. Please wait for approval email.","error");
             } else if (res.status === "error") {
-              setMsg(
-                "loginMsg",
-                "❌ " + (res.message || "Account issue."),
-                "error"
-              );
+              setMsg("loginMsg","❌ " + (res.message || "Account issue."),"error");
             } else {
-              setMsg(
-                "loginMsg",
-                "❌ Invalid mobile number or password.",
-                "error"
-              );
+              setMsg("loginMsg","❌ Invalid mobile number or password.","error");
             }
           });
-        } catch (err) {
-          setMsg("loginMsg", "❌ " + err.message, "error");
-        } finally {
-          btn.disabled = false;
-          btn.innerHTML =
-            '<i class="fa-solid fa-right-to-bracket"></i> Secure Login';
+        } catch(err) { setMsg("loginMsg","❌ " + err.message,"error"); }
+        finally {
+          btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Secure Login';
         }
       }
 
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") login();
-      });
+      document.addEventListener("keydown", (e) => { if(e.key==="Enter") login(); });
 
       // ── FORGOT PASSWORD
       let targetUserId, currentMobile;
       function openForgotModal() {
         currentMobile = document.getElementById("mobile").value.trim();
-        if (!currentMobile) {
-          setMsg("loginMsg", "Please enter your Mobile Number first.", "error");
-          return;
-        }
-        setMsg("resetMsg1", "Verifying account for: " + currentMobile, "");
+        if (!currentMobile) { setMsg("loginMsg","Please enter your Mobile Number first.","error"); return; }
+        setMsg("resetMsg1","Verifying account for: " + currentMobile,"");
         document.getElementById("forgotModal").style.display = "flex";
         document.getElementById("resetStep1").style.display = "block";
         document.getElementById("resetStep2").style.display = "none";
       }
-      function closeForgotModal() {
-        document.getElementById("forgotModal").style.display = "none";
-      }
+      function closeForgotModal() { document.getElementById("forgotModal").style.display = "none"; }
 
       function sendOTP() {
         let email = document.getElementById("resetEmail").value.trim();
-        if (!email) {
-          setMsg("resetMsg1", "Please enter your registered email.", "error");
-          return;
-        }
-        setMsg("resetMsg1", "Sending OTP...", "");
+        if (!email) { setMsg("resetMsg1","Please enter your registered email.","error"); return; }
+        setMsg("resetMsg1","Sending OTP...","");
         let s = document.createElement("script");
-        s.src =
-          API_URL +
-          "?action=sendEmailOTP&email=" +
-          encodeURIComponent(email) +
-          "&mobile=" +
-          encodeURIComponent(currentMobile) +
-          "&callback=handleOTPSent";
+        s.src = API_URL + "?action=sendEmailOTP&email=" + encodeURIComponent(email) + "&mobile=" + encodeURIComponent(currentMobile) + "&callback=handleOTPSent";
         document.body.appendChild(s);
       }
       function handleOTPSent(res) {
@@ -711,71 +512,100 @@
           document.getElementById("resetStep1").style.display = "none";
           document.getElementById("resetStep2").style.display = "block";
         } else {
-          setMsg(
-            "resetMsg1",
-            "❌ " + (res.message || "Verification failed."),
-            "error"
-          );
+          setMsg("resetMsg1","❌ " + (res.message || "Verification failed."),"error");
         }
       }
-
-      // FIX #4 — reset hashes new password before sending
       async function verifyAndReset() {
-        let userOTP = document.getElementById("inputOTP").value.trim();
-        let newPass = document.getElementById("newPassword").value;
-        if (!userOTP) {
-          setMsg("resetMsg2", "Please enter the OTP.", "error");
-          return;
-        }
-        if (!newPass || newPass.length < 6) {
-          setMsg(
-            "resetMsg2",
-            "Password must be at least 6 characters.",
-            "error"
-          );
-          return;
-        }
+        let userOTP  = document.getElementById("inputOTP").value.trim();
+        let newPass  = document.getElementById("newPassword").value;
+        if (!userOTP) { setMsg("resetMsg2","Please enter the OTP.","error"); return; }
+        if (!newPass || newPass.length < 6) { setMsg("resetMsg2","Password must be at least 6 characters.","error"); return; }
         let hashedNew = await sha256(newPass);
         let s = document.createElement("script");
-        s.src =
-          API_URL +
-          "?action=resetPassword&UserId=" +
-          encodeURIComponent(targetUserId) +
-          "&otp=" +
-          encodeURIComponent(userOTP) +
-          "&NewPassword=" +
-          hashedNew +
-          "&callback=handleResetDone";
+        s.src = API_URL + "?action=resetPassword&UserId=" + encodeURIComponent(targetUserId) + "&otp=" + encodeURIComponent(userOTP) + "&NewPassword=" + hashedNew + "&callback=handleResetDone";
         document.body.appendChild(s);
       }
       function handleResetDone(res) {
-        if (res.status === "success") {
-          toast("✅ Password changed! Please login again.");
-          closeForgotModal();
-          location.reload();
-        } else {
-          setMsg(
-            "resetMsg2",
-            "❌ " + (res.message || "Invalid OTP. Please try again."),
-            "error"
-          );
-        }
+        if (res.status === "success") { toast("✅ Password changed! Please login again."); closeForgotModal(); location.reload(); }
+        else { setMsg("resetMsg2","❌ " + (res.message || "Invalid OTP. Please try again."),"error"); }
+      }
+      document.getElementById("togglePassword").addEventListener("click", function () {
+        let p = document.getElementById("password");
+        if (p.type === "password") { p.type = "text"; this.classList.replace("fa-eye","fa-eye-slash"); this.style.color = "#f7a01a"; }
+        else { p.type = "password"; this.classList.replace("fa-eye-slash","fa-eye"); this.style.color = "#aaa"; }
+      });
+
+      // ══════════════════════════════════════════
+      //  REGISTRATION
+      // ══════════════════════════════════════════
+      function openRegisterModal() {
+        // Clear form
+        ["reg_name","reg_mobile","reg_email","reg_password","reg_confirm","reg_village","reg_address"].forEach(id => {
+          document.getElementById(id).value = "";
+        });
+        setMsg("regMsg","","");
+        document.getElementById("regForm").style.display = "block";
+        document.getElementById("regSuccess").style.display = "none";
+        document.getElementById("registerModal").style.display = "flex";
+      }
+      function closeRegisterModal() {
+        document.getElementById("registerModal").style.display = "none";
       }
 
-      document
-        .getElementById("togglePassword")
-        .addEventListener("click", function () {
-          let p = document.getElementById("password");
-          if (p.type === "password") {
-            p.type = "text";
-            this.classList.replace("fa-eye", "fa-eye-slash");
-            this.style.color = "#f7a01a";
+      async function submitRegistration() {
+        const name    = document.getElementById("reg_name").value.trim();
+        const mobile  = document.getElementById("reg_mobile").value.trim();
+        const email   = document.getElementById("reg_email").value.trim();
+        const pwd     = document.getElementById("reg_password").value;
+        const confirm = document.getElementById("reg_confirm").value;
+        const village = document.getElementById("reg_village").value.trim();
+        const address = document.getElementById("reg_address").value.trim();
+
+        // Client-side validation
+        if (!name)   { setMsg("regMsg","Please enter your full name.","error"); return; }
+        if (!mobile || mobile.length < 10 || !/^\d{10}$/.test(mobile)) {
+          setMsg("regMsg","Please enter a valid 10-digit mobile number.","error"); return;
+        }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          setMsg("regMsg","Please enter a valid email address.","error"); return;
+        }
+        if (!pwd || pwd.length < 6) {
+          setMsg("regMsg","Password must be at least 6 characters.","error"); return;
+        }
+        if (pwd !== confirm) {
+          setMsg("regMsg","Passwords do not match. Please re-enter.","error"); return;
+        }
+        if (!village) { setMsg("regMsg","Please enter your village or town.","error"); return; }
+
+        const btn = document.getElementById("regBtn");
+        btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+        setMsg("regMsg","","");
+
+        try {
+          const hashedPwd = await sha256(pwd);
+          const res = await postData({
+            action:   "registerUser",
+            Name:     name,
+            Mobile:   mobile,
+            Email:    email,
+            Password: hashedPwd,
+            Village:  village,
+            Address:  address
+          });
+          if (res && res.status === "success") {
+            document.getElementById("regForm").style.display = "none";
+            document.getElementById("regSuccess").style.display = "block";
           } else {
-            p.type = "password";
-            this.classList.replace("fa-eye-slash", "fa-eye");
-            this.style.color = "#aaa";
+            setMsg("regMsg","❌ " + (res && res.message ? res.message : "Registration failed. Please try again."),"error");
           }
-        });
+        } catch(err) {
+          setMsg("regMsg","❌ " + err.message,"error");
+        } finally {
+          btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Registration';
+        }
+      }
     </script>
+    <!-- Chatbot widget -->
+    <script src="chatbot_widget.js"></script>
   </body>
 </html>

@@ -862,6 +862,77 @@
       #glryPhotoGrid .glry-card img {
         width: 100%; height: 130px; object-fit: cover; display: block;
       }
+
+      /* ── PENDING BADGE on sidebar nav item ── */
+.nav-badge {
+  background: #e74c3c; color: #fff; border-radius: 12px;
+  padding: 1px 7px; font-size: 10px; font-weight: 700;
+  margin-left: auto; min-width: 18px; text-align: center; display: none;
+}
+.nav-badge.show { display: inline-block; }
+ 
+/* ── User Status Tabs ── */
+.status-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.status-tab {
+  padding: 6px 16px; border-radius: 20px; font-size: 12.5px;
+  font-weight: 600; cursor: pointer; border: 1.5px solid #e8e8e8;
+  color: #666; background: #fff; transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.status-tab:hover { border-color: #f7a01a; color: #f7a01a; }
+.status-tab.active { background: #f7a01a; color: #fff; border-color: #f7a01a; }
+.status-tab.tab-pending.active { background: #e67e22; border-color: #e67e22; }
+.status-tab.tab-rejected.active { background: #e74c3c; border-color: #e74c3c; }
+.status-tab.tab-approved.active { background: #27ae60; border-color: #27ae60; }
+.tab-ct {
+  background: rgba(255,255,255,0.3); border-radius: 10px;
+  padding: 0 5px; font-size: 10.5px;
+}
+.status-tab:not(.active) .tab-ct { background: #f0f0f0; color: #888; }
+ 
+/* ── Pending user row highlight ── */
+tr.row-pending td { background: #fffbf0 !important; }
+tr.row-rejected td { background: #fff5f5 !important; }
+ 
+/* ── Chatbot Settings Page ── */
+.cbot-section { margin-bottom: 24px; }
+.cbot-section h4 {
+  font-size: 13.5px; font-weight: 700; color: #334155;
+  margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #f4f6f9;
+  display: flex; align-items: center; gap: 8px;
+}
+.cbot-section h4 i { color: #f7a01a; }
+.cbot-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+@media(max-width:640px){ .cbot-row { grid-template-columns: 1fr; } }
+.cbot-label { font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 5px; display: block; }
+.cbot-input, .cbot-textarea {
+  width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0;
+  border-radius: 9px; font-size: 13px; font-family: "Poppins", sans-serif;
+  color: #334155; background: #fafafa; outline: none; transition: border-color 0.2s;
+}
+.cbot-input:focus, .cbot-textarea:focus { border-color: #f7a01a; background: #fff; }
+.cbot-textarea { min-height: 70px; resize: vertical; }
+.cbot-toggle-row { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.cbot-toggle {
+  position: relative; width: 46px; height: 24px; flex-shrink: 0;
+}
+.cbot-toggle input { opacity: 0; width: 0; height: 0; }
+.cbot-toggle-slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background: #ccc; border-radius: 24px; transition: 0.25s;
+}
+.cbot-toggle-slider:before {
+  position: absolute; content: ""; width: 18px; height: 18px;
+  left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.25s;
+}
+.cbot-toggle input:checked + .cbot-toggle-slider { background: #27ae60; }
+.cbot-toggle input:checked + .cbot-toggle-slider:before { transform: translateX(22px); }
+.cbot-save-bar {
+  background: #f8fafc; border-top: 1px solid #e2e8f0;
+  padding: 14px 0 4px; margin-top: 8px; display: flex; gap: 10px; align-items: center;
+}
     </style>
   </head>
   <body>
@@ -894,8 +965,9 @@
           <li onclick="showPage('expensePage',this)">
             <i class="fa-solid fa-money-bill-wave"></i> Expense
           </li>
-          <li onclick="showPage('usersPage',this)">
-            <i class="fa-solid fa-users"></i> Manage Users
+          <li onclick="showPage('usersPage',this)" id="nav_users">
+            <i class="fa-solid fa-users"></i> Users
+            <span class="nav-badge" id="pendingBadge">0</span>
           </li>
           <li onclick="showPage('masterPage',this)">
             <i class="fa-solid fa-database"></i> Master Data
@@ -911,6 +983,9 @@
           </li>
           <li onclick="showPage('announcementPage',this)" id="nav_announcement">
             <i class="fa-solid fa-bullhorn"></i> Announcement
+          </li>
+          <li onclick="showPage('chatbotPage',this)">
+            <i class="fa-solid fa-robot"></i> Chatbot Settings
           </li>
           <li onclick="showPage('broadcastPage',this)">
             <i class="fa-solid fa-bullhorn"></i> Broadcast
@@ -1592,7 +1667,22 @@
         <!-- USERS -->
         <div id="usersPage" class="page">
           <div class="card">
-            <h3><i class="fa-solid fa-user-plus"></i> Add New User</h3>
+            <h3><i class="fa-solid fa-users"></i> Manage Users
+              <div class="status-tabs" id="userStatusTabs">
+                <button class="status-tab active" onclick="filterUsers('all',this)">
+                  <i class="fa-solid fa-list"></i> All <span class="tab-ct" id="ct_all">0</span>
+                </button>
+                <button class="status-tab tab-pending" onclick="filterUsers('pending',this)">
+                  <i class="fa-solid fa-clock"></i> Pending <span class="tab-ct" id="ct_pending">0</span>
+                </button>
+                <button class="status-tab tab-approved" onclick="filterUsers('active',this)">
+                  <i class="fa-solid fa-circle-check"></i> Approved <span class="tab-ct" id="ct_approved">0</span>
+                </button>
+                <button class="status-tab tab-rejected" onclick="filterUsers('rejected',this)">
+                  <i class="fa-solid fa-circle-xmark"></i> Rejected <span class="tab-ct" id="ct_rejected">0</span>
+                </button>
+              </div>
+            </h3>
             <div class="form-row">
               <div>
                 <label>Full Name</label><input id="u_name" placeholder="Name" />
@@ -2472,7 +2562,209 @@
           </div>
         </div>
         <!-- ══ END EMAIL AUTOMATION PAGE ══ -->
+        <div id="chatbotPage" class="page">
+          <div class="card">
+            <h3><i class="fa-solid fa-robot"></i> Chatbot Settings
+              <span style="font-size:11px;font-weight:400;color:#aaa;margin-left:6px;">Controls what the chatbot shows to visitors</span>
+              <button class="btn-sm btn-green" onclick="saveChatbotSettings()" style="margin-left:auto;">
+                <i class="fa-solid fa-floppy-disk"></i> Save All Settings
+              </button>
+            </h3>
+            <div id="cbotMsg" class="msg-box" style="margin-bottom:12px;"></div>
+     
+            <!-- Enable/Disable -->
+            <div class="cbot-toggle-row">
+              <label class="cbot-toggle">
+                <input type="checkbox" id="cbot_enabled" checked />
+                <span class="cbot-toggle-slider"></span>
+              </label>
+              <span style="font-size:13.5px;font-weight:600;color:#334155;">Chatbot Enabled</span>
+              <span style="font-size:12px;color:#94a3b8;">(Turn off to hide chatbot from all pages)</span>
+            </div>
+     
+            <!-- Welcome Messages -->
+            <div class="cbot-section">
+              <h4><i class="fa-solid fa-hand-wave"></i> Welcome Messages</h4>
+              <div class="cbot-row">
+                <div>
+                  <span class="cbot-label">English</span>
+                  <textarea class="cbot-textarea" id="cbot_welcome_en" placeholder="e.g. Jai Shree Ram! How can I help you?"></textarea>
+                </div>
+                <div>
+                  <span class="cbot-label">Hindi</span>
+                  <textarea class="cbot-textarea" id="cbot_welcome_hi" placeholder="e.g. जय श्री राम! मैं कैसे मदद करूं?"></textarea>
+                </div>
+              </div>
+            </div>
+     
+            <!-- Timings -->
+            <div class="cbot-section">
+              <h4><i class="fa-solid fa-clock"></i> Temple Timings</h4>
+              <div class="cbot-row">
+                <div>
+                  <span class="cbot-label">English</span>
+                  <textarea class="cbot-textarea" id="cbot_timings_en" placeholder="e.g. Morning: 5 AM – 12 PM&#10;Evening: 4 PM – 9 PM"></textarea>
+                </div>
+                <div>
+                  <span class="cbot-label">Hindi</span>
+                  <textarea class="cbot-textarea" id="cbot_timings_hi" placeholder="e.g. सुबह: 5 AM – 12 PM&#10;शाम: 4 PM – 9 PM"></textarea>
+                </div>
+              </div>
+            </div>
+     
+            <!-- Location -->
+            <div class="cbot-section">
+              <h4><i class="fa-solid fa-location-dot"></i> Temple Location</h4>
+              <div class="cbot-row">
+                <div>
+                  <span class="cbot-label">English</span>
+                  <input class="cbot-input" id="cbot_location_en" placeholder="Full address in English" />
+                </div>
+                <div>
+                  <span class="cbot-label">Hindi</span>
+                  <input class="cbot-input" id="cbot_location_hi" placeholder="पूरा पता हिंदी में" />
+                </div>
+              </div>
+            </div>
+     
+            <!-- Donation Info -->
+            <div class="cbot-section">
+              <h4><i class="fa-solid fa-hand-holding-heart"></i> Donation Information</h4>
+              <div class="cbot-row">
+                <div>
+                  <span class="cbot-label">English</span>
+                  <textarea class="cbot-textarea" id="cbot_donate_en" placeholder="How to donate in English"></textarea>
+                </div>
+                <div>
+                  <span class="cbot-label">Hindi</span>
+                  <textarea class="cbot-textarea" id="cbot_donate_hi" placeholder="दान कैसे करें — हिंदी में"></textarea>
+                </div>
+              </div>
+            </div>
+     
+            <!-- Bank Details -->
+            <div class="cbot-section">
+              <h4><i class="fa-solid fa-building-columns"></i> Bank Details</h4>
+              <div class="cbot-row">
+                <div>
+                  <span class="cbot-label">Bank Name</span>
+                  <input class="cbot-input" id="cbot_bank_name" placeholder="e.g. State Bank of India" />
+                </div>
+                <div>
+                  <span class="cbot-label">Account Number</span>
+                  <input class="cbot-input" id="cbot_bank_account" placeholder="Account number" />
+                </div>
+              </div>
+              <div class="cbot-row">
+                <div>
+                  <span class="cbot-label">IFSC Code</span>
+                  <input class="cbot-input" id="cbot_bank_ifsc" placeholder="e.g. SBIN0001234" />
+                </div>
+                <div>
+                  <span class="cbot-label">Branch</span>
+                  <input class="cbot-input" id="cbot_bank_branch" placeholder="e.g. Sultanpur Main Branch" />
+                </div>
+              </div>
+            </div>
+     
+            <!-- UPI -->
+            <div class="cbot-section">
+              <h4><i class="fa-solid fa-qrcode"></i> UPI / QR Code</h4>
+              <div style="max-width:360px;">
+                <span class="cbot-label">UPI ID (QR will be auto-generated from this)</span>
+                <input class="cbot-input" id="cbot_upi_id" placeholder="e.g. mandir@upi or 9876543210@paytm" />
+              </div>
+              <p style="font-size:11.5px;color:#94a3b8;margin:8px 0 0;">
+                <i class="fa-solid fa-info-circle" style="color:#f7a01a;"></i>
+                Visitors will see a scannable QR code in the chatbot generated from this UPI ID.
+              </p>
+            </div>
+     
+            <!-- Contact -->
+            <div class="cbot-section">
+              <h4><i class="fa-solid fa-address-book"></i> Contact Details</h4>
+              <div class="cbot-row">
+                <div>
+                  <span class="cbot-label">Phone Number</span>
+                  <input class="cbot-input" id="cbot_contact_phone" placeholder="e.g. +91-8127991402" />
+                </div>
+                <div>
+                  <span class="cbot-label">Email</span>
+                  <input class="cbot-input" id="cbot_contact_email" placeholder="Temple email address" />
+                </div>
+              </div>
+              <div style="max-width:360px;">
+                <span class="cbot-label">WhatsApp Number (optional)</span>
+                <input class="cbot-input" id="cbot_contact_whatsapp" placeholder="e.g. +91-9876543210" />
+              </div>
+            </div>
+     
+            <!-- Custom Q&A -->
+            <div class="cbot-section">
+              <h4><i class="fa-solid fa-circle-question"></i> Custom Questions (optional)</h4>
+              <p style="font-size:12px;color:#94a3b8;margin:0 0 14px;">Add up to 2 custom Q&amp;A pairs that appear as chatbot options.</p>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:14px;">
+                <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:10px;">Custom Q&amp;A #1</div>
+                <div class="cbot-row">
+                  <div>
+                    <span class="cbot-label">Question (English button label)</span>
+                    <input class="cbot-input" id="cbot_custom_q1_en" placeholder="e.g. Upcoming Events" />
+                  </div>
+                  <div>
+                    <span class="cbot-label">Question (Hindi button label)</span>
+                    <input class="cbot-input" id="cbot_custom_q1_hi" placeholder="e.g. आगामी कार्यक्रम" />
+                  </div>
+                </div>
+                <div class="cbot-row">
+                  <div>
+                    <span class="cbot-label">Answer (English)</span>
+                    <textarea class="cbot-textarea" id="cbot_custom_a1_en" placeholder="Answer in English..." style="min-height:56px;"></textarea>
+                  </div>
+                  <div>
+                    <span class="cbot-label">Answer (Hindi)</span>
+                    <textarea class="cbot-textarea" id="cbot_custom_a1_hi" placeholder="हिंदी में उत्तर..." style="min-height:56px;"></textarea>
+                  </div>
+                </div>
+              </div>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
+                <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:10px;">Custom Q&amp;A #2</div>
+                <div class="cbot-row">
+                  <div>
+                    <span class="cbot-label">Question (English)</span>
+                    <input class="cbot-input" id="cbot_custom_q2_en" placeholder="e.g. Temple History" />
+                  </div>
+                  <div>
+                    <span class="cbot-label">Question (Hindi)</span>
+                    <input class="cbot-input" id="cbot_custom_q2_hi" placeholder="e.g. मंदिर का इतिहास" />
+                  </div>
+                </div>
+                <div class="cbot-row">
+                  <div>
+                    <span class="cbot-label">Answer (English)</span>
+                    <textarea class="cbot-textarea" id="cbot_custom_a2_en" placeholder="Answer in English..." style="min-height:56px;"></textarea>
+                  </div>
+                  <div>
+                    <span class="cbot-label">Answer (Hindi)</span>
+                    <textarea class="cbot-textarea" id="cbot_custom_a2_hi" placeholder="हिंदी में उत्तर..." style="min-height:56px;"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+     
+            <div class="cbot-save-bar">
+              <button class="btn-green" onclick="saveChatbotSettings()">
+                <i class="fa-solid fa-floppy-disk"></i> Save All Settings
+              </button>
+              <button onclick="loadChatbotSettings()" style="background:#64748b;box-shadow:none;">
+                <i class="fa-solid fa-rotate-right"></i> Reload
+              </button>
+            </div>
+          </div>
+        </div>
       </div><!-- end .main -->
+      <!-- ═══ CHATBOT SETTINGS PAGE ═══ -->
+    
+    <!-- ═══ END CHATBOT PAGE ═══ -->
     </div><!-- end .layout -->
 
     <script src="constants.js"></script>
@@ -6224,18 +6516,233 @@
         setTimeout(_pollResult, 8000);
       }
 
-      // Hook tracker init AND email auto init to showPage
-      const _origShowPage = showPage;
-      window.showPage = function(id, el) {
-        _origShowPage(id, el);
-        if (id === "trackerPage" && typeof initTrackerDropdowns === "function") {
-          setTimeout(initTrackerDropdowns, 100);
-        }
-        if (id === "emailAutoPage" && typeof initEmailAutoPage === "function") {
-          setTimeout(initEmailAutoPage, 100);
-        }
-      }
+      // // Hook tracker init AND email auto init to showPage
+      // const _origShowPage = showPage;
+      // window.showPage = function(id, el) {
+      //   _origShowPage(id, el);
+      //   if (id === "trackerPage" && typeof initTrackerDropdowns === "function") {
+      //     setTimeout(initTrackerDropdowns, 100);
+      //   }
+      //   if (id === "emailAutoPage" && typeof initEmailAutoPage === "function") {
+      //     setTimeout(initEmailAutoPage, 100);
+      //   }
+      // }
 
+    /* ══════════════════════════════════════════════════════════════
+   ADDON: PENDING USERS + CHATBOT SETTINGS
+   ══════════════════════════════════════════════════════════════ */
+ 
+/* ── User filter state ── */
+var _userFilterStatus = "all";
+ 
+ function filterUsers(status, tabEl) {
+   _userFilterStatus = status;
+   document.querySelectorAll(".status-tab").forEach(t => t.classList.remove("active"));
+   if (tabEl) tabEl.classList.add("active");
+   renderUsersTable();
+ }
+  
+ /* ── Update tab counts + sidebar badge ── */
+ function updateUserTabCounts(users) {
+   if (!users) return;
+   const all      = users.length;
+   const pending  = users.filter(u => String(u.Status||"Active").toLowerCase() === "pending").length;
+   const approved = users.filter(u => String(u.Status||"Active").toLowerCase() === "active").length;
+   const rejected = users.filter(u => String(u.Status||"Active").toLowerCase() === "rejected").length;
+   const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+   setEl("ct_all", all); setEl("ct_pending", pending);
+   setEl("ct_approved", approved); setEl("ct_rejected", rejected);
+   // Sidebar badge
+   const badge = document.getElementById("pendingBadge");
+   if (badge) {
+     badge.textContent = pending;
+     badge.classList.toggle("show", pending > 0);
+   }
+ }
+  
+ /* ── Wrap existing renderUsers to support filtering ── */
+ /* This function intercepts the existing render. Find your existing
+    renderUsers (or whatever renders the users table) and add this call
+    at the TOP of that function:
+        if (applyUserFilter(users)) return;
+    OR simply call updateUserTabCounts(_users) after data loads.
+    The filterUsers() function already calls renderUsersTable()
+    which should be your existing render function.
+    Rename it renderUsersTable if it has a different name. */
+  
+ /* ── APPROVE USER ── */
+ function approveUser(userId, userName) {
+   if (!confirm("Approve " + userName + "?\n\nThis will activate their account and send an approval email.")) return;
+   const s = JSON.parse(localStorage.getItem("session") || "{}");
+   postData({ action: "approveUser", UserId: userId, AdminName: s.name || "Admin" })
+     .then(res => {
+       if (res && res.status === "success") {
+         toast("✅ " + userName + " approved! Approval email sent.", "success");
+         loadData(); // refresh all data
+       } else {
+         toast("❌ " + (res && res.message ? res.message : "Approval failed."), "error");
+       }
+     })
+     .catch(err => toast("❌ " + err.message, "error"));
+ }
+  
+ /* ── REJECT USER ── */
+ function rejectUser(userId, userName) {
+   // Build reason modal inline using existing modal system
+   const html = `
+     <div class="_mhdr"><h3><i class="fa-solid fa-circle-xmark"></i> Reject Registration</h3>
+       <button class="_mcls" onclick="closeModal()">×</button></div>
+     <div class="_mbdy">
+       <p style="font-size:13px;color:#475569;margin:0 0 14px;">
+         You are about to reject <strong>${escapeHtml(userName)}</strong>'s registration request.
+         A rejection email will be sent.
+       </p>
+       <label class="_fl">Reason <span style="color:#aaa;font-weight:400;">(optional — shown in email)</span></label>
+       <textarea class="_fi" id="rejectReason" placeholder="e.g. Could not verify identity. Please contact temple admin." rows="3"
+         style="resize:vertical;min-height:70px;"></textarea>
+     </div>
+     <div class="_mft">
+       <button class="_mbtn" style="background:#999;" onclick="closeModal()">
+         <i class="fa-solid fa-xmark"></i> Cancel
+       </button>
+       <button class="_mbtn" style="background:#e74c3c;" onclick="confirmRejectUser('${escapeHtml(userId)}','${escapeHtml(userName)}')">
+         <i class="fa-solid fa-circle-xmark"></i> Reject & Send Email
+       </button>
+     </div>`;
+   openModal(html, "500px");
+ }
+  
+ function confirmRejectUser(userId, userName) {
+   const reason = (document.getElementById("rejectReason") || {}).value || "";
+   const s = JSON.parse(localStorage.getItem("session") || "{}");
+   closeModal();
+   postData({ action: "rejectUser", UserId: userId, Reason: reason, AdminName: s.name || "Admin" })
+     .then(res => {
+       if (res && res.status === "success") {
+         toast("Registration for " + userName + " rejected. Email sent.", "warn");
+         loadData();
+       } else {
+         toast("❌ " + (res && res.message ? res.message : "Rejection failed."), "error");
+       }
+     })
+     .catch(err => toast("❌ " + err.message, "error"));
+ }
+  
+ /* ── CHATBOT SETTINGS ── */
+ function loadChatbotSettings() {
+   const cbMsg = document.getElementById("cbotMsg");
+   if (cbMsg) { cbMsg.textContent = "Loading..."; cbMsg.className = "msg-box"; }
+   getData("getChatbotConfig")
+     .then(cfg => {
+       if (!cfg) { if (cbMsg) { cbMsg.textContent = "Could not load settings."; cbMsg.className = "msg-box error"; } return; }
+       const fields = [
+         "welcome_en","welcome_hi","timings_en","timings_hi",
+         "location_en","location_hi","donate_en","donate_hi",
+         "bank_name","bank_account","bank_ifsc","bank_branch",
+         "upi_id","contact_phone","contact_email","contact_whatsapp",
+         "custom_q1_en","custom_q1_hi","custom_a1_en","custom_a1_hi",
+         "custom_q2_en","custom_q2_hi","custom_a2_en","custom_a2_hi"
+       ];
+       fields.forEach(f => {
+         const el = document.getElementById("cbot_" + f);
+         if (el) el.value = (cfg[f] || "").replace(/\\n/g, "\n");
+       });
+       const tog = document.getElementById("cbot_enabled");
+       if (tog) tog.checked = String(cfg.enabled || "1") !== "0";
+       if (cbMsg) { cbMsg.textContent = ""; cbMsg.className = "msg-box"; }
+     })
+     .catch(err => {
+       if (cbMsg) { cbMsg.textContent = "❌ " + err.message; cbMsg.className = "msg-box error"; }
+     });
+ }
+  
+ function saveChatbotSettings() {
+   const cbMsg = document.getElementById("cbotMsg");
+   const btn   = document.querySelector('[onclick="saveChatbotSettings()"]');
+   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; }
+   if (cbMsg) { cbMsg.textContent = ""; cbMsg.className = "msg-box"; }
+  
+   const fields = [
+     "welcome_en","welcome_hi","timings_en","timings_hi",
+     "location_en","location_hi","donate_en","donate_hi",
+     "bank_name","bank_account","bank_ifsc","bank_branch",
+     "upi_id","contact_phone","contact_email","contact_whatsapp",
+     "custom_q1_en","custom_q1_hi","custom_a1_en","custom_a1_hi",
+     "custom_q2_en","custom_q2_hi","custom_a2_en","custom_a2_hi"
+   ];
+   const data = { action: "saveChatbotConfig" };
+   const togEl = document.getElementById("cbot_enabled");
+   data["enabled"] = (togEl && togEl.checked) ? "1" : "0";
+   fields.forEach(f => {
+     const el = document.getElementById("cbot_" + f);
+     if (el) data[f] = el.value.trim().replace(/\n/g, "\\n");
+   });
+  
+   postData(data)
+     .then(res => {
+       if (res && res.status === "success") {
+         toast("✅ Chatbot settings saved successfully!", "success");
+         if (cbMsg) { cbMsg.textContent = "✓ Settings saved."; cbMsg.className = "msg-box success"; setTimeout(()=>{ cbMsg.textContent=""; cbMsg.className="msg-box"; },3000); }
+       } else {
+         toast("❌ " + (res && res.message ? res.message : "Save failed."), "error");
+       }
+     })
+     .catch(err => toast("❌ " + err.message, "error"))
+     .finally(() => {
+       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save All Settings'; }
+     });
+ }
+  
+ /* ── Load chatbot settings when page shown ── */
+ const _origShowPage = typeof showPage !== "undefined" ? showPage : null;
+ // Hook into showPage for chatbot settings auto-load
+ // Find your existing showPage function in admin.html and add this inside it:
+ //   if (pageId === "chatbotPage") loadChatbotSettings();
+ // OR add this after your showPage function definition:
+ document.addEventListener("DOMContentLoaded", function () {
+   // Hook: auto-load chatbot settings when chatbot page opens
+   const tabs = document.querySelectorAll("[onclick*=\"'chatbotPage'\"]");
+   tabs.forEach(t => {
+     const orig = t.getAttribute("onclick");
+     t.setAttribute("onclick", orig + ";loadChatbotSettings();");
+   });
+   // Load pending count on startup
+   getData("getPendingCount").then(r => {
+     if (r && r.count) {
+       const badge = document.getElementById("pendingBadge");
+       if (badge) {
+         badge.textContent = r.count;
+         badge.classList.toggle("show", r.count > 0);
+       }
+     }
+   }).catch(() => {});
+ });
+  
+ /* ── IMPORTANT: After data loads (in your existing loadData/getAllData callback),
+    add this ONE line to update the tab counts:
+        updateUserTabCounts(_users);   // where _users is your users array
+    
+    AND modify your existing users render to filter by status:
+    In your renderUsers / displayUsers function, filter like this:
+        let filtered = _users;
+        if (_userFilterStatus && _userFilterStatus !== "all") {
+          filtered = _users.filter(u => String(u.Status||"Active").toLowerCase() === _userFilterStatus);
+        }
+    Then render 'filtered' instead of '_users'.
+    
+    AND in the users table rows HTML, add class for visual highlight:
+        class="${String(u.Status||'').toLowerCase() === 'pending' ? 'row-pending' : String(u.Status||'').toLowerCase() === 'rejected' ? 'row-rejected' : ''}"
+    
+    AND in your user action buttons, add Approve/Reject for Pending users:
+        ${String(u.Status||'').toLowerCase() === 'pending' ? `
+          <button class="btn-sm btn-green" onclick="approveUser('${u.UserId}','${escapeHtml(u.Name||'')}')" title="Approve">
+            <i class="fa-solid fa-check"></i>
+          </button>
+          <button class="btn-sm btn-danger" onclick="rejectUser('${u.UserId}','${escapeHtml(u.Name||'')}')" title="Reject">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        ` : ''}
+ ── */
     </script>
   </body>
 </html>
