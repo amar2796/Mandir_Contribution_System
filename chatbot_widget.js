@@ -42,7 +42,7 @@
         if (done) return; done = true;
         window[name] = function () { try { delete window[name]; script.remove(); } catch (e) {} };
         cb(new Error("timeout"), null);
-      }, 12000);
+      }, 25000);
       script.onerror = function () {
         if (done) return; done = true;
         clearTimeout(timer);
@@ -56,11 +56,12 @@
     /* ── LOAD CHATBOT CONFIG ── */
     function _loadConfig(cb) {
       var now = Date.now();
-      if (_botConfig && (now - _botConfigTime) < 300000) { cb(_botConfig); return; }
-      var apiUrl = (window.API_URL || "");
+      if (_botConfig && (now - _botConfigTime) < 30000) { cb(_botConfig); return; }
+      // Use typeof to access const API_URL (const does NOT attach to window)
+      var apiUrl = (typeof API_URL !== "undefined" ? API_URL : "") || (window.API_URL || "");
       if (!apiUrl) { _botConfig = {}; cb(_botConfig); return; }
       _fetchJSON(apiUrl + "?action=getChatbotConfig", function (err, data) {
-        if (!err && data) { _botConfig = data; _botConfigTime = Date.now(); }
+        if (!err && data && !data.error) { _botConfig = data; _botConfigTime = Date.now(); }
         else { _botConfig = {}; }
         cb(_botConfig);
       });
@@ -262,14 +263,18 @@
       document.getElementById("_mbotUnread").style.display = "none";
       var win = document.getElementById("_mbotWin");
       win.classList.add("_show");
-      // Load config and start if first open
       var msgs = document.getElementById("_mbotMsgs");
       if (msgs.children.length === 0) {
+        // Force fresh config load (bust cache) to pick up latest admin settings
+        _botConfig = null;
         _showTyping();
         _loadConfig(function (cfg) {
           _removeTyping();
           if (String(cfg.enabled || "1") === "0") {
-            _addBotMsg("Chatbot is currently unavailable. Please contact the temple directly.");
+            // Admin disabled after page load — close and hide button
+            window._mbotClose();
+            var btn = document.getElementById("_mbotBtn");
+            if (btn) btn.style.display = "none";
             return;
           }
           _addBotMsg(_t("welcome") || "Jai Shree Ram! How can I help you?");
@@ -541,9 +546,11 @@
     /* ══════════════ INIT ══════════════ */
     function _init() {
       _injectCSS();
-      _buildDOM();
-      // Pre-load config silently so first open is instant
-      _loadConfig(function () {});
+      // Pre-load config first — only render button if chatbot is enabled
+      _loadConfig(function (cfg) {
+        if (String(cfg.enabled || "1") === "0") return; // disabled — render nothing
+        _buildDOM();
+      });
     }
   
     if (document.readyState === "loading") {

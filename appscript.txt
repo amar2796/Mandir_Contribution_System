@@ -555,6 +555,10 @@ function doGet(e) {
     let user = users.find(u => String(u.Mobile) === mobile && String(u.Password) === pwdHash);
     if (!user) {
       result = { status: "fail" };
+    } else if (String(user.Status||"").toLowerCase() === "pending") {
+      result = { status: "pending", message: "Your registration is pending admin approval. You will receive an email once approved." };
+    } else if (String(user.Status||"").toLowerCase() === "rejected") {
+      result = { status: "error", message: "Your registration was not approved. Please contact the temple admin." };
     } else if (user.Status === "Inactive") {
       result = { status: "error", message: "Account is deactivated. Please contact admin." };
     } else {
@@ -1192,6 +1196,7 @@ function doGet(e) {
   else if (action === "saveAnnouncement")       { result = _saveAnnouncement(e); }
   else if (action === "clearAnnouncement")      { result = _clearAnnouncement(e); }
   else if (action === "saveBroadcast")          { result = _saveBroadcast(e); }
+
   else { result = { error: "Invalid action: " + action }; }
 
   return ContentService
@@ -1744,8 +1749,6 @@ function rejectUser(params) {
  
     const data    = sheet.getDataRange().getValues();
     const headers = data[0];
-    const statusIdx = headers.indexOf("Status");
-    if (statusIdx === -1) return { status: "error", message: "Status column not found." };
  
     let userRow = -1;
     let userObj = {};
@@ -1757,12 +1760,8 @@ function rejectUser(params) {
       }
     }
     if (userRow === -1) return { status: "error", message: "User not found." };
- 
-    sheet.getRange(userRow, statusIdx + 1).setValue("Rejected");
-    SpreadsheetApp.flush();
-    logAction(adminName, "Reject User", "UserId: " + userId + " | Name: " + userObj.Name + (reason ? " | Reason: " + reason : ""));
- 
-    // Send rejection email
+
+    // Send rejection email BEFORE deleting row (need user data)
     const toEmail = String(userObj.Email || "").trim();
     if (toEmail && canSendEmail()) {
       try {
@@ -1774,6 +1773,11 @@ function rejectUser(params) {
         incrementEmailCount();
       } catch(mailErr) { Logger.log("Rejection email error: " + mailErr); }
     }
+
+    // DELETE the row from sheet
+    sheet.deleteRow(userRow);
+    SpreadsheetApp.flush();
+    logAction(adminName, "Reject & Delete User", "UserId: " + userId + " | Name: " + userObj.Name + (reason ? " | Reason: " + reason : ""));
  
     return { status: "success" };
   } catch(e) { return { status: "error", message: e.message }; }

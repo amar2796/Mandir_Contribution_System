@@ -4039,6 +4039,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
           loadOccasions();
           render();
           renderUsers();
+          updateUserTabCounts(users);
           renderTypes();
           renderOccasions();
           renderExpenseTypes();
@@ -4523,44 +4524,52 @@ tr.row-rejected td { background: #fff5f5 !important; }
 
       /* ── RENDER USERS — view-only rows ── */
       function renderUsers() {
-        let sv = (
-          document.getElementById("userSearchInput")?.value || ""
-        ).toLowerCase();
-        document.getElementById("userTable").innerHTML = users
-          .filter(
-            (u) =>
-              u.Name.toLowerCase().includes(sv) ||
-              String(u.Mobile || "").includes(sv)
-          )
-          .map(
-            (u) => `
-      <tr onclick="viewUser('${u.UserId}')" title="Click to view details">
-        <td onclick="event.stopPropagation();openEditUser('${
-          u.UserId
-        }')" title="Click to edit user" style="cursor:pointer;"><img src="${
-              u.PhotoURL ? escapeHtml(u.PhotoURL) : ""
-            }" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23f7a01a\'/></svg>'" width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;"/></td>
-        <td><b>${escapeHtml(u.Name)}</b></td>
-        <td>${escapeHtml(String(u.Mobile || ""))}</td>
-        <td><span class="badge ${
-          u.Role === "Admin" ? "badge-red" : "badge-green"
-        }">${u.Role}</span></td>
-        <td><span class="badge ${
-          u.Status === "Active" ? "badge-green" : "badge-red"
-        }">${u.Status || "Active"}</span></td>
-        <td onclick="event.stopPropagation()">
-          <div class="action-btns">
-            <button class="btn-sm" onclick="openEditUser('${
-              u.UserId
-            }')"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn-sm btn-danger" onclick="deleteUser('${
-              u.UserId
-            }')"><i class="fa-solid fa-trash"></i></button>
-          </div>
+        let sv = (document.getElementById("userSearchInput")?.value || "").toLowerCase();
+        // Apply status filter from tabs
+        let filtered = users.filter(u => {
+          const matchSearch = (u.Name||"").toLowerCase().includes(sv) || String(u.Mobile||"").includes(sv);
+          if (!matchSearch) return false;
+          if (!window._userFilterStatus || window._userFilterStatus === "all") return true;
+          return String(u.Status||"Active").toLowerCase() === window._userFilterStatus;
+        });
+        // Update tab counts on every render
+        updateUserTabCounts(users);
+        const statusBadge = (u) => {
+          const st = String(u.Status||"Active").toLowerCase();
+          if (st === "pending")  return `<span class="badge" style="background:#fff3e0;color:#e67e22;border:1px solid #f7a01a;">Pending</span>`;
+          if (st === "active")   return `<span class="badge badge-green">Active</span>`;
+          if (st === "rejected") return `<span class="badge badge-red">Rejected</span>`;
+          if (st === "inactive") return `<span class="badge badge-red">Inactive</span>`;
+          return `<span class="badge badge-green">${escapeHtml(u.Status||"Active")}</span>`;
+        };
+        document.getElementById("userTable").innerHTML = filtered.map(u => {
+          const st = String(u.Status||"Active").toLowerCase();
+          const isPending = st === "pending";
+          const rowClass = isPending ? "row-pending" : st === "rejected" ? "row-rejected" : "";
+          const approveRejectBtns = isPending ? `
+            <button class="btn-sm btn-green" onclick="event.stopPropagation();approveUser('${u.UserId}','${escapeHtml(u.Name||'')}')" title="Approve Registration" style="background:#27ae60;">
+              <i class="fa-solid fa-check"></i> Approve
+            </button>
+            <button class="btn-sm btn-danger" onclick="event.stopPropagation();rejectUser('${u.UserId}','${escapeHtml(u.Name||'')}')" title="Reject Registration">
+              <i class="fa-solid fa-xmark"></i> Reject
+            </button>` : `
+            <button class="btn-sm" onclick="event.stopPropagation();openEditUser('${u.UserId}')"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-sm btn-danger" onclick="event.stopPropagation();deleteUser('${u.UserId}')"><i class="fa-solid fa-trash"></i></button>`;
+          return `
+      <tr class="${rowClass}" onclick="viewUser('${u.UserId}')" title="Click to view details">
+        <td onclick="event.stopPropagation();openEditUser('${u.UserId}')" title="Click to edit user" style="cursor:pointer;">
+          <img src="${u.PhotoURL ? escapeHtml(u.PhotoURL) : ""}" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23f7a01a\'/></svg>'"
+               width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;"/>
         </td>
-      </tr>`
-          )
-          .join("");
+        <td><b>${escapeHtml(u.Name||"")}</b></td>
+        <td>${escapeHtml(String(u.Mobile||""))}</td>
+        <td><span class="badge ${u.Role==="Admin"?"badge-red":"badge-green"}">${u.Role||"User"}</span></td>
+        <td>${statusBadge(u)}</td>
+        <td onclick="event.stopPropagation()">
+          <div class="action-btns">${approveRejectBtns}</div>
+        </td>
+      </tr>`;
+        }).join("");
       }
 
       function viewUser(id) {
@@ -6536,10 +6545,10 @@ tr.row-rejected td { background: #fff5f5 !important; }
 var _userFilterStatus = "all";
  
  function filterUsers(status, tabEl) {
-   _userFilterStatus = status;
+   window._userFilterStatus = status;
    document.querySelectorAll(".status-tab").forEach(t => t.classList.remove("active"));
    if (tabEl) tabEl.classList.add("active");
-   renderUsersTable();
+   renderUsers();
  }
   
  /* ── Update tab counts + sidebar badge ── */
@@ -6693,56 +6702,16 @@ var _userFilterStatus = "all";
      });
  }
   
- /* ── Load chatbot settings when page shown ── */
- const _origShowPage = typeof showPage !== "undefined" ? showPage : null;
- // Hook into showPage for chatbot settings auto-load
- // Find your existing showPage function in admin.html and add this inside it:
- //   if (pageId === "chatbotPage") loadChatbotSettings();
- // OR add this after your showPage function definition:
+ /* ── Hook showPage to auto-load chatbot settings ── */
  document.addEventListener("DOMContentLoaded", function () {
-   // Hook: auto-load chatbot settings when chatbot page opens
-   const tabs = document.querySelectorAll("[onclick*=\"'chatbotPage'\"]");
-   tabs.forEach(t => {
-     const orig = t.getAttribute("onclick");
-     t.setAttribute("onclick", orig + ";loadChatbotSettings();");
-   });
-   // Load pending count on startup
-   getData("getPendingCount").then(r => {
-     if (r && r.count) {
-       const badge = document.getElementById("pendingBadge");
-       if (badge) {
-         badge.textContent = r.count;
-         badge.classList.toggle("show", r.count > 0);
-       }
-     }
-   }).catch(() => {});
+   if (typeof showPage === "function") {
+     var _spOrig = showPage;
+     window.showPage = function (id, el) {
+       _spOrig(id, el);
+       if (id === "chatbotPage") loadChatbotSettings();
+     };
+   }
  });
-  
- /* ── IMPORTANT: After data loads (in your existing loadData/getAllData callback),
-    add this ONE line to update the tab counts:
-        updateUserTabCounts(_users);   // where _users is your users array
-    
-    AND modify your existing users render to filter by status:
-    In your renderUsers / displayUsers function, filter like this:
-        let filtered = _users;
-        if (_userFilterStatus && _userFilterStatus !== "all") {
-          filtered = _users.filter(u => String(u.Status||"Active").toLowerCase() === _userFilterStatus);
-        }
-    Then render 'filtered' instead of '_users'.
-    
-    AND in the users table rows HTML, add class for visual highlight:
-        class="${String(u.Status||'').toLowerCase() === 'pending' ? 'row-pending' : String(u.Status||'').toLowerCase() === 'rejected' ? 'row-rejected' : ''}"
-    
-    AND in your user action buttons, add Approve/Reject for Pending users:
-        ${String(u.Status||'').toLowerCase() === 'pending' ? `
-          <button class="btn-sm btn-green" onclick="approveUser('${u.UserId}','${escapeHtml(u.Name||'')}')" title="Approve">
-            <i class="fa-solid fa-check"></i>
-          </button>
-          <button class="btn-sm btn-danger" onclick="rejectUser('${u.UserId}','${escapeHtml(u.Name||'')}')" title="Reject">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        ` : ''}
- ── */
     </script>
   </body>
 </html>

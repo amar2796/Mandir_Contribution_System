@@ -952,7 +952,7 @@
       }
       .cs-cta a:hover { color: #ffd585; border-color: rgba(255,213,133,0.6); }
 
-      /* ══ FEEDBACK SECTION — FIX #1 ══ */
+      /* ══ FEEDBACK SECTION — Map Left + Form Right ══ */
       .feedback-section {
         padding: 60px 20px;
         background: linear-gradient(135deg, #fff8ed 0%, #fdf4e3 100%);
@@ -963,20 +963,68 @@
         color: #946c44;
         margin-bottom: 8px;
       }
-      .feedback-section p {
+      .feedback-section > p {
         color: #666;
-        margin-bottom: 30px;
+        margin-bottom: 36px;
         font-size: 1rem;
       }
-      .feedback-form {
-        max-width: 560px;
+      /* Two-column layout */
+      .feedback-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        max-width: 1100px;
         margin: 0 auto;
+        text-align: left;
+        align-items: start;
+      }
+      /* Map side */
+      .feedback-map-side {
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(148,108,68,0.15);
+        border: 1.5px solid rgba(247,160,26,0.22);
+        height: 100%;
+        min-height: 420px;
+        display: flex;
+        flex-direction: column;
+      }
+      .feedback-map-header {
+        background: linear-gradient(135deg, #f7a01a, #d35400);
+        color: white;
+        padding: 14px 20px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .feedback-map-side iframe {
+        flex: 1;
+        width: 100%;
+        border: none;
+        display: block;
+        min-height: 370px;
+      }
+      /* Form side */
+      .feedback-form {
         background: white;
         border-radius: 18px;
         box-shadow: 0 10px 40px rgba(148, 108, 68, 0.12);
         padding: 32px 28px;
         text-align: left;
       }
+      .feedback-form-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #3c1a00;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .feedback-form-title i { color: #f7a01a; }
       .feedback-form label {
         display: block;
         font-size: 12px;
@@ -1063,6 +1111,11 @@
         margin: 0;
         font-size: 0.95rem;
         line-height: 1.6;
+      }
+      @media (max-width: 800px) {
+        .feedback-layout { grid-template-columns: 1fr; }
+        .feedback-map-side { min-height: 280px; }
+        .feedback-map-side iframe { min-height: 260px; }
       }
 
       /* FOOTER */
@@ -1197,6 +1250,363 @@
           top: 52px;
         }
       }
+
+      /* ══ OUR MEMBERS SECTION — Dark Cinematic ══ */
+      .members-section {
+        padding: 72px 24px 80px;
+        /* Matches project's dark warm-brown palette (same family as community-stats) */
+        background: linear-gradient(180deg, #1e0a00 0%, #2a0f00 40%, #3c1a00 70%, #2a0f00 100%);
+        position: relative;
+        overflow: hidden;
+      }
+      /* Top gold separator line — consistent with community-stats */
+      .members-section::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, transparent 0%, #f7a01a 30%, #ffd585 50%, #f7a01a 70%, transparent 100%);
+      }
+      .members-section::after {
+        content: '';
+        position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(247,160,26,0.4) 50%, transparent 100%);
+      }
+      /* Ambient glow blobs */
+      .members-section-bg {
+        position: absolute; inset: 0; pointer-events: none;
+        background-image:
+          radial-gradient(ellipse 55% 40% at 10% 50%, rgba(99,60,200,0.10) 0%, transparent 65%),
+          radial-gradient(ellipse 55% 40% at 90% 50%, rgba(211,84,0,0.10) 0%, transparent 65%),
+          radial-gradient(ellipse 70% 35% at 50% 100%, rgba(247,160,26,0.06) 0%, transparent 60%);
+      }
+      /* ── Header ── */
+      .members-header {
+        margin-bottom: 44px;
+        position: relative; z-index: 1;
+        text-align: center;
+      }
+      .members-eyebrow {
+        display: inline-flex !important;
+        display: inline-flex; align-items: center; gap: 8px;
+        background: rgba(247,160,26,0.09);
+        border: 1px solid rgba(247,160,26,0.32);
+        border-radius: 20px; padding: 5px 18px;
+        font-size: 11px; font-weight: 700;
+        color: #f7c35a; letter-spacing: 1.2px;
+        text-transform: uppercase; margin-bottom: 16px;
+      }
+      .members-eyebrow i { color: #f7a01a; font-size: 10px; }
+      .members-title {
+        font-size: 2.3rem; font-weight: 700;
+        color: #fff; margin: 0 0 12px;
+        line-height: 1.2; text-align: center;
+      }
+      .members-title span {
+        background: linear-gradient(135deg, #f7a01a, #ffd585);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .members-subtitle {
+        color: rgba(247,200,130,0.6);
+        font-size: 1rem; max-width: 520px;
+        margin: 0 auto; line-height: 1.65;
+      }
+      .members-header-top {
+        display: flex; align-items: center;
+        justify-content: center; gap: 24px;
+        flex-wrap: wrap; flex-direction: column;
+      }
+      .members-header-left {
+        flex: 1; min-width: 0;
+        text-align: center; width: 100%;
+      }
+      .members-nav {
+        display: flex; gap: 10px;
+        align-items: center; justify-content: center;
+        padding-top: 0; flex-shrink: 0; margin-top: 8px;
+      }
+      /* ── Slider track ── */
+      .member-slider-track {
+        overflow: hidden; position: relative;
+        max-width: 880px; margin: 0 auto;
+      }
+      @keyframes memberSlideLeft {
+        0%,18%  { transform: translateX(0); opacity: 1; }
+        28%     { transform: translateX(-60px); opacity: 0; }
+        30%     { transform: translateX(60px); opacity: 0; }
+        40%,100%{ transform: translateX(0); opacity: 1; }
+      }
+      .members-nav-btn {
+        width: 44px; height: 44px; border-radius: 50%;
+        border: 1.5px solid rgba(247,160,26,0.40);
+        background: rgba(247,160,26,0.07);
+        color: #f7c35a; font-size: 0.85rem;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.25s;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+      }
+      .members-nav-btn:hover {
+        background: linear-gradient(135deg, #f7a01a, #d35400);
+        color: white; border-color: #f7a01a;
+        transform: scale(1.08);
+        box-shadow: 0 4px 20px rgba(247,160,26,0.5);
+      }
+
+      /* ══ MEMBER CARD — Dark Cinematic ══ */
+      .member-card {
+        display: none;
+        max-width: 880px; margin: 0 auto;
+        background: linear-gradient(135deg, #2e1200 0%, #3c1a00 50%, #2a0f00 100%);
+        border: 1px solid rgba(247,160,26,0.20);
+        border-radius: 24px; overflow: hidden;
+        box-shadow:
+          0 0 0 1px rgba(247,160,26,0.07),
+          0 20px 70px rgba(0,0,0,0.55),
+          inset 0 1px 0 rgba(255,255,255,0.04);
+        position: relative;
+      }
+      /* Top shimmer line */
+      .member-card::before {
+        content: '';
+        position: absolute; top: 0; left: 8%; right: 8%; height: 2px;
+        background: linear-gradient(90deg, transparent, #f7a01a 25%, #ffd585 50%, #f7a01a 75%, transparent);
+        border-radius: 2px; z-index: 10;
+      }
+      /* Inner ambient glow */
+      .member-card::after {
+        content: '';
+        position: absolute; inset: 0; border-radius: 24px;
+        background:
+          radial-gradient(ellipse 50% 60% at 0% 50%, rgba(99,60,200,0.08) 0%, transparent 60%),
+          radial-gradient(ellipse 40% 50% at 100% 50%, rgba(247,120,0,0.07) 0%, transparent 60%);
+        pointer-events: none; z-index: 0;
+      }
+      .member-card.active {
+        display: flex;
+        animation: memberSlideIn 0.55s cubic-bezier(.34,1.4,.64,1) both;
+      }
+      @keyframes memberSlideIn {
+        from { opacity: 0; transform: translateX(70px) scale(0.97); }
+        to   { opacity: 1; transform: translateX(0) scale(1); }
+      }
+      .member-card.slide-out {
+        display: flex;
+        animation: memberSlideOut 0.3s ease forwards;
+        pointer-events: none;
+      }
+      @keyframes memberSlideOut {
+        from { opacity: 1; transform: translateX(0); }
+        to   { opacity: 0; transform: translateX(-70px); }
+      }
+
+      /* ── Photo side ── */
+      .member-photo-side {
+        flex: 0 0 300px;
+        background: linear-gradient(170deg, #1a0800 0%, #2a0f00 50%, #160600 100%);
+        display: flex; align-items: flex-end; justify-content: center;
+        position: relative; overflow: hidden;
+        min-height: 360px; z-index: 1;
+      }
+      /* Purple glowing circle — LoveBabbar signature */
+      .member-photo-side::before {
+        content: '';
+        position: absolute;
+        bottom: -50px; left: 50%; transform: translateX(-50%);
+        width: 300px; height: 300px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(99,60,200,0.52) 0%, rgba(60,20,150,0.28) 45%, transparent 72%);
+        border: 1.5px solid rgba(120,80,240,0.42);
+        z-index: 1;
+      }
+      /* Outer ring */
+      .member-photo-side::after {
+        content: '';
+        position: absolute;
+        bottom: -75px; left: 50%; transform: translateX(-50%);
+        width: 380px; height: 380px; border-radius: 50%;
+        border: 1px solid rgba(120,80,240,0.16);
+        z-index: 1;
+      }
+      .member-photo-side img.member-avatar {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover; object-position: center top;
+        border-radius: 0; margin: 0; z-index: 2;
+      }
+      .member-avatar {
+        position: absolute; z-index: 2; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover; object-position: center top;
+        border-radius: 0; margin: 0; display: block;
+      }
+      .member-avatar-placeholder {
+        position: relative; z-index: 3;
+        width: 180px; height: 180px; border-radius: 50%;
+        border: 2px solid rgba(120,80,240,0.55);
+        box-shadow: 0 0 0 6px rgba(99,60,200,0.14), 0 0 40px rgba(99,60,200,0.32), 0 12px 40px rgba(0,0,0,0.5);
+        margin-bottom: 32px;
+        background: linear-gradient(160deg, #1e0e40, #2a0f00);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 4.5rem;
+      }
+      /* Right-edge fade to blend into info panel */
+      .member-photo-side .photo-edge-fade {
+        position: absolute; top: 0; right: 0; bottom: 0; width: 55px;
+        background: linear-gradient(to right, transparent, rgba(46,18,0,0.75));
+        z-index: 4; pointer-events: none;
+      }
+      /* ── Info side ── */
+      .member-info-side {
+        flex: 1; padding: 44px 44px 40px;
+        display: flex; flex-direction: column; justify-content: center;
+        position: relative; z-index: 1;
+      }
+      .member-role-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(247,160,26,0.09);
+        border: 1px solid rgba(247,160,26,0.30);
+        border-radius: 20px; padding: 5px 16px;
+        font-size: 11px; font-weight: 700;
+        color: #f7c35a; letter-spacing: 0.8px;
+        text-transform: uppercase; margin-bottom: 16px;
+        width: fit-content;
+      }
+      .member-role-badge i { color: #f7a01a; }
+      .member-name {
+        font-size: 2rem; font-weight: 700;
+        color: #fff; margin: 0 0 6px; line-height: 1.15;
+        text-shadow: 0 2px 20px rgba(247,160,26,0.12);
+      }
+      .member-title {
+        font-size: 0.92rem; font-weight: 500;
+        color: rgba(247,190,100,0.62); margin: 0 0 24px;
+      }
+      .member-divider {
+        height: 1px;
+        background: linear-gradient(90deg, rgba(247,160,26,0.38), rgba(120,80,240,0.18), transparent);
+        margin-bottom: 24px;
+      }
+      .member-bio {
+        font-size: 0.95rem;
+        color: rgba(255,230,180,0.70);
+        line-height: 1.82;
+      }
+      .member-bio strong { color: #ffd585; font-weight: 700; }
+      /* Dot indicators */
+      .member-dots {
+        display: flex; gap: 8px;
+        justify-content: center; margin-top: 32px;
+      }
+      .member-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: rgba(247,160,26,0.18);
+        border: 1.5px solid rgba(247,160,26,0.32);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+      }
+      .member-dot.active {
+        background: linear-gradient(135deg, #f7a01a, #d35400);
+        width: 26px; border-radius: 4px;
+        border-color: #f7a01a;
+        box-shadow: 0 0 10px rgba(247,160,26,0.5);
+      }
+
+      /* ══ MOBILE — Tablet (≤760px) ══ */
+      @media (max-width: 760px) {
+        .members-section { padding: 52px 16px 60px; }
+        .members-header { margin-bottom: 28px; }
+        .members-title { font-size: 1.8rem; }
+        .members-subtitle { font-size: 0.9rem; }
+        .members-header-top { flex-direction: column; gap: 12px; }
+        .members-nav { margin-top: 4px; }
+        .members-nav-btn { width: 40px; height: 40px; }
+
+        /* Stack card vertically */
+        .member-card.active {
+          flex-direction: column;
+          border-radius: 20px;
+        }
+
+        /* Photo on top — portrait style with centered glow */
+        .member-photo-side {
+          flex: none;
+          width: 100%;
+          height: 280px;
+          min-height: unset;
+          align-items: center;
+          justify-content: center;
+          border-radius: 0;
+        }
+        /* Reposition glow circle to center for portrait */
+        .member-photo-side::before {
+          bottom: -40px; left: 50%;
+          width: 260px; height: 260px;
+        }
+        .member-photo-side::after {
+          bottom: -65px; left: 50%;
+          width: 330px; height: 330px;
+        }
+        /* Bottom fade instead of right-edge on mobile */
+        .member-photo-side .photo-edge-fade {
+          top: auto; right: 0; left: 0; bottom: 0;
+          width: 100%; height: 70px;
+          background: linear-gradient(to bottom, transparent, rgba(46,18,0,0.85));
+        }
+        .member-photo-side img.member-avatar {
+          object-position: center top;
+        }
+        .member-avatar-placeholder {
+          width: 140px; height: 140px;
+          font-size: 3.2rem; margin-bottom: 0;
+          box-shadow: 0 0 0 5px rgba(99,60,200,0.12), 0 0 30px rgba(99,60,200,0.28);
+        }
+
+        /* Info panel below photo */
+        .member-info-side {
+          padding: 24px 22px 28px;
+        }
+        .member-role-badge {
+          font-size: 10px; padding: 4px 12px; margin-bottom: 10px;
+        }
+        .member-name { font-size: 1.45rem; margin-bottom: 4px; }
+        .member-title { font-size: 0.83rem; margin-bottom: 16px; }
+        .member-divider { margin-bottom: 16px; }
+        .member-bio { font-size: 0.88rem; line-height: 1.75; }
+        .member-dots { margin-top: 22px; }
+      }
+
+      /* ══ MOBILE — Small phones (≤480px) ══ */
+      @media (max-width: 480px) {
+        .members-section { padding: 44px 12px 52px; }
+        .members-title { font-size: 1.55rem; }
+        .members-eyebrow { font-size: 10px; padding: 4px 14px; }
+        .members-subtitle { font-size: 0.85rem; }
+
+        .member-photo-side { height: 240px; }
+        .member-photo-side::before { width: 220px; height: 220px; }
+        .member-photo-side::after  { width: 280px; height: 280px; }
+        .member-avatar-placeholder {
+          width: 120px; height: 120px; font-size: 2.8rem;
+        }
+
+        .member-info-side { padding: 20px 16px 24px; }
+        .member-name { font-size: 1.3rem; }
+        .member-title { font-size: 0.8rem; }
+        .member-bio { font-size: 0.85rem; }
+
+        /* Make dots slightly bigger for touch */
+        .member-dot { width: 10px; height: 10px; }
+        .member-dot.active { width: 28px; }
+        .members-nav-btn { width: 38px; height: 38px; font-size: 0.8rem; }
+      }
+
+      /* ══ MOBILE — Very small (≤360px) ══ */
+      @media (max-width: 360px) {
+        .members-section { padding: 36px 10px 44px; }
+        .member-photo-side { height: 210px; }
+        .member-info-side { padding: 18px 14px 20px; }
+        .member-name { font-size: 1.15rem; }
+      }
     </style>
   </head>
   <body>
@@ -1294,6 +1704,99 @@
         expenses, and maintain the yearly financial balance in a highly secure
         and transparent manner.
       </p>
+    </div>
+
+    <!-- ══ OUR MEMBERS SECTION ══ -->
+    <div class="members-section reveal" id="membersSection">
+      <div class="members-section-bg"></div>
+
+      <div class="members-header">
+        <div class="members-header-top">
+          <div class="members-header-left">
+            <div class="members-eyebrow">
+              <i class="fa-solid fa-om"></i> हमारे सदस्य
+            </div>
+            <h2 class="members-title">Our <span>Mandir Members</span></h2>
+            <p class="members-subtitle">
+              The devoted souls who uphold the spirit of Shree Hanuman Mandir — serving the community with faith, love, and dedication.
+            </p>
+          </div>
+          <div class="members-nav">
+            <button class="members-nav-btn" onclick="memberNav(-1);resetMemberAutoplay();" aria-label="Previous">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button class="members-nav-btn" onclick="memberNav(1);resetMemberAutoplay();" aria-label="Next">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Member 1 -->
+      <div class="member-card active" id="memberCard0">
+        <div class="member-photo-side">
+          <img class="member-avatar" src="Image/AmarjeetPic.jpeg" alt="Amarjeet" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="member-avatar-placeholder" style="display:none;">🕉️</div>
+          <div class="photo-edge-fade"></div>
+        </div>
+        <div class="member-info-side">
+          <div class="member-role-badge">
+            <i class="fa-solid fa-crown"></i> मुख्य पुजारी
+          </div>
+          <h3 class="member-name">पं. राम प्रसाद शर्मा</h3>
+          <p class="member-title">Head Priest · Shree Hanuman Mandir, Paliya</p>
+          <div class="member-divider"></div>
+          <p class="member-bio">
+            पं. राम प्रसाद शर्मा जी <strong>30 वर्षों</strong> से अधिक समय से मंदिर में पूजा-अर्चना का कार्य संभाल रहे हैं। वे <strong>वैदिक अनुष्ठानों</strong> के विशेषज्ञ हैं और समुदाय में बेहद सम्मानित हैं। उनके मार्गदर्शन में मंदिर ने <strong>अनेक यज्ञ एवं धार्मिक कार्यक्रम</strong> सफलतापूर्वक आयोजित किए हैं।
+          </p>
+        </div>
+      </div>
+
+      <!-- Member 2 -->
+      <div class="member-card" id="memberCard1">
+        <div class="member-photo-side">
+          <img class="member-avatar" src="Image/Vinod_Pic.jpeg" alt="Vinod Kumar Vishwakarma" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="member-avatar-placeholder" style="display:none;">🪔</div>
+          <div class="photo-edge-fade"></div>
+        </div>
+        <div class="member-info-side">
+          <div class="member-role-badge">
+            <i class="fa-solid fa-star"></i> सचिव
+          </div>
+          <h3 class="member-name">श्री विनोद कुमार विश्वकर्मा</h3>
+          <p class="member-title">Secretary · Ram Yagya Vishwakarma Committee</p>
+          <div class="member-divider"></div>
+          <p class="member-bio">
+            श्री विनोद कुमार जी मंदिर प्रबंधन एवं <strong>सामुदायिक सेवा</strong> में अग्रणी भूमिका निभाते हैं। उन्होंने <strong>राम यज्ञ विश्वकर्मा</strong> समिति की नींव रखने में महत्वपूर्ण योगदान दिया है। उनके नेतृत्व में <strong>500+ परिवार</strong> मंदिर से जुड़ चुके हैं।
+          </p>
+        </div>
+      </div>
+
+      <!-- Member 3 -->
+      <div class="member-card" id="memberCard2">
+        <div class="member-photo-side">
+          <div class="member-avatar-placeholder">🙏</div>
+          <div class="photo-edge-fade"></div>
+        </div>
+        <div class="member-info-side">
+          <div class="member-role-badge">
+            <i class="fa-solid fa-hands-praying"></i> कोषाध्यक्ष
+          </div>
+          <h3 class="member-name">श्री सुरेश चंद्र पाठक</h3>
+          <p class="member-title">Treasurer · Shree Hanuman Mandir Trust</p>
+          <div class="member-divider"></div>
+          <p class="member-bio">
+            श्री सुरेश चंद्र जी मंदिर की <strong>वित्तीय पारदर्शिता</strong> सुनिश्चित करते हैं। उनकी देखरेख में सभी दान एवं व्यय का लेखा-जोखा पूरी ईमानदारी से रखा जाता है। वे <strong>15 वर्षों</strong> से मंदिर सेवा में समर्पित हैं और <strong>डिजिटल मंदिर प्रणाली</strong> के प्रमुख समर्थक हैं।
+          </p>
+        </div>
+      </div>
+
+      <!-- Dot indicators -->
+      <div class="member-dots">
+        <div class="member-dot active" onclick="memberGoTo(0);resetMemberAutoplay();"></div>
+        <div class="member-dot" onclick="memberGoTo(1);resetMemberAutoplay();"></div>
+        <div class="member-dot" onclick="memberGoTo(2);resetMemberAutoplay();"></div>
+      </div>
     </div>
 
     <div class="section reveal" id="features">
@@ -1394,55 +1897,64 @@
 
     </div>
 
-    <!-- FIX #1 & #3: Feedback Section -->
+    <!-- Feedback Section: Map Left + Form Right -->
     <div class="feedback-section reveal" id="feedbackSection">
       <h2>
-        <i
-          class="fa-solid fa-comment-dots"
-          style="color: #f7a01a; margin-right: 8px"
-        ></i>
+        <i class="fa-solid fa-comment-dots" style="color: #f7a01a; margin-right: 8px"></i>
         Share Your Feedback
       </h2>
       <p>Your suggestions help us improve the Mandir system for everyone. 🙏</p>
-      <div class="feedback-form" id="feedbackFormBox">
-        <div class="form-row2">
-          <div>
-            <label>Full Name <span style="color: #e74c3c">*</span></label>
-            <input id="fb_name" placeholder="Your full name" />
+
+      <div class="feedback-layout">
+
+        <!-- LEFT: Google Map -->
+        <div class="feedback-map-side">
+          <div class="feedback-map-header">
+            <i class="fa-solid fa-location-dot"></i>
+            Shree Hanuman Mandir, Paliya — Find Us Here
           </div>
-          <div>
-            <label>Mobile Number <span style="color: #e74c3c">*</span></label>
-            <input
-              id="fb_mobile"
-              placeholder="10-digit mobile"
-              maxlength="15"
-            />
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3559.123456789!2d80.7!3d27.0!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sShree+Hanuman+Mandir+Paliya!5e0!3m2!1sen!2sin!4v1234567890"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Shree Hanuman Mandir Location">
+          </iframe>
+        </div>
+
+        <!-- RIGHT: Feedback Form -->
+        <div class="feedback-form" id="feedbackFormBox">
+          <div class="feedback-form-title">
+            <i class="fa-solid fa-paper-plane"></i> Send Us Your Message
+          </div>
+          <div class="form-row2">
+            <div>
+              <label>Full Name <span style="color: #e74c3c">*</span></label>
+              <input id="fb_name" placeholder="Your full name" />
+            </div>
+            <div>
+              <label>Mobile Number <span style="color: #e74c3c">*</span></label>
+              <input id="fb_mobile" placeholder="10-digit mobile" maxlength="15" />
+            </div>
+          </div>
+          <label>Address</label>
+          <input id="fb_address" placeholder="Village / City" />
+          <label>Your Message / Suggestion <span style="color: #e74c3c">*</span></label>
+          <textarea id="fb_message" placeholder="Share your feedback, ideas or suggestions for improvement..."></textarea>
+          <button class="feedback-submit-btn" onclick="submitFeedback()">
+            <i class="fa-solid fa-paper-plane"></i> &nbsp; Submit Feedback
+          </button>
+          <!-- Thank you message -->
+          <div id="feedbackThanks">
+            <div class="ty-icon">🙏</div>
+            <h3>Thank You for Your Valuable Feedback!</h3>
+            <p>
+              Your message has been received. We deeply appreciate your time and<br />suggestions
+              — they help us serve the Mandir community better.<br /><br /><em>जय श्री राम 🕉️</em>
+            </p>
           </div>
         </div>
-        <label>Address</label>
-        <input id="fb_address" placeholder="Village / City" />
-        <label
-          >Your Message / Suggestion
-          <span style="color: #e74c3c">*</span></label
-        >
-        <textarea
-          id="fb_message"
-          placeholder="Share your feedback, ideas or suggestions for improvement..."
-        ></textarea>
-        <button class="feedback-submit-btn" onclick="submitFeedback()">
-          <i class="fa-solid fa-paper-plane"></i> &nbsp; Submit Feedback
-        </button>
-      </div>
-      <!-- FIX #3: Thank you message shown after submit -->
-      <div id="feedbackThanks">
-        <div class="ty-icon">🙏</div>
-        <h3>Thank You for Your Valuable Feedback!</h3>
-        <p>
-          Your message has been received. We deeply appreciate your time and<br />suggestions
-          — they help us serve the Mandir community better.<br /><br /><em
-            >जय श्री राम 🕉️</em
-          >
-        </p>
+
       </div>
     </div>
 
@@ -1689,6 +2201,40 @@
       document.addEventListener("DOMContentLoaded", loadGallery);
     </script>
     <script>
+      /* ── Members Slider ── */
+      var _memberIdx = 0;
+      var _memberTotal = 3;
+      var _memberAutoplay = null;
+      var _memberAutoplayDelay = 4000;
+
+      function memberGoTo(idx) {
+        var cards = document.querySelectorAll('.member-card');
+        var dots = document.querySelectorAll('.member-dot');
+        var currentCard = cards[_memberIdx];
+        // Add slide-out, then switch
+        currentCard.classList.add('slide-out');
+        setTimeout(function() {
+          currentCard.classList.remove('active');
+          currentCard.classList.remove('slide-out');
+          currentCard.style.display = '';
+          dots[_memberIdx].classList.remove('active');
+          _memberIdx = (idx + _memberTotal) % _memberTotal;
+          cards[_memberIdx].classList.add('active');
+          dots[_memberIdx].classList.add('active');
+        }, 300);
+      }
+      function memberNav(dir) { memberGoTo(_memberIdx + dir); }
+      function resetMemberAutoplay() {
+        clearInterval(_memberAutoplay);
+        _memberAutoplay = setInterval(function(){ memberNav(1); }, _memberAutoplayDelay);
+      }
+      // Start autoplay after page load
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          _memberAutoplay = setInterval(function(){ memberNav(1); }, _memberAutoplayDelay);
+        }, 2500);
+      });
+
       /* Splash */
       window.addEventListener("load", () => {
         setTimeout(() => {
