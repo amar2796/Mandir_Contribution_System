@@ -1422,6 +1422,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
               <h2 id="netBalance" style="color: #f7a01a; font-size: 1.5rem">
                 ₹0
               </h2>
+              <div id="netBalanceBreakdown" style="margin-top:6px;min-height:16px;"></div>
             </div>
           </div>
         </div>
@@ -2859,29 +2860,52 @@ tr.row-rejected td { background: #fff5f5 !important; }
       });
       let _adminSelfCroppedB64 = "";
 
-      function openAdminEditProfile(previewB64, prefillName, prefillEmail) {
+      function openAdminEditProfile() {
         let s = JSON.parse(localStorage.getItem("session"));
-        let myProfile = users.find(
-          (u) => String(u.UserId) === String(s.userId)
-        );
-        let displayName =
-          prefillName !== undefined
-            ? prefillName
-            : myProfile?.Name || s.name || "";
-        let displayEmail =
-          prefillEmail !== undefined
-            ? prefillEmail
-            : myProfile?.Email || s.email || "";
+        let myProfile = users.find((u) => String(u.UserId) === String(s.userId));
+        if (!myProfile) { toast("Profile data not loaded yet.", "warn"); return; }
+        let photoSrc = myProfile.PhotoURL || "";
+        let fb = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
+        if (photoSrc.includes("drive.google.com/uc")) { let m = photoSrc.match(/[?&]id=([^&]+)/); if (m) photoSrc = "https://lh3.googleusercontent.com/d/" + m[1]; }
+        let st = String(myProfile.Status || "Active");
+        let stC = st.toLowerCase() === "active" ? "#22c55e" : st.toLowerCase() === "pending" ? "#f59e0b" : "#ef4444";
+        let html = `
+          <div class="_mhdr"><h3><i class="fa-solid fa-user-shield"></i> Admin Profile</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy" style="padding:0;">
+            <div style="background:linear-gradient(135deg,#141b2d,#334155);padding:26px 20px 20px;text-align:center;">
+              <img src="${escapeHtml(photoSrc)}" onerror="this.src='${fb}'"
+                style="width:82px;height:82px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#eee;display:block;margin:0 auto 10px;box-shadow:0 4px 16px rgba(247,160,26,.35);"/>
+              <div style="color:#f7a01a;font-size:1.05rem;font-weight:700;margin-bottom:8px;">${escapeHtml(myProfile.Name || "—")}</div>
+              <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                <span style="background:${stC};color:#fff;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:700;">${escapeHtml(st)}</span>
+                <span style="background:rgba(255,255,255,.12);color:#94a3b8;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:600;">${escapeHtml(myProfile.Role || "Admin")}</span>
+              </div>
+            </div>
+            <div style="padding:8px 20px 14px;">
+              <div class="_row"><span class="_rl"><i class="fa-solid fa-mobile-screen" style="width:14px;color:#f7a01a;"></i> Mobile</span><span class="_rv">${escapeHtml(String(myProfile.Mobile || "—"))}</span></div>
+              <div class="_row"><span class="_rl"><i class="fa-solid fa-envelope" style="width:14px;color:#f7a01a;"></i> Email</span><span class="_rv" style="word-break:break-all;">${escapeHtml(myProfile.Email || "—")}</span></div>
+              <div class="_row"><span class="_rl"><i class="fa-regular fa-id-badge" style="width:14px;color:#f7a01a;"></i> Admin ID</span><span class="_rv" style="font-family:monospace;font-size:12px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
+            </div>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>
+            <button class="_mbtn" style="background:#f7a01a;" onclick="closeModal();openAdminEditProfileForm()"><i class="fa-solid fa-user-pen"></i> Edit Profile</button>
+          </div>`;
+        openModal(html, "460px");
+      }
+
+      function openAdminEditProfileForm(previewB64, prefillName, prefillEmail) {
+        let s = JSON.parse(localStorage.getItem("session"));
+        let myProfile = users.find((u) => String(u.UserId) === String(s.userId));
+        let displayName = prefillName !== undefined ? prefillName : myProfile?.Name || s.name || "";
+        let displayEmail = prefillEmail !== undefined ? prefillEmail : myProfile?.Email || s.email || "";
         let photoSrc = previewB64 || myProfile?.PhotoURL || "";
-        let fallbackSvg =
-          "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
+        let fallbackSvg = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
         let html = `
           <div class="_mhdr"><h3><i class="fa-solid fa-user-shield"></i> Edit Admin Profile</h3><button class="_mcls" onclick="closeModal()">×</button></div>
           <div class="_mbdy" style="text-align:center;">
             <div style="position:relative;width:88px;margin:0 auto 10px;">
-              <img id="adminPhotoPreview" src="${escapeHtml(
-                photoSrc
-              )}" onerror="this.src='${fallbackSvg}'"
+              <img id="adminPhotoPreview" src="${escapeHtml(photoSrc)}" onerror="this.src='${fallbackSvg}'"
                 style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#faeeda;display:block;margin-bottom:0;box-shadow:0 4px 14px rgba(247,160,26,0.25);"/>
               <div onclick="document.getElementById('adminPhotoFile').click()" style="position:absolute;bottom:2px;right:2px;width:26px;height:26px;background:#f7a01a;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.2);border:2px solid white;" title="Change Photo">
                 <i class="fa-solid fa-camera" style="color:white;font-size:11px;"></i>
@@ -2890,17 +2914,11 @@ tr.row-rejected td { background: #fff5f5 !important; }
             <input type="file" id="adminPhotoFile" accept="image/*" style="display:none;" onchange="handleAdminSelfPhotoSelected(this)"/>
             <div style="text-align:left;margin-top:6px;">
               <label class="_fl">Full Name</label>
-              <input class="_fi" id="asp_name" value="${escapeHtml(
-                displayName
-              )}" placeholder="Your name"/>
+              <input class="_fi" id="asp_name" value="${escapeHtml(displayName)}" placeholder="Your name"/>
               <label class="_fl">Email</label>
-              <input class="_fi" id="asp_email" type="email" value="${escapeHtml(
-                displayEmail
-              )}" placeholder="your@email.com"/>
+              <input class="_fi" id="asp_email" type="email" value="${escapeHtml(displayEmail)}" placeholder="your@email.com"/>
               <label class="_fl">Mobile <span style="color:#bbb;font-weight:400;font-size:10px;">(read-only)</span></label>
-              <input class="_fi" value="${escapeHtml(
-                String(myProfile?.Mobile || "")
-              )}" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;"/>
+              <input class="_fi" value="${escapeHtml(String(myProfile?.Mobile || ""))}" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;"/>
             </div>
           </div>
           <div class="_mft">
@@ -2921,7 +2939,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         let savedEmail = document.getElementById("asp_email")?.value || "";
         openCropModal(file, function (base64) {
           _adminSelfCroppedB64 = base64;
-          openAdminEditProfile(base64, savedName, savedEmail);
+          openAdminEditProfileForm(base64, savedName, savedEmail);
         });
       }
 
@@ -3571,7 +3589,8 @@ tr.row-rejected td { background: #fff5f5 !important; }
         types = [],
         expenseTypes = [],
         occasions = [],
-        expenses = [];
+        expenses = [],
+        yearConfig = [];
       const MONTHS = [
         "January",
         "February",
@@ -3599,11 +3618,33 @@ tr.row-rejected td { background: #fff5f5 !important; }
         document.getElementById("totalContribution").innerText =
           "₹" + fmt(totalC);
         document.getElementById("totalExpense").innerText = "₹" + fmt(totalE);
-        let net = totalC - totalE;
+
+        // Sum all opening balances from YEAR_CONFIG (supports OpeningBalance / Opening_Balance / Balance column names)
+        let totalOpening = yearConfig.reduce((sum, row) => {
+          const val = Number(
+            row.OpeningBalance || row.Opening_Balance || row.opening_balance ||
+            row.Balance || row.balance || 0
+          );
+          return sum + (isNaN(val) ? 0 : val);
+        }, 0);
+
+        let net = totalOpening + totalC - totalE;
         document.getElementById("netBalance").innerText =
           (net < 0 ? "−" : "") + "₹" + fmt(Math.abs(net));
         document.getElementById("netBalance").style.color =
           net >= 0 ? "#27ae60" : "#e74c3c";
+
+        // Show opening balance breakdown hint under the card
+        const breakdownEl = document.getElementById("netBalanceBreakdown");
+        if (breakdownEl) {
+          if (totalOpening > 0) {
+            breakdownEl.innerHTML =
+              `<span style="color:#64748b;font-size:10px;">Opening: <b style="color:#f7a01a;">₹${fmt(totalOpening)}</b> + Contributions − Expenses</span>`;
+          } else {
+            breakdownEl.innerHTML = "";
+          }
+        }
+
         updateSidebarSummary();
       }
 
@@ -4030,6 +4071,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
           data = allData.contributions || [];
           expenses = allData.expenses || [];
           goals = allData.goals || [];
+          yearConfig = allData.yearConfig || [];
           showUser();
           loadMonths();
           loadYears();
@@ -5139,6 +5181,9 @@ tr.row-rejected td { background: #fff5f5 !important; }
             document.getElementById("amount").value = "";
             document.getElementById("note").value = "";
             init();
+            // Refresh dashboard iframe so totals stay in sync
+            const _dfi = document.getElementById("dashboardFrame");
+            if (_dfi && _dfi.src && _dfi.src !== "") _dfi.src = "dashboard.html?" + Date.now();
           } else toast("❌ Failed to add.", "error");
         } catch (err) {
           toast("❌ " + err.message, "error");
@@ -6027,6 +6072,8 @@ tr.row-rejected td { background: #fff5f5 !important; }
             <input class="_fi" id="wi_name" placeholder="e.g. Ramesh Kumar" />
             <label class="_fl">Mobile Number (optional)</label>
             <input class="_fi" id="wi_mobile" placeholder="e.g. 9876543210" maxlength="15" />
+            <label class="_fl">Email <span style="color:#888;font-weight:400;font-size:10px;">(optional — receipt will be sent if provided)</span></label>
+            <input class="_fi" id="wi_email" type="email" placeholder="e.g. donor@email.com" />
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div>
                 <label class="_fl">Amount (₹) <span style="color:#e74c3c">*</span></label>
@@ -6062,6 +6109,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
       async function saveWalkIn() {
         const name = document.getElementById("wi_name").value.trim();
         const mobile = document.getElementById("wi_mobile").value.trim();
+        const email = (document.getElementById("wi_email")?.value || "").trim();
         const amount = document.getElementById("wi_amount").value;
         const year = document.getElementById("wi_year").value;
         const month = document.getElementById("wi_month").value;
@@ -6079,7 +6127,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
           btn.textContent = "Saving...";
         }
         try {
-          let res = await postData({
+          let payload = {
             action: "addContribution",
             Id: "wi_" + Date.now(),
             UserId: walkInUserId,
@@ -6093,10 +6141,18 @@ tr.row-rejected td { background: #fff5f5 !important; }
               "Walk-in: " +
               name +
               (mobile ? " | " + mobile : ""),
-          });
+          };
+          // Only pass email if provided — backend sends receipt only when email present
+          if (email) payload.WalkInEmail = email;
+          let res = await postData(payload);
           if (res.status === "success") {
-            toast("✅ Walk-in entry saved!");
-            // Build a mock contribution object for the receipt
+            let msg = "✅ Walk-in entry saved!";
+            if (email) {
+              if (res.emailSent) msg += " · 📧 Receipt emailed to " + email;
+              else if (res.emailSkipped) msg += " · ⚠️ Email quota reached";
+            }
+            toast(msg);
+            // Build a mock contribution object for the on-screen receipt
             const mockC = {
               ReceiptID: res.receiptId || "TRX-wi" + Date.now(),
               Amount: amount,
@@ -6116,6 +6172,9 @@ tr.row-rejected td { background: #fff5f5 !important; }
             );
             closeModal();
             init();
+            // Refresh dashboard iframe so live summary reflects the new walk-in entry
+            const _df = document.getElementById("dashboardFrame");
+            if (_df && _df.src && _df.src !== "") _df.src = "dashboard.html?" + Date.now();
             setTimeout(
               () =>
                 showReceipt(

@@ -396,9 +396,6 @@
         <button class="qa-btn qa-dark" onclick="shareStatementWhatsApp()">
           <i class="fa-brands fa-whatsapp"></i> WhatsApp
         </button>
-        <button class="qa-btn qa-ghost" onclick="shareStatementEmail()">
-          <i class="fa-solid fa-envelope"></i> Email
-        </button>
       </div>
 
       <!-- GOALS -->
@@ -799,17 +796,6 @@
         const gD=new Date().toLocaleDateString("en-IN"),pL=fM&&fY?`${fM} ${fY}`:fY?`Year ${fY}`:"All Time";
         const msg=`🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n📋 *My Contribution Statement*\n👤 Member: *${s.name}*\n📆 Period: ${pL}\n━━━━━━━━━━━━━━━━━━━━\n${mL}\n━━━━━━━━━━━━━━━━━━━━\n💰 *Total: ₹${fmt(total)}* (${filtered.length} record${filtered.length!==1?"s":""})\n━━━━━━━━━━━━━━━━━━━━\n_System Generated — ${gD}_\n_🙏 Jai Shree Ram_`;
         window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
-      }
-
-      function shareStatementEmail(){
-        let s=JSON.parse(localStorage.getItem("session")),fY=document.getElementById("filterYear").value,fM=document.getElementById("filterMonth").value;
-        let filtered=data.filter(c=>(!fY||String(c.Year)===fY)&&(!fM||c.ForMonth===fM));
-        let total=filtered.reduce((sum,c)=>sum+Number(c.Amount||0),0);
-        const pL=fM&&fY?`${fM} ${fY}`:fY?`Year ${fY}`:"All Time",gD=new Date().toLocaleDateString("en-IN");
-        let rows=filtered.map((c,i)=>{let tN=types.find(t=>String(t.TypeId)===String(c.TypeId))?.TypeName||"Contribution",dR=(c.ReceiptID||"").replace(/^TRX-/,"MNR-");return`  ${i+1}. ${c.ForMonth||"—"} ${c.Year||""} | Rs.${Number(c.Amount||0).toLocaleString("en-IN")} | ${tN} | ${dR}`;}).join("\n")||"  No records found";
-        const subj=encodeURIComponent(`My Contribution Statement — ${pL} — Shree Hanuman Mandir`);
-        const body=encodeURIComponent(`SHREE HANUMAN MANDIR, PALIYA, SULTANPUR\nCONTRIBUTION STATEMENT\n\nMember : ${s.name}\nPeriod : ${pL}\nGenerated : ${gD}\n\nRECORDS:\n${rows}\n\nTOTAL: Rs.${total.toLocaleString("en-IN")} (${filtered.length} record${filtered.length!==1?"s":""})\n\nSystem Generated — Not Manually Signed\nJai Shree Ram 🙏`);
-        window.open(`mailto:?subject=${subj}&body=${body}`,"_blank");
       }
 
       init();
