@@ -952,7 +952,7 @@
       }
       .cs-cta a:hover { color: #ffd585; border-color: rgba(255,213,133,0.6); }
 
-      /* ══ FEEDBACK SECTION — FIX #1 ══ */
+      /* ══ FEEDBACK SECTION — Map Left + Form Right ══ */
       .feedback-section {
         padding: 60px 20px;
         background: linear-gradient(135deg, #fff8ed 0%, #fdf4e3 100%);
@@ -963,20 +963,68 @@
         color: #946c44;
         margin-bottom: 8px;
       }
-      .feedback-section p {
+      .feedback-section > p {
         color: #666;
-        margin-bottom: 30px;
+        margin-bottom: 36px;
         font-size: 1rem;
       }
-      .feedback-form {
-        max-width: 560px;
+      /* Two-column layout */
+      .feedback-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        max-width: 1100px;
         margin: 0 auto;
+        text-align: left;
+        align-items: start;
+      }
+      /* Map side */
+      .feedback-map-side {
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(148,108,68,0.15);
+        border: 1.5px solid rgba(247,160,26,0.22);
+        height: 100%;
+        min-height: 420px;
+        display: flex;
+        flex-direction: column;
+      }
+      .feedback-map-header {
+        background: linear-gradient(135deg, #f7a01a, #d35400);
+        color: white;
+        padding: 14px 20px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .feedback-map-side iframe {
+        flex: 1;
+        width: 100%;
+        border: none;
+        display: block;
+        min-height: 370px;
+      }
+      /* Form side */
+      .feedback-form {
         background: white;
         border-radius: 18px;
         box-shadow: 0 10px 40px rgba(148, 108, 68, 0.12);
         padding: 32px 28px;
         text-align: left;
       }
+      .feedback-form-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #3c1a00;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .feedback-form-title i { color: #f7a01a; }
       .feedback-form label {
         display: block;
         font-size: 12px;
@@ -1063,6 +1111,11 @@
         margin: 0;
         font-size: 0.95rem;
         line-height: 1.6;
+      }
+      @media (max-width: 800px) {
+        .feedback-layout { grid-template-columns: 1fr; }
+        .feedback-map-side { min-height: 280px; }
+        .feedback-map-side iframe { min-height: 260px; }
       }
 
       /* FOOTER */
@@ -1197,6 +1250,696 @@
           top: 52px;
         }
       }
+
+      /* ══ PAYMENT MODAL ══ */
+      /* ══ PAYMENT MODAL — Animated Beautiful ══ */
+      /* ── Keyframes ── */
+      @keyframes payBdIn       { from{opacity:0}                    to{opacity:1} }
+      @keyframes payBodyIn     { from{opacity:0;transform:translateY(36px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+      @keyframes payCardIn     { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+      @keyframes payOrb1       { 0%,100%{transform:translate(0,0) scale(1)}    50%{transform:translate(40px,-30px) scale(1.18)} }
+      @keyframes payOrb2       { 0%,100%{transform:translate(0,0) scale(1)}    50%{transform:translate(-35px,25px) scale(1.12)} }
+      @keyframes payOrb3       { 0%,100%{transform:translate(0,0) scale(1)}    60%{transform:translate(20px,40px) scale(1.15)} }
+      @keyframes payShimmer    { 0%{background-position:200% center} 100%{background-position:-200% center} }
+      @keyframes payGoldPulse  { 0%,100%{opacity:0.55;transform:scaleX(1)}    50%{opacity:1;transform:scaleX(1.04)} }
+      @keyframes payIconPulse  { 0%,100%{box-shadow:0 0 0 0 rgba(247,160,26,0.0)} 50%{box-shadow:0 0 0 8px rgba(247,160,26,0.12)} }
+      @keyframes payQrGlow     { 0%,100%{box-shadow:0 0 0 4px rgba(247,160,26,0.10),0 8px 32px rgba(0,0,0,0.5)} 50%{box-shadow:0 0 0 6px rgba(247,160,26,0.22),0 8px 48px rgba(247,120,0,0.28)} }
+      @keyframes paySpinRing   { from{transform:translateX(-50%) rotate(0deg)} to{transform:translateX(-50%) rotate(360deg)} }
+      @keyframes payParticle   { 0%{transform:translateY(0) scale(1);opacity:0.7} 100%{transform:translateY(-120px) scale(0);opacity:0} }
+      @keyframes payDivinePulse{ 0%,100%{opacity:0.08} 50%{opacity:0.18} }
+      @keyframes paySweep      { 0%{left:-60%} 100%{left:160%} }
+      @keyframes payTitleGlow  { 0%,100%{text-shadow:0 0 20px rgba(247,160,26,0.0)} 50%{text-shadow:0 0 40px rgba(247,160,26,0.45), 0 0 80px rgba(255,213,100,0.20)} }
+      @keyframes payDividerPulse{ 0%,100%{opacity:0.6} 50%{opacity:1} }
+
+      /* ── Modal shell ── */
+      .pay-modal {
+        display: none; position: fixed; inset: 0; z-index: 99998;
+        flex-direction: column; align-items: stretch; justify-content: flex-start;
+        overflow-y: auto; scroll-behavior: smooth;
+      }
+      .pay-modal.open { display: flex; }
+
+      /* ── Layered animated backdrop ── */
+      .pay-modal-backdrop {
+        position: fixed; inset: 0; z-index: 0;
+        background: radial-gradient(ellipse 120% 100% at 50% 0%,
+          #3d1200 0%, #1e0800 35%, #0d0300 65%, #180600 100%);
+        animation: payBdIn 0.35s ease forwards;
+        overflow: hidden;
+      }
+      /* Large drifting orbs — warm amber */
+      .pay-modal-backdrop::before {
+        content: '';
+        position: absolute;
+        width: 520px; height: 520px; border-radius: 50%;
+        top: -160px; left: -100px;
+        background: radial-gradient(circle, rgba(247,120,0,0.22) 0%, rgba(180,60,0,0.10) 45%, transparent 72%);
+        animation: payOrb1 12s ease-in-out infinite;
+        pointer-events: none;
+      }
+      /* Large drifting orb — deep saffron right */
+      .pay-modal-backdrop::after {
+        content: '';
+        position: absolute;
+        width: 480px; height: 480px; border-radius: 50%;
+        bottom: -120px; right: -80px;
+        background: radial-gradient(circle, rgba(211,84,0,0.20) 0%, rgba(120,40,0,0.08) 50%, transparent 72%);
+        animation: payOrb2 15s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      /* ── Extra floating orbs injected via .pay-orb elements ── */
+      .pay-orb {
+        position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+      }
+      .pay-orb-1 {
+        width: 340px; height: 340px;
+        top: 30%; left: 50%; transform: translateX(-50%);
+        background: radial-gradient(circle, rgba(99,60,200,0.13) 0%, transparent 70%);
+        animation: payOrb3 18s ease-in-out infinite;
+      }
+      .pay-orb-2 {
+        width: 200px; height: 200px;
+        top: 10%; right: 8%;
+        background: radial-gradient(circle, rgba(255,180,40,0.12) 0%, transparent 68%);
+        animation: payOrb1 9s ease-in-out infinite reverse;
+      }
+      .pay-orb-3 {
+        width: 160px; height: 160px;
+        bottom: 15%; left: 5%;
+        background: radial-gradient(circle, rgba(211,84,0,0.14) 0%, transparent 68%);
+        animation: payOrb2 11s ease-in-out infinite;
+      }
+
+      /* Floating divine particles */
+      .pay-particle {
+        position: fixed; z-index: 0; pointer-events: none;
+        font-size: 1.1rem; opacity: 0;
+        animation: payParticle linear infinite;
+      }
+
+      /* Top bar */
+      .pay-modal-topbar {
+        position: sticky; top: 0; z-index: 10;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px 12px;
+        background: linear-gradient(to bottom, rgba(14,5,0,0.92) 0%, transparent 100%);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+      .pay-modal-label {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: rgba(247,160,26,0.12);
+        border: 1px solid rgba(247,160,26,0.38);
+        border-radius: 20px; padding: 6px 18px;
+        font-size: 11px; font-weight: 700;
+        color: #f7c35a; letter-spacing: 1.2px; text-transform: uppercase;
+        position: relative; overflow: hidden;
+      }
+      /* Sweep shimmer on label */
+      .pay-modal-label::after {
+        content: '';
+        position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,220,120,0.30), transparent);
+        animation: paySweep 3.5s ease-in-out infinite;
+      }
+      .pay-modal-close {
+        width: 44px; height: 44px; border-radius: 50%;
+        border: 1.5px solid rgba(247,160,26,0.38);
+        background: rgba(40,14,0,0.80); color: rgba(255,255,255,0.88);
+        font-size: 1.05rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.28s cubic-bezier(.34,1.56,.64,1);
+        backdrop-filter: blur(10px); flex-shrink: 0;
+      }
+      .pay-modal-close:hover {
+        background: linear-gradient(135deg, #f7a01a, #d35400);
+        color: #fff; border-color: #f7a01a;
+        transform: rotate(90deg) scale(1.12);
+        box-shadow: 0 0 20px rgba(247,160,26,0.5);
+      }
+
+      /* ── Scrollable body ── */
+      .pay-modal-body {
+        position: relative; z-index: 1;
+        max-width: 740px; width: 100%;
+        margin: 0 auto;
+        padding: 8px 22px 70px;
+        animation: payBodyIn 0.5s cubic-bezier(.34,1.4,.64,1) 0.1s both;
+      }
+
+      /* ── Decorative temple diya icon above title ── */
+      .pay-diya-icon {
+        text-align: center; font-size: 2.2rem; margin-bottom: 8px;
+        animation: payDivinePulse 2.8s ease-in-out infinite;
+        filter: drop-shadow(0 0 12px rgba(247,160,26,0.6));
+      }
+
+      /* ── Title ── */
+      .pay-section-title {
+        font-size: 2rem; font-weight: 700;
+        color: #fff; text-align: center;
+        margin: 0 0 8px; line-height: 1.2;
+        animation: payTitleGlow 3s ease-in-out infinite;
+      }
+      .pay-section-title span {
+        background: linear-gradient(135deg, #f7a01a 0%, #ffd585 40%, #f7a01a 70%, #ffd585 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: payShimmer 4s linear infinite;
+      }
+      .pay-section-sub {
+        text-align: center; font-size: 0.88rem;
+        color: rgba(247,205,135,0.62); margin: 0 0 24px; line-height: 1.65;
+      }
+
+      /* ── Animated gold divider ── */
+      .pay-gold-divider {
+        height: 2px; margin: 0 0 28px; position: relative; border-radius: 2px;
+        background: linear-gradient(90deg, transparent, rgba(247,160,26,0.3) 20%, #ffd585 50%, rgba(247,160,26,0.3) 80%, transparent);
+        animation: payDividerPulse 2.5s ease-in-out infinite;
+      }
+      .pay-gold-divider::before {
+        content: '🕉️';
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%,-50%);
+        font-size: 1rem; line-height: 1;
+        filter: drop-shadow(0 0 8px rgba(247,160,26,0.7));
+        background: radial-gradient(circle, #1e0800 0%, transparent 70%);
+        padding: 0 8px;
+      }
+
+      /* ── Cards grid ── */
+      .pay-cards-row {
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 18px; margin-bottom: 22px;
+      }
+
+      /* ── Individual card ── */
+      .pay-card {
+        background: linear-gradient(155deg, #341200 0%, #4a1c00 40%, #3a1400 80%, #2a0e00 100%);
+        border: 1px solid rgba(247,160,26,0.22);
+        border-radius: 22px; padding: 26px 22px 24px;
+        position: relative; overflow: hidden;
+        transition: transform 0.28s cubic-bezier(.34,1.56,.64,1),
+                    box-shadow 0.28s ease, border-color 0.28s ease;
+        animation: payCardIn 0.55s cubic-bezier(.34,1.4,.64,1) both;
+      }
+      .pay-card:nth-child(2) { animation-delay: 0.12s; }
+      .pay-card:hover {
+        transform: translateY(-5px) scale(1.012);
+        border-color: rgba(247,160,26,0.45);
+        box-shadow: 0 16px 48px rgba(0,0,0,0.55), 0 0 30px rgba(247,120,0,0.18);
+      }
+      /* Top shimmer line */
+      .pay-card::before {
+        content: '';
+        position: absolute; top: 0; left: 12%; right: 12%; height: 2px;
+        background: linear-gradient(90deg, transparent, #f7a01a, #ffd585, #f7a01a, transparent);
+        border-radius: 2px;
+        animation: payGoldPulse 2.8s ease-in-out infinite;
+      }
+      /* Inner ambient glow */
+      .pay-card::after {
+        content: '';
+        position: absolute; inset: 0; border-radius: 22px;
+        background:
+          radial-gradient(ellipse 80% 55% at 50% 0%, rgba(247,160,26,0.07) 0%, transparent 65%),
+          radial-gradient(ellipse 60% 50% at 100% 100%, rgba(211,84,0,0.05) 0%, transparent 65%);
+        pointer-events: none;
+      }
+      /* Animated sweep highlight */
+      .pay-card .pay-card-sweep {
+        position: absolute; top: 0; left: -80%; width: 55%; height: 100%;
+        background: linear-gradient(105deg, transparent 30%, rgba(255,220,120,0.06) 50%, transparent 70%);
+        transition: left 0.8s ease;
+        pointer-events: none; z-index: 2; border-radius: 22px;
+      }
+      .pay-card:hover .pay-card-sweep { left: 120%; }
+
+      /* Icon */
+      .pay-card-icon {
+        width: 50px; height: 50px; border-radius: 50%;
+        background: rgba(247,160,26,0.10);
+        border: 1px solid rgba(247,160,26,0.30);
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 16px;
+        animation: payIconPulse 3s ease-in-out infinite;
+        transition: transform 0.25s;
+      }
+      .pay-card:hover .pay-card-icon { transform: scale(1.12) rotate(-5deg); }
+      .pay-card-icon i { font-size: 1.2rem; color: #f7a01a; }
+
+      .pay-card-heading {
+        font-size: 0.78rem; font-weight: 700; color: #f7c35a;
+        letter-spacing: 1.1px; text-transform: uppercase; margin-bottom: 14px;
+      }
+      .pay-detail-row {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        gap: 8px; padding: 9px 0;
+        border-bottom: 1px solid rgba(247,160,26,0.09);
+        transition: background 0.2s;
+      }
+      .pay-detail-row:hover { background: rgba(247,160,26,0.04); }
+      .pay-detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+      .pay-detail-label {
+        font-size: 0.74rem; color: rgba(247,190,100,0.52);
+        font-weight: 600; flex-shrink: 0; padding-top: 1px;
+      }
+      .pay-detail-value {
+        font-size: 0.82rem; color: #fff5d6; font-weight: 700;
+        text-align: right; word-break: break-all; line-height: 1.4;
+      }
+
+      /* Copy button */
+      .pay-copy-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(247,160,26,0.10);
+        border: 1px solid rgba(247,160,26,0.30);
+        border-radius: 10px; padding: 6px 14px;
+        font-size: 0.72rem; font-weight: 700; color: #f7c35a;
+        cursor: pointer; transition: all 0.22s; margin-top: 14px;
+        white-space: nowrap; position: relative; overflow: hidden;
+      }
+      .pay-copy-btn::before {
+        content: '';
+        position: absolute; top: 0; left: -80%; width: 60%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,220,120,0.2), transparent);
+        transition: left 0.5s ease;
+      }
+      .pay-copy-btn:hover::before { left: 130%; }
+      .pay-copy-btn:hover {
+        background: rgba(247,160,26,0.22); border-color: #f7a01a;
+        box-shadow: 0 4px 16px rgba(247,160,26,0.30);
+        transform: translateY(-1px);
+      }
+      .pay-copy-btn:active { transform: scale(0.97); }
+      .pay-copy-btn.copied {
+        background: rgba(40,200,80,0.15); border-color: rgba(40,200,80,0.45);
+        color: #7dffaa; box-shadow: 0 0 14px rgba(40,200,80,0.20);
+      }
+
+      /* QR section */
+      .pay-qr-wrap {
+        display: flex; flex-direction: column; align-items: center; gap: 14px;
+      }
+      /* Spinning outer ring around QR */
+      .pay-qr-ring-wrap {
+        position: relative; width: 180px; height: 180px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+      }
+      .pay-qr-ring-wrap::before {
+        content: '';
+        position: absolute; inset: -6px; border-radius: 20px;
+        border: 2px dashed rgba(247,160,26,0.28);
+        animation: paySpinRing 12s linear infinite;
+        transform-origin: center;
+        transform: rotate(0deg);
+      }
+      .pay-qr-ring-wrap::after {
+        content: '';
+        position: absolute; inset: -3px; border-radius: 18px;
+        border: 1px solid rgba(247,160,26,0.15);
+        animation: paySpinRing 8s linear infinite reverse;
+      }
+      .pay-qr-box {
+        width: 164px; height: 164px; background: #fff;
+        border-radius: 16px;
+        border: 3px solid rgba(247,160,26,0.55);
+        animation: payQrGlow 3s ease-in-out infinite;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; flex-shrink: 0; position: relative; z-index: 2;
+      }
+      .pay-qr-placeholder {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 8px;
+        color: #b86818; font-size: 0.68rem; font-weight: 700;
+        text-align: center; padding: 12px;
+      }
+      .pay-qr-placeholder i { font-size: 3rem; color: #d07820; }
+      .pay-qr-img { width: 100%; height: 100%; object-fit: contain; }
+
+      .pay-upi-id {
+        background: linear-gradient(135deg, rgba(247,160,26,0.10), rgba(211,84,0,0.08));
+        border: 1px solid rgba(247,160,26,0.32);
+        border-radius: 12px; padding: 10px 16px;
+        font-size: 0.88rem; font-weight: 700; color: #ffd585;
+        text-align: center; word-break: break-all; line-height: 1.4;
+        width: 100%; letter-spacing: 0.3px;
+        position: relative; overflow: hidden;
+      }
+      .pay-upi-id::after {
+        content: '';
+        position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,220,120,0.18), transparent);
+        animation: paySweep 4s ease-in-out infinite 1s;
+      }
+
+      /* Declaration */
+      .pay-declaration {
+        background: linear-gradient(135deg, rgba(247,160,26,0.07), rgba(211,84,0,0.04));
+        border: 1px solid rgba(247,160,26,0.20);
+        border-left: 3px solid rgba(247,160,26,0.80);
+        border-radius: 0 14px 14px 0;
+        padding: 16px 20px; margin-top: 6px;
+        position: relative; overflow: hidden;
+      }
+      .pay-declaration::before {
+        content: '';
+        position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
+        background: linear-gradient(180deg, #f7a01a, #ffd585, #f7a01a);
+        animation: payGoldPulse 3s ease-in-out infinite;
+      }
+      .pay-declaration p {
+        font-size: 0.78rem; color: rgba(255,235,185,0.65);
+        line-height: 1.78; margin: 0;
+      }
+      .pay-declaration p strong { color: #ffd585; font-weight: 700; }
+
+      /* Help */
+      .pay-help {
+        text-align: center; margin-top: 22px;
+        font-size: 0.78rem; color: rgba(247,190,100,0.44); line-height: 1.6;
+      }
+      .pay-help a {
+        color: #f7a01a; text-decoration: none;
+        border-bottom: 1px solid rgba(247,160,26,0.35);
+        transition: color 0.2s, border-color 0.2s;
+      }
+      .pay-help a:hover { color: #ffd585; border-color: rgba(255,213,133,0.6); }
+
+      /* ── Responsive ── */
+      @media (max-width: 560px) {
+        .pay-cards-row { grid-template-columns: 1fr; }
+        .pay-modal-body { padding: 4px 14px 56px; }
+        .pay-section-title { font-size: 1.55rem; }
+        .pay-card { padding: 22px 18px 20px; }
+        .pay-qr-ring-wrap { width: 158px; height: 158px; }
+        .pay-qr-box { width: 148px; height: 148px; }
+      }
+      @media (max-width: 380px) {
+        .pay-section-title { font-size: 1.3rem; }
+        .pay-card { padding: 18px 14px 16px; }
+        .pay-qr-ring-wrap { width: 140px; height: 140px; }
+        .pay-qr-box { width: 130px; height: 130px; }
+      }
+
+      /* ══ OUR MEMBERS SECTION ══ */
+      .members-section {
+        padding: 64px 24px 72px;
+        background: linear-gradient(180deg, #fdfbf7 0%, #fff8ed 60%, #fdf4e3 100%);
+        position: relative;
+        overflow: hidden;
+      }
+      .members-section::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, transparent 0%, #f7a01a 30%, #ffd585 50%, #f7a01a 70%, transparent 100%);
+      }
+      .members-section::after {
+        content: '';
+        position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(247,160,26,0.4) 50%, transparent 100%);
+      }
+      /* Subtle background mandala pattern */
+      .members-section-bg {
+        position: absolute; inset: 0; pointer-events: none;
+        background-image:
+          radial-gradient(circle at 10% 20%, rgba(247,160,26,0.06) 0%, transparent 40%),
+          radial-gradient(circle at 90% 80%, rgba(211,84,0,0.05) 0%, transparent 40%);
+      }
+      .members-header {
+        margin-bottom: 40px;
+        position: relative;
+        z-index: 1;
+        text-align: center;
+      }
+      .members-eyebrow {
+        display: inline-flex !important;
+        display: inline-flex; align-items: center; gap: 8px;
+        background: rgba(247,160,26,0.10);
+        border: 1px solid rgba(247,160,26,0.35);
+        border-radius: 20px; padding: 5px 18px;
+        font-size: 11px; font-weight: 700;
+        color: #d35400; letter-spacing: 1px;
+        text-transform: uppercase; margin-bottom: 16px;
+      }
+      .members-eyebrow i { color: #f7a01a; font-size: 10px; }
+      .members-title {
+        font-size: 2.3rem;
+        font-weight: 700;
+        color: #3c1a00;
+        margin: 0 0 12px;
+        line-height: 1.2;
+        text-align: center;
+      }
+      .members-title span {
+        background: linear-gradient(135deg, #f7a01a, #d35400);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .members-subtitle {
+        color: #946c44;
+        font-size: 1rem;
+        max-width: 520px;
+        margin: 0 auto;
+        line-height: 1.65;
+      }
+      /* Nav arrows */
+      .members-header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        flex-wrap: wrap;
+        flex-direction: column;
+      }
+      .members-header-left {
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+        width: 100%;
+      }
+      .members-nav {
+        display: flex; gap: 10px;
+        align-items: center;
+        justify-content: center;
+        padding-top: 0;
+        flex-shrink: 0;
+        margin-top: 8px;
+      }
+
+      /* ── Members auto-scroll track ── */
+      .member-slider-track {
+        overflow: hidden;
+        position: relative;
+        max-width: 860px;
+        margin: 0 auto;
+      }
+      @keyframes memberSlideLeft {
+        0%   { transform: translateX(0); opacity: 1; }
+        18%  { transform: translateX(0); opacity: 1; }
+        28%  { transform: translateX(-60px); opacity: 0; }
+        30%  { transform: translateX(60px); opacity: 0; }
+        40%  { transform: translateX(0); opacity: 1; }
+        100% { transform: translateX(0); opacity: 1; }
+      }
+      .members-nav-btn {
+        width: 42px; height: 42px; border-radius: 50%;
+        border: 1.5px solid rgba(247,160,26,0.5);
+        background: white;
+        color: #f7a01a; font-size: 0.85rem;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.25s;
+        box-shadow: 0 2px 12px rgba(247,160,26,0.18);
+      }
+      .members-nav-btn:hover {
+        background: linear-gradient(135deg, #f7a01a, #d35400);
+        color: white; border-color: #f7a01a;
+        transform: scale(1.08);
+        box-shadow: 0 4px 16px rgba(247,160,26,0.45);
+      }
+      /* Member Card — CodeHelp-style horizontal card */
+      .member-card {
+        display: none;
+        max-width: 860px;
+        margin: 0 auto;
+        background: linear-gradient(135deg, #fff8ed 0%, #ffffff 50%, #fdf4e3 100%);
+        border: 1px solid rgba(247,160,26,0.25);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow:
+          0 4px 0 rgba(247,160,26,0.15),
+          0 12px 48px rgba(148,108,68,0.12),
+          0 2px 8px rgba(0,0,0,0.05);
+        position: relative;
+        animation: memberFadeIn 0.55s cubic-bezier(.34,1.4,.64,1) both;
+      }
+      @keyframes memberFadeIn {
+        from { opacity: 0; transform: translateY(28px) scale(0.97); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .member-card.active { display: flex; animation: memberSlideIn 0.5s cubic-bezier(.34,1.4,.64,1) both; }
+      @keyframes memberSlideIn {
+        from { opacity: 0; transform: translateX(60px) scale(0.97); }
+        to   { opacity: 1; transform: translateX(0) scale(1); }
+      }
+      .member-card.slide-out {
+        display: flex;
+        animation: memberSlideOut 0.3s ease forwards;
+        pointer-events: none;
+      }
+      @keyframes memberSlideOut {
+        from { opacity: 1; transform: translateX(0); }
+        to   { opacity: 0; transform: translateX(-60px); }
+      }
+      /* Top gold shimmer line */
+      .member-card::before {
+        content: '';
+        position: absolute; top: 0; left: 12%; right: 12%; height: 2px;
+        background: linear-gradient(90deg, transparent, #f7a01a, #ffd585, #f7a01a, transparent);
+        border-radius: 2px;
+      }
+      /* Photo side */
+      .member-photo-side {
+        flex: 0 0 300px;
+        background: linear-gradient(160deg, #3c1a00 0%, #78501e 50%, #5a2e0a 100%);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        min-height: 340px;
+      }
+      .member-photo-side img.member-avatar {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+        border-radius: 0;
+        margin: 0;
+        z-index: 2;
+      }
+      /* Decorative circle behind photo */
+      .member-photo-side::before {
+        content: '';
+        position: absolute;
+        bottom: -30px; left: 50%; transform: translateX(-50%);
+        width: 260px; height: 260px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(247,160,26,0.22) 0%, rgba(211,84,0,0.12) 50%, transparent 70%);
+        border: 2px solid rgba(247,160,26,0.25);
+      }
+      .member-photo-side::after {
+        content: '';
+        position: absolute;
+        bottom: -50px; left: 50%; transform: translateX(-50%);
+        width: 320px; height: 320px; border-radius: 50%;
+        border: 1px solid rgba(247,160,26,0.12);
+      }
+      .member-avatar {
+        position: absolute; z-index: 2;
+        inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        object-position: center top;
+        border-radius: 0;
+        margin: 0;
+        display: block;
+      }
+      .member-avatar-placeholder {
+        position: relative; z-index: 2;
+        width: 200px; height: 200px; border-radius: 50%;
+        border: 3px solid rgba(247,160,26,0.6);
+        box-shadow: 0 0 0 8px rgba(247,160,26,0.12), 0 12px 40px rgba(0,0,0,0.4);
+        margin-bottom: 28px;
+        background: linear-gradient(160deg, #5a2e0a, #3c1a00);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 4.5rem;
+        text-shadow: 0 0 20px rgba(247,160,26,0.6);
+      }
+      /* Info side */
+      .member-info-side {
+        flex: 1;
+        padding: 40px 40px 36px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .member-role-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(247,160,26,0.10);
+        border: 1px solid rgba(247,160,26,0.32);
+        border-radius: 14px;
+        padding: 4px 14px;
+        font-size: 11.5px; font-weight: 700;
+        color: #d35400; letter-spacing: 0.6px;
+        text-transform: uppercase;
+        margin-bottom: 14px;
+        width: fit-content;
+      }
+      .member-role-badge i { color: #f7a01a; }
+      .member-name {
+        font-size: 1.9rem; font-weight: 700;
+        color: #3c1a00; margin: 0 0 5px;
+        line-height: 1.15;
+      }
+      .member-title {
+        font-size: 0.95rem; font-weight: 600;
+        color: #946c44; margin: 0 0 22px;
+      }
+      .member-divider {
+        height: 1px;
+        background: linear-gradient(90deg, rgba(247,160,26,0.35), transparent);
+        margin-bottom: 22px;
+      }
+      .member-bio {
+        font-size: 0.96rem;
+        color: #555;
+        line-height: 1.75;
+      }
+      .member-bio strong { color: #3c1a00; }
+      /* Dot indicators */
+      .member-dots {
+        display: flex; gap: 8px;
+        justify-content: center;
+        margin-top: 28px;
+      }
+      .member-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: rgba(247,160,26,0.25);
+        border: 1.5px solid rgba(247,160,26,0.35);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+      }
+      .member-dot.active {
+        background: linear-gradient(135deg, #f7a01a, #d35400);
+        width: 26px; border-radius: 4px;
+        border-color: #f7a01a;
+        box-shadow: 0 0 8px rgba(247,160,26,0.5);
+      }
+      @media (max-width: 760px) {
+        .members-header-top { flex-direction: column; gap: 14px; }
+        .members-nav { align-self: flex-end; padding-top: 0; }
+        .member-card.active { flex-direction: column; }
+        .member-photo-side { flex: 0 0 220px; min-height: 220px; }
+        .member-avatar-placeholder { width: 150px; height: 150px; font-size: 3.5rem; margin-bottom: 20px; }
+        .member-photo-side img.member-avatar { width: 100%; height: 100%; }
+        .member-info-side { padding: 28px 22px 28px; }
+        .member-name { font-size: 1.5rem; }
+        .members-title { font-size: 1.75rem; }
+      }
+      @media (max-width: 500px) {
+        .member-photo-side { flex: 0 0 180px; min-height: 180px; }
+        .member-avatar-placeholder { width: 120px; height: 120px; font-size: 2.8rem; }
+        .member-photo-side img.member-avatar { width: 100%; height: 100%; }
+        .member-info-side { padding: 22px 18px; }
+      }
     </style>
   </head>
   <body>
@@ -1242,6 +1985,7 @@
         <a href="#features">Features</a>
         <a href="#gallery">Gallery</a>
         <a href="#feedbackSection">Feedback</a>
+        <a href="#" onclick="openPayModal();return false;" style="color:#f7c35a;"><i class="fa-solid fa-hand-holding-heart" style="color:#f7a01a;"></i> Donate</a>
         <a href="login.html" class="login-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
       </nav>
       <!-- Mobile hamburger -->
@@ -1273,6 +2017,10 @@
         <i class="fa-solid fa-comment-dots"></i> 
         Feedback</a
       >
+      <a href="#" onclick="closeNavMenu();openPayModal();return false;">
+        <i class="fa-solid fa-hand-holding-heart"></i>
+        Donate / Pay</a
+      >
       <a href="login.html" class="menu-login"
         ><i class="fa-solid fa-right-to-bracket"></i> Login</a
       >
@@ -1294,6 +2042,96 @@
         expenses, and maintain the yearly financial balance in a highly secure
         and transparent manner.
       </p>
+    </div>
+
+    <!-- ══ OUR MEMBERS SECTION ══ -->
+    <div class="members-section reveal" id="membersSection">
+      <div class="members-section-bg"></div>
+
+      <div class="members-header">
+        <div class="members-header-top">
+          <div class="members-header-left">
+            <div class="members-eyebrow">
+              <i class="fa-solid fa-om"></i> हमारे सदस्य
+            </div>
+            <h2 class="members-title">Our <span>Mandir Members</span></h2>
+            <p class="members-subtitle">
+              The devoted souls who uphold the spirit of Shree Hanuman Mandir — serving the community with faith, love, and dedication.
+            </p>
+          </div>
+          <div class="members-nav">
+            <button class="members-nav-btn" onclick="memberNav(-1);resetMemberAutoplay();" aria-label="Previous">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button class="members-nav-btn" onclick="memberNav(1);resetMemberAutoplay();" aria-label="Next">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Member 1 -->
+      <div class="member-card active" id="memberCard0">
+        <div class="member-photo-side">
+          <img class="member-avatar" src="Image/AmarjeetPic.jpeg" alt="Amarjeet" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="member-avatar-placeholder" style="display:none;">🕉️</div>
+        </div>
+        <div class="member-info-side">
+          <div class="member-role-badge">
+            <i class="fa-solid fa-crown"></i> मुख्य पुजारी
+          </div>
+          <h3 class="member-name">पं. राम प्रसाद शर्मा</h3>
+          <p class="member-title">Head Priest · Shree Hanuman Mandir, Paliya</p>
+          <div class="member-divider"></div>
+          <p class="member-bio">
+            पं. राम प्रसाद शर्मा जी <strong>30 वर्षों</strong> से अधिक समय से मंदिर में पूजा-अर्चना का कार्य संभाल रहे हैं। वे <strong>वैदिक अनुष्ठानों</strong> के विशेषज्ञ हैं और समुदाय में बेहद सम्मानित हैं। उनके मार्गदर्शन में मंदिर ने <strong>अनेक यज्ञ एवं धार्मिक कार्यक्रम</strong> सफलतापूर्वक आयोजित किए हैं।
+          </p>
+        </div>
+      </div>
+
+      <!-- Member 2 -->
+      <div class="member-card" id="memberCard1">
+        <div class="member-photo-side">
+          <img class="member-avatar" src="Image/Vinod_Pic.jpeg" alt="Vinod Kumar Vishwakarma" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="member-avatar-placeholder" style="display:none;">🪔</div>
+        </div>
+        <div class="member-info-side">
+          <div class="member-role-badge">
+            <i class="fa-solid fa-star"></i> सचिव
+          </div>
+          <h3 class="member-name">श्री विनोद कुमार विश्वकर्मा</h3>
+          <p class="member-title">Secretary · Ram Yagya Vishwakarma Committee</p>
+          <div class="member-divider"></div>
+          <p class="member-bio">
+            श्री विनोद कुमार जी मंदिर प्रबंधन एवं <strong>सामुदायिक सेवा</strong> में अग्रणी भूमिका निभाते हैं। उन्होंने <strong>राम यज्ञ विश्वकर्मा</strong> समिति की नींव रखने में महत्वपूर्ण योगदान दिया है। उनके नेतृत्व में <strong>500+ परिवार</strong> मंदिर से जुड़ चुके हैं।
+          </p>
+        </div>
+      </div>
+
+      <!-- Member 3 -->
+      <div class="member-card" id="memberCard2">
+        <div class="member-photo-side">
+          <div class="member-avatar-placeholder">🙏</div>
+        </div>
+        <div class="member-info-side">
+          <div class="member-role-badge">
+            <i class="fa-solid fa-hands-praying"></i> कोषाध्यक्ष
+          </div>
+          <h3 class="member-name">श्री सुरेश चंद्र पाठक</h3>
+          <p class="member-title">Treasurer · Shree Hanuman Mandir Trust</p>
+          <div class="member-divider"></div>
+          <p class="member-bio">
+            श्री सुरेश चंद्र जी मंदिर की <strong>वित्तीय पारदर्शिता</strong> सुनिश्चित करते हैं। उनकी देखरेख में सभी दान एवं व्यय का लेखा-जोखा पूरी ईमानदारी से रखा जाता है। वे <strong>15 वर्षों</strong> से मंदिर सेवा में समर्पित हैं और <strong>डिजिटल मंदिर प्रणाली</strong> के प्रमुख समर्थक हैं।
+          </p>
+        </div>
+      </div>
+
+      <!-- Dot indicators -->
+      <div class="member-dots">
+        <div class="member-dot active" onclick="memberGoTo(0);resetMemberAutoplay();"></div>
+        <div class="member-dot" onclick="memberGoTo(1);resetMemberAutoplay();"></div>
+        <div class="member-dot" onclick="memberGoTo(2);resetMemberAutoplay();"></div>
+      </div>
     </div>
 
     <div class="section reveal" id="features">
@@ -1394,55 +2232,64 @@
 
     </div>
 
-    <!-- FIX #1 & #3: Feedback Section -->
+    <!-- Feedback Section: Map Left + Form Right -->
     <div class="feedback-section reveal" id="feedbackSection">
       <h2>
-        <i
-          class="fa-solid fa-comment-dots"
-          style="color: #f7a01a; margin-right: 8px"
-        ></i>
+        <i class="fa-solid fa-comment-dots" style="color: #f7a01a; margin-right: 8px"></i>
         Share Your Feedback
       </h2>
       <p>Your suggestions help us improve the Mandir system for everyone. 🙏</p>
-      <div class="feedback-form" id="feedbackFormBox">
-        <div class="form-row2">
-          <div>
-            <label>Full Name <span style="color: #e74c3c">*</span></label>
-            <input id="fb_name" placeholder="Your full name" />
+
+      <div class="feedback-layout">
+
+        <!-- LEFT: Google Map -->
+        <div class="feedback-map-side">
+          <div class="feedback-map-header">
+            <i class="fa-solid fa-location-dot"></i>
+            Shree Hanuman Mandir, Paliya — Find Us Here
           </div>
-          <div>
-            <label>Mobile Number <span style="color: #e74c3c">*</span></label>
-            <input
-              id="fb_mobile"
-              placeholder="10-digit mobile"
-              maxlength="15"
-            />
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3559.123456789!2d80.7!3d27.0!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sShree+Hanuman+Mandir+Paliya!5e0!3m2!1sen!2sin!4v1234567890"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Shree Hanuman Mandir Location">
+          </iframe>
+        </div>
+
+        <!-- RIGHT: Feedback Form -->
+        <div class="feedback-form" id="feedbackFormBox">
+          <div class="feedback-form-title">
+            <i class="fa-solid fa-paper-plane"></i> Send Us Your Message
+          </div>
+          <div class="form-row2">
+            <div>
+              <label>Full Name <span style="color: #e74c3c">*</span></label>
+              <input id="fb_name" placeholder="Your full name" />
+            </div>
+            <div>
+              <label>Mobile Number <span style="color: #e74c3c">*</span></label>
+              <input id="fb_mobile" placeholder="10-digit mobile" maxlength="15" />
+            </div>
+          </div>
+          <label>Address</label>
+          <input id="fb_address" placeholder="Village / City" />
+          <label>Your Message / Suggestion <span style="color: #e74c3c">*</span></label>
+          <textarea id="fb_message" placeholder="Share your feedback, ideas or suggestions for improvement..."></textarea>
+          <button class="feedback-submit-btn" onclick="submitFeedback()">
+            <i class="fa-solid fa-paper-plane"></i> &nbsp; Submit Feedback
+          </button>
+          <!-- Thank you message -->
+          <div id="feedbackThanks">
+            <div class="ty-icon">🙏</div>
+            <h3>Thank You for Your Valuable Feedback!</h3>
+            <p>
+              Your message has been received. We deeply appreciate your time and<br />suggestions
+              — they help us serve the Mandir community better.<br /><br /><em>जय श्री राम 🕉️</em>
+            </p>
           </div>
         </div>
-        <label>Address</label>
-        <input id="fb_address" placeholder="Village / City" />
-        <label
-          >Your Message / Suggestion
-          <span style="color: #e74c3c">*</span></label
-        >
-        <textarea
-          id="fb_message"
-          placeholder="Share your feedback, ideas or suggestions for improvement..."
-        ></textarea>
-        <button class="feedback-submit-btn" onclick="submitFeedback()">
-          <i class="fa-solid fa-paper-plane"></i> &nbsp; Submit Feedback
-        </button>
-      </div>
-      <!-- FIX #3: Thank you message shown after submit -->
-      <div id="feedbackThanks">
-        <div class="ty-icon">🙏</div>
-        <h3>Thank You for Your Valuable Feedback!</h3>
-        <p>
-          Your message has been received. We deeply appreciate your time and<br />suggestions
-          — they help us serve the Mandir community better.<br /><br /><em
-            >जय श्री राम 🕉️</em
-          >
-        </p>
+
       </div>
     </div>
 
@@ -1451,6 +2298,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
+    <script src="chatbot_widget.js"></script>
     <script>
       /* ── Gallery — Swiper.js ── */
       var _gcPhotos = [], _gcLbIdx = 0;
@@ -1688,6 +2536,40 @@
       document.addEventListener("DOMContentLoaded", loadGallery);
     </script>
     <script>
+      /* ── Members Slider ── */
+      var _memberIdx = 0;
+      var _memberTotal = 3;
+      var _memberAutoplay = null;
+      var _memberAutoplayDelay = 4000;
+
+      function memberGoTo(idx) {
+        var cards = document.querySelectorAll('.member-card');
+        var dots = document.querySelectorAll('.member-dot');
+        var currentCard = cards[_memberIdx];
+        // Add slide-out, then switch
+        currentCard.classList.add('slide-out');
+        setTimeout(function() {
+          currentCard.classList.remove('active');
+          currentCard.classList.remove('slide-out');
+          currentCard.style.display = '';
+          dots[_memberIdx].classList.remove('active');
+          _memberIdx = (idx + _memberTotal) % _memberTotal;
+          cards[_memberIdx].classList.add('active');
+          dots[_memberIdx].classList.add('active');
+        }, 300);
+      }
+      function memberNav(dir) { memberGoTo(_memberIdx + dir); }
+      function resetMemberAutoplay() {
+        clearInterval(_memberAutoplay);
+        _memberAutoplay = setInterval(function(){ memberNav(1); }, _memberAutoplayDelay);
+      }
+      // Start autoplay after page load
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          _memberAutoplay = setInterval(function(){ memberNav(1); }, _memberAutoplayDelay);
+        }, 2500);
+      });
+
       /* Splash */
       window.addEventListener("load", () => {
         setTimeout(() => {
@@ -1863,6 +2745,189 @@
             document.getElementById("fb_message").value = "";
           }, 500);
         }, 6000);
+      }
+    </script>
+
+    <!-- ══ PAYMENT / DONATE MODAL ══ -->
+    <div class="pay-modal" id="payModal" role="dialog" aria-modal="true" aria-label="Donation Payment Details">
+      <div class="pay-modal-backdrop" onclick="closePayModal()"></div>
+      <!-- Floating ambient orbs -->
+      <div class="pay-orb pay-orb-1"></div>
+      <div class="pay-orb pay-orb-2"></div>
+      <div class="pay-orb pay-orb-3"></div>
+
+      <!-- Sticky top bar -->
+      <div class="pay-modal-topbar">
+        <div class="pay-modal-label">
+          <i class="fa-solid fa-hand-holding-heart"></i> Donate / दान करें
+        </div>
+        <button class="pay-modal-close" onclick="closePayModal()" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable body -->
+      <div class="pay-modal-body">
+
+        <!-- Diya icon + Heading -->
+        <div class="pay-diya-icon">🪔</div>
+        <h2 class="pay-section-title">Payment <span>Details</span></h2>
+        <p class="pay-section-sub">
+          Support Shree Hanuman Mandir — your donation helps maintain the temple,
+          conduct yagyas, and serve the community.
+        </p>
+        <div class="pay-gold-divider"></div>
+
+        <!-- Two cards: Bank + UPI -->
+        <div class="pay-cards-row">
+
+          <!-- Bank Account Card -->
+          <div class="pay-card">
+            <div class="pay-card-sweep"></div>
+            <div class="pay-card-icon"><i class="fa-solid fa-building-columns"></i></div>
+            <div class="pay-card-heading">Bank Transfer</div>
+            <div class="pay-detail-row">
+              <span class="pay-detail-label">Account Name</span>
+              <span class="pay-detail-value">Shree Hanuman Mandir<br>Ram Yagya Vishwakarma</span>
+            </div>
+            <div class="pay-detail-row">
+              <span class="pay-detail-label">Account No.</span>
+              <span class="pay-detail-value" id="payAccNo">XXXX XXXX XXXX</span>
+            </div>
+            <div class="pay-detail-row">
+              <span class="pay-detail-label">IFSC Code</span>
+              <span class="pay-detail-value" id="payIfsc">XXXXXXXX</span>
+            </div>
+            <div class="pay-detail-row">
+              <span class="pay-detail-label">Bank Name</span>
+              <span class="pay-detail-value">Bank of India</span>
+            </div>
+            <div class="pay-detail-row">
+              <span class="pay-detail-label">Branch</span>
+              <span class="pay-detail-value">Paliya Branch</span>
+            </div>
+            <div class="pay-detail-row">
+              <span class="pay-detail-label">Account Type</span>
+              <span class="pay-detail-value">Savings</span>
+            </div>
+            <button class="pay-copy-btn" id="copyBankBtn" onclick="copyBankDetails()">
+              <i class="fa-regular fa-copy"></i> Copy Details
+            </button>
+          </div>
+
+          <!-- UPI Card -->
+          <div class="pay-card">
+            <div class="pay-card-sweep"></div>
+            <div class="pay-card-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+            <div class="pay-card-heading">UPI / QR Code</div>
+            <div class="pay-qr-wrap">
+              <div class="pay-qr-ring-wrap">
+                <div class="pay-qr-box">
+                  <img class="pay-qr-img" src="Image/upi_qr.png" alt="UPI QR Code"
+                    onerror="this.style.display='none';document.getElementById('qrFallback').style.display='flex';">
+                  <div class="pay-qr-placeholder" id="qrFallback" style="display:none;">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>Place your<br>QR image here</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pay-upi-id" id="payUpiId">mandir@upi</div>
+              <button class="pay-copy-btn" id="copyUpiBtn" onclick="copyUpiId()" style="margin-top:0;">
+                <i class="fa-regular fa-copy"></i> Copy UPI ID
+              </button>
+            </div>
+          </div>
+
+        </div><!-- /pay-cards-row -->
+
+        <!-- Declaration -->
+        <div class="pay-declaration">
+          <p>
+            <strong>Declaration:</strong> All donations made to <strong>Shree Hanuman Mandir, Paliya</strong>
+            are used exclusively for temple maintenance, religious ceremonies, and community welfare activities.
+            This institution is managed by the <strong>Ram Yagya Vishwakarma Committee</strong>.
+            Please retain your payment receipt for records. For any queries, contact the temple office.
+            <strong>दान का सदुपयोग मंदिर संचालन एवं धार्मिक कार्यों में किया जाता है।</strong>
+          </p>
+        </div>
+
+        <div class="pay-help">
+          Need help? Contact us at <a href="#feedbackSection" onclick="closePayModal()">Feedback</a>
+          &nbsp;·&nbsp; Thank you for your generous support 🙏
+        </div>
+
+      </div><!-- /pay-modal-body -->
+    </div><!-- /payModal -->
+
+    <script>
+      /* ── Payment Modal ── */
+      function openPayModal() {
+        var m = document.getElementById('payModal');
+        m.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        m.scrollTop = 0;
+        spawnPayParticles();
+      }
+      function closePayModal() {
+        var m = document.getElementById('payModal');
+        m.classList.remove('open');
+        document.body.style.overflow = '';
+        stopPayParticles();
+      }
+      /* Close on Escape key */
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePayModal();
+      });
+
+      /* ── Floating divine particles ── */
+      var _payParticleInterval = null;
+      var _payParticles = ['🪔','✨','🌸','🔱','ॐ','🌼','🙏'];
+      function spawnPayParticles() {
+        _payParticleInterval = setInterval(function() {
+          var modal = document.getElementById('payModal');
+          if (!modal || !modal.classList.contains('open')) return;
+          var el = document.createElement('div');
+          el.className = 'pay-particle';
+          el.textContent = _payParticles[Math.floor(Math.random() * _payParticles.length)];
+          var dur = 4 + Math.random() * 5;
+          el.style.cssText = 'left:' + (5 + Math.random()*88) + '%;bottom:0;animation-duration:' + dur + 's;animation-delay:' + (Math.random()*1.5) + 's;font-size:' + (0.85 + Math.random()*0.7) + 'rem;opacity:0;';
+          modal.appendChild(el);
+          setTimeout(function(){ el.remove(); }, (dur + 2) * 1000);
+        }, 900);
+      }
+      function stopPayParticles() {
+        clearInterval(_payParticleInterval);
+        var old = document.querySelectorAll('.pay-particle');
+        old.forEach(function(el){ el.remove(); });
+      }
+
+      /* ── Copy bank details ── */
+      function copyBankDetails() {
+        var accNo = document.getElementById('payAccNo').innerText;
+        var ifsc  = document.getElementById('payIfsc').innerText;
+        var text  = 'Shree Hanuman Mandir\nAccount No: ' + accNo + '\nIFSC: ' + ifsc + '\nBank: Bank of India, Paliya Branch';
+        navigator.clipboard.writeText(text).then(function() {
+          var btn = document.getElementById('copyBankBtn');
+          btn.classList.add('copied');
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+          setTimeout(function() {
+            btn.classList.remove('copied');
+            btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy Details';
+          }, 2500);
+        }).catch(function() {});
+      }
+      /* ── Copy UPI ID ── */
+      function copyUpiId() {
+        var upi = document.getElementById('payUpiId').innerText;
+        navigator.clipboard.writeText(upi).then(function() {
+          var btn = document.getElementById('copyUpiBtn');
+          btn.classList.add('copied');
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+          setTimeout(function() {
+            btn.classList.remove('copied');
+            btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy UPI ID';
+          }, 2500);
+        }).catch(function() {});
       }
     </script>
   </body>

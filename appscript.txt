@@ -555,6 +555,10 @@ function doGet(e) {
     let user = users.find(u => String(u.Mobile) === mobile && String(u.Password) === pwdHash);
     if (!user) {
       result = { status: "fail" };
+    } else if (String(user.Status||"").toLowerCase() === "pending") {
+      result = { status: "pending", message: "Your registration is pending admin approval. You will receive an email once approved." };
+    } else if (String(user.Status||"").toLowerCase() === "rejected") {
+      result = { status: "error", message: "Your registration was not approved. Please contact the temple admin." };
     } else if (user.Status === "Inactive") {
       result = { status: "error", message: "Account is deactivated. Please contact admin." };
     } else {
@@ -943,6 +947,41 @@ function doGet(e) {
     result = { status: "ok" };
   }
 
+    else if (action === "getChatbotConfig")  result = getChatbotConfig();
+ 
+  else if (action === "saveChatbotConfig") result = saveChatbotConfig(e.parameter);
+ 
+  else if (action === "registerUser")      result = registerUser(e.parameter);
+ 
+  else if (action === "approveUser")       result = approveUser(e.parameter);
+ 
+  else if (action === "rejectUser")        result = rejectUser(e.parameter);
+ 
+  else if (action === "getPendingUsers") {
+    try {
+      const all = getSheetData(SHEETS.USERS);
+      result = all
+        .filter(u => String(u.Status || "").toLowerCase() === "pending")
+        .map(u => { const s = Object.assign({}, u); delete s.Password; return s; });
+    } catch(err) { result = []; }
+  }
+ 
+  else if (action === "getPendingCount") {
+    try {
+      const all = getSheetData(SHEETS.USERS);
+      result = { count: all.filter(u => String(u.Status || "").toLowerCase() === "pending").length };
+    } catch(err) { result = { count: 0 }; }
+  }
+ 
+  else if (action === "getUsersByStatus") {
+    const filterStatus = sanitize(e.parameter.status || "all", 20);
+    try {
+      let all = getSheetData(SHEETS.USERS).map(u => { const s = Object.assign({}, u); delete s.Password; return s; });
+      if (filterStatus !== "all") all = all.filter(u => String(u.Status || "Active").toLowerCase() === filterStatus.toLowerCase());
+      result = all;
+    } catch(err) { result = []; }
+  }
+
   // ── ADD USER
   else if (action === "addUser") {
     let existingUsers = getSheetData(SHEETS.USERS);
@@ -1081,28 +1120,56 @@ function doGet(e) {
     ]);
     logAction("Admin", "Add Contribution", "UserId: " + userId + ", Amount: " + amount + ", Receipt: " + receiptId);
 
-    // #1 — Send receipt email only if auto_receipt toggle is ON (quota-guarded)
+    // #1 — Send receipt email (quota-guarded)
+    // Case A: Walk-in entry with a directly provided email (WalkInEmail param)
+    // Case B: Regular member contribution when auto_receipt toggle is ON
     let emailSent = false;
     let emailSkipped = false;
     try {
-      const emailSettings = getEmailSettings();
-      if (emailSettings.auto_receipt) {
-        const users = getSheetData(SHEETS.USERS);
-        const donor = users.find(u => String(u.UserId) === userId);
-        if (donor && donor.Email && String(donor.Email).trim() !== "") {
-          const types     = getSheetData(SHEETS.TYPES);
-          const occasions = getSheetData(SHEETS.OCCASIONS);
-          const typeName     = (types.find(t => String(t.TypeId) === typeId) || {}).TypeName || "Contribution";
-          const occasionName = (occasions.find(o => String(o.OccasionId) === occasionId) || {}).OccasionName || "";
-          if (canSendEmail()) {
-            emailSent = sendReceiptEmail(
-              donor.Email, donor.Name, receiptId,
-              amount, forMonth, year,
-              typeName, occasionName, note,
-              formatDate(), paymentMode
-            );
-          } else {
-            emailSkipped = true; // quota hit — skip silently
+      const walkInEmail = sanitize(e.parameter.WalkInEmail || "", 200).trim();
+      const isWalkIn    = userId.indexOf("WALKIN_") === 0;
+
+      if (isWalkIn && walkInEmail) {
+        // Walk-in donor provided an email — always send receipt regardless of auto_receipt toggle
+        const types     = getSheetData(SHEETS.TYPES);
+        const occasions = getSheetData(SHEETS.OCCASIONS);
+        const typeName     = (types.find(t => String(t.TypeId) === typeId) || {}).TypeName || "Contribution";
+        const occasionName = (occasions.find(o => String(o.OccasionId) === occasionId) || {}).OccasionName || "";
+        // Extract donor name from Note field: "Walk-in: Ramesh Kumar | 9876543210"
+        const noteStr  = sanitize(e.parameter.Note || "", 500);
+        const nameMatch = noteStr.match(/Walk-in:\s*([^|]+)/);
+        const donorName = nameMatch ? nameMatch[1].trim() : "Donor";
+        if (canSendEmail()) {
+          emailSent = sendReceiptEmail(
+            walkInEmail, donorName, receiptId,
+            amount, forMonth, year,
+            typeName, occasionName, note,
+            formatDate(), paymentMode
+          );
+        } else {
+          emailSkipped = true;
+        }
+      } else if (!isWalkIn) {
+        // Regular member — send only if auto_receipt toggle is ON
+        const emailSettings = getEmailSettings();
+        if (emailSettings.auto_receipt) {
+          const users = getSheetData(SHEETS.USERS);
+          const donor = users.find(u => String(u.UserId) === userId);
+          if (donor && donor.Email && String(donor.Email).trim() !== "") {
+            const types     = getSheetData(SHEETS.TYPES);
+            const occasions = getSheetData(SHEETS.OCCASIONS);
+            const typeName     = (types.find(t => String(t.TypeId) === typeId) || {}).TypeName || "Contribution";
+            const occasionName = (occasions.find(o => String(o.OccasionId) === occasionId) || {}).OccasionName || "";
+            if (canSendEmail()) {
+              emailSent = sendReceiptEmail(
+                donor.Email, donor.Name, receiptId,
+                amount, forMonth, year,
+                typeName, occasionName, note,
+                formatDate(), paymentMode
+              );
+            } else {
+              emailSkipped = true;
+            }
           }
         }
       }
@@ -1157,6 +1224,7 @@ function doGet(e) {
   else if (action === "saveAnnouncement")       { result = _saveAnnouncement(e); }
   else if (action === "clearAnnouncement")      { result = _clearAnnouncement(e); }
   else if (action === "saveBroadcast")          { result = _saveBroadcast(e); }
+
   else { result = { error: "Invalid action: " + action }; }
 
   return ContentService
@@ -1178,23 +1246,35 @@ function updateSingle(sheetName, id, value) {
 }
 
 function updateUser(p) {
-  let sheet  = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
-  let data   = sheet.getDataRange().getValues();
-  let userId = sanitize(p.UserId, 30);
-  let found  = false;
+  let sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+  let data    = sheet.getDataRange().getValues();
+  let headers = data[0];
+  let userId  = sanitize(p.UserId, 30);
+  let found   = false;
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === userId) {
-      let existingPwd = data[i][4];
-      sheet.getRange(i+1,2).setValue(sanitize(p.Name,   100));
-      sheet.getRange(i+1,3).setValue(sanitize(p.Mobile, 15));
-      sheet.getRange(i+1,4).setValue(sanitize(p.Role,   20));
-      if (p.Password && sanitize(p.Password,128).length > 0) {
-        let pwd = sanitize(p.Password,128);
-        sheet.getRange(i+1,5).setValue(pwd.length===64 ? pwd : hashPassword(pwd));
-      } else { sheet.getRange(i+1,5).setValue(existingPwd); }
-      sheet.getRange(i+1,6).setValue(sanitize(p.Email,   200));
-      sheet.getRange(i+1,7).setValue(sanitize(p.Status,  20)||"Active");
-      sheet.getRange(i+1,8).setValue(sanitize(p.PhotoURL,500)||"");
+      // Helper: write a value to the column matching the given header name (1-based col)
+      function setCol(headerName, value) {
+        const col = headers.indexOf(headerName);
+        if (col !== -1) sheet.getRange(i+1, col+1).setValue(value);
+      }
+      const existingPwd = data[i][headers.indexOf("Password")];
+      setCol("Name",     sanitize(p.Name,    100));
+      setCol("Mobile",   sanitize(p.Mobile,  15));
+      setCol("Role",     sanitize(p.Role,    20));
+      if (p.Password && sanitize(p.Password, 128).length > 0) {
+        let pwd = sanitize(p.Password, 128);
+        setCol("Password", pwd.length === 64 ? pwd : hashPassword(pwd));
+      } else {
+        setCol("Password", existingPwd);
+      }
+      setCol("Email",    sanitize(p.Email,   200));
+      setCol("Status",   sanitize(p.Status,  20) || "Active");
+      setCol("PhotoURL", sanitize(p.PhotoURL, 500) || "");
+      // Village and Address — only update when explicitly provided (not undefined)
+      if (p.Village !== undefined) setCol("Village", sanitize(p.Village, 100));
+      if (p.Address !== undefined) setCol("Address", sanitize(p.Address, 300));
+      SpreadsheetApp.flush();
       found = true; break;
     }
   }
@@ -1402,7 +1482,7 @@ function doPost(e) {
         try { const oldId=data.oldPhotoURL.split("/d/")[1].split("?")[0].trim(); if(oldId&&oldId.length>10) DriveApp.getFileById(oldId).setTrashed(true); } catch(e){}
       }
       const photoUrl = uploadUserPhoto(data.base64, sanitize(data.fileName,100));
-      const userUpdateRes = updateUser({ UserId:data.UserId, Name:data.Name, Mobile:data.Mobile||"", Role:data.Role, Password:"", Email:data.Email||"", Status:data.Status||"Active", PhotoURL:photoUrl, AdminName:data.AdminName||"User" });
+      const userUpdateRes = updateUser({ UserId:data.UserId, Name:data.Name, Mobile:data.Mobile||"", Role:data.Role, Password:"", Email:data.Email||"", Status:data.Status||"Active", PhotoURL:photoUrl, AdminName:data.AdminName||"User", Village:data.Village||"", Address:data.Address||"" });
       logAction(data.AdminName||"User","Upload Photo","UserId: "+data.UserId);
       result = { status:"success", photoUrl:photoUrl };
     } else if (data.action === "uploadGalleryPhoto") {
@@ -1445,4 +1525,374 @@ function verifyEmailSystem() {
     MailApp.sendEmail({ to:"amarjeetvish@gmail.com", subject:CFG.name+" - Verification Test", htmlBody:"<h2>It Works!</h2><p>Email system is operational.</p>" });
     Logger.log("Success! Check your inbox.");
   } catch(e) { Logger.log("Error: "+e.toString()); }
+}
+
+// ── CHATBOT CONFIG ────────────────────────────────────────────
+ 
+function getChatbotConfig() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("CHATBOT_CONFIG");
+    if (!sheet) return _defaultChatbotConfig();
+    const data = sheet.getDataRange().getValues();
+    if (data.length < 2) return _defaultChatbotConfig();
+    const config = Object.assign({}, _defaultChatbotConfig());
+    data.slice(1).forEach(r => {
+      if (r[0]) config[String(r[0]).trim()] = String(r[1] !== undefined && r[1] !== null ? r[1] : "").trim();
+    });
+    return config;
+  } catch(e) { return _defaultChatbotConfig(); }
+}
+ 
+function _defaultChatbotConfig() {
+  return {
+    enabled:         "1",
+    welcome_en:      "Jai Shree Ram! How can I help you today?",
+    welcome_hi:      "जय श्री राम! आज मैं आपकी कैसे मदद कर सकता हूँ?",
+    timings_en:      "Temple is open daily:\nMorning: 5:00 AM – 12:00 PM\nEvening: 4:00 PM – 9:00 PM",
+    timings_hi:      "मंदिर प्रतिदिन खुला रहता है:\nसुबह: 5:00 AM – 12:00 PM\nशाम: 4:00 PM – 9:00 PM",
+    location_en:     "Shree Hanuman Mandir, Paliya, Sultanpur, Uttar Pradesh.",
+    location_hi:     "श्री हनुमान मंदिर, पालिया, सुल्तानपुर, उत्तर प्रदेश।",
+    donate_en:       "You can donate in person at the temple or via bank transfer / UPI. Please see Bank Details or UPI/QR option for more.",
+    donate_hi:       "आप मंदिर में आकर या बैंक ट्रांसफर / UPI के माध्यम से दान कर सकते हैं।",
+    bank_name:       "",
+    bank_account:    "",
+    bank_ifsc:       "",
+    bank_branch:     "",
+    upi_id:          "",
+    contact_phone:   "",
+    contact_email:   "",
+    contact_whatsapp:"",
+    custom_q1_en:    "",
+    custom_q1_hi:    "",
+    custom_a1_en:    "",
+    custom_a1_hi:    "",
+    custom_q2_en:    "",
+    custom_q2_hi:    "",
+    custom_a2_en:    "",
+    custom_a2_hi:    ""
+  };
+}
+ 
+function saveChatbotConfig(params) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("CHATBOT_CONFIG");
+    if (!sheet) {
+      sheet = ss.insertSheet("CHATBOT_CONFIG");
+      sheet.appendRow(["Key", "Value", "UpdatedAt"]);
+      sheet.getRange(1, 1, 1, 3).setFontWeight("bold")
+           .setBackground("#334155").setFontColor("#ffffff");
+      sheet.setFrozenRows(1);
+    }
+    const data = sheet.getDataRange().getValues();
+    const allowedKeys = [
+      "enabled","welcome_en","welcome_hi","timings_en","timings_hi",
+      "location_en","location_hi","donate_en","donate_hi",
+      "bank_name","bank_account","bank_ifsc","bank_branch",
+      "upi_id","contact_phone","contact_email","contact_whatsapp",
+      "custom_q1_en","custom_q1_hi","custom_a1_en","custom_a1_hi",
+      "custom_q2_en","custom_q2_hi","custom_a2_en","custom_a2_hi"
+    ];
+    const ts = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+    const savedKeys = [];
+    allowedKeys.forEach(key => {
+      if (params[key] === undefined || params[key] === null) return;
+      const val = sanitize(String(params[key]), 1000);
+      let found = false;
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() === key) {
+          sheet.getRange(i + 1, 2).setValue(val);
+          sheet.getRange(i + 1, 3).setValue(ts);
+          found = true; break;
+        }
+      }
+      if (!found) sheet.appendRow([key, val, ts]);
+      savedKeys.push(key);
+    });
+    SpreadsheetApp.flush();
+    logAction("Admin", "saveChatbotConfig", "Updated: " + savedKeys.join(", "));
+    return { status: "success" };
+  } catch(e) { return { status: "error", message: e.message }; }
+}
+ 
+ 
+// ── USER REGISTRATION WITH ADMIN APPROVAL ────────────────────
+ 
+function registerUser(params) {
+  try {
+    const ss     = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet  = ss.getSheetByName(SHEETS.USERS);
+    if (!sheet) return { status: "error", message: "System error. Please try again." };
+ 
+    const name    = sanitize(params.Name    || "", 100);
+    const mobile  = sanitize(params.Mobile  || "", 15);
+    const email   = sanitize(params.Email   || "", 200);
+    const pwd     = sanitize(params.Password || "", 200); // SHA-256 hashed on client
+    const village = sanitize(params.Village || "", 100);
+    const address = sanitize(params.Address || "", 300);
+ 
+    if (!name || !mobile || !email || !pwd) {
+      return { status: "error", message: "Name, Mobile, Email and Password are required." };
+    }
+ 
+    const existingUsers = getSheetData(SHEETS.USERS);
+ 
+    // Check duplicate mobile
+    const dupMobile = existingUsers.find(u => String(u.Mobile || "") === mobile);
+    if (dupMobile) {
+      const ds = String(dupMobile.Status || "").toLowerCase();
+      if (ds === "pending")  return { status: "error", message: "A registration with this mobile is already pending approval." };
+      if (ds === "active")   return { status: "error", message: "This mobile number is already registered. Please login directly." };
+      if (ds === "rejected") return { status: "error", message: "This registration was previously rejected. Please contact the temple admin." };
+      return { status: "error", message: "Mobile number already in use." };
+    }
+ 
+    // Check duplicate email (only among non-rejected accounts)
+    const dupEmail = existingUsers.find(u =>
+      String(u.Email || "").toLowerCase() === email.toLowerCase() &&
+      String(u.Status || "").toLowerCase() !== "rejected"
+    );
+    if (dupEmail) return { status: "error", message: "This email address is already registered." };
+ 
+    // Ensure required columns exist — add gracefully if missing
+    let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const requiredCols = ["Village", "Address", "RegisteredAt"];
+    requiredCols.forEach(col => {
+      if (headers.indexOf(col) === -1) {
+        sheet.getRange(1, sheet.getLastColumn() + 1).setValue(col);
+      }
+    });
+    // Refresh headers after possible additions
+    headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+ 
+    const newId = generateId();
+    const row = headers.map(h => {
+      if (h === "UserId")       return newId;
+      if (h === "Name")         return name;
+      if (h === "Mobile")       return mobile;
+      if (h === "Role")         return "User";
+      if (h === "Password")     return pwd;
+      if (h === "Email")        return email;
+      if (h === "Status")       return "Pending";
+      if (h === "SessionToken") return "";
+      if (h === "Village")      return village;
+      if (h === "Address")      return address;
+      if (h === "RegisteredAt") return formatDate();
+      return "";
+    });
+    sheet.appendRow(row);
+    SpreadsheetApp.flush();
+    logAction("System", "New Registration (Pending)", "Name: " + name + " | Mobile: " + mobile);
+ 
+    // Notify all admin users (best-effort, non-blocking)
+    try {
+      const admins = existingUsers.filter(u =>
+        String(u.Role || "").toLowerCase() === "admin" &&
+        String(u.Email || "").trim() !== "" &&
+        String(u.Status || "Active").toLowerCase() === "active"
+      );
+      admins.forEach(admin => {
+        try {
+          MailApp.sendEmail({
+            to: String(admin.Email).trim(),
+            subject: CFG.name + " — New Registration Request from " + name,
+            htmlBody: `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f4f6f9;padding:30px;">
+<table width="540" style="background:#fff;border-radius:16px;overflow:hidden;border-top:4px solid #f7a01a;box-shadow:0 4px 20px rgba(0,0,0,0.08);margin:0 auto;">
+  <tr><td style="background:#334155;padding:24px;text-align:center;">
+    ${_logoHtml()}
+    <div style="color:#f7a01a;font-size:18px;font-weight:700;">${CFG.name.toUpperCase()}</div>
+    <div style="margin-top:10px;"><span style="background:#f59e0b;color:#fff;padding:3px 14px;border-radius:20px;font-size:11px;font-weight:700;">NEW REGISTRATION REQUEST</span></div>
+  </td></tr>
+  <tr><td style="padding:24px 28px;">
+    <p style="color:#334155;font-size:14px;">Hello <strong>${admin.Name}</strong>,</p>
+    <p style="color:#475569;font-size:13px;">A new user has submitted a registration request:</p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin:12px 0;">
+      <tr style="background:#fef3c7;"><td style="padding:8px 12px;font-weight:700;color:#92400e;border:1px solid #fde68a;">Name</td><td style="padding:8px 12px;border:1px solid #fde68a;">${name}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:700;color:#334155;border:1px solid #e2e8f0;background:#f8fafc;">Mobile</td><td style="padding:8px 12px;border:1px solid #e2e8f0;">${mobile}</td></tr>
+      <tr style="background:#f8fafc;"><td style="padding:8px 12px;font-weight:700;color:#334155;border:1px solid #e2e8f0;">Email</td><td style="padding:8px 12px;border:1px solid #e2e8f0;">${email}</td></tr>
+      <tr><td style="padding:8px 12px;font-weight:700;color:#334155;border:1px solid #e2e8f0;background:#f8fafc;">Village</td><td style="padding:8px 12px;border:1px solid #e2e8f0;">${village || "—"}</td></tr>
+    </table>
+    <p style="color:#64748b;font-size:12px;">Please login to the admin panel → Users tab → Pending to approve or reject.</p>
+  </td></tr>
+  <tr><td style="background:#fef9ee;padding:14px 28px;text-align:center;border-top:1px solid #fde68a;">
+    <div style="color:#a16207;font-size:11px;">${CFG.name} | ${CFG.address}</div>
+  </td></tr>
+</table></body></html>`
+          });
+        } catch(mailErr) { /* non-fatal */ }
+      });
+    } catch(e2) { /* non-fatal */ }
+ 
+    return { status: "success" };
+  } catch(e) { return { status: "error", message: e.message }; }
+}
+ 
+function approveUser(params) {
+  try {
+    const userId    = sanitize(params.UserId    || "", 30);
+    const adminName = sanitize(params.AdminName || "Admin", 100);
+    if (!userId) return { status: "error", message: "UserId required." };
+ 
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+    if (!sheet) return { status: "error", message: "Users sheet not found." };
+ 
+    const data    = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const statusIdx = headers.indexOf("Status");
+    if (statusIdx === -1) return { status: "error", message: "Status column not found." };
+ 
+    let userRow = -1;
+    let userObj = {};
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][headers.indexOf("UserId")] || "") === userId) {
+        userRow = i + 1;
+        headers.forEach((h, j) => { userObj[h] = data[i][j]; });
+        break;
+      }
+    }
+    if (userRow === -1) return { status: "error", message: "User not found." };
+    if (String(userObj.Status || "").toLowerCase() !== "pending") {
+      return { status: "error", message: "User is not in Pending status." };
+    }
+ 
+    sheet.getRange(userRow, statusIdx + 1).setValue("Active");
+    SpreadsheetApp.flush();
+    logAction(adminName, "Approve User", "UserId: " + userId + " | Name: " + userObj.Name + " | Mobile: " + userObj.Mobile);
+ 
+    // Send approval email
+    const toEmail = String(userObj.Email || "").trim();
+    if (toEmail && canSendEmail()) {
+      try {
+        MailApp.sendEmail({
+          to: toEmail,
+          subject: CFG.name + " — Your Registration Has Been Approved!",
+          htmlBody: _buildApprovalEmail(userObj)
+        });
+        incrementEmailCount();
+      } catch(mailErr) { Logger.log("Approval email error: " + mailErr); }
+    }
+ 
+    return { status: "success" };
+  } catch(e) { return { status: "error", message: e.message }; }
+}
+ 
+function rejectUser(params) {
+  try {
+    const userId    = sanitize(params.UserId    || "", 30);
+    const reason    = sanitize(params.Reason    || "", 500);
+    const adminName = sanitize(params.AdminName || "Admin", 100);
+    if (!userId) return { status: "error", message: "UserId required." };
+ 
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+    if (!sheet) return { status: "error", message: "Users sheet not found." };
+ 
+    const data    = sheet.getDataRange().getValues();
+    const headers = data[0];
+ 
+    let userRow = -1;
+    let userObj = {};
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][headers.indexOf("UserId")] || "") === userId) {
+        userRow = i + 1;
+        headers.forEach((h, j) => { userObj[h] = data[i][j]; });
+        break;
+      }
+    }
+    if (userRow === -1) return { status: "error", message: "User not found." };
+
+    // Send rejection email BEFORE deleting row (need user data)
+    const toEmail = String(userObj.Email || "").trim();
+    if (toEmail && canSendEmail()) {
+      try {
+        MailApp.sendEmail({
+          to: toEmail,
+          subject: CFG.name + " — Regarding Your Registration Request",
+          htmlBody: _buildRejectionEmail(userObj, reason)
+        });
+        incrementEmailCount();
+      } catch(mailErr) { Logger.log("Rejection email error: " + mailErr); }
+    }
+
+    // DELETE the row from sheet
+    sheet.deleteRow(userRow);
+    SpreadsheetApp.flush();
+    logAction(adminName, "Reject & Delete User", "UserId: " + userId + " | Name: " + userObj.Name + (reason ? " | Reason: " + reason : ""));
+ 
+    return { status: "success" };
+  } catch(e) { return { status: "error", message: e.message }; }
+}
+ 
+function _buildApprovalEmail(user) {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);max-width:560px;width:100%;">
+  <tr><td style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);padding:28px 32px;text-align:center;border-top:4px solid #f7a01a;">
+    ${_logoHtml()}
+    <div style="color:#f7a01a;font-size:20px;font-weight:700;letter-spacing:1px;">${CFG.name.toUpperCase()}</div>
+    <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${CFG.location}</div>
+    <div style="margin-top:12px;"><span style="background:#22c55e;color:#fff;padding:5px 18px;border-radius:20px;font-size:11px;font-weight:700;">REGISTRATION APPROVED</span></div>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="color:#334155;font-size:16px;font-weight:700;margin:0 0 8px;">Jai Shree Ram, <span style="color:#f7a01a;">${user.Name}</span>!</p>
+    <p style="color:#475569;font-size:13px;line-height:1.8;margin:0 0 20px;">Your registration request for <strong>${CFG.name}</strong> has been <strong style="color:#16a34a;">approved</strong> by the admin. You can now login to access your account.</p>
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:18px 22px;margin:0 0 20px;">
+      <div style="color:#15803d;font-size:13px;font-weight:700;margin-bottom:12px;border-bottom:1px solid #bbf7d0;padding-bottom:8px;">Your Login Details</div>
+      <div style="color:#166534;font-size:13px;margin-bottom:6px;"><strong>Login ID (Mobile):</strong> ${user.Mobile}</div>
+      <div style="color:#166534;font-size:13px;"><strong>Password:</strong> The password you set during registration</div>
+    </div>
+    <p style="color:#64748b;font-size:13px;line-height:1.7;margin:0;">You can now view your donation history, download receipts, and more. Welcome to the ${CFG.name} family!</p>
+  </td></tr>
+  <tr><td style="background:#fef9ee;padding:18px 32px;text-align:center;border-top:2px solid #fde68a;">
+    <div style="color:#92400e;font-size:14px;font-weight:700;">Jai Shree Ram</div>
+    <div style="color:#a16207;font-size:12px;margin-top:4px;">${CFG.tagline}</div>
+  </td></tr>
+  <tr><td style="background:#f8fafc;padding:12px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+    <div style="color:#94a3b8;font-size:10px;">${CFG.name} | ${CFG.address}</div>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+}
+ 
+function _buildRejectionEmail(user, reason) {
+  const reasonBlock = reason
+    ? `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:14px 18px;margin:16px 0;">
+         <div style="color:#991b1b;font-size:12px;font-weight:700;margin-bottom:6px;">Reason:</div>
+         <div style="color:#7f1d1d;font-size:13px;line-height:1.6;">${reason}</div>
+       </div>`
+    : `<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin:16px 0;">
+         <div style="color:#92400e;font-size:13px;">If you have questions, please contact the temple admin directly.</div>
+       </div>`;
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);max-width:560px;width:100%;">
+  <tr><td style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);padding:28px 32px;text-align:center;border-top:4px solid #f7a01a;">
+    ${_logoHtml()}
+    <div style="color:#f7a01a;font-size:20px;font-weight:700;">${CFG.name.toUpperCase()}</div>
+    <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${CFG.location}</div>
+    <div style="margin-top:12px;"><span style="background:#64748b;color:#fff;padding:5px 18px;border-radius:20px;font-size:11px;font-weight:700;">REGISTRATION UPDATE</span></div>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="color:#334155;font-size:15px;margin:0 0 12px;">Dear <strong>${user.Name}</strong>,</p>
+    <p style="color:#475569;font-size:13px;line-height:1.8;margin:0 0 12px;">
+      Thank you for your interest in registering with <strong>${CFG.name}</strong>.
+      After review, we are unable to approve your registration request at this time.
+    </p>
+    ${reasonBlock}
+    <p style="color:#475569;font-size:13px;line-height:1.7;">
+      For assistance, please contact us at:<br/>
+      <strong>Phone:</strong> ${CFG.address}
+    </p>
+  </td></tr>
+  <tr><td style="background:#fef9ee;padding:18px 32px;text-align:center;border-top:2px solid #fde68a;">
+    <div style="color:#92400e;font-size:14px;font-weight:700;">Jai Shree Ram</div>
+    <div style="color:#a16207;font-size:12px;margin-top:4px;">${CFG.name}</div>
+  </td></tr>
+  <tr><td style="background:#f8fafc;padding:12px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+    <div style="color:#94a3b8;font-size:10px;">${CFG.name} | ${CFG.address}</div>
+  </td></tr>
+</table></td></tr></table></body></html>`;
 }
