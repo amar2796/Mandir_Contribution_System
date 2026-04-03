@@ -27,6 +27,15 @@
     receiptPrefix: "MNR",   // Receipt IDs: MNR-2025-0001, MNR-2025-0002 ...
     currency:      "₹",
     currencyCode:  "INR",
+
+    /* ── Bank / UPI Details (used in Donate modal) ── */
+    upiId:         "8127991402@upi",   // UPI ID for QR generation
+    accountName:   "Ram Shank Vishwakarma",
+    accountNo:     "1234 5678 1234",           // Replace with actual account number
+    ifscCode:      "BKID0008XXX",              // Replace with actual IFSC
+    bankName:      "State Bank of India",
+    bankBranch:    "Katka Khanpur Branch",
+    accountType:   "Savings",
   
     /* ── Authorized Signatory (shown on PDF receipts) ── */
     signatory:     "Temple Trust",

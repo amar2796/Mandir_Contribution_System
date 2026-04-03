@@ -556,42 +556,135 @@
         }
       }
 
+      /* ── SIDEBAR BRAND HEADER ── */
+      .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 18px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        margin-bottom: 4px;
+      }
+      .sidebar-brand-icon {
+        font-size: 2rem;
+        line-height: 1;
+        filter: drop-shadow(0 0 8px rgba(247,160,26,0.7));
+        flex-shrink: 0;
+      }
+      .sidebar-brand-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #f7a01a;
+        line-height: 1.2;
+      }
+      .sidebar-brand-sub {
+        font-size: 0.68rem;
+        color: rgba(255,255,255,0.42);
+        margin-top: 1px;
+        line-height: 1;
+      }
+      .sidebar h2 { display: none; }
+
+      /* ── Section group labels ── */
+      .nav-section-label {
+        font-size: 9.5px !important;
+        font-weight: 700 !important;
+        letter-spacing: 1.2px !important;
+        text-transform: uppercase !important;
+        color: rgba(255,255,255,0.32) !important;
+        padding: 14px 20px 5px !important;
+        cursor: default !important;
+        pointer-events: none;
+        border-bottom: none !important;
+        background: none !important;
+      }
+      .nav-section-label:hover {
+        background: none !important;
+        color: rgba(255,255,255,0.32) !important;
+        padding-left: 20px !important;
+      }
+
       /* ── UI ENHANCEMENTS ── */
       .sidebar li.active-nav {
-        border-left: 4px solid #f7c35a;
-        background: linear-gradient(
-          90deg,
-          rgba(247, 160, 26, 0.92),
-          rgba(247, 140, 10, 0.82)
-        );
-        padding-left: 26px;
+        border-left: 3px solid #f7c35a;
+        background: linear-gradient(90deg, rgba(247,160,26,0.88), rgba(247,140,10,0.76));
+        padding-left: 27px;
+        color: #fff !important;
+        font-weight: 600;
       }
-      .sidebar li:hover:not(.active-nav) {
-        background: rgba(247, 160, 26, 0.18);
+      .sidebar li:hover:not(.active-nav):not(.nav-section-label) {
+        background: rgba(255,255,255,0.07);
         color: #f7c35a;
+        padding-left: 30px;
       }
-      .sidebar li:last-child {
-        color: inherit;
+
+      /* Finance group — amber tint */
+      .nav-finance { color: #fcd34d; }
+      .nav-finance:hover:not(.active-nav), .nav-finance.active-nav {
+        color: #fef3c7 !important;
       }
-      .sidebar li:last-child:hover {
-        background: rgba(247, 160, 26, 0.18) !important;
-        color: #f7c35a;
+      .nav-finance.active-nav {
+        background: linear-gradient(90deg, rgba(245,158,11,0.85), rgba(217,119,6,0.72)) !important;
+        border-left-color: #fcd34d !important;
       }
-      #nav_audit {
-        color: #f87171;
+
+      /* Members group — blue tint */
+      .nav-members { color: #93c5fd; }
+      .nav-members:hover:not(.active-nav), .nav-members.active-nav {
+        color: #dbeafe !important;
       }
-      #nav_audit:hover,
-      #nav_audit.active-nav {
-        background: rgba(231, 76, 60, 0.25) !important;
-        color: #fca5a5 !important;
+      .nav-members.active-nav {
+        background: linear-gradient(90deg, rgba(59,130,246,0.7), rgba(37,99,235,0.55)) !important;
+        border-left-color: #93c5fd !important;
       }
-      #nav_feedback {
-        color: #86efac;
+
+      /* Content group — purple tint */
+      .nav-content { color: #c4b5fd; }
+      .nav-content:hover:not(.active-nav), .nav-content.active-nav {
+        color: #ede9fe !important;
       }
-      #nav_feedback:hover,
-      #nav_feedback.active-nav {
-        background: rgba(34, 197, 94, 0.18) !important;
+      .nav-content.active-nav {
+        background: linear-gradient(90deg, rgba(124,58,237,0.7), rgba(109,40,217,0.55)) !important;
+        border-left-color: #c4b5fd !important;
+      }
+      #nav_announcement { color: #c4b5fd; }
+      #nav_announcement:hover, #nav_announcement.active-nav {
+        color: #ede9fe !important;
+        background: linear-gradient(90deg, rgba(124,58,237,0.7), rgba(109,40,217,0.55)) !important;
+      }
+
+      /* System group — teal/green tint */
+      .nav-system { color: #6ee7b7; }
+      .nav-system:hover:not(.active-nav), .nav-system.active-nav {
+        color: #d1fae5 !important;
+      }
+      .nav-system.active-nav {
+        background: linear-gradient(90deg, rgba(16,185,129,0.65), rgba(5,150,105,0.50)) !important;
+        border-left-color: #6ee7b7 !important;
+      }
+      #nav_feedback { color: #6ee7b7; }
+      #nav_feedback:hover, #nav_feedback.active-nav {
+        background: rgba(16,185,129,0.18) !important;
         color: #bbf7d0 !important;
+      }
+      #nav_emailauto { color: #34d399; }
+      #nav_emailauto:hover, #nav_emailauto.active-nav {
+        background: rgba(16,185,129,0.22) !important;
+        color: #6ee7b7 !important;
+      }
+      #nav_tracker { color: #fcd34d; }
+      #nav_tracker:hover, #nav_tracker.active-nav {
+        background: linear-gradient(90deg, rgba(245,158,11,0.82), rgba(217,119,6,0.68)) !important;
+        color: #fef3c7 !important;
+      }
+
+      /* Audit — red tint */
+      .nav-audit-item { color: #fca5a5; }
+      #nav_audit { color: #fca5a5; }
+      .nav-audit-item:hover:not(.active-nav),
+      #nav_audit:hover, #nav_audit.active-nav {
+        background: rgba(239,68,68,0.18) !important;
+        color: #fecaca !important;
       }
       .card-box {
         position: relative;
@@ -951,64 +1044,72 @@ tr.row-rejected td { background: #fff5f5 !important; }
 
     <div class="layout">
       <div class="sidebar">
-        <h2><i class="fa-solid fa-om"></i> Admin Panel</h2>
+        <div class="sidebar-brand">
+          <div class="sidebar-brand-icon">🕉️</div>
+          <div class="sidebar-brand-text">
+            <div class="sidebar-brand-title">Admin Panel</div>
+            <div class="sidebar-brand-sub">Shree Hanuman Mandir</div>
+          </div>
+        </div>
+
         <ul>
+          <!-- ── Overview ── -->
           <li onclick="showPage('home',this)" class="active-nav">
             <i class="fa-solid fa-house"></i> Home
           </li>
           <li onclick="openDashboard(this)">
             <i class="fa-solid fa-chart-pie"></i> Dashboard
           </li>
-          <li onclick="showPage('contributionPage',this)">
+
+          <!-- ── Section label: Finance ── -->
+          <li class="nav-section-label">Finance</li>
+          <li onclick="showPage('contributionPage',this)" class="nav-finance">
             <i class="fa-solid fa-hand-holding-dollar"></i> Contribution
           </li>
-          <li onclick="showPage('expensePage',this)">
+          <li onclick="showPage('expensePage',this)" class="nav-finance">
             <i class="fa-solid fa-money-bill-wave"></i> Expense
           </li>
-          <li onclick="showPage('usersPage',this)" id="nav_users">
+          <li onclick="showPage('trackerPage',this)" id="nav_tracker" class="nav-finance">
+            <i class="fa-solid fa-chart-line"></i> Tracker
+          </li>
+          <li onclick="showPage('goalsPage',this)" class="nav-finance">
+            <i class="fa-solid fa-bullseye"></i> Goals
+          </li>
+
+          <!-- ── Section label: Members ── -->
+          <li class="nav-section-label">Members</li>
+          <li onclick="showPage('usersPage',this)" id="nav_users" class="nav-members">
             <i class="fa-solid fa-users"></i> Users
             <span class="nav-badge" id="pendingBadge">0</span>
           </li>
-          <li onclick="showPage('masterPage',this)">
+          <li onclick="showPage('masterPage',this)" class="nav-members">
             <i class="fa-solid fa-database"></i> Master Data
           </li>
-          <li onclick="showPage('goalsPage',this)">
-            <i class="fa-solid fa-bullseye"></i> Manage Goals
-          </li>
-          <li onclick="showPage('galleryAdminPage',this)">
+
+          <!-- ── Section label: Content ── -->
+          <li class="nav-section-label">Content</li>
+          <li onclick="showPage('galleryAdminPage',this)" class="nav-content">
             <i class="fa-solid fa-images"></i> Gallery
           </li>
-          <li onclick="showPage('trackerPage',this)" id="nav_tracker">
-            <i class="fa-solid fa-chart-pie"></i> Contribution Tracker
-          </li>
-          <li onclick="showPage('announcementPage',this)" id="nav_announcement">
+          <li onclick="showPage('announcementPage',this)" id="nav_announcement" class="nav-content">
             <i class="fa-solid fa-bullhorn"></i> Announcement
           </li>
-          <li onclick="showPage('chatbotPage',this)">
-            <i class="fa-solid fa-robot"></i> Chatbot Settings
+          <li onclick="showPage('broadcastPage',this)" class="nav-content">
+            <i class="fa-solid fa-satellite-dish"></i> Broadcast
           </li>
-          <li onclick="showPage('broadcastPage',this)">
-            <i class="fa-solid fa-bullhorn"></i> Broadcast
+
+          <!-- ── Section label: System ── -->
+          <li class="nav-section-label">System</li>
+          <li onclick="showPage('chatbotPage',this)" class="nav-system">
+            <i class="fa-solid fa-robot"></i> Chatbot
           </li>
-          <li
-            id="nav_feedback"
-            onclick="showPage('feedbackAdminPage',this)"
-            style="color: #86efac"
-          >
+          <li id="nav_feedback" onclick="showPage('feedbackAdminPage',this)" class="nav-system">
             <i class="fa-solid fa-comment-dots"></i> Feedback
           </li>
-          <li
-            id="nav_emailauto"
-            onclick="showPage('emailAutoPage',this)"
-            style="color: #34d399"
-          >
+          <li id="nav_emailauto" onclick="showPage('emailAutoPage',this)" class="nav-system">
             <i class="fa-solid fa-envelope-circle-check"></i> Email Automation
           </li>
-          <li
-            id="nav_audit"
-            onclick="showPage('auditPage',this)"
-            style="color: #f87171"
-          >
+          <li id="nav_audit" onclick="showPage('auditPage',this)" class="nav-audit-item">
             <i class="fa-solid fa-scroll"></i> Audit Log
           </li>
         </ul>
@@ -1352,7 +1453,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
                   class="fa-solid fa-user-pen"
                   style="color: #f7a01a; width: 16px; text-align: center"
                 ></i>
-                Edit Profile
+                My Profile
               </div>
               <div
                 onclick="logout()"
@@ -2443,6 +2544,8 @@ tr.row-rejected td { background: #fff5f5 !important; }
                     <th>Mobile</th>
                     <th>Address</th>
                     <th>Message</th>
+                    <th>Status</th>
+                    <th style="min-width:120px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="fbAdminTableBody">
@@ -5850,7 +5953,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         const pagEl  = document.getElementById("audit_pagination");
         if (!tbody) return;
         if (!list || list.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
           if (pagEl) pagEl.innerHTML = "";
           return;
         }
@@ -5940,58 +6043,232 @@ tr.row-rejected td { background: #fff5f5 !important; }
       }
 
       /* ═══ FEEDBACK ADMIN FUNCTIONS ═══ */
+      /* ══════════ FEEDBACK CONFIRM MODAL ══════════ */
+      (function injectFbModal() {
+        if (document.getElementById('_fbModalOverlay')) return;
+        const style = document.createElement('style');
+        style.textContent = `
+          #_fbModalOverlay {
+            position: fixed; inset: 0; z-index: 99999;
+            background: rgba(15,23,42,0.55);
+            backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.22s ease;
+          }
+          #_fbModalOverlay.show { opacity: 1; pointer-events: all; }
+          #_fbModalBox {
+            background: #fff; border-radius: 20px;
+            padding: 32px 28px 24px; max-width: 360px; width: 90%;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.04);
+            transform: scale(0.88) translateY(16px);
+            transition: transform 0.26s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease;
+            opacity: 0; text-align: center;
+          }
+          #_fbModalOverlay.show #_fbModalBox { transform: scale(1) translateY(0); opacity: 1; }
+          #_fbModalIcon {
+            width: 66px; height: 66px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.7rem; margin: 0 auto 16px;
+          }
+          #_fbModalIcon.done { background: #d1fae5; color: #059669; }
+          #_fbModalIcon.del  { background: #fee2e2; color: #dc2626; }
+          #_fbModalTitle {
+            font-size: 1.12rem; font-weight: 700; color: #0f172a;
+            margin: 0 0 8px; font-family: Poppins, sans-serif;
+          }
+          #_fbModalMsg {
+            font-size: 0.855rem; color: #64748b; line-height: 1.65;
+            margin: 0 0 24px; font-family: Poppins, sans-serif;
+          }
+          #_fbModalMsg strong { color: #334155; }
+          #_fbModalMeta {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 10px 14px; margin: -10px 0 20px;
+            font-size: 12px; color: #475569; font-family: Poppins, sans-serif;
+            text-align: left; line-height: 1.7; display: none;
+          }
+          #_fbModalMeta.show { display: block; }
+          #_fbModalMeta span { font-weight: 600; color: #0f172a; }
+          ._fbModalBtns { display: flex; gap: 10px; justify-content: center; }
+          ._fbModalBtns button {
+            flex: 1; max-width: 148px; padding: 11px 0;
+            border-radius: 10px; border: none;
+            font-size: 0.88rem; font-weight: 700; cursor: pointer;
+            font-family: Poppins, sans-serif;
+            transition: transform 0.15s, box-shadow 0.15s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+          }
+          ._fbModalBtns button:hover { transform: translateY(-2px); }
+          #_fbModalCancel { background: #f1f5f9; color: #475569; }
+          #_fbModalCancel:hover { background: #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+          #_fbModalConfirm.done { background: linear-gradient(135deg,#34d399,#059669); color:#fff; box-shadow:0 4px 14px rgba(5,150,105,0.3); }
+          #_fbModalConfirm.done:hover { box-shadow:0 8px 20px rgba(5,150,105,0.45); }
+          #_fbModalConfirm.del  { background: linear-gradient(135deg,#f87171,#dc2626); color:#fff; box-shadow:0 4px 14px rgba(220,38,38,0.3); }
+          #_fbModalConfirm.del:hover  { box-shadow:0 8px 20px rgba(220,38,38,0.45); }
+        `;
+        document.head.appendChild(style);
+        const overlay = document.createElement('div');
+        overlay.id = '_fbModalOverlay';
+        overlay.innerHTML = `
+          <div id="_fbModalBox">
+            <div id="_fbModalIcon"><i id="_fbModalIconI"></i></div>
+            <div id="_fbModalTitle"></div>
+            <div id="_fbModalMsg"></div>
+            <div id="_fbModalMeta"></div>
+            <div class="_fbModalBtns">
+              <button id="_fbModalCancel" onclick="_fbModalClose()">
+                <i class="fa-solid fa-xmark"></i> Cancel
+              </button>
+              <button id="_fbModalConfirm">Confirm</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', function(e){ if(e.target===overlay) _fbModalClose(); });
+        document.addEventListener('keydown', function(e){ if(e.key==='Escape') _fbModalClose(); });
+      })();
+
+      window._fbModalClose = function() {
+        const ov = document.getElementById('_fbModalOverlay');
+        if (ov) ov.classList.remove('show');
+      };
+
+      function _fbShowConfirm({ type, title, msg, meta, onConfirm }) {
+        const ov    = document.getElementById('_fbModalOverlay');
+        const icon  = document.getElementById('_fbModalIcon');
+        const iconI = document.getElementById('_fbModalIconI');
+        const tit   = document.getElementById('_fbModalTitle');
+        const msgEl = document.getElementById('_fbModalMsg');
+        const metaEl= document.getElementById('_fbModalMeta');
+        const conf  = document.getElementById('_fbModalConfirm');
+        icon.className  = type; icon.id = '_fbModalIcon';
+        iconI.className = type === 'done' ? 'fa-solid fa-circle-check' : 'fa-solid fa-triangle-exclamation';
+        tit.textContent = title;
+        msgEl.innerHTML = msg;
+        if (meta) { metaEl.innerHTML = meta; metaEl.classList.add('show'); }
+        else { metaEl.innerHTML = ''; metaEl.classList.remove('show'); }
+        conf.className = type; conf.id = '_fbModalConfirm';
+        conf.innerHTML = type === 'done'
+          ? '<i class="fa-solid fa-check"></i> Mark Done'
+          : '<i class="fa-solid fa-trash-can"></i> Delete';
+        conf.onclick = function() { _fbModalClose(); onConfirm(); };
+        ov.classList.add('show');
+      }
+
       let _fbAdminData = [];
 
       async function loadFeedbackAdmin() {
         const tbody = document.getElementById("fbAdminTableBody");
         if (!tbody) return;
         tbody.innerHTML =
-          '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">Loading...</td></tr>';
+          '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;">Loading...</td></tr>';
         try {
           const res = await getData("getFeedback");
           _fbAdminData = Array.isArray(res) ? res : [];
           renderFeedbackAdmin(_fbAdminData);
           if (_fbAdminData.length === 0)
             tbody.innerHTML =
-              '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No feedback yet.<br><small style="font-size:11px;">Feedback from the Home page will appear here.</small></td></tr>';
+              '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;">No feedback yet.<br><small style="font-size:11px;">Feedback from the Home page will appear here.</small></td></tr>';
         } catch (e) {
           tbody.innerHTML =
-            '<tr><td colspan="6" style="text-align:center;color:#e74c3c;padding:20px;">Could not load feedback. Make sure FEEDBACK sheet exists.</td></tr>';
+            '<tr><td colspan="8" style="text-align:center;color:#e74c3c;padding:20px;">Could not load feedback. Make sure FEEDBACK sheet exists.</td></tr>';
         }
+      }
+
+      function fbMarkResolved(rowIndex, btnEl) {
+        const row = _fbAdminData.find(r => r.RowIndex === rowIndex) || {};
+        _fbShowConfirm({
+          type: 'done',
+          title: 'Mark as Resolved?',
+          msg: 'This will update the status to <strong>Resolved</strong> in your Google Sheet permanently.',
+          meta: `👤 <span>${escapeHtml(row.Name||'—')}</span> &nbsp;·&nbsp; 💬 ${escapeHtml(row.Message||'—')}`,
+          onConfirm: async function() {
+            if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
+            try {
+              const res = await postData({ action: "updateFeedbackStatus", RowIndex: rowIndex, Status: "Resolved" });
+              if (res && res.status === "updated") {
+                toast("✅ Marked as Resolved!", "success");
+                await loadFeedbackAdmin();
+              } else {
+                toast("Failed to update. Try again.", "error");
+                if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fa-solid fa-check"></i> Done'; }
+              }
+            } catch(e) {
+              toast("Network error. Try again.", "error");
+              if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fa-solid fa-check"></i> Done'; }
+            }
+          }
+        });
+      }
+
+      function fbDeleteRow(rowIndex, btnEl) {
+        const row = _fbAdminData.find(r => r.RowIndex === rowIndex) || {};
+        _fbShowConfirm({
+          type: 'del',
+          title: 'Delete Feedback?',
+          msg: 'This will <strong>permanently remove</strong> this entry from your Google Sheet. This cannot be undone.',
+          meta: `👤 <span>${escapeHtml(row.Name||'—')}</span> &nbsp;·&nbsp; 💬 ${escapeHtml(row.Message||'—')}`,
+          onConfirm: async function() {
+            if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
+            try {
+              const res = await postData({ action: "deleteFeedback", RowIndex: rowIndex });
+              if (res && res.status === "deleted") {
+                toast("🗑️ Feedback deleted!", "success");
+                await loadFeedbackAdmin();
+              } else {
+                toast("Failed to delete. Try again.", "error");
+                if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fa-solid fa-trash-can"></i> Del'; }
+              }
+            } catch(e) {
+              toast("Network error. Try again.", "error");
+              if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fa-solid fa-trash-can"></i> Del'; }
+            }
+          }
+        });
       }
 
       function renderFeedbackAdmin(list) {
         const tbody = document.getElementById("fbAdminTableBody");
         if (!tbody) return;
         if (!list || list.length === 0) {
-          tbody.innerHTML =
-            '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
           return;
         }
-        tbody.innerHTML = list
-          .map((row, i) => {
-            const ts = String(row.Timestamp || row[0] || "—");
-            const name = String(row.Name || row[1] || "—");
-            const mobile = String(row.Mobile || row[2] || "—");
-            const address = String(row.Address || row[3] || "—");
-            const message = String(row.Message || row[4] || "—");
-            return `<tr>
-            <td style="color:#888;">${i + 1}</td>
-            <td style="font-size:12px;color:#888;font-family:monospace;">${escapeHtml(
-              ts
-            )}</td>
+        let visibleIdx = 0;
+        tbody.innerHTML = list.map((row, i) => {
+          visibleIdx++;
+          const ts      = String(row.Timestamp || row[0] || '—');
+          const name    = String(row.Name || row[1] || '—');
+          const mobile  = String(row.Mobile || row[2] || '—');
+          const address = String(row.Address || row[3] || '—');
+          const message = String(row.Message || row[4] || '—');
+          const status  = String(row.Status || 'Pending');
+          const rowIdx  = row.RowIndex;
+          const isDone  = status === 'Resolved';
+          const badge   = isDone
+            ? '<span style="background:#d1fae5;color:#065f46;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;">✓ Resolved</span>'
+            : '<span style="background:#fef3c7;color:#92400e;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">Pending</span>';
+          return `<tr style="${isDone ? 'opacity:0.6;' : ''}">
+            <td style="color:#888;">${visibleIdx}</td>
+            <td style="font-size:12px;color:#888;font-family:monospace;">${escapeHtml(ts)}</td>
             <td style="font-weight:600;">${escapeHtml(name)}</td>
             <td>${escapeHtml(mobile)}</td>
             <td style="font-size:12px;color:#666;">${escapeHtml(address)}</td>
-            <td style="font-size:12px;color:#333;white-space:normal;max-width:250px;">${escapeHtml(
-              message
-            )}</td>
+            <td style="font-size:12px;color:#333;white-space:normal;max-width:200px;">${escapeHtml(message)}</td>
+            <td>${badge}</td>
+            <td>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+                ${!isDone ? `<button onclick="fbMarkResolved(${rowIdx}, this)"
+                  style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:8px;padding:4px 9px;font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fa-solid fa-check"></i> Done</button>` : ''}
+                <button onclick="fbDeleteRow(${rowIdx}, this)"
+                  style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:8px;padding:4px 9px;font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fa-solid fa-trash-can"></i> Del</button>
+              </div>
+            </td>
           </tr>`;
-          })
-          .join("");
+        }).join('');
       }
 
-      function filterFeedbackAdmin() {
+            function filterFeedbackAdmin() {
         const txt = (
           document.getElementById("fbAdminSearch")?.value || ""
         ).toLowerCase();

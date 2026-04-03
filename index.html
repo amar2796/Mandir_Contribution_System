@@ -832,15 +832,15 @@
       }
 
       @media(max-width: 768px) {
-        .swiper-slide-gallery img { height: 210px; }
-        .gallery-swiper-section { padding: 0 48px; }
+        .swiper-slide-gallery img { height: 260px; }
+        .gallery-swiper-section { padding: 0 44px; }
         .gc-lb-panel { padding: 0 50px 12px; }
         .gc-lb-prev { left: -46px; width: 38px; height: 38px; }
         .gc-lb-next { right: -46px; width: 38px; height: 38px; }
       }
       @media(max-width: 520px) {
-        .swiper-slide-gallery img { height: 240px; }
-        .gallery-swiper-section { padding: 0 36px; }
+        .swiper-slide-gallery img { height: 320px; }
+        .gallery-swiper-section { padding: 0 32px; }
         .gc-lb-panel { padding: 0 12px 12px; }
         .gc-lb-prev, .gc-lb-next { display: none; }
         .swiper-button-prev-custom, .swiper-button-next-custom {
@@ -1112,6 +1112,19 @@
         font-size: 0.95rem;
         line-height: 1.6;
       }
+      .fb-pending-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #fff8e1;
+        border: 1.5px solid #f7a01a;
+        border-radius: 20px;
+        padding: 5px 16px;
+        font-size: 0.82rem; font-weight: 700;
+        color: #b45309;
+        letter-spacing: 0.4px;
+        margin-top: 14px;
+        box-shadow: 0 2px 8px rgba(247,160,26,0.15);
+      }
+      .fb-pending-badge i { color: #f7a01a; font-size: 0.78rem; }
       @media (max-width: 800px) {
         .feedback-layout { grid-template-columns: 1fr; }
         .feedback-map-side { min-height: 280px; }
@@ -1133,22 +1146,24 @@
       /* AUDIO BUTTON */
       .audio-btn {
         position: fixed;
-        bottom: 25px;
-        right: 25px;
+        bottom: 24px;
+        left: 24px;
+        right: auto;
         background: linear-gradient(135deg, #f7a01a, #e08e12);
         color: white;
         border: none;
         border-radius: 50%;
-        width: 55px;
-        height: 55px;
-        font-size: 20px;
+        width: 54px;
+        height: 54px;
+        font-size: 18px;
         cursor: pointer;
-        box-shadow: 0 8px 20px rgba(247, 160, 26, 0.4);
-        z-index: 1000;
+        box-shadow: 0 6px 22px rgba(247, 160, 26, 0.45);
+        z-index: 99990;
         display: flex;
         justify-content: center;
         align-items: center;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 3px solid #fff;
       }
       .audio-btn:hover {
         transform: scale(1.1) translateY(-3px);
@@ -1225,11 +1240,12 @@
           gap: 0;
         }
         .audio-btn {
-          width: 46px;
-          height: 46px;
+          width: 48px;
+          height: 48px;
           font-size: 16px;
-          bottom: 18px;
-          right: 18px;
+          bottom: 24px;
+          left: 14px;
+          right: auto;
         }
         .footer {
           padding: 16px;
@@ -1807,13 +1823,31 @@
       /* Photo side */
       .member-photo-side {
         flex: 0 0 300px;
-        background: linear-gradient(160deg, #3c1a00 0%, #78501e 50%, #5a2e0a 100%);
+        background: linear-gradient(160deg, #2a0d00 0%, #5a2e0a 45%, #3c1a00 100%);
         display: flex;
         align-items: flex-end;
         justify-content: center;
         position: relative;
         overflow: hidden;
         min-height: 340px;
+      }
+      /* Warm ambient light from bottom */
+      .member-photo-side::before {
+        content: '';
+        position: absolute;
+        bottom: -30px; left: 50%; transform: translateX(-50%);
+        width: 280px; height: 280px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(247,160,26,0.28) 0%, rgba(211,84,0,0.14) 50%, transparent 70%);
+        border: 2px solid rgba(247,160,26,0.3);
+        z-index: 1;
+      }
+      .member-photo-side::after {
+        content: '';
+        position: absolute;
+        bottom: -55px; left: 50%; transform: translateX(-50%);
+        width: 350px; height: 350px; border-radius: 50%;
+        border: 1px solid rgba(247,160,26,0.14);
+        z-index: 1;
       }
       .member-photo-side img.member-avatar {
         position: absolute;
@@ -1825,43 +1859,30 @@
         border-radius: 0;
         margin: 0;
         z-index: 2;
+        filter: brightness(1.04) contrast(1.02);
       }
-      /* Decorative circle behind photo */
-      .member-photo-side::before {
-        content: '';
+      /* Gold shimmer overlay at bottom of photo */
+      .member-photo-side .member-photo-overlay {
         position: absolute;
-        bottom: -30px; left: 50%; transform: translateX(-50%);
-        width: 260px; height: 260px; border-radius: 50%;
-        background: radial-gradient(circle, rgba(247,160,26,0.22) 0%, rgba(211,84,0,0.12) 50%, transparent 70%);
-        border: 2px solid rgba(247,160,26,0.25);
-      }
-      .member-photo-side::after {
-        content: '';
-        position: absolute;
-        bottom: -50px; left: 50%; transform: translateX(-50%);
-        width: 320px; height: 320px; border-radius: 50%;
-        border: 1px solid rgba(247,160,26,0.12);
-      }
-      .member-avatar {
-        position: absolute; z-index: 2;
-        inset: 0;
-        width: 100%; height: 100%;
-        object-fit: cover;
-        object-position: center top;
-        border-radius: 0;
-        margin: 0;
-        display: block;
+        bottom: 0; left: 0; right: 0;
+        height: 80px;
+        background: linear-gradient(to top, rgba(40,10,0,0.72) 0%, transparent 100%);
+        z-index: 3;
+        pointer-events: none;
       }
       .member-avatar-placeholder {
         position: relative; z-index: 2;
         width: 200px; height: 200px; border-radius: 50%;
-        border: 3px solid rgba(247,160,26,0.6);
-        box-shadow: 0 0 0 8px rgba(247,160,26,0.12), 0 12px 40px rgba(0,0,0,0.4);
+        border: 4px solid rgba(247,160,26,0.75);
+        box-shadow: 0 0 0 6px rgba(247,160,26,0.18), 0 0 0 12px rgba(247,160,26,0.07), 0 16px 48px rgba(0,0,0,0.45);
         margin-bottom: 28px;
         background: linear-gradient(160deg, #5a2e0a, #3c1a00);
         display: flex; align-items: center; justify-content: center;
-        font-size: 4.5rem;
-        text-shadow: 0 0 20px rgba(247,160,26,0.6);
+        font-size: 4rem;
+        font-weight: 700;
+        color: #f7c35a;
+        text-shadow: 0 0 24px rgba(247,160,26,0.7);
+        letter-spacing: -1px;
       }
       /* Info side */
       .member-info-side {
@@ -1927,18 +1948,60 @@
         .members-header-top { flex-direction: column; gap: 14px; }
         .members-nav { align-self: flex-end; padding-top: 0; }
         .member-card.active { flex-direction: column; }
-        .member-photo-side { flex: 0 0 220px; min-height: 220px; }
+        .member-photo-side { flex: 0 0 300px; min-height: 300px; }
+        .member-photo-side img.member-avatar { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
         .member-avatar-placeholder { width: 150px; height: 150px; font-size: 3.5rem; margin-bottom: 20px; }
-        .member-photo-side img.member-avatar { width: 100%; height: 100%; }
         .member-info-side { padding: 28px 22px 28px; }
         .member-name { font-size: 1.5rem; }
         .members-title { font-size: 1.75rem; }
       }
       @media (max-width: 500px) {
-        .member-photo-side { flex: 0 0 180px; min-height: 180px; }
+        .member-photo-side { flex: 0 0 280px; min-height: 280px; }
+        .member-photo-side img.member-avatar { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
         .member-avatar-placeholder { width: 120px; height: 120px; font-size: 2.8rem; }
-        .member-photo-side img.member-avatar { width: 100%; height: 100%; }
         .member-info-side { padding: 22px 18px; }
+      }
+
+      /* ══ SECTION DIVIDERS ══ */
+      .section-divider {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        padding: 8px 0;
+        overflow: hidden;
+        position: relative;
+      }
+      .section-divider .sd-line {
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(247,160,26,0.45) 30%, rgba(247,160,26,0.45) 70%, transparent);
+        max-width: 340px;
+      }
+      .section-divider .sd-center {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 18px;
+        position: relative;
+      }
+      .section-divider .sd-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #f7a01a;
+        opacity: 0.6;
+        flex-shrink: 0;
+      }
+      .section-divider .sd-symbol {
+        font-size: 1.4rem;
+        line-height: 1;
+        filter: drop-shadow(0 0 8px rgba(247,160,26,0.6));
+        user-select: none;
+      }
+      .section-divider .sd-petal {
+        width: 8px; height: 8px; border-radius: 50% 0 50% 0;
+        background: rgba(247,160,26,0.5);
+        transform: rotate(45deg);
+        flex-shrink: 0;
       }
     </style>
   </head>
@@ -2045,6 +2108,19 @@
     </div>
 
     <!-- ══ OUR MEMBERS SECTION ══ -->
+
+    <div class="section-divider reveal">
+      <div class="sd-line"></div>
+      <div class="sd-center">
+        <div class="sd-petal"></div>
+        <div class="sd-dot"></div>
+        <div class="sd-symbol">🕉️</div>
+        <div class="sd-dot"></div>
+        <div class="sd-petal"></div>
+      </div>
+      <div class="sd-line"></div>
+    </div>
+
     <div class="members-section reveal" id="membersSection">
       <div class="members-section-bg"></div>
 
@@ -2074,7 +2150,8 @@
       <div class="member-card active" id="memberCard0">
         <div class="member-photo-side">
           <img class="member-avatar" src="Image/AmarjeetPic.jpeg" alt="Amarjeet" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-          <div class="member-avatar-placeholder" style="display:none;">🕉️</div>
+          <div class="member-photo-overlay"></div>
+          <div class="member-avatar-placeholder" style="display:none;">अ</div>
         </div>
         <div class="member-info-side">
           <div class="member-role-badge">
@@ -2093,7 +2170,8 @@
       <div class="member-card" id="memberCard1">
         <div class="member-photo-side">
           <img class="member-avatar" src="Image/Vinod_Pic.jpeg" alt="Vinod Kumar Vishwakarma" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-          <div class="member-avatar-placeholder" style="display:none;">🪔</div>
+          <div class="member-photo-overlay"></div>
+          <div class="member-avatar-placeholder" style="display:none;">वि</div>
         </div>
         <div class="member-info-side">
           <div class="member-role-badge">
@@ -2111,7 +2189,7 @@
       <!-- Member 3 -->
       <div class="member-card" id="memberCard2">
         <div class="member-photo-side">
-          <div class="member-avatar-placeholder">🙏</div>
+          <div class="member-avatar-placeholder">सु</div>
         </div>
         <div class="member-info-side">
           <div class="member-role-badge">
@@ -2132,6 +2210,19 @@
         <div class="member-dot" onclick="memberGoTo(1);resetMemberAutoplay();"></div>
         <div class="member-dot" onclick="memberGoTo(2);resetMemberAutoplay();"></div>
       </div>
+    </div>
+
+
+    <div class="section-divider reveal">
+      <div class="sd-line"></div>
+      <div class="sd-center">
+        <div class="sd-petal"></div>
+        <div class="sd-dot"></div>
+        <div class="sd-symbol">🪔</div>
+        <div class="sd-dot"></div>
+        <div class="sd-petal"></div>
+      </div>
+      <div class="sd-line"></div>
     </div>
 
     <div class="section reveal" id="features">
@@ -2157,6 +2248,19 @@
           </p>
         </div>
       </div>
+    </div>
+
+
+    <div class="section-divider reveal">
+      <div class="sd-line"></div>
+      <div class="sd-center">
+        <div class="sd-petal"></div>
+        <div class="sd-dot"></div>
+        <div class="sd-symbol">🌸</div>
+        <div class="sd-dot"></div>
+        <div class="sd-petal"></div>
+      </div>
+      <div class="sd-line"></div>
     </div>
 
     <div class="section reveal" id="gallery">
@@ -2208,6 +2312,19 @@
       </div>
     </div>
 
+
+    <div class="section-divider reveal">
+      <div class="sd-line"></div>
+      <div class="sd-center">
+        <div class="sd-petal"></div>
+        <div class="sd-dot"></div>
+        <div class="sd-symbol">🔱</div>
+        <div class="sd-dot"></div>
+        <div class="sd-petal"></div>
+      </div>
+      <div class="sd-line"></div>
+    </div>
+
     <!-- ══ COMMUNITY STATS SECTION ══ -->
     <div class="community-stats-section reveal" id="communityStats">
 
@@ -2232,6 +2349,19 @@
 
     </div>
 
+
+    <div class="section-divider reveal">
+      <div class="sd-line"></div>
+      <div class="sd-center">
+        <div class="sd-petal"></div>
+        <div class="sd-dot"></div>
+        <div class="sd-symbol">🙏</div>
+        <div class="sd-dot"></div>
+        <div class="sd-petal"></div>
+      </div>
+      <div class="sd-line"></div>
+    </div>
+
     <!-- Feedback Section: Map Left + Form Right -->
     <div class="feedback-section reveal" id="feedbackSection">
       <h2>
@@ -2249,11 +2379,11 @@
             Shree Hanuman Mandir, Paliya — Find Us Here
           </div>
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3559.123456789!2d80.7!3d27.0!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sShree+Hanuman+Mandir+Paliya!5e0!3m2!1sen!2sin!4v1234567890"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3273.497389457402!2d82.20519597492734!3d26.321060585267084!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399a790bd4e8dff3%3A0x93c61c2049ae55f2!2sHanuman%20Mandir!5e1!3m2!1sen!2sin!4v1775203315104!5m2!1sen!2sin"
             allowfullscreen=""
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
-            title="Shree Hanuman Mandir Location">
+            title="Shree Hanuman Mandir, Paliya — Google Maps">
           </iframe>
         </div>
 
@@ -2287,6 +2417,9 @@
               Your message has been received. We deeply appreciate your time and<br />suggestions
               — they help us serve the Mandir community better.<br /><br /><em>जय श्री राम 🕉️</em>
             </p>
+            <div class="fb-pending-badge">
+              <i class="fa-solid fa-clock"></i> Status: Pending Review
+            </div>
           </div>
         </div>
 
@@ -2296,6 +2429,7 @@
     <div class="footer">© 2026 Mandir System | Built with <span>❤️</span></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js"></script>
+    <script src="constants.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script src="chatbot_widget.js"></script>
@@ -2721,6 +2855,8 @@
             Mobile: mobile,
             Address: address,
             Message: message,
+            Status: "Pending",
+            SubmittedAt: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
           }).catch(() => {}); // best-effort
         }
 
@@ -2788,27 +2924,27 @@
             <div class="pay-card-heading">Bank Transfer</div>
             <div class="pay-detail-row">
               <span class="pay-detail-label">Account Name</span>
-              <span class="pay-detail-value">Shree Hanuman Mandir<br>Ram Yagya Vishwakarma</span>
+              <span class="pay-detail-value" id="payAccName">Loading...</span>
             </div>
             <div class="pay-detail-row">
               <span class="pay-detail-label">Account No.</span>
-              <span class="pay-detail-value" id="payAccNo">XXXX XXXX XXXX</span>
+              <span class="pay-detail-value" id="payAccNo">Loading...</span>
             </div>
             <div class="pay-detail-row">
               <span class="pay-detail-label">IFSC Code</span>
-              <span class="pay-detail-value" id="payIfsc">XXXXXXXX</span>
+              <span class="pay-detail-value" id="payIfsc">Loading...</span>
             </div>
             <div class="pay-detail-row">
               <span class="pay-detail-label">Bank Name</span>
-              <span class="pay-detail-value">Bank of India</span>
+              <span class="pay-detail-value" id="payBankName">Loading...</span>
             </div>
             <div class="pay-detail-row">
               <span class="pay-detail-label">Branch</span>
-              <span class="pay-detail-value">Paliya Branch</span>
+              <span class="pay-detail-value" id="payBranch">Loading...</span>
             </div>
             <div class="pay-detail-row">
               <span class="pay-detail-label">Account Type</span>
-              <span class="pay-detail-value">Savings</span>
+              <span class="pay-detail-value" id="payAccType">Loading...</span>
             </div>
             <button class="pay-copy-btn" id="copyBankBtn" onclick="copyBankDetails()">
               <i class="fa-regular fa-copy"></i> Copy Details
@@ -2822,16 +2958,14 @@
             <div class="pay-card-heading">UPI / QR Code</div>
             <div class="pay-qr-wrap">
               <div class="pay-qr-ring-wrap">
-                <div class="pay-qr-box">
-                  <img class="pay-qr-img" src="Image/upi_qr.png" alt="UPI QR Code"
-                    onerror="this.style.display='none';document.getElementById('qrFallback').style.display='flex';">
-                  <div class="pay-qr-placeholder" id="qrFallback" style="display:none;">
+                <div class="pay-qr-box" id="payQrBox">
+                  <div class="pay-qr-placeholder" id="qrFallback">
                     <i class="fa-solid fa-qrcode"></i>
-                    <span>Place your<br>QR image here</span>
+                    <span>Generating<br>QR Code...</span>
                   </div>
                 </div>
               </div>
-              <div class="pay-upi-id" id="payUpiId">mandir@upi</div>
+              <div class="pay-upi-id" id="payUpiId">Loading...</div>
               <button class="pay-copy-btn" id="copyUpiBtn" onclick="copyUpiId()" style="margin-top:0;">
                 <i class="fa-regular fa-copy"></i> Copy UPI ID
               </button>
@@ -2861,11 +2995,66 @@
 
     <script>
       /* ── Payment Modal ── */
+      function _initPayModalFields() {
+        if (typeof APP === 'undefined') return;
+        var accName = document.getElementById('payAccName');
+        var accNo   = document.getElementById('payAccNo');
+        var ifsc    = document.getElementById('payIfsc');
+        var bank    = document.getElementById('payBankName');
+        var branch  = document.getElementById('payBranch');
+        var accType = document.getElementById('payAccType');
+        var upiEl   = document.getElementById('payUpiId');
+        if (accName) accName.textContent = APP.accountName  || 'Shree Hanuman Mandir';
+        if (accNo)   accNo.textContent   = APP.accountNo    || 'Contact Temple Office';
+        if (ifsc)    ifsc.textContent    = APP.ifscCode     || 'Contact Temple Office';
+        if (bank)    bank.textContent    = APP.bankName     || 'Bank of India';
+        if (branch)  branch.textContent  = APP.bankBranch   || 'Paliya Branch';
+        if (accType) accType.textContent = APP.accountType  || 'Savings';
+        if (upiEl)   upiEl.textContent   = APP.upiId        || 'mandir@upi';
+      }
+      /* Pre-fill fields as soon as DOM is ready */
+      document.addEventListener('DOMContentLoaded', _initPayModalFields);
+
+      function _generatePayQR() {
+        var upiId = (typeof APP !== 'undefined' && APP.upiId) ? APP.upiId : 'mandir@upi';
+        var name  = (typeof APP !== 'undefined' && APP.name)  ? APP.name  : 'Shree Hanuman Mandir';
+        var upiStr = 'upi://pay?pa=' + encodeURIComponent(upiId) + '&pn=' + encodeURIComponent(name) + '&cu=INR';
+        var box = document.getElementById('payQrBox');
+        if (!box) return;
+        // Clear previous QR
+        box.innerHTML = '';
+        if (window.QRCode) {
+          try {
+            new window.QRCode(box, {
+              text: upiStr,
+              width: 148,
+              height: 148,
+              colorDark: '#1a0800',
+              colorLight: '#ffffff',
+              correctLevel: window.QRCode.CorrectLevel.M
+            });
+          } catch(e) {
+            box.innerHTML = '<div class="pay-qr-placeholder"><i class="fa-solid fa-qrcode"></i><span>QR Ready<br>' + upiId + '</span></div>';
+          }
+        } else {
+          // Load QRCode.js on demand
+          var s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+          s.onload = function() { _generatePayQR(); };
+          s.onerror = function() {
+            box.innerHTML = '<div class="pay-qr-placeholder"><i class="fa-solid fa-qrcode"></i><span>' + upiId + '</span></div>';
+          };
+          document.head.appendChild(s);
+        }
+      }
+
       function openPayModal() {
         var m = document.getElementById('payModal');
         m.classList.add('open');
         document.body.style.overflow = 'hidden';
         m.scrollTop = 0;
+        _initPayModalFields();
+        _generatePayQR();
         spawnPayParticles();
       }
       function closePayModal() {
@@ -2903,9 +3092,12 @@
 
       /* ── Copy bank details ── */
       function copyBankDetails() {
-        var accNo = document.getElementById('payAccNo').innerText;
-        var ifsc  = document.getElementById('payIfsc').innerText;
-        var text  = 'Shree Hanuman Mandir\nAccount No: ' + accNo + '\nIFSC: ' + ifsc + '\nBank: Bank of India, Paliya Branch';
+        var accNo  = document.getElementById('payAccNo').innerText;
+        var ifsc   = document.getElementById('payIfsc').innerText;
+        var bank   = document.getElementById('payBankName').innerText;
+        var branch = document.getElementById('payBranch').innerText;
+        var name   = (typeof APP !== 'undefined' && APP.name) ? APP.name : 'Shree Hanuman Mandir';
+        var text   = name + '\nAccount No: ' + accNo + '\nIFSC: ' + ifsc + '\nBank: ' + bank + ', ' + branch;
         navigator.clipboard.writeText(text).then(function() {
           var btn = document.getElementById('copyBankBtn');
           btn.classList.add('copied');
