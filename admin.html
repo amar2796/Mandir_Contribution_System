@@ -3194,7 +3194,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             _adminSelfCroppedB64 = "";
             toast("✅ Profile updated!");
             closeModal();
-            init();
+            smartRefresh("users");
           } else {
             toast("❌ Update failed.", "error");
           }
@@ -4627,6 +4627,7 @@ function _ysShow(visibleId) {
           if (res.status === "updated") {
             toast("✅ Contribution updated.");
             closeModal();
+            smartRefresh("contributions");
             updateLocalData("contributions", id, {
               Amount: amt,
               ForMonth: mon,
@@ -4860,7 +4861,7 @@ function _ysShow(visibleId) {
           );
           if (res.status === "updated") {
             closeModal();
-            init();
+            smartRefresh("expenses");
           }
         } catch (err) {
           toast("❌ " + err.message, "error");
@@ -5116,7 +5117,7 @@ function _ysShow(visibleId) {
           if (res.status === "updated") {
             _adminPendingCroppedB64 = ""; // clear after success
             closeModal();
-            init();
+            smartRefresh("users");
           }
         } catch (err) {
           toast("❌ " + err.message, "error");
@@ -5199,7 +5200,7 @@ function _ysShow(visibleId) {
           res.status === "updated" ? "" : "error"
         );
         closeModal();
-        init();
+        smartRefresh("types");
       }
 
       function openEditOccasion(id, val) {
@@ -5221,7 +5222,7 @@ function _ysShow(visibleId) {
           res.status === "updated" ? "" : "error"
         );
         closeModal();
-        init();
+        smartRefresh("occasions");
       }
 
       function openEditExpenseType(id, val) {
@@ -5243,7 +5244,7 @@ function _ysShow(visibleId) {
           res.status === "updated" ? "" : "error"
         );
         closeModal();
-        init();
+        smartRefresh("expenseTypes");
       }
 
       /* ── BULK INSERT v2: per-row (month + custom amount) ── */
@@ -5438,7 +5439,7 @@ function _ysShow(visibleId) {
         );
         setTimeout(() => {
           closeModal();
-          init();
+          smartRefresh("contributions");
         }, 1200);
       }
       async function addContribution() {
@@ -5483,7 +5484,7 @@ function _ysShow(visibleId) {
             toast(msg);
             document.getElementById("amount").value = "";
             document.getElementById("note").value = "";
-            init();
+            smartRefresh("contributions");
             // Refresh dashboard iframe so totals stay in sync
             const _dfi = document.getElementById("dashboardFrame");
             if (_dfi && _dfi.src && _dfi.src !== "") _dfi.src = "dashboard.html?" + Date.now();
@@ -5500,7 +5501,7 @@ function _ysShow(visibleId) {
               res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               res.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("contributions");
           } catch (err) {
             toast("❌ " + err.message, "error");
           }
@@ -5529,7 +5530,7 @@ function _ysShow(visibleId) {
           );
           document.getElementById("title").value = "";
           document.getElementById("expAmount").value = "";
-          init();
+          smartRefresh("expenses");
         } catch (err) {
           toast("❌ " + err.message, "error");
         }
@@ -5542,7 +5543,7 @@ function _ysShow(visibleId) {
               res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               res.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("expenses");
           } catch (err) {
             toast("❌ " + err.message, "error");
           }
@@ -5578,7 +5579,7 @@ function _ysShow(visibleId) {
             document.getElementById("u_mobile").value = "";
             document.getElementById("u_password").value = "";
             document.getElementById("u_email").value = "";
-            init();
+            smartRefresh("users");
           }
         } catch (err) {
           toast("❌ " + err.message, "error");
@@ -5592,7 +5593,7 @@ function _ysShow(visibleId) {
               res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               res.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("users");
           } catch (err) {
             toast("❌ " + err.message, "error");
           }
@@ -5608,7 +5609,7 @@ function _ysShow(visibleId) {
             r.status === "success" ? "" : "error"
           );
           document.getElementById("t_name").value = "";
-          init();
+          smartRefresh("types");
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
@@ -5621,7 +5622,7 @@ function _ysShow(visibleId) {
               r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               r.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("types");
           } catch (e) {
             toast("❌ " + e.message, "error");
           }
@@ -5637,7 +5638,7 @@ function _ysShow(visibleId) {
             r.status === "success" ? "" : "error"
           );
           document.getElementById("o_name").value = "";
-          init();
+          smartRefresh("occasions");
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
@@ -5653,7 +5654,7 @@ function _ysShow(visibleId) {
               r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               r.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("occasions");
           } catch (e) {
             toast("❌ " + e.message, "error");
           }
@@ -5669,7 +5670,7 @@ function _ysShow(visibleId) {
             r.status === "success" ? "" : "error"
           );
           document.getElementById("e_name").value = "";
-          init();
+          smartRefresh("expenseTypes");
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
@@ -5685,7 +5686,7 @@ function _ysShow(visibleId) {
               r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               r.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("expenseTypes");
           } catch (e) {
             toast("❌ " + e.message, "error");
           }
@@ -5885,7 +5886,7 @@ function _ysShow(visibleId) {
               res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               res.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("goals");
           } catch (e) {
             toast("❌ " + e.message, "error");
           }
@@ -6648,7 +6649,7 @@ function _ysShow(visibleId) {
               (o) => String(o.OccasionId) === String(occasionId)
             );
             closeModal();
-            init();
+            smartRefresh("contributions");
             // Refresh dashboard iframe so live summary reflects the new walk-in entry
             const _df = document.getElementById("dashboardFrame");
             if (_df && _df.src && _df.src !== "") _df.src = "dashboard.html?" + Date.now();
@@ -7132,7 +7133,7 @@ var _userFilterStatus = "all";
          .then(res => {
            if (res && res.status === "success") {
              toast("✅ " + userName + " approved! Approval email sent.");
-             setTimeout(() => { try { init(); } catch(e) {} }, 300);
+             setTimeout(() => { try { smartRefresh("users"); } catch(e) {} }, 300);
            } else {
              toast("❌ " + (res && res.message ? res.message : "Approval failed."), "error");
            }
@@ -7176,7 +7177,7 @@ var _userFilterStatus = "all";
      .then(res => {
        if (res && res.status === "success") {
          toast("Registration for " + userName + " rejected. Email sent.", "warn");
-         setTimeout(() => { try { init(); } catch(e) {} }, 300);
+         setTimeout(() => { try { smartRefresh("users"); } catch(e) {} }, 300);
        } else {
          toast("❌ " + (res && res.message ? res.message : "Rejection failed."), "error");
        }

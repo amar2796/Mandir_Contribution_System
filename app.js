@@ -213,6 +213,7 @@ const _CACHE_BUST_ON_WRITE = {
   updateOccasion:     ["getAllData", "getOccasions"],
   addExpenseType:     ["getAllData", "getExpenseTypes"],
   deleteExpenseType:  ["getAllData", "getExpenseTypes"],
+  updateExpenseType:  ["getAllData", "getExpenseTypes"],
   addGoal:            ["getAllData"],
   updateGoal:         ["getAllData"],
   deleteGoal:         ["getAllData"],
@@ -299,6 +300,99 @@ function mandirCacheBust(action) {
     // so existing cached data is still valid.
   };
 })();
+
+/* ═══ SMART REFRESH ══════════════════════════════════════════════
+   Fetches only the data that changed, updates global arrays,
+   then calls only the render functions that need updating.
+   Falls back to full init() if anything goes wrong.
+   ═══════════════════════════════════════════════════════════════ */
+   async function smartRefresh(scope) {
+    try {
+      // Always re-fetch getAllData from cache (cache was busted by postData wrapper)
+      // This is fast — cache miss re-fetches, cache hit is instant
+      const allData = (await getCached("getAllData")) || {};
+   
+      // Update global arrays — same as init() does
+      if (typeof users       !== "undefined") users       = allData.users         || users;
+      if (typeof data        !== "undefined") data        = allData.contributions  || data;
+      if (typeof expenses    !== "undefined") expenses    = allData.expenses       || expenses;
+      if (typeof types       !== "undefined") types       = allData.types          || types;
+      if (typeof expenseTypes!== "undefined") expenseTypes= allData.expenseTypes   || expenseTypes;
+      if (typeof occasions   !== "undefined") occasions   = allData.occasions      || occasions;
+      if (typeof goals       !== "undefined") goals       = allData.goals          || goals;
+      if (typeof yearConfig  !== "undefined") yearConfig  = allData.yearConfig     || yearConfig;
+   
+      // Render only what this scope affects
+      switch (scope) {
+   
+        case "contributions":
+          if (typeof render          === "function") render();
+          if (typeof loadSummary     === "function") loadSummary();
+          if (typeof loadYears       === "function") loadYears();
+          if (typeof loadExpenseFilters === "function") loadExpenseFilters();
+          break;
+   
+        case "expenses":
+          if (typeof renderExpenses  === "function") renderExpenses();
+          if (typeof loadSummary     === "function") loadSummary();
+          if (typeof loadYears       === "function") loadYears();
+          if (typeof loadExpenseFilters === "function") loadExpenseFilters();
+          break;
+   
+        case "users":
+          if (typeof renderUsers         === "function") renderUsers();
+          if (typeof updateUserTabCounts === "function") updateUserTabCounts(users);
+          if (typeof loadUsers           === "function") loadUsers();
+          break;
+   
+        case "types":
+          if (typeof renderTypes === "function") renderTypes();
+          if (typeof loadTypes   === "function") loadTypes();
+          break;
+   
+        case "occasions":
+          if (typeof renderOccasions === "function") renderOccasions();
+          if (typeof loadOccasions   === "function") loadOccasions();
+          break;
+   
+        case "expenseTypes":
+          if (typeof renderExpenseTypes === "function") renderExpenseTypes();
+          if (typeof loadExpenseTypes   === "function") loadExpenseTypes();
+          break;
+   
+        case "goals":
+          if (typeof renderGoals === "function") renderGoals();
+          break;
+   
+        case "all":
+        default:
+          // Full re-render — same as original init() minus the data fetch
+          if (typeof showUser           === "function") showUser();
+          if (typeof loadMonths         === "function") loadMonths();
+          if (typeof loadYears          === "function") loadYears();
+          if (typeof loadUsers          === "function") loadUsers();
+          if (typeof loadTypes          === "function") loadTypes();
+          if (typeof loadExpenseTypes   === "function") loadExpenseTypes();
+          if (typeof loadOccasions      === "function") loadOccasions();
+          if (typeof render             === "function") render();
+          if (typeof renderUsers        === "function") renderUsers();
+          if (typeof updateUserTabCounts=== "function") updateUserTabCounts(users);
+          if (typeof renderTypes        === "function") renderTypes();
+          if (typeof renderOccasions    === "function") renderOccasions();
+          if (typeof renderExpenseTypes === "function") renderExpenseTypes();
+          if (typeof renderExpenses     === "function") renderExpenses();
+          if (typeof loadExpenseFilters === "function") loadExpenseFilters();
+          if (typeof renderGoals        === "function") renderGoals();
+          if (typeof loadSummary        === "function") loadSummary();
+          break;
+      }
+   
+    } catch(err) {
+      // On any error: fall back silently to full init()
+      console.warn("smartRefresh failed, falling back to init():", err);
+      if (typeof init === "function") init();
+    }
+  }
 
 /* ═══════════════════════════════════════════════════════════
    ONE SESSION PER USER — Cross-device single session system
