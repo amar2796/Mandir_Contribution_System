@@ -70,6 +70,17 @@
       }
       .msg-box.error   { background: #fdedec; color: #c0392b; display: block; }
       .msg-box.success { background: #eafaf1; color: #1e8449; display: block; }
+      .msg-box.pending {
+        background: #fff8ee; color: #92400e; display: block;
+        border: 1.5px solid #f7a01a; border-radius: 12px;
+        padding: 14px 16px; text-align: center;
+      }
+      .msg-box.pending .pend-title {
+        font-size: 14px; font-weight: 700; color: #78350f; margin-bottom: 6px;
+      }
+      .msg-box.pending .pend-sub {
+        font-size: 12px; font-weight: 400; color: #a16207; line-height: 1.5;
+      }
       button.main-btn {
         width: 100%; padding: 14px; border: none; border-radius: 10px;
         color: white; font-family: "Poppins", sans-serif; font-size: 1rem;
@@ -375,8 +386,15 @@
 
       function setMsg(id, text, type) {
         let el = document.getElementById(id);
-        el.textContent = text; el.className = "msg-box " + (type || "");
-        if (!text) el.className = "msg-box";
+        if (!text) { el.className = "msg-box"; el.innerHTML = ""; return; }
+        el.className = "msg-box " + (type || "");
+        // Pending gets a richer HTML layout
+        if (type === "pending") {
+          el.innerHTML = `<div class="pend-title">⏳ Registration Under Review</div>
+            <div class="pend-sub">${text}</div>`;
+        } else {
+          el.textContent = text;
+        }
       }
 
       async function sha256(str) {
@@ -470,7 +488,7 @@
               setMsg("loginMsg","✓ Login successful! Redirecting...","success");
               setTimeout(() => { location.href = user.Role === "Admin" ? "admin.html" : "user.html"; }, 600);
             } else if (res.status === "pending") {
-              setMsg("loginMsg","⏳ Your registration is pending admin approval. Please wait for approval email.","error");
+              setMsg("loginMsg", "Your account is awaiting approval. You'll receive an email with your login details once the temple admin reviews your request.", "pending");
             } else if (res.status === "error") {
               setMsg("loginMsg","❌ " + (res.message || "Account issue."),"error");
             } else {

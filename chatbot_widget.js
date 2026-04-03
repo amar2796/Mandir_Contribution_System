@@ -77,9 +77,12 @@
     /* ══════════════ INJECT CSS ══════════════ */
     function _injectCSS() {
       if (document.getElementById("_mbotCSS")) return;
+      // Detect if an audio/sound button exists at bottom-right — if so, raise chatbot above it
+      var hasAudioBtn = document.querySelector('.audio-btn, #audioControl, [class*="audio-btn"]');
+      var bottomOffset = hasAudioBtn ? "100px" : "24px";
       var css = `
   #_mbotBtn {
-    position: fixed; bottom: 24px; right: 24px; z-index: 99990;
+    position: fixed; bottom: ${bottomOffset}; right: 24px; z-index: 99990;
     width: 58px; height: 58px; border-radius: 50%;
     background: linear-gradient(135deg, #f7a01a, #e08e12);
     box-shadow: 0 6px 22px rgba(247,160,26,0.45);
@@ -92,7 +95,7 @@
   #_mbotBtn._open { transform: rotate(90deg) scale(1.05); }
   
   #_mbotWin {
-    position: fixed; bottom: 94px; right: 24px; z-index: 99989;
+    position: fixed; bottom: ${hasAudioBtn ? "170px" : "94px"}; right: 24px; z-index: 99989;
     width: 330px; max-height: 520px;
     background: #fff; border-radius: 18px;
     box-shadow: 0 12px 48px rgba(0,0,0,0.18);
@@ -202,8 +205,8 @@
     font-family: Poppins, sans-serif;
   }
   @media (max-width: 420px) {
-    #_mbotWin { width: calc(100vw - 20px); right: 10px; bottom: 80px; }
-    #_mbotBtn { right: 14px; bottom: 16px; }
+    #_mbotWin { width: calc(100vw - 20px); right: 10px; bottom: ${hasAudioBtn ? "170px" : "80px"}; }
+    #_mbotBtn { right: 14px; bottom: ${hasAudioBtn ? "100px" : "16px"}; }
   }
       `;
       var el = document.createElement("style");

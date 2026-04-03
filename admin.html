@@ -3588,9 +3588,9 @@ tr.row-rejected td { background: #fff5f5 !important; }
       ];
 
       function loadSummary() {
-        // Total Members = active users with Role=User only (not Admins)
+        // Total Members = ACTIVE users only (not Admins, not Pending, not Inactive)
         let memberCount = users.filter(
-          (u) => u.Role !== "Admin" && u.Status !== "Inactive"
+          (u) => u.Role !== "Admin" && String(u.Status||"Active").toLowerCase() === "active"
         ).length;
         document.getElementById("totalUsers").innerText = memberCount;
         // FIX #5 & #14: Include walk-in entries in all totals
@@ -3629,7 +3629,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         let yearE         = expenses.filter(e => String(e.Year) === String(curYear)).reduce((s,e) => s + Number(e.Amount||0), 0);
 
         let sb = document.getElementById("sb_members");
-        if (sb) sb.innerText = users.filter(u => u.Role !== "Admin" && u.Status !== "Inactive").length;
+        if (sb) sb.innerText = users.filter(u => u.Role !== "Admin" && String(u.Status||"Active").toLowerCase() === "active").length;
 
         let sbm = document.getElementById("sb_month");
         if (sbm) sbm.innerText = "₹" + fmt(monthC + monthWalkIn);
@@ -3770,7 +3770,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             .filter((c) => String(c.UserId).startsWith("WALKIN_"))
             .reduce((s, c) => s + Number(c.Amount || 0), 0);
           let memberLines = users
-            .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
+            .filter((u) => u.Role !== "Admin" && String(u.Status||"").toLowerCase() === "active")
             .map((u) => {
               let paid = monthContribs
                 .filter((c) => String(c.UserId) === String(u.UserId))
@@ -3802,7 +3802,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             .filter((c) => String(c.UserId).startsWith("WALKIN_"))
             .reduce((s, c) => s + Number(c.Amount || 0), 0);
           let memberLines = users
-            .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
+            .filter((u) => u.Role !== "Admin" && String(u.Status||"").toLowerCase() === "active")
             .map((u) => {
               let paid = yearContribs
                 .filter((c) => String(c.UserId) === String(u.UserId))
@@ -3953,7 +3953,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
 
         // ── Member-wise table
         let memberRows = users
-          .filter(u => u.Status !== "Inactive" && u.Role !== "Admin")
+          .filter(u => u.Role !== "Admin" && String(u.Status||"").toLowerCase() === "active")
           .map((u, i) => {
             let paid   = yearContribs.filter(c => String(c.UserId) === String(u.UserId)).reduce((s,c) => s+Number(c.Amount||0), 0);
             let moPaid = monthContribs.filter(c => String(c.UserId) === String(u.UserId)).reduce((s,c) => s+Number(c.Amount||0), 0);
@@ -4094,7 +4094,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
       }
       function loadUsers() {
         document.getElementById("user").innerHTML = users
-          .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
+          .filter((u) => u.Role !== "Admin" && String(u.Status||"").toLowerCase() === "active")
           .map((u) => `<option value="${u.UserId}">${u.Name}</option>`)
           .join("");
       }
@@ -4969,7 +4969,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
       function openBulkInsert() {
         if (!checkSession()) return;
         let userOpts = users
-          .filter((u) => u.Status !== "Inactive" && u.Role !== "Admin")
+          .filter((u) => u.Role !== "Admin" && String(u.Status||"").toLowerCase() === "active")
           .map(
             (u) => `<option value="${u.UserId}">${escapeHtml(u.Name)}</option>`
           )
@@ -5965,7 +5965,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         );
       }
 
-      init();
+      try { init(); } catch(e) { console.warn('init() error:', e); }
 
       /* FIX #4: Header always stays visible (sticky), scroll-hide removed */
       /* No scroll-hide for admin header — menu stays accessible always */
@@ -6195,7 +6195,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         const selYear   = String(trYear.value);
 
         // All active non-admin members (exclude walk-ins — they have no user record)
-        const members = users.filter(u => u.Role !== "Admin" && u.Status !== "Inactive");
+        const members = users.filter(u => u.Role !== "Admin" && String(u.Status||"").toLowerCase() === "active");
 
         // Filter contributions matching criteria
         let contribs = data.filter(c =>
@@ -6525,17 +6525,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         setTimeout(_pollResult, 8000);
       }
 
-      // // Hook tracker init AND email auto init to showPage
-      // const _origShowPage = showPage;
-      // window.showPage = function(id, el) {
-      //   _origShowPage(id, el);
-      //   if (id === "trackerPage" && typeof initTrackerDropdowns === "function") {
-      //     setTimeout(initTrackerDropdowns, 100);
-      //   }
-      //   if (id === "emailAutoPage" && typeof initEmailAutoPage === "function") {
-      //     setTimeout(initEmailAutoPage, 100);
-      //   }
-      // }
+      // showPage lazy-init hooks handled by DOMContentLoaded listener below
 
     /* ══════════════════════════════════════════════════════════════
    ADDON: PENDING USERS + CHATBOT SETTINGS
@@ -6581,18 +6571,39 @@ var _userFilterStatus = "all";
   
  /* ── APPROVE USER ── */
  function approveUser(userId, userName) {
-   if (!confirm("Approve " + userName + "?\n\nThis will activate their account and send an approval email.")) return;
-   const s = JSON.parse(localStorage.getItem("session") || "{}");
-   postData({ action: "approveUser", UserId: userId, AdminName: s.name || "Admin" })
-     .then(res => {
-       if (res && res.status === "success") {
-         toast("✅ " + userName + " approved! Approval email sent.", "success");
-         loadData(); // refresh all data
-       } else {
-         toast("❌ " + (res && res.message ? res.message : "Approval failed."), "error");
-       }
-     })
-     .catch(err => toast("❌ " + err.message, "error"));
+   const html = `
+     <div class="_mhdr">
+       <h3><i class="fa-solid fa-circle-check" style="color:#27ae60;"></i> Approve Registration</h3>
+       <button class="_mcls" onclick="closeModal()">×</button>
+     </div>
+     <div class="_mbdy" style="text-align:center;padding:20px 16px 10px;">
+       <div style="width:56px;height:56px;border-radius:50%;background:#eafaf1;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;">✅</div>
+       <p style="font-size:15px;color:#334155;font-weight:600;margin:0 0 6px;">${escapeHtml(userName)}</p>
+       <p style="font-size:13px;color:#64748b;margin:0 0 20px;">This will activate their account and send an approval email with login details.</p>
+       <div style="display:flex;gap:10px;justify-content:center;">
+         <button class="_mbtn" style="background:#999;min-width:90px;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Cancel</button>
+         <button class="_mbtn" style="background:#27ae60;min-width:120px;" id="_approveOkBtn"><i class="fa-solid fa-check"></i> Approve</button>
+       </div>
+     </div>`;
+   openModal(html, "380px");
+   setTimeout(() => {
+     const btn = document.getElementById("_approveOkBtn");
+     if (btn) btn.addEventListener("click", () => {
+       closeModal();
+       btn.disabled = true;
+       const s = JSON.parse(localStorage.getItem("session") || "{}");
+       postData({ action: "approveUser", UserId: userId, AdminName: s.name || "Admin" })
+         .then(res => {
+           if (res && res.status === "success") {
+             toast("✅ " + userName + " approved! Approval email sent.");
+             setTimeout(() => { try { init(); } catch(e) {} }, 300);
+           } else {
+             toast("❌ " + (res && res.message ? res.message : "Approval failed."), "error");
+           }
+         })
+         .catch(err => toast("❌ " + err.message, "error"));
+     });
+   }, 50);
  }
   
  /* ── REJECT USER ── */
@@ -6629,7 +6640,7 @@ var _userFilterStatus = "all";
      .then(res => {
        if (res && res.status === "success") {
          toast("Registration for " + userName + " rejected. Email sent.", "warn");
-         loadData();
+         setTimeout(() => { try { init(); } catch(e) {} }, 300);
        } else {
          toast("❌ " + (res && res.message ? res.message : "Rejection failed."), "error");
        }
@@ -6702,13 +6713,18 @@ var _userFilterStatus = "all";
      });
  }
   
- /* ── Hook showPage to auto-load chatbot settings ── */
+ /* ── Hook showPage to auto-init lazy pages ── */
  document.addEventListener("DOMContentLoaded", function () {
    if (typeof showPage === "function") {
      var _spOrig = showPage;
      window.showPage = function (id, el) {
        _spOrig(id, el);
-       if (id === "chatbotPage") loadChatbotSettings();
+       if (id === "chatbotPage" && typeof loadChatbotSettings === "function")
+         loadChatbotSettings();
+       if (id === "trackerPage" && typeof initTrackerDropdowns === "function")
+         setTimeout(initTrackerDropdowns, 100);
+       if (id === "emailAutoPage" && typeof initEmailAutoPage === "function")
+         setTimeout(initEmailAutoPage, 100);
      };
    }
  });

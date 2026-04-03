@@ -1,6 +1,47 @@
 let selectedYear;
 let _cbId = 0;
 
+/* ── Suppress JSONP noise from Apps Script HTML error pages ──────────────────
+   When Apps Script returns an HTML page instead of JS (cold start / rate limit),
+   Firefox throws "Uncaught SyntaxError: unexpected token: identifier" and
+   falsely attributes it to "admin.html:1:42" — NOT to the Google script URL.
+   So filename-based filters are useless. The correct detection strategy:
+     • Any SyntaxError whose filename ends in ".html" is JSONP parse noise —
+       HTML files are never valid JS, so this can never be a real app error.
+     • Also suppress errors from known Google domains as a belt-and-suspenders.
+   TWO layers: window.onerror (suppresses "Uncaught" in Firefox) +
+               addEventListener (suppresses in Chrome / other browsers). ── */
+window._activeJsonpCount = 0;
+
+window.onerror = (function (_prev) {
+  return function (msg, src, line, col, error) {
+    // HTML file attributed error = JSONP parse noise (Firefox quirk)
+    if (src && /\.html(\?.*)?$/i.test(src)) return true;
+    // Known Google/Apps Script domain
+    if (src && (src.indexOf('script.google.com') !== -1 ||
+                src.indexOf('macros/s/') !== -1 ||
+                src.indexOf('googleusercontent.com') !== -1)) return true;
+    // SyntaxError while JSONP in-flight = Apps Script HTML response
+    if (error instanceof SyntaxError && window._activeJsonpCount > 0) return true;
+    // "unexpected token" message while JSONP in-flight
+    if (window._activeJsonpCount > 0 && typeof msg === 'string' &&
+        msg.toLowerCase().indexOf('unexpected token') !== -1) return true;
+    return _prev ? _prev.call(this, msg, src, line, col, error) : false;
+  };
+}(window.onerror));
+
+window.addEventListener('error', function (e) {
+  if (!e) return;
+  var src = e.filename || '';
+  if (/\.html(\?.*)?$/i.test(src)) { e.preventDefault(); return true; }
+  if (src.indexOf('script.google.com') !== -1 ||
+      src.indexOf('macros/s/') !== -1 ||
+      src.indexOf('googleusercontent.com') !== -1) { e.preventDefault(); return true; }
+  if (e.error instanceof SyntaxError && window._activeJsonpCount > 0) { e.preventDefault(); return true; }
+  if (!e.error && window._activeJsonpCount > 0 && e.message &&
+      e.message.toLowerCase().indexOf('unexpected token') !== -1) { e.preventDefault(); return true; }
+}, true);
+
 /* ═══ SHARED EMAIL QUOTA CACHE ═══
    Both sidebar and Email Automation page use this so they always
    show the same number and only ONE API call fires per refresh. */
@@ -84,9 +125,11 @@ async function sha256(str) {
 function getData(action) {
   return new Promise((resolve,reject)=>{
     _cbId++; const cb="cb_"+_cbId+"_"+Date.now(); const script=document.createElement("script"); let done=false;
-    window[cb]=function(data){if(done)return;done=true;clearTimeout(timer);delete window[cb];script.remove();resolve(data);};
-    const timer=setTimeout(()=>{if(done)return;done=true;window[cb]=function(){try{delete window[cb];script.remove();}catch(e){}};try{script.remove();}catch(e){}reject(new Error("Request timed out."));},20000);
-    script.onerror=function(){if(done)return;done=true;clearTimeout(timer);window[cb]=function(){try{delete window[cb];}catch(e){}};try{script.remove();}catch(e){}reject(new Error("Network error."));};
+    window._activeJsonpCount = (window._activeJsonpCount||0) + 1;
+    function _fin(){ if(!done){ done=true; window._activeJsonpCount = Math.max(0,(window._activeJsonpCount||1)-1); } }
+    window[cb]=function(data){ _fin(); clearTimeout(timer); delete window[cb]; script.remove(); resolve(data); };
+    const timer=setTimeout(()=>{ _fin(); window[cb]=function(){try{delete window[cb];script.remove();}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Request timed out.")); },20000);
+    script.onerror=function(){ _fin(); clearTimeout(timer); window[cb]=function(){try{delete window[cb];}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Network error. Check Apps Script deployment.")); };
     script.src=API_URL+"?action="+action+"&callback="+cb; document.body.appendChild(script);
   });
 }
@@ -95,9 +138,11 @@ function getData(action) {
 function postData(data) {
   return new Promise((resolve,reject)=>{
     _cbId++; const cb="cb_post_"+_cbId+"_"+Date.now(); const script=document.createElement("script"); let done=false;
-    window[cb]=function(res){if(done)return;done=true;clearTimeout(timer);delete window[cb];script.remove();resolve(res);};
-    const timer=setTimeout(()=>{if(done)return;done=true;window[cb]=function(){try{delete window[cb];script.remove();}catch(e){}};try{script.remove();}catch(e){}reject(new Error("Request timed out."));},20000);
-    script.onerror=function(){if(done)return;done=true;clearTimeout(timer);window[cb]=function(){try{delete window[cb];}catch(e){}};try{script.remove();}catch(e){}reject(new Error("Network error."));};
+    window._activeJsonpCount = (window._activeJsonpCount||0) + 1;
+    function _fin(){ if(!done){ done=true; window._activeJsonpCount = Math.max(0,(window._activeJsonpCount||1)-1); } }
+    window[cb]=function(res){ _fin(); clearTimeout(timer); delete window[cb]; script.remove(); resolve(res); };
+    const timer=setTimeout(()=>{ _fin(); window[cb]=function(){try{delete window[cb];script.remove();}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Request timed out.")); },20000);
+    script.onerror=function(){ _fin(); clearTimeout(timer); window[cb]=function(){try{delete window[cb];}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Network error.")); };
     script.src=API_URL+"?"+new URLSearchParams(data).toString()+"&callback="+cb; document.body.appendChild(script);
   });
 }
