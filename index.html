@@ -2413,6 +2413,7 @@
     <div class="footer">© 2026 Mandir System | Built with <span>❤️</span></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js"></script>
+    <script src="constants.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script src="chatbot_widget.js"></script>
@@ -2993,6 +2994,8 @@
         if (accType) accType.textContent = APP.accountType  || 'Savings';
         if (upiEl)   upiEl.textContent   = APP.upiId        || 'mandir@upi';
       }
+      /* Pre-fill fields as soon as DOM is ready */
+      document.addEventListener('DOMContentLoaded', _initPayModalFields);
 
       function _generatePayQR() {
         var upiId = (typeof APP !== 'undefined' && APP.upiId) ? APP.upiId : 'mandir@upi';
