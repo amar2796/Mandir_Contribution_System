@@ -911,12 +911,47 @@ function doGet(e) {
         const data = sheet.getDataRange().getValues();
         if (data.length < 2) { result = []; }
         else {
-          result = data.slice(1).reverse().map(r => ({
-            Timestamp:r[0]||"", Name:r[1]||"", Mobile:r[2]||"", Address:r[3]||"", Message:r[4]||""
-          }));
+          // Return rows with RowIndex (1-based, header=row1 so data starts row2)
+          // Columns: Timestamp(0), Name(1), Mobile(2), Address(3), Message(4), Status(5)
+          result = data.slice(1).map((r, i) => ({
+            RowIndex: i + 2,
+            Timestamp: r[0] || "", Name: r[1] || "", Mobile: r[2] || "",
+            Address: r[3] || "", Message: r[4] || "", Status: r[5] || "Pending"
+          })).filter(r => r.Status !== "Deleted").reverse();
         }
       }
     } catch(e) { result = []; }
+  }
+
+  else if (action === "updateFeedbackStatus") {
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("FEEDBACK");
+      if (!sheet) { result = { status: "error", message: "Sheet not found" }; }
+      else {
+        const rowIndex = parseInt(e.parameter.RowIndex);
+        const newStatus = sanitize(e.parameter.Status, 20);
+        // Ensure Status column (col 6) exists — extend header if needed
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
+        sheet.getRange(rowIndex, 6).setValue(newStatus);
+        result = { status: "updated" };
+      }
+    } catch(err) { result = { status: "error", message: err.message }; }
+  }
+
+  else if (action === "deleteFeedback") {
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("FEEDBACK");
+      if (!sheet) { result = { status: "error", message: "Sheet not found" }; }
+      else {
+        const rowIndex = parseInt(e.parameter.RowIndex);
+        // Mark as Deleted (soft delete) so row numbers stay stable
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
+        sheet.getRange(rowIndex, 6).setValue("Deleted");
+        result = { status: "deleted" };
+      }
+    } catch(err) { result = { status: "error", message: err.message }; }
   }
 
   else if (action === "submitFeedback") {
@@ -924,14 +959,18 @@ function doGet(e) {
       let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("FEEDBACK");
       if (!sheet) {
         sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("FEEDBACK");
-        sheet.appendRow(["Timestamp","Name","Mobile","Address","Message"]);
+        sheet.appendRow(["Timestamp","Name","Mobile","Address","Message","Status"]);
       }
+      // Add Status header if missing
+      const lastCol = sheet.getLastColumn();
+      if (lastCol < 6) sheet.getRange(1, 6).setValue("Status");
       sheet.appendRow([
         formatDate(),
         sanitize(e.parameter.Name, 100),
         sanitize(e.parameter.Mobile, 15),
         sanitize(e.parameter.Address, 200),
-        sanitize(e.parameter.Message, 1000)
+        sanitize(e.parameter.Message, 1000),
+        "Pending"
       ]);
       result = { status: "success" };
     } catch(err) { result = { status: "error", message: err.message }; }

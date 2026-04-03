@@ -1112,6 +1112,19 @@
         font-size: 0.95rem;
         line-height: 1.6;
       }
+      .fb-pending-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #fff8e1;
+        border: 1.5px solid #f7a01a;
+        border-radius: 20px;
+        padding: 5px 16px;
+        font-size: 0.82rem; font-weight: 700;
+        color: #b45309;
+        letter-spacing: 0.4px;
+        margin-top: 14px;
+        box-shadow: 0 2px 8px rgba(247,160,26,0.15);
+      }
+      .fb-pending-badge i { color: #f7a01a; font-size: 0.78rem; }
       @media (max-width: 800px) {
         .feedback-layout { grid-template-columns: 1fr; }
         .feedback-map-side { min-height: 280px; }
@@ -2404,6 +2417,9 @@
               Your message has been received. We deeply appreciate your time and<br />suggestions
               — they help us serve the Mandir community better.<br /><br /><em>जय श्री राम 🕉️</em>
             </p>
+            <div class="fb-pending-badge">
+              <i class="fa-solid fa-clock"></i> Status: Pending Review
+            </div>
           </div>
         </div>
 
@@ -2839,6 +2855,8 @@
             Mobile: mobile,
             Address: address,
             Message: message,
+            Status: "Pending",
+            SubmittedAt: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
           }).catch(() => {}); // best-effort
         }
 
