@@ -27,6 +27,15 @@
     receiptPrefix: "MNR",   // Receipt IDs: MNR-2025-0001, MNR-2025-0002 ...
     currency:      "₹",
     currencyCode:  "INR",
+
+    /* ── Bank / UPI Details (used in Donate modal) ── */
+    upiId:         "hanumanmandirpaliya@upi",   // UPI ID for QR generation
+    accountName:   "Shree Hanuman Mandir Ram Yagya Vishwakarma",
+    accountNo:     "XXXX XXXX XXXX",           // Replace with actual account number
+    ifscCode:      "BKID0008XXX",              // Replace with actual IFSC
+    bankName:      "Bank of India",
+    bankBranch:    "Paliya Branch",
+    accountType:   "Savings",
   
     /* ── Authorized Signatory (shown on PDF receipts) ── */
     signatory:     "Temple Trust",

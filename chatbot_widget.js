@@ -77,17 +77,51 @@
     /* ══════════════ INJECT CSS ══════════════ */
     function _injectCSS() {
       if (document.getElementById("_mbotCSS")) return;
-      // Detect if an audio/sound button exists at bottom-right — if so, raise chatbot above it
-      var hasAudioBtn = document.querySelector('.audio-btn, #audioControl, [class*="audio-btn"]');
-      var bottomOffset = hasAudioBtn ? "100px" : "24px";
+      // Both audio btn (left) and chatbot btn (right) sit at the same bottom — no need to raise
+      var chatBtnBottom = "24px";
+      var chatWinBottom = "94px";
       var css = `
+  /* ── Chatbot help bubble tooltip ── */
+  #_mbotHelpBubble {
+    position: fixed; z-index: 99991;
+    right: 86px;
+    background: #fff;
+    color: #334155;
+    font-family: Poppins, sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 20px 20px 4px 20px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.14);
+    border: 1.5px solid rgba(247,160,26,0.35);
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateX(6px);
+  }
+  #_mbotHelpBubble.show {
+    opacity: 1 !important;
+    transform: translateX(0);
+  }
+  #_mbotHelpBubble::after {
+    content: '';
+    position: absolute;
+    right: -9px; top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-left-color: rgba(247,160,26,0.35);
+  }
+  @media (max-width: 420px) {
+    #_mbotHelpBubble { right: 70px; font-size: 11.5px; padding: 7px 12px; }
+  }
+
   #_mbotBtn {
-    position: fixed; bottom: ${bottomOffset}; right: 24px; z-index: 99990;
-    width: 58px; height: 58px; border-radius: 50%;
+    position: fixed; bottom: ${chatBtnBottom}; right: 24px; z-index: 99990;
+    width: 54px; height: 54px; border-radius: 50%;
     background: linear-gradient(135deg, #f7a01a, #e08e12);
     box-shadow: 0 6px 22px rgba(247,160,26,0.45);
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    font-size: 26px; border: 3px solid #fff;
+    font-size: 24px; border: 3px solid #fff;
     transition: transform 0.22s ease, box-shadow 0.22s ease;
     user-select: none;
   }
@@ -95,8 +129,8 @@
   #_mbotBtn._open { transform: rotate(90deg) scale(1.05); }
   
   #_mbotWin {
-    position: fixed; bottom: ${hasAudioBtn ? "170px" : "94px"}; right: 24px; z-index: 99989;
-    width: 330px; max-height: 520px;
+    position: fixed; bottom: ${chatWinBottom}; right: 24px; z-index: 99989;
+    width: 335px; max-height: 530px;
     background: #fff; border-radius: 18px;
     box-shadow: 0 12px 48px rgba(0,0,0,0.18);
     display: flex; flex-direction: column;
@@ -205,8 +239,8 @@
     font-family: Poppins, sans-serif;
   }
   @media (max-width: 420px) {
-    #_mbotWin { width: calc(100vw - 20px); right: 10px; bottom: ${hasAudioBtn ? "170px" : "80px"}; }
-    #_mbotBtn { right: 14px; bottom: ${hasAudioBtn ? "100px" : "16px"}; }
+    #_mbotWin { width: calc(100vw - 20px); right: 10px; bottom: ${chatWinBottom}; }
+    #_mbotBtn { right: 14px; bottom: 24px; width: 48px; height: 48px; font-size: 21px; }
   }
       `;
       var el = document.createElement("style");
@@ -217,14 +251,43 @@
     /* ══════════════ BUILD DOM ══════════════ */
     function _buildDOM() {
       if (document.getElementById("_mbotBtn")) return;
-  
+
+      /* Help bubble tooltip */
+      var bubble = document.createElement("div");
+      bubble.id = "_mbotHelpBubble";
+      bubble.innerHTML = "How can I help you? 🙏";
+      bubble.style.cssText = "opacity:0;";
+      document.body.appendChild(bubble);
+
       /* Floating button */
       var btn = document.createElement("div");
       btn.id = "_mbotBtn";
       btn.innerHTML = '🙏<div id="_mbotUnread"></div>';
       btn.onclick = _toggleChat;
       document.body.appendChild(btn);
-  
+
+      /* Position bubble vertically aligned with button */
+      function _alignBubble() {
+        var btnEl = document.getElementById("_mbotBtn");
+        var bub = document.getElementById("_mbotHelpBubble");
+        if (!btnEl || !bub) return;
+        var rect = btnEl.getBoundingClientRect();
+        bub.style.bottom = (window.innerHeight - rect.bottom + (rect.height / 2) - 18) + "px";
+      }
+      _alignBubble();
+      window.addEventListener("resize", _alignBubble);
+
+      /* Show bubble after 1.8s, hide after 6s or on first click */
+      setTimeout(function () {
+        var bub = document.getElementById("_mbotHelpBubble");
+        if (bub && !_botOpen) {
+          bub.classList.add("show");
+          setTimeout(function () {
+            if (bub) { bub.classList.remove("show"); setTimeout(function(){ if(bub) bub.style.display="none"; }, 500); }
+          }, 5000);
+        }
+      }, 1800);
+
       /* Chat window */
       var win = document.createElement("div");
       win.id = "_mbotWin";
@@ -245,7 +308,7 @@
         </div>
       `;
       document.body.appendChild(win);
-  
+
       document.getElementById("_mbotInput").addEventListener("keydown", function (e) {
         if (e.key === "Enter") _mbotHandleInput();
       });
@@ -262,6 +325,9 @@
     function _toggleChat() {
       if (_botOpen) { window._mbotClose(); return; }
       _botOpen = true;
+      /* Hide help bubble permanently once user interacts */
+      var bub = document.getElementById("_mbotHelpBubble");
+      if (bub) { bub.classList.remove("show"); bub.style.display = "none"; }
       document.getElementById("_mbotBtn").classList.add("_open");
       document.getElementById("_mbotUnread").style.display = "none";
       var win = document.getElementById("_mbotWin");
