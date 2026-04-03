@@ -1218,23 +1218,35 @@ function updateSingle(sheetName, id, value) {
 }
 
 function updateUser(p) {
-  let sheet  = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
-  let data   = sheet.getDataRange().getValues();
-  let userId = sanitize(p.UserId, 30);
-  let found  = false;
+  let sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+  let data    = sheet.getDataRange().getValues();
+  let headers = data[0];
+  let userId  = sanitize(p.UserId, 30);
+  let found   = false;
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === userId) {
-      let existingPwd = data[i][4];
-      sheet.getRange(i+1,2).setValue(sanitize(p.Name,   100));
-      sheet.getRange(i+1,3).setValue(sanitize(p.Mobile, 15));
-      sheet.getRange(i+1,4).setValue(sanitize(p.Role,   20));
-      if (p.Password && sanitize(p.Password,128).length > 0) {
-        let pwd = sanitize(p.Password,128);
-        sheet.getRange(i+1,5).setValue(pwd.length===64 ? pwd : hashPassword(pwd));
-      } else { sheet.getRange(i+1,5).setValue(existingPwd); }
-      sheet.getRange(i+1,6).setValue(sanitize(p.Email,   200));
-      sheet.getRange(i+1,7).setValue(sanitize(p.Status,  20)||"Active");
-      sheet.getRange(i+1,8).setValue(sanitize(p.PhotoURL,500)||"");
+      // Helper: write a value to the column matching the given header name (1-based col)
+      function setCol(headerName, value) {
+        const col = headers.indexOf(headerName);
+        if (col !== -1) sheet.getRange(i+1, col+1).setValue(value);
+      }
+      const existingPwd = data[i][headers.indexOf("Password")];
+      setCol("Name",     sanitize(p.Name,    100));
+      setCol("Mobile",   sanitize(p.Mobile,  15));
+      setCol("Role",     sanitize(p.Role,    20));
+      if (p.Password && sanitize(p.Password, 128).length > 0) {
+        let pwd = sanitize(p.Password, 128);
+        setCol("Password", pwd.length === 64 ? pwd : hashPassword(pwd));
+      } else {
+        setCol("Password", existingPwd);
+      }
+      setCol("Email",    sanitize(p.Email,   200));
+      setCol("Status",   sanitize(p.Status,  20) || "Active");
+      setCol("PhotoURL", sanitize(p.PhotoURL, 500) || "");
+      // Village and Address — only update when explicitly provided (not undefined)
+      if (p.Village !== undefined) setCol("Village", sanitize(p.Village, 100));
+      if (p.Address !== undefined) setCol("Address", sanitize(p.Address, 300));
+      SpreadsheetApp.flush();
       found = true; break;
     }
   }
@@ -1442,7 +1454,7 @@ function doPost(e) {
         try { const oldId=data.oldPhotoURL.split("/d/")[1].split("?")[0].trim(); if(oldId&&oldId.length>10) DriveApp.getFileById(oldId).setTrashed(true); } catch(e){}
       }
       const photoUrl = uploadUserPhoto(data.base64, sanitize(data.fileName,100));
-      const userUpdateRes = updateUser({ UserId:data.UserId, Name:data.Name, Mobile:data.Mobile||"", Role:data.Role, Password:"", Email:data.Email||"", Status:data.Status||"Active", PhotoURL:photoUrl, AdminName:data.AdminName||"User" });
+      const userUpdateRes = updateUser({ UserId:data.UserId, Name:data.Name, Mobile:data.Mobile||"", Role:data.Role, Password:"", Email:data.Email||"", Status:data.Status||"Active", PhotoURL:photoUrl, AdminName:data.AdminName||"User", Village:data.Village||"", Address:data.Address||"" });
       logAction(data.AdminName||"User","Upload Photo","UserId: "+data.UserId);
       result = { status:"success", photoUrl:photoUrl };
     } else if (data.action === "uploadGalleryPhoto") {
