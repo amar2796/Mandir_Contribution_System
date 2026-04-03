@@ -670,6 +670,12 @@
           <div id="userDropdown" class="hdr-dropdown">
             <div
               class="hdr-drop-item"
+              onclick="closeDropdown();openMyProfile()"
+            >
+              <i class="fa-solid fa-id-card"></i> My Profile
+            </div>
+            <div
+              class="hdr-drop-item"
               onclick="closeDropdown();openEditProfile()"
             >
               <i class="fa-solid fa-user-pen"></i> Edit Profile
@@ -935,10 +941,94 @@
         if (url) document.getElementById("hdr_photo").src = url;
       }
 
-      // ── EDIT PROFILE POPUP with crop
+      // ── MY PROFILE (view-only) + EDIT PROFILE POPUP with crop
       let _pendingCroppedB64 = "";
 
-      function openEditProfile(previewB64, prefillName, prefillEmail) {
+      function openMyProfile() {
+        let s = JSON.parse(localStorage.getItem("session"));
+        let myProfile = users.find(
+          (u) => String(u.UserId) === String(s.userId)
+        );
+        if (!myProfile) { toast("Profile data not loaded yet.", "warn"); return; }
+
+        let photoSrc = myProfile.PhotoURL || "";
+        let fallbackSvg =
+          "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
+        // Resolve Drive photo URL
+        if (photoSrc.includes("drive.google.com/uc")) {
+          let m = photoSrc.match(/[?&]id=([^&]+)/);
+          if (m) photoSrc = "https://lh3.googleusercontent.com/d/" + m[1];
+        }
+
+        // Status badge colour
+        let st = String(myProfile.Status || "Active");
+        let stColor = st.toLowerCase() === "active" ? "#27ae60" : st.toLowerCase() === "pending" ? "#e67e22" : "#e74c3c";
+
+        let html = `
+          <div class="_mhdr">
+            <h3><i class="fa-solid fa-id-card"></i> My Profile</h3>
+            <button class="_mcls" onclick="closeModal()">×</button>
+          </div>
+          <div class="_mbdy" style="padding:0;">
+            <!-- Photo + name band -->
+            <div style="background:linear-gradient(135deg,#1e293b,#334155);padding:22px 20px 18px;text-align:center;">
+              <img src="${escapeHtml(photoSrc)}" onerror="this.src='${fallbackSvg}'"
+                style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#eee;display:block;margin:0 auto 10px;"/>
+              <div style="color:#f7a01a;font-size:1.05rem;font-weight:700;">${escapeHtml(myProfile.Name || "—")}</div>
+              <div style="margin-top:6px;">
+                <span style="background:${stColor};color:#fff;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:700;">${escapeHtml(st)}</span>
+                <span style="background:#334155;color:#94a3b8;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:600;margin-left:6px;">${escapeHtml(myProfile.Role || "User")}</span>
+              </div>
+            </div>
+            <!-- Details rows -->
+            <div style="padding:6px 20px 12px;">
+              <div class="_row"><span class="_rl"><i class="fa-solid fa-mobile-screen" style="width:14px;"></i> Mobile</span><span class="_rv">${escapeHtml(String(myProfile.Mobile || "—"))}</span></div>
+              <div class="_row"><span class="_rl"><i class="fa-solid fa-envelope" style="width:14px;"></i> Email</span><span class="_rv" style="word-break:break-all;">${escapeHtml(myProfile.Email || "—")}</span></div>
+              ${myProfile.Village ? `<div class="_row"><span class="_rl"><i class="fa-solid fa-map-pin" style="width:14px;"></i> Village</span><span class="_rv">${escapeHtml(myProfile.Village)}</span></div>` : ""}
+              ${myProfile.Address ? `<div class="_row"><span class="_rl"><i class="fa-solid fa-location-dot" style="width:14px;"></i> Address</span><span class="_rv">${escapeHtml(myProfile.Address)}</span></div>` : ""}
+              <div class="_row" id="_pwdRow">
+                <span class="_rl"><i class="fa-solid fa-lock" style="width:14px;"></i> Password</span>
+                <span class="_rv" style="display:flex;align-items:center;gap:8px;">
+                  <span id="_pwdVal" style="font-family:monospace;font-size:11px;color:#94a3b8;letter-spacing:1px;">••••••••</span>
+                  <button id="_pwdToggle" onclick="toggleProfilePassword()" style="background:none;border:1px solid #ddd;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;color:#666;font-family:Poppins,sans-serif;">Show</button>
+                </span>
+              </div>
+              <div class="_row"><span class="_rl"><i class="fa-regular fa-id-badge" style="width:14px;"></i> Member ID</span><span class="_rv" style="font-family:monospace;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
+            </div>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>
+            <button class="_mbtn" style="background:#f7a01a;" onclick="closeModal();openEditProfile()"><i class="fa-solid fa-user-pen"></i> Edit Profile</button>
+          </div>`;
+        // Store hashed password for toggle
+        window._myProfilePwdHash = myProfile.Password || "";
+        openModal(html, "460px");
+      }
+
+      function toggleProfilePassword() {
+        let val = document.getElementById("_pwdVal");
+        let btn = document.getElementById("_pwdToggle");
+        if (!val || !btn) return;
+        if (btn.textContent === "Show") {
+          val.textContent = window._myProfilePwdHash || "(not available)";
+          val.style.color = "#334155";
+          val.style.letterSpacing = "0.5px";
+          btn.textContent = "Hide";
+          btn.style.background = "#fff3e0";
+          btn.style.borderColor = "#f7a01a";
+          btn.style.color = "#c0580a";
+        } else {
+          val.textContent = "••••••••";
+          val.style.color = "#94a3b8";
+          val.style.letterSpacing = "1px";
+          btn.textContent = "Show";
+          btn.style.background = "none";
+          btn.style.borderColor = "#ddd";
+          btn.style.color = "#666";
+        }
+      }
+
+      function openEditProfile(previewB64, prefillName, prefillEmail, prefillVillage, prefillAddress) {
         let s = JSON.parse(localStorage.getItem("session"));
         let myProfile = users.find(
           (u) => String(u.UserId) === String(s.userId)
@@ -951,6 +1041,14 @@
           prefillEmail !== undefined
             ? prefillEmail
             : myProfile?.Email || s.email || "";
+        let displayVillage =
+          prefillVillage !== undefined
+            ? prefillVillage
+            : myProfile?.Village || "";
+        let displayAddress =
+          prefillAddress !== undefined
+            ? prefillAddress
+            : myProfile?.Address || "";
         let photoSrc = previewB64 || myProfile?.PhotoURL || "";
         let fallbackSvg =
           "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
@@ -976,6 +1074,12 @@
               <input class="_fi" id="ep_email" type="email" value="${escapeHtml(
                 displayEmail
               )}" placeholder="your@email.com"/>
+              <label class="_fl">Village</label>
+              <input class="_fi" id="ep_village" value="${escapeHtml(
+                displayVillage
+              )}" placeholder="Village name"/>
+              <label class="_fl">Address</label>
+              <textarea class="_fi" id="ep_address" rows="2" placeholder="Full address" style="resize:vertical;min-height:52px;">${escapeHtml(displayAddress)}</textarea>
               <label class="_fl">Mobile <span style="color:#bbb;font-weight:400;font-size:10px;">(read-only)</span></label>
               <input class="_fi" value="${escapeHtml(
                 String(myProfile?.Mobile || "")
@@ -1003,11 +1107,13 @@
           toast("Photo must be under 5MB.", "error");
           return;
         }
-        let savedName = document.getElementById("ep_name")?.value || "";
-        let savedEmail = document.getElementById("ep_email")?.value || "";
+        let savedName    = document.getElementById("ep_name")?.value    || "";
+        let savedEmail   = document.getElementById("ep_email")?.value   || "";
+        let savedVillage = document.getElementById("ep_village")?.value || "";
+        let savedAddress = document.getElementById("ep_address")?.value || "";
         openCropModal(file, function (base64) {
           _pendingCroppedB64 = base64;
-          openEditProfile(base64, savedName, savedEmail);
+          openEditProfile(base64, savedName, savedEmail, savedVillage, savedAddress);
         });
       }
 
@@ -1016,8 +1122,10 @@
         let myProfile = users.find(
           (u) => String(u.UserId) === String(s.userId)
         );
-        let name = document.getElementById("ep_name").value.trim();
-        let email = document.getElementById("ep_email").value.trim();
+        let name    = document.getElementById("ep_name").value.trim();
+        let email   = document.getElementById("ep_email").value.trim();
+        let village = (document.getElementById("ep_village")?.value || "").trim();
+        let address = (document.getElementById("ep_address")?.value || "").trim();
         if (!name) {
           toast("Name cannot be empty.", "error");
           return;
@@ -1036,6 +1144,8 @@
                 Role: s.role,
                 Password: "",
                 Email: email,
+                Village: village,
+                Address: address,
                 Status: "Active",
                 AdminName: name,
                 base64: _pendingCroppedB64,
@@ -1062,6 +1172,8 @@
             Role: s.role,
             Status: myProfile?.Status || "Active",
             Email: email,
+            Village: village,
+            Address: address,
             Password: "",
             PhotoURL: photoURL,
             AdminName: name,
