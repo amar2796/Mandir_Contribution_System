@@ -3589,7 +3589,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         grid.innerHTML="<p style='color:#aaa;font-size:13px;'><i class='fa-solid fa-spinner fa-spin'></i> Loading...</p>";
         noPhotos.style.display="none";
         try {
-          var photos = await getData("getGallery");
+          var photos = await getCached("getGallery");
           grid.innerHTML="";
           if(!Array.isArray(photos)||photos.length===0){ noPhotos.style.display="block"; return; }
           photos.forEach(function(p){
@@ -3798,7 +3798,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
   // Show loading, hide everything else
   _ysShow("ys_loading");
  
-  getData("getYearlySummary")
+  getCached("getYearlySummary")
     .then(function(res) {
       if (!res || res.status === "error") {
         _ysShow("ys_error");
@@ -4366,7 +4366,7 @@ function _ysShow(visibleId) {
         const _scrollY = window.scrollY;
         setLoading(true);
         try {
-          let allData = (await getData("getAllData")) || {};
+          let allData = (await getCached("getAllData")) || {};
           users = allData.users || [];
           types = allData.types || [];
           expenseTypes = allData.expenseTypes || [];
@@ -6850,7 +6850,7 @@ function _ysShow(visibleId) {
           if(el) el.innerHTML="<span style='color:#94a3b8;'>Loading status...</span>";
         });
 
-        getData("getEmailSettings").then(function(s) {
+        getCached("getEmailSettings").then(function(s) {
           // FIX: use strict === true (Apps Script now returns proper booleans)
           var receiptOn  = s === true || (s && s.auto_receipt  === true);
           var monthlyOn  = s === true || (s && s.monthly_report === true);
@@ -7188,7 +7188,7 @@ var _userFilterStatus = "all";
  function loadChatbotSettings() {
    const cbMsg = document.getElementById("cbotMsg");
    if (cbMsg) { cbMsg.textContent = "Loading..."; cbMsg.className = "msg-box"; }
-   getData("getChatbotConfig")
+   getCached("getChatbotConfig")
      .then(cfg => {
        if (!cfg) { if (cbMsg) { cbMsg.textContent = "Could not load settings."; cbMsg.className = "msg-box error"; } return; }
        const fields = [

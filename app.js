@@ -147,6 +147,159 @@ function postData(data) {
   });
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   IMPROVEMENT #5 — CLIENT CACHE + REQUEST DEDUPLICATION
+   ═══════════════════════════════════════════════════════════════
+   PASTE LOCATION: In app.js, immediately after the postData()
+   function block (around line 148).
+
+   WHAT THIS DOES:
+   ┌─────────────────────────────────────────────────────────────┐
+   │ 1. In-memory cache (window._mandirCache)                    │
+   │    • getAllData cached for 5 minutes in memory              │
+   │    • Slow-changing actions (getTypes, getOccasions,         │
+   │      getExpenseTypes) cached for 10 minutes                 │
+   │    • Cache auto-invalidated when a write (postData) happens │
+   │      for that data type (e.g. addType clears types cache)   │
+   │                                                             │
+   │ 2. Request deduplication (window._mandirPending)            │
+   │    • If getData("getAllData") is already in-flight and       │
+   │      another call fires (double-click, rapid navigation),   │
+   │      the second call gets the same Promise — zero extra     │
+   │      network request                                        │
+   │                                                             │
+   │ 3. Manual cache busting                                     │
+   │    • mandirCacheBust("getAllData") — clears one key         │
+   │    • mandirCacheBust() — clears everything                  │
+   │    • init() already calls this automatically after writes   │
+   └─────────────────────────────────────────────────────────────┘
+
+   ZERO changes to existing getData() or postData().
+   getCached() wraps getData() — all existing calls still work.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Cache store: { action → { data, ts } } ── */
+window._mandirCache   = {};
+window._mandirPending = {}; // in-flight deduplication map
+
+/* ── TTL config per action (milliseconds) ── */
+const _CACHE_TTL = {
+  getAllData:       5 * 60 * 1000,  // 5 min  — contributions/expenses change on writes
+  getTypes:        10 * 60 * 1000, // 10 min — rarely changes
+  getOccasions:    10 * 60 * 1000, // 10 min
+  getExpenseTypes: 10 * 60 * 1000, // 10 min
+  getGallery:       5 * 60 * 1000, // 5 min
+  getEmailSettings: 5 * 60 * 1000, // 5 min
+  getChatbotConfig: 5 * 60 * 1000, // 5 min
+  getYearlySummary: 5 * 60 * 1000, // 5 min
+  // Actions NOT listed here are never cached (audit log, feedback, session checks etc.)
+};
+
+/* ── Which cache keys to bust when a write action fires ──
+   Key = write action name, Value = array of cache keys to clear */
+const _CACHE_BUST_ON_WRITE = {
+  addContribution:    ["getAllData", "getYearlySummary"],
+  deleteContribution: ["getAllData", "getYearlySummary"],
+  addExpense:         ["getAllData", "getYearlySummary"],
+  deleteExpense:      ["getAllData", "getYearlySummary"],
+  addUser:            ["getAllData"],
+  deleteUser:         ["getAllData"],
+  updateUser:         ["getAllData"],
+  addType:            ["getAllData", "getTypes"],
+  deleteType:         ["getAllData", "getTypes"],
+  updateType:         ["getAllData", "getTypes"],
+  addOccasion:        ["getAllData", "getOccasions"],
+  deleteOccasion:     ["getAllData", "getOccasions"],
+  updateOccasion:     ["getAllData", "getOccasions"],
+  addExpenseType:     ["getAllData", "getExpenseTypes"],
+  deleteExpenseType:  ["getAllData", "getExpenseTypes"],
+  addGoal:            ["getAllData"],
+  updateGoal:         ["getAllData"],
+  deleteGoal:         ["getAllData"],
+  deleteGalleryPhoto: ["getGallery"],
+  saveChatbotConfig:  ["getChatbotConfig"],
+  saveEmailSettings:  ["getEmailSettings"],
+};
+
+/* ═══ getCached(action) ═══════════════════════════════════════
+   Drop-in replacement for getData(action) with cache + dedup.
+   Usage: getCached("getAllData")  instead of  getData("getAllData")
+   Falls back to getData() transparently on cache miss.
+   ═══════════════════════════════════════════════════════════ */
+function getCached(action) {
+  const ttl = _CACHE_TTL[action];
+
+  // 1. Return from in-memory cache if still fresh
+  if (ttl) {
+    const entry = window._mandirCache[action];
+    if (entry && (Date.now() - entry.ts) < ttl) {
+      return Promise.resolve(entry.data);
+    }
+  }
+
+  // 2. Deduplication — return existing in-flight Promise if one exists
+  if (window._mandirPending[action]) {
+    return window._mandirPending[action];
+  }
+
+  // 3. Cache miss — fire real network request, store Promise for dedup
+  const promise = getData(action).then(function(result) {
+    // Store result in cache if this action has a TTL
+    if (ttl) {
+      window._mandirCache[action] = { data: result, ts: Date.now() };
+    }
+    // Remove from pending map once resolved
+    delete window._mandirPending[action];
+    return result;
+  }).catch(function(err) {
+    // On error: remove from pending so next call retries fresh
+    delete window._mandirPending[action];
+    throw err;
+  });
+
+  // Register as in-flight
+  window._mandirPending[action] = promise;
+  return promise;
+}
+
+/* ═══ mandirCacheBust(action?) ════════════════════════════════
+   Call with no args to clear everything.
+   Call with an action name to clear just that one.
+   Already called automatically by postData wrapping below.
+   ═══════════════════════════════════════════════════════════ */
+function mandirCacheBust(action) {
+  if (action) {
+    delete window._mandirCache[action];
+    delete window._mandirPending[action];
+  } else {
+    window._mandirCache   = {};
+    window._mandirPending = {};
+  }
+}
+
+/* ═══ Wrap postData to auto-bust cache on writes ═══════════════
+   Intercepts every postData() call. After a successful write,
+   clears only the cache keys that are affected by that action.
+   The original postData() function is untouched.
+   ═══════════════════════════════════════════════════════════ */
+(function() {
+  var _origPostData = postData;
+  postData = function(payload) {
+    return _origPostData(payload).then(function(result) {
+      // Auto-bust relevant caches based on write action
+      var writeAction = payload && payload.action;
+      if (writeAction && _CACHE_BUST_ON_WRITE[writeAction]) {
+        _CACHE_BUST_ON_WRITE[writeAction].forEach(function(key) {
+          mandirCacheBust(key);
+        });
+      }
+      return result;
+    });
+    // Note: on postData error we do NOT bust cache — the write failed,
+    // so existing cached data is still valid.
+  };
+})();
+
 /* ═══════════════════════════════════════════════════════════
    ONE SESSION PER USER — Cross-device single session system
    ═══════════════════════════════════════════════════════════
