@@ -1011,6 +1011,8 @@ function doGet(e) {
       result = { count: all.filter(u => String(u.Status || "").toLowerCase() === "pending").length };
     } catch(err) { result = { count: 0 }; }
   }
+
+  else if (action === "getYearlySummary") { result = getYearlySummary(); }
  
   else if (action === "getUsersByStatus") {
     const filterStatus = sanitize(e.parameter.status || "all", 20);
@@ -1274,6 +1276,90 @@ function doGet(e) {
 // ════════════════════════════════════════════════════════════════
 //  HELPERS
 // ════════════════════════════════════════════════════════════════
+
+function getYearlySummary() {
+  try {
+    const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
+    const expenses      = getSheetData(SHEETS.EXPENSES);
+    const yearConfigRaw = getSheetData("YEAR_CONFIG");
+ 
+    // ── Collect all years present in contributions or expenses
+    const yearSet = new Set();
+    contributions.forEach(c => {
+      const y = parseInt(c.Year, 10);
+      if (!isNaN(y) && y > 2000) yearSet.add(y);
+    });
+    expenses.forEach(e => {
+      const y = parseInt(e.Year, 10);
+      if (!isNaN(y) && y > 2000) yearSet.add(y);
+    });
+ 
+    // Also include any years defined in YEAR_CONFIG even if no transactions yet
+    yearConfigRaw.forEach(row => {
+      const y = parseInt(row.Year || row.year, 10);
+      if (!isNaN(y) && y > 2000) yearSet.add(y);
+    });
+ 
+    // Sort years ascending
+    const years = Array.from(yearSet).sort((a, b) => a - b);
+ 
+    // ── Build a lookup for opening balances from YEAR_CONFIG
+    // Supports column names: OpeningBalance, Opening_Balance, opening_balance, Balance, balance
+    const openingMap = {};
+    yearConfigRaw.forEach(row => {
+      const y = parseInt(row.Year || row.year, 10);
+      if (isNaN(y)) return;
+      const ob = Number(
+        row.OpeningBalance  || row.Opening_Balance  ||
+        row.opening_balance || row.Balance          ||
+        row.balance         || 0
+      );
+      openingMap[y] = isNaN(ob) ? 0 : ob;
+    });
+ 
+    // ── Build summary rows with carry-forward chain
+    const rows = [];
+    let carryForward = 0; // running carry-forward from previous year
+ 
+    years.forEach(year => {
+      // Opening balance = YEAR_CONFIG value OR carry-forward from last year
+      // YEAR_CONFIG takes priority (admin may have set an explicit opening)
+      const configOpening = openingMap[year] || 0;
+      // Use explicit config opening if set, else use carry-forward
+      const openingBalance = configOpening > 0 ? configOpening : carryForward;
+ 
+      // Total contributions for this year
+      const totalCollection = contributions
+        .filter(c => parseInt(c.Year, 10) === year)
+        .reduce((sum, c) => sum + Number(c.Amount || 0), 0);
+ 
+      // Total expenses for this year
+      const totalExpense = expenses
+        .filter(e => parseInt(e.Year, 10) === year)
+        .reduce((sum, e) => sum + Number(e.Amount || 0), 0);
+ 
+      // Closing balance = opening + collection - expense
+      const closingBalance = openingBalance + totalCollection - totalExpense;
+ 
+      // This year's closing becomes next year's carry-forward
+      carryForward = closingBalance;
+ 
+      rows.push({
+        year:            year,
+        openingBalance:  openingBalance,
+        totalCollection: totalCollection,
+        totalExpense:    totalExpense,
+        closingBalance:  closingBalance,
+        carryForward:    closingBalance  // same value — explicit for UI clarity
+      });
+    });
+ 
+    return { status: "ok", rows: rows };
+ 
+  } catch(err) {
+    return { status: "error", message: err.message, rows: [] };
+  }
+}
 
 function updateSingle(sheetName, id, value) {
   let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);

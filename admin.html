@@ -1075,6 +1075,9 @@ tr.row-rejected td { background: #fff5f5 !important; }
           <li onclick="showPage('goalsPage',this)" class="nav-finance">
             <i class="fa-solid fa-bullseye"></i> Goals
           </li>
+          <li onclick="showPage('yearSummaryPage',this)" class="nav-finance">
+            <i class="fa-solid fa-calendar-check"></i> Year Summary
+          </li>
 
           <!-- ── Section label: Members ── -->
           <li class="nav-section-label">Members</li>
@@ -1916,7 +1919,89 @@ tr.row-rejected td { background: #fff5f5 !important; }
             </div>
           </div>
         </div>
-
+        <!-- YEAR SUMMARY -->
+<div id="yearSummaryPage" class="page">
+ 
+  <!-- Header card -->
+  <div class="card" style="margin-bottom:18px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <h3 style="margin:0;">
+        <i class="fa-solid fa-calendar-check" style="color:#f7a01a;"></i>
+        Year-by-Year Financial Summary
+      </h3>
+      <button
+        onclick="loadYearSummary()"
+        style="background:#334155;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"
+      >
+        <i class="fa-solid fa-rotate-right"></i> Refresh
+      </button>
+    </div>
+    <p style="color:#64748b;font-size:12px;margin:8px 0 0;">
+      Opening balance per year comes from <strong>YEAR_CONFIG</strong> sheet.
+      If not set, the previous year's closing balance carries forward automatically.
+    </p>
+  </div>
+ 
+  <!-- Loading state -->
+  <div id="ys_loading" style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;">
+    <i class="fa-solid fa-spinner fa-spin"></i> Loading year summary…
+  </div>
+ 
+  <!-- Error state -->
+  <div id="ys_error" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:16px 20px;color:#991b1b;font-size:13px;margin-bottom:16px;"></div>
+ 
+  <!-- Summary totals row (filled by JS) -->
+  <div id="ys_totals" style="display:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;">
+    <div class="card-box" style="text-align:center;">
+      <h4 style="font-size:11px;color:#64748b;margin:0 0 6px;">Total Years</h4>
+      <h2 id="ys_t_years" style="color:#334155;font-size:1.4rem;margin:0;">—</h2>
+    </div>
+    <div class="card-box" style="text-align:center;">
+      <h4 style="font-size:11px;color:#64748b;margin:0 0 6px;">All-time Collection</h4>
+      <h2 id="ys_t_collection" style="color:#27ae60;font-size:1.4rem;margin:0;">—</h2>
+    </div>
+    <div class="card-box" style="text-align:center;">
+      <h4 style="font-size:11px;color:#64748b;margin:0 0 6px;">All-time Expenses</h4>
+      <h2 id="ys_t_expense" style="color:#e74c3c;font-size:1.4rem;margin:0;">—</h2>
+    </div>
+    <div class="card-box" style="text-align:center;">
+      <h4 style="font-size:11px;color:#64748b;margin:0 0 6px;">Current Balance</h4>
+      <h2 id="ys_t_balance" style="color:#f7a01a;font-size:1.4rem;margin:0;">—</h2>
+    </div>
+  </div>
+ 
+  <!-- Main table card -->
+  <div class="card" id="ys_table_card" style="display:none;">
+    <div class="table-responsive">
+      <table id="ys_table">
+        <thead>
+          <tr>
+            <th style="text-align:center;">Year</th>
+            <th style="text-align:right;">Opening Balance</th>
+            <th style="text-align:right;">Total Collection</th>
+            <th style="text-align:right;">Total Expenses</th>
+            <th style="text-align:right;">Closing Balance</th>
+            <th style="text-align:right;">Carry-forward →</th>
+          </tr>
+        </thead>
+        <tbody id="ys_tbody"></tbody>
+        <!-- Totals footer -->
+        <tfoot id="ys_tfoot"></tfoot>
+      </table>
+    </div>
+    <p style="color:#94a3b8;font-size:11px;margin:12px 0 0;text-align:right;">
+      * Carry-forward = this year's closing balance passed to next year as opening balance.
+    </p>
+  </div>
+ 
+  <!-- Empty state -->
+  <div id="ys_empty" style="display:none;text-align:center;padding:40px;color:#94a3b8;font-size:14px;">
+    <i class="fa-solid fa-folder-open" style="font-size:32px;margin-bottom:12px;display:block;"></i>
+    No financial data found. Add contributions or expenses to see the summary.
+  </div>
+ 
+</div>
+<!-- END YEAR SUMMARY PAGE -->
         <!-- MASTER -->
         <div id="masterPage" class="page">
           <div
@@ -3708,6 +3793,121 @@ tr.row-rejected td { background: #fff5f5 !important; }
         "November",
         "December",
       ];
+
+      function loadYearSummary() {
+  // Show loading, hide everything else
+  _ysShow("ys_loading");
+ 
+  getData("getYearlySummary")
+    .then(function(res) {
+      if (!res || res.status === "error") {
+        _ysShow("ys_error");
+        document.getElementById("ys_error").textContent =
+          "Error loading summary: " + ((res && res.message) || "Unknown error");
+        return;
+      }
+ 
+      const rows = res.rows || [];
+ 
+      if (rows.length === 0) {
+        _ysShow("ys_empty");
+        return;
+      }
+ 
+      // ── Populate totals row
+      let sumCollection = 0, sumExpense = 0;
+      rows.forEach(function(r) {
+        sumCollection += Number(r.totalCollection || 0);
+        sumExpense    += Number(r.totalExpense    || 0);
+      });
+      const lastRow      = rows[rows.length - 1];
+      const finalBalance = Number(lastRow.closingBalance || 0);
+ 
+      document.getElementById("ys_t_years").textContent      = rows.length;
+      document.getElementById("ys_t_collection").textContent = "₹" + fmt(sumCollection);
+      document.getElementById("ys_t_expense").textContent    = "₹" + fmt(sumExpense);
+      document.getElementById("ys_t_balance").textContent    =
+        (finalBalance < 0 ? "−" : "") + "₹" + fmt(Math.abs(finalBalance));
+      document.getElementById("ys_t_balance").style.color    =
+        finalBalance >= 0 ? "#27ae60" : "#e74c3c";
+ 
+      // ── Populate table body
+      const tbody = document.getElementById("ys_tbody");
+      tbody.innerHTML = "";
+ 
+      const curYear = new Date().getFullYear();
+ 
+      rows.forEach(function(r, idx) {
+        const isCurrentYear = Number(r.year) === curYear;
+        const closing       = Number(r.closingBalance || 0);
+        const isLastRow     = idx === rows.length - 1;
+ 
+        // Carry-forward column: show for all rows except last (which is the "current" balance)
+        const cfText = isLastRow
+          ? '<span style="color:#94a3b8;font-size:11px;">Current year</span>'
+          : (closing < 0 ? "−" : "") + "₹" + fmt(Math.abs(closing));
+ 
+        const tr = document.createElement("tr");
+        if (isCurrentYear) {
+          tr.style.background = "rgba(247,160,26,0.07)";
+          tr.style.fontWeight = "600";
+        }
+ 
+        tr.innerHTML =
+          '<td style="text-align:center;">' +
+            '<span style="font-weight:700;color:#334155;">' + r.year + '</span>' +
+            (isCurrentYear ? ' <span style="font-size:10px;background:#f7a01a;color:#fff;border-radius:4px;padding:1px 6px;vertical-align:middle;">Current</span>' : '') +
+          '</td>' +
+          '<td style="text-align:right;color:#64748b;">₹' + fmt(Number(r.openingBalance  || 0)) + '</td>' +
+          '<td style="text-align:right;color:#27ae60;font-weight:600;">₹' + fmt(Number(r.totalCollection || 0)) + '</td>' +
+          '<td style="text-align:right;color:#e74c3c;font-weight:600;">₹' + fmt(Number(r.totalExpense    || 0)) + '</td>' +
+          '<td style="text-align:right;font-weight:700;color:' + (closing >= 0 ? "#27ae60" : "#e74c3c") + ';">' +
+            (closing < 0 ? "−" : "") + "₹" + fmt(Math.abs(closing)) +
+          '</td>' +
+          '<td style="text-align:right;color:#6366f1;">' + cfText + '</td>';
+ 
+        tbody.appendChild(tr);
+      });
+ 
+      // ── Totals footer row
+      const tfoot = document.getElementById("ys_tfoot");
+      tfoot.innerHTML =
+        '<tr style="background:#f1f5f9;font-weight:700;border-top:2px solid #e2e8f0;">' +
+          '<td style="text-align:center;color:#334155;">All Years</td>' +
+          '<td style="text-align:right;color:#64748b;">—</td>' +
+          '<td style="text-align:right;color:#27ae60;">₹' + fmt(sumCollection) + '</td>' +
+          '<td style="text-align:right;color:#e74c3c;">₹' + fmt(sumExpense)    + '</td>' +
+          '<td style="text-align:right;color:' + (finalBalance >= 0 ? "#27ae60" : "#e74c3c") + ';">' +
+            (finalBalance < 0 ? "−" : "") + "₹" + fmt(Math.abs(finalBalance)) +
+          '</td>' +
+          '<td style="text-align:right;color:#94a3b8;font-size:11px;">Final balance</td>' +
+        '</tr>';
+ 
+      // Show table + totals
+      _ysShow("ys_table_card");
+      document.getElementById("ys_totals").style.display = "grid";
+ 
+    })
+    .catch(function(err) {
+      _ysShow("ys_error");
+      document.getElementById("ys_error").textContent =
+        "Network error: " + (err.message || err);
+    });
+}
+ 
+/* Helper: hide all ys_ state panels, then show the one needed */
+function _ysShow(visibleId) {
+  ["ys_loading","ys_error","ys_empty","ys_table_card"].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+  // Also hide totals grid unless showing table
+  const totals = document.getElementById("ys_totals");
+  if (totals && visibleId !== "ys_table_card") totals.style.display = "none";
+ 
+  const show = document.getElementById(visibleId);
+  if (show) show.style.display = visibleId === "ys_table_card" ? "block" : (visibleId === "ys_loading" || visibleId === "ys_error" || visibleId === "ys_empty" ? "block" : "block");
+}
 
       function loadSummary() {
         // Total Members = ACTIVE users only (not Admins, not Pending, not Inactive)
@@ -7059,6 +7259,8 @@ var _userFilterStatus = "all";
          loadChatbotSettings();
        if (id === "trackerPage" && typeof initTrackerDropdowns === "function")
          setTimeout(initTrackerDropdowns, 100);
+         if (id === "yearSummaryPage" && typeof loadYearSummary === "function")
+         loadYearSummary();
        if (id === "emailAutoPage" && typeof initEmailAutoPage === "function")
          setTimeout(initEmailAutoPage, 100);
      };
