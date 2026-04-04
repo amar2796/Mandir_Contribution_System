@@ -455,6 +455,7 @@
 
       // ── LOGIN
       async function login() {
+        if (!_loginGuard()) return;
         let mobile   = document.getElementById("mobile").value.trim();
         let password = document.getElementById("password").value;
         if (!mobile || !password) { setMsg("loginMsg","Please enter both mobile number and password.","error"); return; }
@@ -486,13 +487,16 @@
                 setTimeout(() => _bc.close(), 500);
               } catch(e){}
               setMsg("loginMsg","✓ Login successful! Redirecting...","success");
+              _loginSuccess();
               setTimeout(() => { location.href = user.Role === "Admin" ? "admin.html" : "user.html"; }, 600);
             } else if (res.status === "pending") {
               setMsg("loginMsg", "Your account is awaiting approval. You'll receive an email with your login details once the temple admin reviews your request.", "pending");
             } else if (res.status === "error") {
               setMsg("loginMsg","❌ " + (res.message || "Account issue."),"error");
+              _loginFail();
             } else {
               setMsg("loginMsg","❌ Invalid mobile number or password.","error");
+              _loginFail();
             }
           });
         } catch(err) { setMsg("loginMsg","❌ " + err.message,"error"); }
@@ -622,6 +626,116 @@
           btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Registration';
         }
       }
+    
+      const _LR = {
+  MAX_ATTEMPTS : 5,
+  LOCKOUT_MS   : 5 * 60 * 1000,  // 5 minutes
+  KEY_COUNT    : "_lr_count",
+  KEY_LOCK_END : "_lr_lock",
+ 
+  getCount  : function() { return parseInt(sessionStorage.getItem(_LR.KEY_COUNT)  || "0", 10); },
+  getLockEnd: function() { return parseInt(sessionStorage.getItem(_LR.KEY_LOCK_END) || "0", 10); },
+ 
+  isLocked: function() {
+    const end = _LR.getLockEnd();
+    if (end && Date.now() < end) return true;
+    // Lock expired — clear it
+    if (end && Date.now() >= end) {
+      sessionStorage.removeItem(_LR.KEY_LOCK_END);
+      sessionStorage.removeItem(_LR.KEY_COUNT);
+    }
+    return false;
+  },
+ 
+  recordFail: function() {
+    let count = _LR.getCount() + 1;
+    sessionStorage.setItem(_LR.KEY_COUNT, String(count));
+    if (count >= _LR.MAX_ATTEMPTS) {
+      const lockEnd = Date.now() + _LR.LOCKOUT_MS;
+      sessionStorage.setItem(_LR.KEY_LOCK_END, String(lockEnd));
+      return { locked: true, lockEnd: lockEnd };
+    }
+    return { locked: false, remaining: _LR.MAX_ATTEMPTS - count };
+  },
+ 
+  clear: function() {
+    sessionStorage.removeItem(_LR.KEY_COUNT);
+    sessionStorage.removeItem(_LR.KEY_LOCK_END);
+  },
+ 
+  remainingMs: function() {
+    return Math.max(0, _LR.getLockEnd() - Date.now());
+  }
+};
+ 
+/* ── _loginGuard() — call at the TOP of login() ─────────────────
+   Returns false (and shows message) if locked out.
+   Returns true if login should proceed.
+   ─────────────────────────────────────────────────────────────── */
+function _loginGuard() {
+  // Validate mobile format first (10 digits, Indian mobile)
+  const mobile = (document.getElementById("mobile")?.value || "").trim();
+  if (mobile && !/^[6-9]\d{9}$/.test(mobile)) {
+    setMsg("loginMsg", "❌ Please enter a valid 10-digit mobile number.", "error");
+    return false;
+  }
+ 
+  // Check lockout
+  if (_LR.isLocked()) {
+    const mins = Math.ceil(_LR.remainingMs() / 60000);
+    setMsg(
+      "loginMsg",
+      "🔒 Too many failed attempts. Please wait " + mins + " minute" + (mins > 1 ? "s" : "") + " before trying again.",
+      "error"
+    );
+    const btn = document.getElementById("loginBtn");
+    if (btn) btn.disabled = true;
+    // Auto-enable button when lockout expires
+    setTimeout(function() {
+      if (!_LR.isLocked()) {
+        const b = document.getElementById("loginBtn");
+        if (b) b.disabled = false;
+        setMsg("loginMsg", "", "");
+      }
+    }, _LR.remainingMs() + 500);
+    return false;
+  }
+  return true;
+}
+ 
+/* ── _loginFail() — call when server returns status !== "success" */
+function _loginFail() {
+  const result = _LR.recordFail();
+  if (result.locked) {
+    const mins = Math.ceil(_LR.LOCKOUT_MS / 60000);
+    setMsg(
+      "loginMsg",
+      "🔒 Too many failed attempts. Account locked for " + mins + " minutes.",
+      "error"
+    );
+    const btn = document.getElementById("loginBtn");
+    if (btn) btn.disabled = true;
+  } else {
+    // Show remaining attempts warning from attempt 3 onwards
+    if (result.remaining <= 2) {
+      // Append warning to existing message
+      setTimeout(function() {
+        const el = document.getElementById("loginMsg");
+        if (el && el.textContent) {
+          el.textContent += " (" + result.remaining + " attempt" + (result.remaining !== 1 ? "s" : "") + " remaining)";
+        }
+      }, 50);
+    }
+  }
+}
+ 
+/* ── _loginSuccess() — call on successful login ─────────────────
+   Clears the attempt counter so a legitimate user who
+   had some failed attempts doesn't stay throttled.
+   ─────────────────────────────────────────────────────────────── */
+function _loginSuccess() {
+  _LR.clear();
+}
     </script>
     <!-- Chatbot widget -->
     <script src="chatbot_widget.js"></script>

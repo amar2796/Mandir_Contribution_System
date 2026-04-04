@@ -552,26 +552,33 @@ function doGet(e) {
     let users   = getSheetData(SHEETS.USERS);
     let mobile  = sanitize(e.parameter.mobile, 15);
     let pwdHash = sanitize(e.parameter.password, 128);
-    let user = users.find(u => String(u.Mobile) === mobile && String(u.Password) === pwdHash);
-    if (!user) {
-      result = { status: "fail" };
-    } else if (String(user.Status||"").toLowerCase() === "pending") {
-      result = { status: "pending", message: "Your registration is pending admin approval. You will receive an email once approved." };
-    } else if (String(user.Status||"").toLowerCase() === "rejected") {
-      result = { status: "error", message: "Your registration was not approved. Please contact the temple admin." };
-    } else if (user.Status === "Inactive") {
-      result = { status: "error", message: "Account is deactivated. Please contact admin." };
+     const _rl = _checkLoginRate(mobile);
+     if (_rl.blocked) {
+       result = { status: "fail", message: _rl.message };
     } else {
-      let safeUser = Object.assign({}, user);
-      delete safeUser.Password;
-      const deviceInfo = sanitize(e.parameter.deviceInfo || "", 200);
-      logAction(
-        safeUser.Name || "User",
-        "Login",
-        "Mobile: " + mobile + " | Role: " + (safeUser.Role || "User") + " | UserId: " + (safeUser.UserId || ""),
-        deviceInfo
-      );
-      result = { status: "success", user: safeUser };
+      let user = users.find(u => String(u.Mobile) === mobile && String(u.Password) === pwdHash);
+      if (!user  || user.Status !== "Active") {
+        _recordLoginFail(mobile);
+        result = { status: "fail" };
+      } else if (String(user.Status||"").toLowerCase() === "pending") {
+        result = { status: "pending", message: "Your registration is pending admin approval. You will receive an email once approved." };
+      } else if (String(user.Status||"").toLowerCase() === "rejected") {
+        result = { status: "error", message: "Your registration was not approved. Please contact the temple admin." };
+      } else if (user.Status === "Inactive") {
+        result = { status: "error", message: "Account is deactivated. Please contact admin." };
+      } else {
+        _clearLoginFail(mobile);
+        let safeUser = Object.assign({}, user);
+        delete safeUser.Password;
+        const deviceInfo = sanitize(e.parameter.deviceInfo || "", 200);
+        logAction(
+          safeUser.Name || "User",
+          "Login",
+          "Mobile: " + mobile + " | Role: " + (safeUser.Role || "User") + " | UserId: " + (safeUser.UserId || ""),
+          deviceInfo
+        );
+        result = { status: "success", user: safeUser };
+      }
     }
   }
 
@@ -1279,6 +1286,56 @@ function doGet(e) {
 //  HELPERS
 // ════════════════════════════════════════════════════════════════
 
+function _loginCacheKey(mobile) {
+  // Short key: "lfail_" + last 4 digits of mobile
+  // Not truly secure but prevents raw mobile exposure in cache keys
+  // and is sufficient for rate-limiting purposes
+  return "lfail_" + String(mobile).slice(-4) + "_" + String(mobile).length;
+}
+ 
+function _checkLoginRate(mobile) {
+  if (!mobile) return { blocked: false };
+  try {
+    const cache = CacheService.getScriptCache();
+    const key   = _loginCacheKey(mobile);
+    const raw   = cache.get(key);
+    if (!raw) return { blocked: false };
+ 
+    const rec = JSON.parse(raw);
+    if (!rec || !rec.count) return { blocked: false };
+ 
+    // Block after 10 server-side attempts within 15 minutes
+    if (rec.count >= 10) {
+      return {
+        blocked: true,
+        message: "Too many login attempts. Please wait 15 minutes before trying again."
+      };
+    }
+    return { blocked: false };
+  } catch(e) {
+    return { blocked: false }; // on cache error, never block legitimate users
+  }
+}
+ 
+function _recordLoginFail(mobile) {
+  if (!mobile) return;
+  try {
+    const cache = CacheService.getScriptCache();
+    const key   = _loginCacheKey(mobile);
+    const raw   = cache.get(key);
+    let rec     = raw ? JSON.parse(raw) : { count: 0 };
+    rec.count   = (rec.count || 0) + 1;
+    // TTL: 15 minutes (900 seconds) — resets window on each failure
+    cache.put(key, JSON.stringify(rec), 900);
+  } catch(e) { /* silent — never crash login on cache error */ }
+}
+ 
+function _clearLoginFail(mobile) {
+  if (!mobile) return;
+  try {
+    CacheService.getScriptCache().remove(_loginCacheKey(mobile));
+  } catch(e) {}
+}
 
 // ── Server-side sheet cache helper (10-min TTL via CacheService)
 // Used for master data that rarely changes: Types, Occasions, ExpenseTypes.
