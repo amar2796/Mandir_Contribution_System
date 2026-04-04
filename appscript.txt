@@ -1020,6 +1020,10 @@ function doGet(e) {
   }
 
   else if (action === "getYearlySummary") { result = getYearlySummary(); }
+
+  else if (action === "getPublicStats") {
+      result = getPublicStats();
+  }
  
   else if (action === "getUsersByStatus") {
     const filterStatus = sanitize(e.parameter.status || "all", 20);
@@ -2101,4 +2105,65 @@ function _buildRejectionEmail(user, reason) {
     <div style="color:#94a3b8;font-size:10px;">${CFG.name} | ${CFG.address}</div>
   </td></tr>
 </table></td></tr></table></body></html>`;
+}
+
+// ── Public stats — safe aggregated data only, no personal info
+function getPublicStats() {
+  try {
+    const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
+    const expenses      = getSheetData(SHEETS.EXPENSES);
+    const users         = getSheetData(SHEETS.USERS);
+    const goals         = getSheetData(SHEETS.GOALS);
+    const yearConfigRaw = getSheetData("YEAR_CONFIG");
+ 
+    const curYear = new Date().getFullYear();
+ 
+    // ── This year totals
+    const thisYearCollection = contributions
+      .filter(c => parseInt(c.Year,10) === curYear)
+      .reduce((s,c) => s + Number(c.Amount||0), 0);
+ 
+    const thisYearExpense = expenses
+      .filter(e => parseInt(e.Year,10) === curYear)
+      .reduce((s,e) => s + Number(e.Amount||0), 0);
+ 
+    // ── Active member count (no Admin, no Inactive)
+    const memberCount = users.filter(u =>
+      String(u.Role||"").toLowerCase() !== "admin" &&
+      String(u.Status||"Active").toLowerCase() === "active"
+    ).length;
+ 
+    // ── Year summary rows (reuse getYearlySummary logic)
+    const summary = getYearlySummary();
+    const yearRows = summary.rows || [];
+ 
+    // ── Current balance = last year's closing balance
+    const balance = yearRows.length > 0
+      ? yearRows[yearRows.length - 1].closingBalance
+      : 0;
+ 
+    // ── Goals — return only Name, Target, Current, Status (no IDs)
+    const safeGoals = goals.map(g => ({
+      Name:    g.Name    || g.GoalName || "",
+      Target:  Number(g.Target  || g.TargetAmount  || 0),
+      Current: Number(g.Current || g.CurrentAmount || 0),
+      Status:  g.Status || "Enabled"
+    }));
+ 
+    const updatedAt = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MMM-yyyy hh:mm a");
+ 
+    return {
+      status:             "ok",
+      thisYearCollection: thisYearCollection,
+      thisYearExpense:    thisYearExpense,
+      balance:            balance,
+      memberCount:        memberCount,
+      yearRows:           yearRows,
+      goals:              safeGoals,
+      updatedAt:          updatedAt
+    };
+ 
+  } catch(err) {
+    return { status: "error", message: err.message };
+  }
 }
