@@ -5063,6 +5063,14 @@ function _ysShow(visibleId) {
             (prefStatus || u.Status) === "Inactive" ? "selected" : ""
           }>Inactive</option>
         </select>
+            <label class="_fl">Monthly Target (₹)
+          <span style="color:#bbb;font-weight:400;font-size:10px;">
+            — optional, used in tracker shortfall view
+          </span>
+        </label>
+        <input class="_fi" id="eu_monthly_target" type="number" min="0"
+          placeholder="e.g. 500 (leave 0 for no target)"
+          value="${Number(u.MonthlyTarget||0)||0}"/>
       </div>
       <div class="_mft">
         <button class="_mbtn" style="background:#999;" onclick="closeModal();_adminPendingCroppedB64='';">Cancel</button>
@@ -5091,6 +5099,7 @@ function _ysShow(visibleId) {
                 Password: "",
                 Email: document.getElementById("eu_email").value,
                 Status: document.getElementById("eu_status").value,
+                MonthlyTarget: Number(document.getElementById("eu_monthly_target")?.value||0),
                 AdminName: s.name,
                 base64: _adminPendingCroppedB64,
                 fileName: "User_" + id + "_" + Date.now() + ".jpg",
@@ -6907,93 +6916,177 @@ function _downloadCSV(csvString, filename) {
         }
       }
 
-      function runTracker() {
-        const trType  = document.getElementById("tr_type");
-        const trMonth = document.getElementById("tr_month");
-        const trYear  = document.getElementById("tr_year");
-        if (!trType || !trMonth || !trYear) return;
-
-        const selTypeId = trType.value;
-        const selMonth  = trMonth.value;
-        const selYear   = String(trYear.value);
-
-        // All active non-admin members (exclude walk-ins — they have no user record)
-        const members = users.filter(u => u.Role !== "Admin" && String(u.Status||"").toLowerCase() === "active");
-
-        // Filter contributions matching criteria
-        let contribs = data.filter(c =>
-          String(c.Year) === selYear &&
-          c.ForMonth === selMonth &&
-          !String(c.UserId).startsWith("WALKIN_")
-        );
-        if (selTypeId) contribs = contribs.filter(c => String(c.TypeId) === selTypeId);
-
-        // Paid member IDs (could have multiple contributions — count as paid)
-        const paidUserIds = new Set(contribs.map(c => String(c.UserId)));
-
-        const paidMembers    = members.filter(u => paidUserIds.has(String(u.UserId)));
-        const pendingMembers = members.filter(u => !paidUserIds.has(String(u.UserId)));
-        const paidAmt        = contribs.reduce((s,c) => s + Number(c.Amount||0), 0);
-        const pctComplete    = members.length > 0 ? Math.round((paidMembers.length / members.length) * 100) : 0;
-
-        // Update badges
-        document.getElementById("tr_summary").style.display = "flex";
-        document.getElementById("tr_paid_count").innerText   = paidMembers.length;
-        document.getElementById("tr_paid_amt").innerText     = "₹" + fmt(paidAmt);
-        document.getElementById("tr_pending_count").innerText= pendingMembers.length;
-        document.getElementById("tr_pending_pct").innerText  = pctComplete + "% complete";
-        document.getElementById("tr_total_members").innerText= members.length;
-        const pw = document.getElementById("tr_progress_wrap");
-        if (pw) pw.style.display = "block";
-
-        // Render paid list
-        const paidList = document.getElementById("tr_paid_list");
-        paidList.innerHTML = paidMembers.length === 0
-          ? '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;"><i class="fa-solid fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px;"></i>No paid members</div>'
-          : paidMembers.map((u, i) => {
-              const userContribs = contribs.filter(c => String(c.UserId) === String(u.UserId));
-              const total = userContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
-              return `<div class="tr-member-row" style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #f0fdf4;font-size:12.5px;gap:8px;min-height:48px;">
-                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                  <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#dcfce7,#bbf7d0);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#16a34a;flex-shrink:0;">${i+1}</div>
-                  <div style="min-width:0;">
-                    <div style="font-weight:600;color:#166534;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.Name||"—")}</div>
-                    <div style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.Mobile||"")}</div>
-                  </div>
-                </div>
-                <span style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#15803d;padding:4px 12px;border-radius:20px;font-weight:700;font-size:11.5px;white-space:nowrap;flex-shrink:0;">₹${fmt(total)}</span>
-              </div>`;
-            }).join("");
-
-        // Render pending list
-        const pendingList = document.getElementById("tr_pending_list");
-        pendingList.innerHTML = pendingMembers.length === 0
-          ? '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;"><i class="fa-solid fa-party-horn" style="font-size:1.5rem;display:block;margin-bottom:6px;color:#22c55e;"></i>🎉 All members have paid!</div>'
-          : pendingMembers.map((u, i) =>
-              `<div class="tr-member-row" style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #fef2f2;font-size:12.5px;gap:8px;min-height:48px;">
-                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                  <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#fee2e2,#fecaca);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#dc2626;flex-shrink:0;">${i+1}</div>
-                  <div style="min-width:0;">
-                    <div style="font-weight:600;color:#991b1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.Name||"—")}</div>
-                    <div style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.Mobile||"")}</div>
-                  </div>
-                </div>
-                <span style="background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626;padding:4px 12px;border-radius:20px;font-weight:700;font-size:11px;white-space:nowrap;flex-shrink:0;">Pending</span>
-              </div>`
-            ).join("");
-
-        document.getElementById("tr_empty").style.display = "none";
-
-        // Progress bar
-        let pbEl = document.getElementById("tr_progress_bar");
-        if (pbEl) {
-          pbEl.style.width = pctComplete + "%";
-          pbEl.style.background = pctComplete >= 100 ? "#16a34a" : pctComplete >= 60 ? "#f7a01a" : "#dc2626";
-        }
-
-        // Store for send functions
-        window._trackerState = { selTypeId, selMonth, selYear, paidMembers, pendingMembers, paidAmt, pctComplete };
+      /* ═══ ENHANCED runTracker() WITH TARGET + SHORTFALL ═════════════
+   Drop-in replacement for the existing runTracker() function.
+   Find runTracker() in admin.html and replace the entire function
+   body with this one.
+   ═══════════════════════════════════════════════════════════════ */
+function runTracker() {
+  const trType  = document.getElementById("tr_type");
+  const trMonth = document.getElementById("tr_month");
+  const trYear  = document.getElementById("tr_year");
+  if (!trType || !trMonth || !trYear) return;
+ 
+  const selTypeId = trType.value;
+  const selMonth  = trMonth.value;
+  const selYear   = String(trYear.value);
+ 
+  // All active non-admin members
+  const members = users.filter(u =>
+    u.Role !== "Admin" &&
+    String(u.Status || "").toLowerCase() === "active"
+  );
+ 
+  // Contributions matching current filter
+  let contribs = data.filter(c =>
+    String(c.Year) === selYear &&
+    c.ForMonth === selMonth &&
+    !String(c.UserId).startsWith("WALKIN_")
+  );
+  if (selTypeId) contribs = contribs.filter(c => String(c.TypeId) === selTypeId);
+ 
+  // Paid member IDs
+  const paidUserIds = new Set(contribs.map(c => String(c.UserId)));
+ 
+  const paidMembers    = members.filter(u =>  paidUserIds.has(String(u.UserId)));
+  const pendingMembers = members.filter(u => !paidUserIds.has(String(u.UserId)));
+  const paidAmt        = contribs.reduce((s, c) => s + Number(c.Amount || 0), 0);
+  const pctComplete    = members.length > 0
+    ? Math.round((paidMembers.length / members.length) * 100) : 0;
+ 
+  // ── Target calculations
+  // Total expected = sum of MonthlyTarget for all members who have one set
+  const totalExpected = members.reduce((s, u) => s + Number(u.MonthlyTarget || 0), 0);
+  const totalShortfall = Math.max(0, totalExpected - paidAmt);
+  const hasAnyTarget = members.some(u => Number(u.MonthlyTarget || 0) > 0);
+ 
+  // ── Update existing badges
+  document.getElementById("tr_summary").style.display = "flex";
+  document.getElementById("tr_paid_count").innerText    = paidMembers.length;
+  document.getElementById("tr_paid_amt").innerText      = "₹" + fmt(paidAmt);
+  document.getElementById("tr_pending_count").innerText = pendingMembers.length;
+  document.getElementById("tr_pending_pct").innerText   = pctComplete + "% complete";
+  document.getElementById("tr_total_members").innerText = members.length;
+ 
+  // ── Add / update target summary badges (only if any target is set)
+  let tgtBadgeWrap = document.getElementById("tr_target_badges");
+  if (hasAnyTarget) {
+    if (!tgtBadgeWrap) {
+      tgtBadgeWrap = document.createElement("div");
+      tgtBadgeWrap.id = "tr_target_badges";
+      tgtBadgeWrap.style.cssText = "display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;";
+      // Insert after tr_summary
+      const summary = document.getElementById("tr_summary");
+      if (summary && summary.parentNode) {
+        summary.parentNode.insertBefore(tgtBadgeWrap, summary.nextSibling);
       }
+    }
+    tgtBadgeWrap.style.display = "flex";
+    tgtBadgeWrap.innerHTML =
+      `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+        <div style="font-size:1.4rem;font-weight:700;color:#2563eb;">₹${fmt(totalExpected)}</div>
+        <div style="font-size:11px;color:#1d4ed8;font-weight:600;">🎯 Expected Total</div>
+        <div style="font-size:11px;color:#3b82f6;">${members.filter(u=>Number(u.MonthlyTarget||0)>0).length} members with target</div>
+      </div>` +
+      (totalShortfall > 0
+        ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+            <div style="font-size:1.4rem;font-weight:700;color:#ea580c;">₹${fmt(totalShortfall)}</div>
+            <div style="font-size:11px;color:#c2410c;font-weight:600;">⚠ Total Shortfall</div>
+            <div style="font-size:11px;color:#ea580c;">vs expected this month</div>
+          </div>`
+        : `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+            <div style="font-size:1.4rem;font-weight:700;color:#16a34a;">₹0</div>
+            <div style="font-size:11px;color:#166534;font-weight:600;">✅ No Shortfall</div>
+            <div style="font-size:11px;color:#22c55e;">Target met or exceeded</div>
+          </div>`
+      );
+  } else if (tgtBadgeWrap) {
+    tgtBadgeWrap.style.display = "none";
+  }
+ 
+  const pw = document.getElementById("tr_progress_wrap");
+  if (pw) pw.style.display = "block";
+ 
+  // ── Render PAID list (with target comparison)
+  const paidList = document.getElementById("tr_paid_list");
+  paidList.innerHTML = paidMembers.length === 0
+    ? '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;"><i class="fa-solid fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px;"></i>No paid members</div>'
+    : paidMembers.map(function(u, i) {
+        const userContribs  = contribs.filter(c => String(c.UserId) === String(u.UserId));
+        const paid          = userContribs.reduce((s, c) => s + Number(c.Amount || 0), 0);
+        const target        = Number(u.MonthlyTarget || 0);
+        const metTarget     = target > 0 && paid >= target;
+        const underTarget   = target > 0 && paid < target;
+ 
+        // Badge: show "₹paid / ₹target" if under target, else just "₹paid"
+        const badgeText = underTarget
+          ? `₹${fmt(paid)} / ₹${fmt(target)}`
+          : `₹${fmt(paid)}`;
+        const badgeBg   = underTarget
+          ? "linear-gradient(135deg,#fff7ed,#fed7aa)"
+          : "linear-gradient(135deg,#dcfce7,#bbf7d0)";
+        const badgeColor = underTarget ? "#c2410c" : "#15803d";
+ 
+        // Small target-met tick
+        const targetTick = metTarget
+          ? `<span style="font-size:10px;color:#16a34a;margin-left:4px;" title="Target met">🎯</span>`
+          : "";
+ 
+        return `<div class="tr-member-row" style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #f0fdf4;font-size:12.5px;gap:8px;min-height:48px;">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#dcfce7,#bbf7d0);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#16a34a;flex-shrink:0;">${i+1}</div>
+            <div style="min-width:0;">
+              <div style="font-weight:600;color:#166534;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                ${escapeHtml(u.Name || "—")}${targetTick}
+              </div>
+              <div style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.Mobile || "")}</div>
+            </div>
+          </div>
+          <span style="background:${badgeBg};color:${badgeColor};padding:4px 10px;border-radius:20px;font-weight:700;font-size:11px;white-space:nowrap;flex-shrink:0;">${badgeText}</span>
+        </div>`;
+      }).join("");
+ 
+  // ── Render PENDING list (with shortfall)
+  const pendingList = document.getElementById("tr_pending_list");
+  pendingList.innerHTML = pendingMembers.length === 0
+    ? '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;"><i class="fa-solid fa-party-horn" style="font-size:1.5rem;display:block;margin-bottom:6px;color:#22c55e;"></i>🎉 All members have paid!</div>'
+    : pendingMembers.map(function(u, i) {
+        const target    = Number(u.MonthlyTarget || 0);
+        const shortfall = target > 0 ? target : 0;
+ 
+        const badgeText  = shortfall > 0 ? `₹${fmt(shortfall)} due` : "Pending";
+        const badgeBg    = shortfall > 0
+          ? "linear-gradient(135deg,#fff7ed,#fed7aa)"
+          : "linear-gradient(135deg,#fee2e2,#fecaca)";
+        const badgeColor = shortfall > 0 ? "#c2410c" : "#dc2626";
+ 
+        return `<div class="tr-member-row" style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #fef2f2;font-size:12.5px;gap:8px;min-height:48px;">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#fee2e2,#fecaca);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#dc2626;flex-shrink:0;">${i+1}</div>
+            <div style="min-width:0;">
+              <div style="font-weight:600;color:#991b1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.Name || "—")}</div>
+              <div style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.Mobile || "")}</div>
+            </div>
+          </div>
+          <span style="background:${badgeBg};color:${badgeColor};padding:4px 10px;border-radius:20px;font-weight:700;font-size:11px;white-space:nowrap;flex-shrink:0;">${badgeText}</span>
+        </div>`;
+      }).join("");
+ 
+  document.getElementById("tr_empty").style.display = "none";
+ 
+  // Progress bar — unchanged
+  let pbEl = document.getElementById("tr_progress_bar");
+  if (pbEl) {
+    pbEl.style.width      = pctComplete + "%";
+    pbEl.style.background = pctComplete >= 100 ? "#16a34a" : pctComplete >= 60 ? "#f7a01a" : "#dc2626";
+  }
+ 
+  // Store state for WhatsApp send functions — unchanged
+  window._trackerState = {
+    selTypeId, selMonth, selYear,
+    paidMembers, pendingMembers, paidAmt, pctComplete
+  };
+}
 
       function sendTrackerMsg(which) {
         const state = window._trackerState;

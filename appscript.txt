@@ -1488,6 +1488,7 @@ function updateUser(p) {
       // Village and Address — only update when explicitly provided (not undefined)
       if (p.Village !== undefined) setCol("Village", sanitize(p.Village, 100));
       if (p.Address !== undefined) setCol("Address", sanitize(p.Address, 300));
+      if (p.MonthlyTarget !== undefined) setCol("MonthlyTarget", Number(p.MonthlyTarget||0));
       SpreadsheetApp.flush();
       found = true; break;
     }
