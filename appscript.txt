@@ -1283,6 +1283,39 @@ function doGet(e) {
   else if (action === "clearAnnouncement")      { result = _clearAnnouncement(e); }
   else if (action === "saveBroadcast")          { result = _saveBroadcast(e); }
 
+      else if (action === "removeExpenseReceipt") {
+      try {
+        const expId     = sanitize(e.parameter.Id, 30);
+        const oldUrl    = sanitize(e.parameter.OldReceiptURL, 500);
+        const adminName = sanitize(e.parameter.AdminName, 100) || "Admin";
+        // Trash old Drive file if it exists
+        if (oldUrl && oldUrl.includes("lh3.googleusercontent.com/d/")) {
+          try {
+            const fileId = oldUrl.split("/d/")[1].split("?")[0].trim();
+            if (fileId && fileId.length > 10) DriveApp.getFileById(fileId).setTrashed(true);
+          } catch(driveErr) { /* silent — file may already be deleted */ }
+        }
+        // Clear ReceiptURL column in sheet
+        const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EXPENSES);
+        const data2   = sheet.getDataRange().getValues();
+        const hdrs    = data2[0];
+        const rcptCol = hdrs.indexOf("ReceiptURL");
+        if (rcptCol !== -1) {
+          for (let i = 1; i < data2.length; i++) {
+            if (String(data2[i][0]) === expId) {
+              sheet.getRange(i + 1, rcptCol + 1).setValue("");
+              SpreadsheetApp.flush();
+              break;
+            }
+          }
+        }
+        logAction(adminName, "removeExpenseReceipt", "ExpenseId: " + expId);
+        result = { status: "success" };
+      } catch(err) {
+        result = { status: "error", message: err.message };
+      }
+    }
+
   else { result = { error: "Invalid action: " + action }; }
 
   return ContentService
@@ -1542,6 +1575,11 @@ function updateExpenseRow(name, body) {
       sheet.getRange(i+1,5).setValue(sanitize(body.Year,          10));
       sheet.getRange(i+1,6).setValue(sanitize(body.ExpenseTypeId, 30));
       sheet.getRange(i+1,7).setValue(sanitize(body.ForMonth,      20));
+      const rcpHdrs = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+    const rcpCol  = rcpHdrs.indexOf("ReceiptURL");
+    if (body.ReceiptURL !== undefined && rcpCol !== -1)
+      sheet.getRange(i+1, rcpCol+1).setValue(sanitize(body.ReceiptURL||"", 500));
+    return { status: "updated" };
       return { status: "updated" };
     }
   }
@@ -1700,6 +1738,32 @@ function doPost(e) {
       const userUpdateRes = updateUser({ UserId:data.UserId, Name:data.Name, Mobile:data.Mobile||"", Role:data.Role, Password:"", Email:data.Email||"", Status:data.Status||"Active", PhotoURL:photoUrl, AdminName:data.AdminName||"User", Village:data.Village||"", Address:data.Address||"" });
       logAction(data.AdminName||"User","Upload Photo","UserId: "+data.UserId);
       result = { status:"success", photoUrl:photoUrl };
+          } else if (data.action === "uploadExpenseReceipt") {
+      if (!data.base64 || !data.fileName || !data.expenseId) {
+        return ContentService.createTextOutput(
+          JSON.stringify({status:"error",message:"Missing fields."})
+        ).setMimeType(ContentService.MimeType.JSON);
+      }
+      const receiptUrl = uploadUserPhoto(data.base64, sanitize(data.fileName, 100));
+      // Save URL to EXPENSES sheet ReceiptURL column
+      const expSheet  = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EXPENSES);
+      const expData   = expSheet.getDataRange().getValues();
+      const expHdrs   = expData[0];
+      const rcptCol   = expHdrs.indexOf("ReceiptURL");
+      if (rcptCol !== -1) {
+        for (let i = 1; i < expData.length; i++) {
+          if (String(expData[i][0]) === String(sanitize(data.expenseId, 30))) {
+            expSheet.getRange(i + 1, rcptCol + 1).setValue(receiptUrl);
+            SpreadsheetApp.flush();
+            break;
+          }
+        }
+      }
+      logAction(sanitize(data.AdminName,100)||"Admin", "uploadExpenseReceipt", "ExpenseId: " + data.expenseId);
+      return ContentService.createTextOutput(
+        JSON.stringify({status:"success", receiptUrl: receiptUrl})
+      ).setMimeType(ContentService.MimeType.JSON);
+ 
     } else if (data.action === "uploadGalleryPhoto") {
       if (!data.base64 || !data.fileName) return ContentService.createTextOutput(JSON.stringify({status:"error",message:"Missing base64 or fileName."})).setMimeType(ContentService.MimeType.JSON);
       const photoUrl = uploadUserPhoto(data.base64, sanitize(data.fileName,100));
