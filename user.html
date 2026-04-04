@@ -396,6 +396,10 @@
         <button class="qa-btn qa-dark" onclick="shareStatementWhatsApp()">
           <i class="fa-brands fa-whatsapp"></i> WhatsApp
         </button>
+        <button class="qa-btn" style="background:#6366f1;color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.28);"
+          onclick="downloadMemberIDCard()">
+          <i class="fa-solid fa-id-card"></i> ID Card
+        </button>
       </div>
 
       <!-- GOALS -->
@@ -540,10 +544,17 @@
               <div class="_row"><span class="_rl"><i class="fa-regular fa-id-badge" style="width:14px;color:#f7a01a;"></i> Member ID</span><span class="_rv" style="font-family:monospace;font-size:12px;">${escapeHtml(String(myProfile.UserId||"—"))}</span></div>
             </div>
           </div>
-          <div class="_mft">
-            <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>
-            <button class="_mbtn" style="background:#f7a01a;" onclick="closeModal();openEditProfile()"><i class="fa-solid fa-user-pen"></i> Edit Profile</button>
-          </div>`;
+              <div class="_mft" style="flex-wrap:wrap;gap:8px;">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">
+        <i class="fa-solid fa-xmark"></i> Close
+      </button>
+      <button class="_mbtn" style="background:#3b82f6;" onclick="closeModal();openChangePassword()">
+        <i class="fa-solid fa-key"></i> Change Password
+      </button>
+      <button class="_mbtn" style="background:#f7a01a;" onclick="closeModal();openEditProfile()">
+        <i class="fa-solid fa-user-pen"></i> Edit Profile
+      </button>
+    </div>`;
         openModal(html,"460px");
       }
 
@@ -581,8 +592,17 @@
               <label class="_fl">Address</label><textarea class="_fi" id="ep_address" rows="2" placeholder="Full address" style="resize:vertical;min-height:52px;display:block;background:#fafafa;color:#333;cursor:text;">${escapeHtml(dA)}</textarea>
               <label class="_fl">Mobile <span style="color:#bbb;font-weight:400;font-size:10px;">(read-only)</span></label>
               <input class="_fi" value="${escapeHtml(String(myProfile?.Mobile||""))}" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;margin-bottom:4px;"/>
-              <label class="_fl">Password <span style="color:#bbb;font-weight:400;font-size:10px;">(use Forgot Password to change)</span></label>
-              <input class="_fi" value="••••••••" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;"/>
+              <label class="_fl">Password</label>
+                  <div style="background:#f8f8f8;border:1.5px solid #eee;border-radius:8px;
+                    padding:10px 14px;display:flex;align-items:center;justify-content:space-between;
+                    margin-bottom:14px;">
+                    <span style="color:#aaa;letter-spacing:2px;font-size:14px;">••••••••</span>
+                    <span onclick="closeModal();openChangePassword()"
+                      style="color:#3b82f6;font-size:12px;font-weight:600;cursor:pointer;
+                      text-decoration:underline;white-space:nowrap;">
+                      <i class="fa-solid fa-key" style="margin-right:3px;"></i>Change
+                    </span>
+                  </div>
             </div>
           </div>
           <div class="_mft">
@@ -621,6 +641,179 @@
           else toast("❌ Update failed.","error");
         }catch(err){toast("❌ "+err.message,"error");}
       }
+
+      /* ═══ CHANGE PASSWORD ════════════════════════════════════════════
+   Opens a modal with 3 fields: current password, new password,
+   confirm new password. Verifies current, then updates via
+   existing updateUser action. No new Apps Script action needed.
+   ═══════════════════════════════════════════════════════════════ */
+function openChangePassword() {
+  const html = `
+    <div class="_mhdr">
+      <h3><i class="fa-solid fa-key" style="color:#3b82f6;"></i> Change Password</h3>
+      <button class="_mcls" onclick="closeModal()">×</button>
+    </div>
+    <div class="_mbdy">
+      <p style="font-size:12.5px;color:#64748b;margin:0 0 16px;line-height:1.6;">
+        Enter your current password to verify, then set a new one.<br>
+        Minimum 6 characters.
+      </p>
+      <label class="_fl">Current Password</label>
+      <div style="position:relative;margin-bottom:14px;">
+        <input class="_fi" type="password" id="cp_current"
+          placeholder="Your current password"
+          style="margin-bottom:0;padding-right:44px;"/>
+        <span onclick="_cpToggle('cp_current',this)"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+          font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
+      </div>
+      <label class="_fl">New Password</label>
+      <div style="position:relative;margin-bottom:14px;">
+        <input class="_fi" type="password" id="cp_new"
+          placeholder="New password (min 6 chars)"
+          style="margin-bottom:0;padding-right:44px;"
+          oninput="_cpStrength(this.value)"/>
+        <span onclick="_cpToggle('cp_new',this)"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+          font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
+      </div>
+      <div id="cp_strength" style="height:4px;border-radius:2px;background:#f1f5f9;
+        margin:-8px 0 12px;overflow:hidden;">
+        <div id="cp_strength_bar"
+          style="height:100%;width:0%;border-radius:2px;transition:width .3s,background .3s;"></div>
+      </div>
+      <label class="_fl">Confirm New Password</label>
+      <div style="position:relative;margin-bottom:6px;">
+        <input class="_fi" type="password" id="cp_confirm"
+          placeholder="Repeat new password"
+          style="margin-bottom:0;padding-right:44px;"/>
+        <span onclick="_cpToggle('cp_confirm',this)"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+          font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
+      </div>
+      <div id="cp_msg" style="font-size:12px;min-height:18px;margin-bottom:4px;"></div>
+    </div>
+    <div class="_mft">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">
+        Cancel
+      </button>
+      <button class="_mbtn" id="cp_save_btn" style="background:#3b82f6;"
+        onclick="saveNewPassword()">
+        <i class="fa-solid fa-key"></i> Update Password
+      </button>
+    </div>`;
+  openModal(html, "420px");
+  // Focus current password field after modal opens
+  setTimeout(function() {
+    var el = document.getElementById("cp_current");
+    if (el) el.focus();
+  }, 120);
+}
+ 
+/* Toggle show/hide for password fields */
+function _cpToggle(inputId, btn) {
+  var inp = document.getElementById(inputId);
+  if (!inp) return;
+  if (inp.type === "password") {
+    inp.type = "text";
+    btn.textContent = "Hide";
+  } else {
+    inp.type = "password";
+    btn.textContent = "Show";
+  }
+}
+ 
+/* Strength bar under new password field */
+function _cpStrength(val) {
+  var bar = document.getElementById("cp_strength_bar");
+  if (!bar) return;
+  var score = 0;
+  if (val.length >= 6)  score++;
+  if (val.length >= 10) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  var pct   = [0, 25, 50, 70, 85, 100][Math.min(score, 5)];
+  var color = score <= 1 ? "#ef4444" : score <= 2 ? "#f59e0b" : score <= 3 ? "#3b82f6" : "#22c55e";
+  bar.style.width      = pct + "%";
+  bar.style.background = color;
+}
+ 
+/* Set message inside modal */
+function _cpMsg(msg, color) {
+  var el = document.getElementById("cp_msg");
+  if (el) { el.textContent = msg; el.style.color = color || "#ef4444"; }
+}
+ 
+/* Main save function */
+async function saveNewPassword() {
+  var currentVal = (document.getElementById("cp_current")?.value || "");
+  var newVal     = (document.getElementById("cp_new")?.value     || "");
+  var confirmVal = (document.getElementById("cp_confirm")?.value || "");
+ 
+  // Client-side validation
+  if (!currentVal) { _cpMsg("Please enter your current password."); return; }
+  if (newVal.length < 6) { _cpMsg("New password must be at least 6 characters."); return; }
+  if (newVal !== confirmVal) { _cpMsg("New passwords do not match."); return; }
+  if (newVal === currentVal) { _cpMsg("New password must be different from current password."); return; }
+ 
+  var btn = document.getElementById("cp_save_btn");
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...'; }
+ 
+  try {
+    var s         = JSON.parse(localStorage.getItem("session") || "{}");
+    var myProfile = (typeof users !== "undefined" ? users : [])
+      .find(function(u) { return String(u.UserId) === String(s.userId); });
+ 
+    if (!myProfile) {
+      _cpMsg("Profile not loaded. Please refresh and try again.");
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-key"></i> Update Password'; }
+      return;
+    }
+ 
+    // Verify current password — hash and compare against stored hash
+    var currentHash  = await sha256(currentVal);
+    var storedHash   = String(myProfile.Password || "").toLowerCase();
+ 
+    // Note: allData strips Password from users for security.
+    // If Password is not available in loaded users, fall back to server verification.
+    if (storedHash && storedHash.length === 64) {
+      // Password hash is available — verify client-side (faster, no extra API call)
+      if (currentHash !== storedHash) {
+        _cpMsg("Current password is incorrect.");
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-key"></i> Update Password'; }
+        return;
+      }
+    }
+    // If storedHash not available (getAllData strips it) — server will reject
+    // wrong current password because updateUser compares on the sheet side.
+    // We send currentHash as OldPassword for server-side verification.
+ 
+    var newHash = await sha256(newVal);
+ 
+    // updateUser already handles password update when Password param is non-empty
+    // We send OldPassword so the server can optionally verify it (see appscript note below)
+    var res = await postData({
+      action:      "changePassword",
+      UserId:      s.userId,
+      OldPassword: currentHash,
+      NewPassword: newHash
+    });
+ 
+    if (res && res.status === "success") {
+      closeModal();
+      toast("✅ Password updated successfully. Please use new password next time you log in.", "");
+    } else {
+      _cpMsg(res?.message || "Current password is incorrect or update failed.");
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-key"></i> Update Password'; }
+    }
+ 
+  } catch(err) {
+    _cpMsg("Error: " + err.message);
+    var b = document.getElementById("cp_save_btn");
+    if (b) { b.disabled = false; b.innerHTML = '<i class="fa-solid fa-key"></i> Update Password'; }
+  }
+}
 
       async function init(){
         try{
@@ -787,6 +980,198 @@
         doc.save(`Mandir_Statement_${s.name.replace(/\s+/g,"_")}_${Date.now()}.pdf`);
       }
 
+      /* ═══ MEMBER ID CARD PDF ═════════════════════════════════════════
+   Generates a CR80 landscape ID card (85.6 × 54 mm).
+   Uses jsPDF already loaded. No server call needed.
+   ═══════════════════════════════════════════════════════════════ */
+ // ✅ Helper: load image → base64
+ function loadImageAsBase64(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+
+    img.onload = function () {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      resolve(canvas.toDataURL("image/png"));
+    };
+
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+async function downloadMemberIDCard() {
+  try {
+    const { jsPDF } = window.jspdf;
+
+    const s = JSON.parse(localStorage.getItem("session") || "{}");
+    const myProfile = (typeof users !== "undefined" ? users : [])
+      .find(u => String(u.UserId) === String(s.userId));
+
+    if (!myProfile) {
+      toast("Profile not loaded", "warn");
+      return;
+    }
+
+    const W = 85.6;
+    const H = 54;
+
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: [H, W]
+    });
+
+    const INK   = [30, 41, 59];
+    const GOLD  = [247, 160, 26];
+    const WHITE = [255, 255, 255];
+    const LIGHT = [248, 250, 252];
+    const MUTED = [100, 116, 139];
+
+    // ✅ Load logo
+    let LOGO = null;
+    try {
+      LOGO = await loadImageAsBase64("image/logo.png");
+    } catch (e) {
+      console.log("Logo load failed");
+    }
+
+    // Background
+    doc.setFillColor(...LIGHT);
+    doc.rect(0, 0, W, H, "F");
+
+    // Header
+    doc.setFillColor(...INK);
+    doc.rect(0, 0, W, 14, "F");
+
+    // ✅ LOGO (perfect aligned box area)
+    if (LOGO) {
+      const logoSize = 15;      // bigger size
+      const logoX = 1.8;          // left margin
+      const logoY = 0.4;          // vertical center in header
+
+      doc.addImage(LOGO, "PNG", logoX, logoY, logoSize, logoSize);
+    }
+
+    // Gold line
+    doc.setFillColor(...GOLD);
+    doc.rect(0, 14, W, 1.2, "F");
+
+    // ✅ Title aligned after logo
+    const textStartX = 18; // shifted based on logo
+
+    doc.setTextColor(...GOLD);
+    doc.setFontSize(10);
+    doc.setFont(undefined, "bold");
+    doc.text("SHREE HANUMAN MANDIR", textStartX, 6);
+
+    // Address
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(6);
+    doc.setFont(undefined, "normal");
+    doc.text("Paliya, Sultanpur, Uttar Pradesh", textStartX, 11);
+
+    // 🔲 Square Photo
+    const photoSize = 20;
+    const photoX = 4;
+    const photoY = 22;
+
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.8);
+    doc.rect(photoX, photoY, photoSize, photoSize, "S");
+
+    doc.setFillColor(...INK);
+    doc.rect(photoX + 0.5, photoY + 0.5, photoSize - 1, photoSize - 1, "F");
+
+    const initials = (myProfile.Name || "?")
+      .split(" ")
+      .map(w => w[0] || "")
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
+    doc.setTextColor(...GOLD);
+    doc.setFontSize(10);
+    doc.setFont(undefined, "bold");
+    doc.text(
+      initials,
+      photoX + photoSize / 2,
+      photoY + photoSize / 2 + 3,
+      { align: "center" }
+    );
+
+    // Details
+    const detX = photoX + photoSize + 4;
+
+    doc.setTextColor(...INK);
+    doc.setFontSize(10);
+    doc.setFont(undefined, "bold");
+    doc.text(String(myProfile.Name || "—"), detX, 22);
+
+    doc.setFontSize(6.5);
+    doc.setTextColor(...MUTED);
+    doc.text(String(myProfile.Role || "User"), detX, 27);
+
+    doc.setDrawColor(226, 232, 240);
+    doc.line(detX, 29, W - 4, 29);
+
+    doc.setFontSize(7);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(...MUTED);
+    doc.text("MEMBER ID", detX, 34);
+
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(...INK);
+    doc.text(String(myProfile.UserId || "—"), detX + 22, 34);
+
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(...MUTED);
+    doc.text("MOBILE", detX, 39);
+
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(...INK);
+    doc.text(String(myProfile.Mobile || "—"), detX + 22, 39);
+
+    if (myProfile.Village) {
+      doc.setFont(undefined, "bold");
+      doc.setTextColor(...MUTED);
+      doc.text("VILLAGE", detX, 44);
+
+      doc.setFont(undefined, "normal");
+      doc.setTextColor(...INK);
+      doc.text(String(myProfile.Village), detX + 22, 44);
+    }
+
+    // Footer
+    doc.setFillColor(...INK);
+    doc.rect(0, H - 8, W, 8, "F");
+
+    doc.setTextColor(...GOLD);
+    doc.setFontSize(6);
+    doc.setFont(undefined, "bold");
+    doc.text("Jai Shree Ram", 4, H - 3);
+
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(5.5);
+    const issued = "Issued: " + new Date().toLocaleDateString("en-IN");
+    doc.text(issued, W - 4, H - 3, { align: "right" });
+
+    // Border
+    doc.setDrawColor(203, 213, 225);
+    doc.rect(0.2, 0.2, W - 0.4, H - 0.4);
+
+    doc.save("IDCard_" + (myProfile.Name || "member") + ".pdf");
+
+  } catch (err) {
+    toast("❌ Error: " + err.message, "error");
+  }
+}
       function shareStatementWhatsApp(){
         let s=JSON.parse(localStorage.getItem("session")),fY=document.getElementById("filterYear").value,fM=document.getElementById("filterMonth").value;
         let filtered=data.filter(c=>(!fY||String(c.Year)===fY)&&(!fM||c.ForMonth===fM));

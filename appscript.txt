@@ -20,7 +20,7 @@ const CFG = {
   // For emails, host logo.PNG on Google Drive (share publicly) and paste the
   // direct image URL below. Format: https://lh3.googleusercontent.com/d/FILE_ID
   // Leave empty to use the Om symbol fallback in emails.
-  logoEmailUrl:  "",             // e.g. "https://lh3.googleusercontent.com/d/YOUR_FILE_ID"
+  logoEmailUrl: "https://lh3.googleusercontent.com/d/1S0RbjNkxhhGsTMI1fPlLSOlkLi87ZHhs",            // e.g. "https://lh3.googleusercontent.com/d/YOUR_FILE_ID"
 };
 
 const SHEETS = {
@@ -1116,6 +1116,10 @@ function doGet(e) {
     }
   }
 
+  else if (action === "changePassword") {
+      result = _changePassword(e.parameter);
+  }
+
   else if (action === "deleteUser") {
     let id = sanitize(e.parameter.UserId, 30);
     result = deleteRow(SHEETS.USERS, id);
@@ -2167,3 +2171,49 @@ function getPublicStats() {
     return { status: "error", message: err.message };
   }
 }
+
+  function _changePassword(p) {
+    try {
+      const userId     = sanitize(p.UserId,      30);
+      const oldHashRaw = sanitize(p.OldPassword, 128);
+      const newHashRaw = sanitize(p.NewPassword, 128);
+ 
+      if (!userId || !oldHashRaw || !newHashRaw) {
+        return { status: "error", message: "Missing required fields." };
+      }
+      // Both must be 64-char SHA-256 hashes (client always sends hashed values)
+      if (oldHashRaw.length !== 64 || newHashRaw.length !== 64) {
+        return { status: "error", message: "Invalid password format." };
+      }
+      // Cannot set same password
+      if (oldHashRaw === newHashRaw) {
+        return { status: "error", message: "New password must be different." };
+      }
+ 
+      const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+      const data    = sheet.getDataRange().getValues();
+      const headers = data[0];
+      const pwdCol  = headers.indexOf("Password");
+      const idCol   = 0; // UserId is always first column
+ 
+      if (pwdCol === -1) return { status: "error", message: "Password column not found." };
+ 
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][idCol]) === userId) {
+          const storedHash = String(data[i][pwdCol] || "").trim().toLowerCase();
+          // Verify old password matches stored hash
+          if (storedHash !== oldHashRaw.toLowerCase()) {
+            return { status: "error", message: "Current password is incorrect." };
+          }
+          // Write new password hash
+          sheet.getRange(i + 1, pwdCol + 1).setValue(newHashRaw.toLowerCase());
+          SpreadsheetApp.flush();
+          logAction("User", "Change Password", "UserId: " + userId);
+          return { status: "success" };
+        }
+      }
+      return { status: "error", message: "User not found." };
+    } catch(err) {
+      return { status: "error", message: err.message };
+    }
+  }
