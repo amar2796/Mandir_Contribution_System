@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#1e293b"/>
+  <circle cx="256" cy="256" r="216" fill="none" stroke="#f7a01a" stroke-width="10" opacity="0.6"/>
+  <text
+    x="256"
+    y="316"
+    text-anchor="middle"
+    font-size="240"
+    font-family="serif"
+    fill="#f7a01a"
+    opacity="0.95">ॐ</text>
+  <circle cx="256" cy="392" r="14" fill="#f7a01a" opacity="0.7"/>
+</svg>

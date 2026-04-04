@@ -3,6 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.svg"/>
+  <meta name="theme-color" content="#f7a01a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="SHM"/>
+
     <title>My Dashboard — Mandir</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1186,5 +1194,41 @@ async function downloadMemberIDCard() {
       init();
       (function(){const s=JSON.parse(localStorage.getItem("session")||"null");if(s&&s.userId)broadcastSessionRevoke(s.userId);})();
     </script>
+
+<script>
+  /* ── Service Worker registration ── */
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("./sw.js").then(function(reg) {
+   
+        // Detect when a new SW version is waiting — prompt user to refresh
+        reg.addEventListener("updatefound", function() {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", function() {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              // New version available — show update toast if toast() is available
+              // Otherwise show a simple confirm dialog
+              if (typeof toast === "function") {
+                toast("🔄 App updated — tap here to refresh", "warn");
+                // Auto-reload after 4 seconds so admin always gets latest code
+                setTimeout(function() { location.reload(); }, 4000);
+              } else {
+                if (confirm("App updated. Reload now for the latest version?")) {
+                  location.reload();
+                }
+              }
+            }
+          });
+        });
+   
+      }).catch(function(err) {
+        // SW registration failed — app still works normally without it
+        console.warn("Service Worker registration failed:", err);
+      });
+    });
+  }
+  </script>
+
   </body>
 </html>

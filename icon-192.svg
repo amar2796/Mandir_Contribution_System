@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Background circle — dark slate matches theme_color -->
+  <rect width="192" height="192" rx="40" fill="#1e293b"/>
+  <!-- Gold accent ring -->
+  <circle cx="96" cy="96" r="80" fill="none" stroke="#f7a01a" stroke-width="4" opacity="0.6"/>
+  <!-- Om symbol in gold — centered -->
+  <text
+    x="96"
+    y="118"
+    text-anchor="middle"
+    font-size="90"
+    font-family="serif"
+    fill="#f7a01a"
+    opacity="0.95">ॐ</text>
+  <!-- Small dot below — traditional Om styling -->
+  <circle cx="96" cy="148" r="5" fill="#f7a01a" opacity="0.7"/>
+</svg>
