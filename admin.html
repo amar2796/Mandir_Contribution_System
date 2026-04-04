@@ -1034,6 +1034,47 @@ tr.row-rejected td { background: #fff5f5 !important; }
   background: #f8fafc; border-top: 1px solid #e2e8f0;
   padding: 14px 0 4px; margin-top: 8px; display: flex; gap: 10px; align-items: center;
 }
+
+.nav-event { color: #fb923c; }
+.nav-event:hover:not(.active-nav), .nav-event.active-nav {
+  background: rgba(251,146,60,0.15); color: #fb923c;
+}
+.nav-event.active-nav { border-left: 3px solid #fb923c; }
+ 
+.ev-status-upcoming  { background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe; }
+.ev-status-active    { background:#f0fdf4;color:#166534;border:1px solid #bbf7d0; }
+.ev-status-completed { background:#f1f5f9;color:#475569;border:1px solid #cbd5e1; }
+ 
+.ev-budget-bar-bg {
+  background:#f1f5f9;border-radius:6px;height:10px;
+  overflow:hidden;margin-top:6px;
+}
+.ev-budget-bar-fill {
+  height:100%;border-radius:6px;
+  transition:width .6s ease,background .4s;
+}
+ 
+.ev-card {
+  background:#fff;border-radius:14px;border:1px solid #e2e8f0;
+  padding:20px;margin-bottom:14px;
+  transition:box-shadow .2s;
+}
+.ev-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+.ev-card-header {
+  display:flex;justify-content:space-between;
+  align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px;
+}
+.ev-card-title { font-size:15px;font-weight:700;color:#334155;margin:0; }
+.ev-card-cat   { font-size:11px;color:#94a3b8;margin-top:2px; }
+.ev-card-body  { display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px; }
+.ev-stat       { text-align:center;padding:10px;background:#f8fafc;border-radius:10px; }
+.ev-stat-val   { font-size:1.2rem;font-weight:700;color:#334155; }
+.ev-stat-lbl   { font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px; }
+.ev-card-footer{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;
+  padding-top:12px;border-top:1px solid #f1f5f9;
+}
+
     </style>
   </head>
   <body>
@@ -1085,6 +1126,10 @@ tr.row-rejected td { background: #fff5f5 !important; }
           </li>
           <li onclick="showPage('yearSummaryPage',this)" class="nav-finance">
             <i class="fa-solid fa-calendar-check"></i> Year Summary
+          </li>
+
+          <li onclick="showPage('eventsPage',this)" class="nav-event">
+            <i class="fa-solid fa-calendar-days"></i> Events
           </li>
 
           <!-- ── Section label: Members ── -->
@@ -2021,6 +2066,95 @@ tr.row-rejected td { background: #fff5f5 !important; }
   </div>
  
 </div>
+
+<!-- EVENTS -->
+<div id="eventsPage" class="page">
+ 
+  <!-- Create / Edit Event -->
+  <div class="card" style="margin-bottom:18px;">
+    <h3><i class="fa-solid fa-calendar-plus" style="color:#fb923c;"></i> Create Event</h3>
+    <div class="form-row">
+      <div>
+        <label>Event Name</label>
+        <input id="ev_name" placeholder="e.g. Navratri 2025"/>
+      </div>
+      <div>
+        <label>Category</label>
+        <select id="ev_cat">
+          <option>Festival</option>
+          <option>Pooja</option>
+          <option>Maintenance</option>
+          <option>Community</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="ev_status">
+          <option value="Upcoming">Upcoming</option>
+          <option value="Active">Active</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>Start Date</label>
+        <input type="date" id="ev_start"/>
+      </div>
+      <div>
+        <label>End Date</label>
+        <input type="date" id="ev_end"/>
+      </div>
+      <div>
+        <label>Budget (₹)</label>
+        <input type="number" id="ev_budget" min="0" placeholder="0 = no budget"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div style="grid-column:1/-1;">
+        <label>Description <span style="color:#aaa;font-size:10px;font-weight:400;">(optional)</span></label>
+        <input id="ev_desc" placeholder="Brief description of the event"/>
+      </div>
+    </div>
+    <button onclick="addEvent()">
+      <i class="fa-solid fa-plus"></i> Save Event
+    </button>
+  </div>
+ 
+  <!-- Event Cards List -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+      <h3 style="margin:0;"><i class="fa-solid fa-calendar-days"></i> All Events</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <select id="ev_filter_status" onchange="renderEvents()"
+          style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
+          <option value="">All Status</option>
+          <option value="Upcoming">Upcoming</option>
+          <option value="Active">Active</option>
+          <option value="Completed">Completed</option>
+        </select>
+        <select id="ev_filter_cat" onchange="renderEvents()"
+          style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
+          <option value="">All Categories</option>
+          <option>Festival</option>
+          <option>Pooja</option>
+          <option>Maintenance</option>
+          <option>Community</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div id="ev_list">
+      <div style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading events…
+      </div>
+    </div>
+  </div>
+ 
+</div>
+<!-- END EVENTS PAGE -->
+
 <!-- END YEAR SUMMARY PAGE -->
         <!-- MASTER -->
         <div id="masterPage" class="page">
@@ -5966,6 +6100,424 @@ async function removeExpenseReceipt(expId) {
                 .join("");
       }
 
+      /* ═══════════════════════════════════════════════════════════════
+   EVENT MANAGEMENT — all functions self-contained
+   Uses global: data, expenses, expenseTypes, MONTHS
+   New globals: _events (array), _eventExpenses (array)
+   ═══════════════════════════════════════════════════════════════ */
+ 
+var _events        = [];
+var _eventExpenses = [];
+var _evLoaded      = false;
+ 
+/* ── Load events + event expenses from API ── */
+async function loadEvents() {
+  if (_evLoaded) return;
+  try {
+    const res = await getCached("getEventData");
+    _events        = (res && res.events)        || [];
+    _eventExpenses = (res && res.eventExpenses) || [];
+    _evLoaded = true;
+    renderEvents();
+  } catch(err) {
+    document.getElementById("ev_list").innerHTML =
+      `<div style="text-align:center;padding:32px;color:#ef4444;font-size:13px;">
+        Error loading events: ${escapeHtml(err.message)}
+      </div>`;
+  }
+}
+ 
+/* ── Bust event cache after any write ── */
+function _evBust() {
+  _evLoaded = false;
+  mandirCacheBust("getEventData");
+}
+ 
+/* ── Render event cards ── */
+function renderEvents() {
+  const filterStatus = document.getElementById("ev_filter_status")?.value || "";
+  const filterCat    = document.getElementById("ev_filter_cat")?.value    || "";
+ 
+  const list = _events.filter(function(e) {
+    const matchStatus = !filterStatus || e.Status === filterStatus;
+    const matchCat    = !filterCat    || e.Category === filterCat;
+    return matchStatus && matchCat;
+  });
+ 
+  const container = document.getElementById("ev_list");
+  if (!container) return;
+ 
+  if (list.length === 0) {
+    container.innerHTML =
+      `<div style="text-align:center;padding:40px;color:#94a3b8;">
+        <i class="fa-solid fa-calendar-xmark" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+        No events found. Create one above.
+      </div>`;
+    return;
+  }
+ 
+  // Sort: Active first, then Upcoming, then Completed
+  const order = { Active:0, Upcoming:1, Completed:2 };
+  list.sort(function(a,b) { return (order[a.Status]||3) - (order[b.Status]||3); });
+ 
+  container.innerHTML = list.map(function(ev) {
+    // Sum expenses for this event
+    const evExps   = _eventExpenses.filter(function(x) { return String(x.EventId) === String(ev.EventId); });
+    const spent    = evExps.reduce(function(s,x) { return s + Number(x.Amount||0); }, 0);
+    const budget   = Number(ev.Budget || 0);
+    const remaining= budget > 0 ? budget - spent : 0;
+    const pct      = budget > 0 ? Math.min(100, Math.round(spent / budget * 100)) : 0;
+    const barColor = pct >= 90 ? "#ef4444" : pct >= 70 ? "#f59e0b" : "#27ae60";
+ 
+    const statusClass = {
+      Upcoming:  "ev-status-upcoming",
+      Active:    "ev-status-active",
+      Completed: "ev-status-completed"
+    }[ev.Status] || "ev-status-upcoming";
+ 
+    const budgetSection = budget > 0 ? `
+      <div style="margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px;">
+          <span>Budget used: ${pct}%</span>
+          <span>₹${fmt(spent)} / ₹${fmt(budget)}</span>
+        </div>
+        <div class="ev-budget-bar-bg">
+          <div class="ev-budget-bar-fill" style="width:${pct}%;background:${barColor};"></div>
+        </div>
+      </div>` : "";
+ 
+    const dateStr = [ev.StartDate, ev.EndDate].filter(Boolean).join(" → ") || "—";
+ 
+    return `<div class="ev-card">
+      <div class="ev-card-header">
+        <div>
+          <div class="ev-card-title">${escapeHtml(ev.EventName || "Untitled")}</div>
+          <div class="ev-card-cat">
+            <i class="fa-solid fa-tag" style="font-size:10px;"></i>
+            ${escapeHtml(ev.Category || "—")} &nbsp;·&nbsp;
+            <i class="fa-regular fa-calendar" style="font-size:10px;"></i>
+            ${escapeHtml(dateStr)}
+          </div>
+        </div>
+        <span class="badge ${statusClass}" style="border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;">
+          ${escapeHtml(ev.Status || "—")}
+        </span>
+      </div>
+ 
+      ${ev.Description ? `<p style="font-size:12.5px;color:#64748b;margin:0 0 12px;line-height:1.6;">${escapeHtml(ev.Description)}</p>` : ""}
+ 
+      <div class="ev-card-body">
+        <div class="ev-stat">
+          <div class="ev-stat-val" style="color:#f59e0b;">₹${fmt(budget || 0)}</div>
+          <div class="ev-stat-lbl">Budget</div>
+        </div>
+        <div class="ev-stat">
+          <div class="ev-stat-val" style="color:#e74c3c;">₹${fmt(spent)}</div>
+          <div class="ev-stat-lbl">Spent (${evExps.length} items)</div>
+        </div>
+        <div class="ev-stat">
+          <div class="ev-stat-val" style="color:${remaining >= 0 ? '#27ae60' : '#ef4444'};">
+            ${remaining < 0 ? "−" : ""}₹${fmt(Math.abs(remaining))}
+          </div>
+          <div class="ev-stat-lbl">${remaining < 0 ? "Over Budget" : "Remaining"}</div>
+        </div>
+      </div>
+ 
+      ${budgetSection}
+ 
+      <div class="ev-card-footer">
+        <button onclick="openAddEventExpense('${ev.EventId}','${escapeHtml(ev.EventName||'')}')"
+          style="padding:7px 14px;font-size:12px;background:#fb923c;box-shadow:none;">
+          <i class="fa-solid fa-plus"></i> Add Expense
+        </button>
+        <button onclick="viewEventExpenses('${ev.EventId}','${escapeHtml(ev.EventName||'')}')"
+          style="padding:7px 14px;font-size:12px;background:#334155;box-shadow:none;">
+          <i class="fa-solid fa-list"></i> View Expenses (${evExps.length})
+        </button>
+        <button onclick="shareEventWhatsApp('${ev.EventId}')"
+          style="padding:7px 14px;font-size:12px;background:#25d366;box-shadow:none;">
+          <i class="fa-brands fa-whatsapp"></i> Share
+        </button>
+        <button onclick="openEditEvent('${ev.EventId}')"
+          style="padding:7px 14px;font-size:12px;background:#64748b;box-shadow:none;">
+          <i class="fa-solid fa-pen"></i> Edit
+        </button>
+        <button onclick="deleteEvent('${ev.EventId}')"
+          style="padding:7px 14px;font-size:12px;background:#ef4444;box-shadow:none;">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    </div>`;
+  }).join("");
+}
+ 
+/* ── Add new event ── */
+async function addEvent() {
+  const name   = document.getElementById("ev_name")?.value.trim();
+  const cat    = document.getElementById("ev_cat")?.value;
+  const status = document.getElementById("ev_status")?.value;
+  const start  = document.getElementById("ev_start")?.value;
+  const end    = document.getElementById("ev_end")?.value;
+  const budget = document.getElementById("ev_budget")?.value || "0";
+  const desc   = document.getElementById("ev_desc")?.value.trim() || "";
+  const s      = JSON.parse(localStorage.getItem("session") || "{}");
+ 
+  if (!name) { toast("Event name is required.", "warn"); return; }
+ 
+  try {
+    const res = await postData({
+      action:    "addEvent",
+      EventId:   "EVT_" + Date.now(),
+      EventName: name,
+      Category:  cat,
+      Status:    status,
+      StartDate: start,
+      EndDate:   end,
+      Budget:    Number(budget),
+      Description: desc,
+      AdminName: s.name || "Admin"
+    });
+    if (res.status === "success") {
+      toast("✅ Event created.", "");
+      document.getElementById("ev_name").value   = "";
+      document.getElementById("ev_budget").value = "";
+      document.getElementById("ev_desc").value   = "";
+      _evBust();
+      await loadEvents();
+    } else {
+      toast("❌ " + (res.message || "Failed to create event."), "error");
+    }
+  } catch(err) {
+    toast("❌ " + err.message, "error");
+  }
+}
+ 
+/* ── Edit event modal ── */
+function openEditEvent(eventId) {
+  const ev = _events.find(function(x) { return String(x.EventId) === String(eventId); });
+  if (!ev) return;
+ 
+  const catOpts = ["Festival","Pooja","Maintenance","Community","Other"]
+    .map(function(c) { return `<option ${c === ev.Category ? "selected" : ""}>${c}</option>`; }).join("");
+  const stOpts = ["Upcoming","Active","Completed"]
+    .map(function(s) { return `<option ${s === ev.Status ? "selected" : ""}>${s}</option>`; }).join("");
+ 
+  const html = `
+    <div class="_mhdr">
+      <h3><i class="fa-solid fa-calendar-pen"></i> Edit Event</h3>
+      <button class="_mcls" onclick="closeModal()">×</button>
+    </div>
+    <div class="_mbdy">
+      <label class="_fl">Event Name</label>
+      <input class="_fi" id="ee_name" value="${escapeHtml(ev.EventName||'')}"/>
+      <label class="_fl">Category</label>
+      <select class="_fi" id="ee_cat">${catOpts}</select>
+      <label class="_fl">Status</label>
+      <select class="_fi" id="ee_status">${stOpts}</select>
+      <label class="_fl">Start Date</label>
+      <input class="_fi" type="date" id="ee_start" value="${escapeHtml(ev.StartDate||'')}"/>
+      <label class="_fl">End Date</label>
+      <input class="_fi" type="date" id="ee_end" value="${escapeHtml(ev.EndDate||'')}"/>
+      <label class="_fl">Budget (₹)</label>
+      <input class="_fi" type="number" id="ee_budget" value="${Number(ev.Budget||0)}" min="0"/>
+      <label class="_fl">Description</label>
+      <input class="_fi" id="ee_desc" value="${escapeHtml(ev.Description||'')}"/>
+    </div>
+    <div class="_mft">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Cancel</button>
+      <button class="_mbtn" style="background:#fb923c;" onclick="saveEditEvent('${eventId}')">
+        <i class="fa-solid fa-check"></i> Save
+      </button>
+    </div>`;
+  openModal(html, "480px");
+}
+ 
+async function saveEditEvent(eventId) {
+  const s = JSON.parse(localStorage.getItem("session") || "{}");
+  try {
+    const res = await postData({
+      action:      "updateEvent",
+      EventId:     eventId,
+      EventName:   document.getElementById("ee_name").value.trim(),
+      Category:    document.getElementById("ee_cat").value,
+      Status:      document.getElementById("ee_status").value,
+      StartDate:   document.getElementById("ee_start").value,
+      EndDate:     document.getElementById("ee_end").value,
+      Budget:      Number(document.getElementById("ee_budget").value || 0),
+      Description: document.getElementById("ee_desc").value.trim(),
+      AdminName:   s.name || "Admin"
+    });
+    toast(res.status === "updated" ? "✅ Event updated." : "❌ Update failed.",
+          res.status === "updated" ? "" : "error");
+    if (res.status === "updated") {
+      closeModal(); _evBust(); loadEvents();
+    }
+  } catch(err) { toast("❌ " + err.message, "error"); }
+}
+ 
+/* ── Delete event ── */
+function deleteEvent(eventId) {
+  const ev = _events.find(function(x) { return String(x.EventId) === String(eventId); });
+  const evExps = _eventExpenses.filter(function(x) { return String(x.EventId) === String(eventId); });
+  const warn   = evExps.length > 0
+    ? ` This will also delete ${evExps.length} expense record(s) linked to this event.`
+    : "";
+  confirmModal("Delete this event?" + warn, async function() {
+    try {
+      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const res = await postData({ action:"deleteEvent", EventId:eventId, AdminName:s.name||"Admin" });
+      toast(res.status === "deleted" ? "✅ Event deleted." : "❌ " + (res.message || "Failed."),
+            res.status === "deleted" ? "" : "error");
+      if (res.status === "deleted") { _evBust(); loadEvents(); }
+    } catch(err) { toast("❌ " + err.message, "error"); }
+  });
+}
+ 
+/* ── Add expense to event ── */
+function openAddEventExpense(eventId, eventName) {
+  const typeOpts = (typeof expenseTypes !== "undefined" ? expenseTypes : [])
+    .map(function(t) { return `<option value="${t.ExpenseTypeId}">${escapeHtml(t.Name)}</option>`; }).join("");
+  const monOpts  = [""].concat(MONTHS)
+    .map(function(m) { return `<option value="${m}">${m || "None"}</option>`; }).join("");
+ 
+  const html = `
+    <div class="_mhdr">
+      <h3><i class="fa-solid fa-receipt" style="color:#fb923c;"></i> Add Event Expense</h3>
+      <button class="_mcls" onclick="closeModal()">×</button>
+    </div>
+    <div class="_mbdy">
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;
+        font-size:12px;color:#92400e;margin-bottom:14px;">
+        <i class="fa-solid fa-calendar-star"></i> ${escapeHtml(eventName)}
+      </div>
+      <label class="_fl">Title</label>
+      <input class="_fi" id="eev_title" placeholder="e.g. Decorations, Prasad, Sound System"/>
+      <label class="_fl">Amount (₹)</label>
+      <input class="_fi" type="number" id="eev_amt" min="1" placeholder="Amount"/>
+      <label class="_fl">Expense Type</label>
+      <select class="_fi" id="eev_type">${typeOpts}</select>
+      <label class="_fl">Month</label>
+      <select class="_fi" id="eev_month">${monOpts}</select>
+      <label class="_fl">Note <span style="color:#bbb;font-weight:400;font-size:10px;">(optional)</span></label>
+      <input class="_fi" id="eev_note" placeholder="Vendor name or details"/>
+    </div>
+    <div class="_mft">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Cancel</button>
+      <button class="_mbtn" style="background:#fb923c;" onclick="saveEventExpense('${eventId}')">
+        <i class="fa-solid fa-check"></i> Save Expense
+      </button>
+    </div>`;
+  openModal(html, "460px");
+}
+ 
+async function saveEventExpense(eventId) {
+  const title = document.getElementById("eev_title")?.value.trim();
+  const amt   = document.getElementById("eev_amt")?.value;
+  if (!title || !amt || Number(amt) <= 0) {
+    toast("Title and amount are required.", "warn"); return;
+  }
+  const s = JSON.parse(localStorage.getItem("session") || "{}");
+  try {
+    const res = await postData({
+      action:        "addEventExpense",
+      Id:            "EEX_" + Date.now(),
+      EventId:       eventId,
+      Title:         title,
+      Amount:        Number(amt),
+      ExpenseTypeId: document.getElementById("eev_type")?.value || "",
+      ForMonth:      document.getElementById("eev_month")?.value || "",
+      Note:          document.getElementById("eev_note")?.value.trim() || "",
+      AdminName:     s.name || "Admin"
+    });
+    if (res.status === "success") {
+      closeModal();
+      toast("✅ Expense added to event.", "");
+      _evBust();
+      loadEvents();
+    } else {
+      toast("❌ " + (res.message || "Failed."), "error");
+    }
+  } catch(err) { toast("❌ " + err.message, "error"); }
+}
+ 
+/* ── View all expenses for one event ── */
+function viewEventExpenses(eventId, eventName) {
+  const evExps = _eventExpenses.filter(function(x) { return String(x.EventId) === String(eventId); });
+  const total  = evExps.reduce(function(s,x) { return s + Number(x.Amount||0); }, 0);
+ 
+  const rows = evExps.length === 0
+    ? `<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No expenses yet</td></tr>`
+    : evExps.map(function(x, i) {
+        const tName = (typeof expenseTypes !== "undefined" ? expenseTypes : [])
+          .find(function(t) { return String(t.ExpenseTypeId) === String(x.ExpenseTypeId); })?.Name || "—";
+        return `<tr>
+          <td>${i+1}</td>
+          <td><b>${escapeHtml(x.Title||"—")}</b>${x.Note ? `<br><span style="font-size:10px;color:#94a3b8;">${escapeHtml(x.Note)}</span>` : ""}</td>
+          <td>${escapeHtml(tName)}</td>
+          <td>${escapeHtml(x.ForMonth||"—")}</td>
+          <td class="amt-red">₹${fmt(x.Amount)}</td>
+        </tr>`;
+      }).join("");
+ 
+  const html = `
+    <div class="_mhdr">
+      <h3><i class="fa-solid fa-list-ul"></i> Event Expenses</h3>
+      <button class="_mcls" onclick="closeModal()">×</button>
+    </div>
+    <div class="_mbdy" style="padding:0;">
+      <div style="background:#fff7ed;padding:12px 20px;font-size:13px;font-weight:600;color:#92400e;
+        border-bottom:1px solid #fed7aa;">
+        <i class="fa-solid fa-calendar-star"></i> ${escapeHtml(eventName)}
+        &nbsp;·&nbsp; Total: <span style="color:#e74c3c;">₹${fmt(total)}</span>
+      </div>
+      <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#f8fafc;position:sticky;top:0;">
+              <th style="padding:10px 12px;text-align:left;font-weight:600;color:#334155;">#</th>
+              <th style="padding:10px 12px;text-align:left;font-weight:600;color:#334155;">Title</th>
+              <th style="padding:10px 12px;text-align:left;font-weight:600;color:#334155;">Type</th>
+              <th style="padding:10px 12px;text-align:left;font-weight:600;color:#334155;">Month</th>
+              <th style="padding:10px 12px;text-align:right;font-weight:600;color:#334155;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="_mft">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Close</button>
+      <button class="_mbtn" style="background:#fb923c;" onclick="closeModal();openAddEventExpense('${eventId}','${escapeHtml(eventName)}')">
+        <i class="fa-solid fa-plus"></i> Add Expense
+      </button>
+    </div>`;
+  openModal(html, "580px");
+}
+ 
+/* ── WhatsApp share ── */
+function shareEventWhatsApp(eventId) {
+  const ev     = _events.find(function(x) { return String(x.EventId) === String(eventId); });
+  if (!ev) return;
+  const evExps = _eventExpenses.filter(function(x) { return String(x.EventId) === String(eventId); });
+  const spent  = evExps.reduce(function(s,x) { return s + Number(x.Amount||0); }, 0);
+  const budget = Number(ev.Budget || 0);
+  const lines  = evExps.map(function(x) { return `  • ${x.Title}: ₹${fmt(x.Amount)}`; }).join("\n") || "  No expenses yet";
+ 
+  const msg = `🕉️ *${ev.EventName}*\n` +
+    `📅 ${[ev.StartDate, ev.EndDate].filter(Boolean).join(" → ") || "Date TBD"}\n` +
+    `🏷️ ${ev.Category} · ${ev.Status}\n` +
+    `━━━━━━━━━━━━━━\n` +
+    (budget > 0 ? `💰 Budget: ₹${fmt(budget)}\n` : "") +
+    `💸 Spent: ₹${fmt(spent)}\n` +
+    (budget > 0 ? `📊 Remaining: ₹${fmt(budget - spent)}\n` : "") +
+    `━━━━━━━━━━━━━━\n` +
+    `*Expense Breakdown:*\n${lines}\n` +
+    `━━━━━━━━━━━━━━\n` +
+    `_${new Date().toLocaleDateString("en-IN")} · Shree Hanuman Mandir_`;
+ 
+  window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+}
+
       async function addGoal() {
         let name = document.getElementById("g_name").value.trim();
         let target = document.getElementById("g_target").value;
@@ -7720,6 +8272,8 @@ var _userFilterStatus = "all";
          loadYearSummary();
        if (id === "emailAutoPage" && typeof initEmailAutoPage === "function")
          setTimeout(initEmailAutoPage, 100);
+      if (id === "eventsPage" && typeof loadEvents === "function")
+         loadEvents();
      };
    }
  });
