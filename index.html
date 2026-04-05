@@ -322,7 +322,10 @@
         height: 2px; border-radius: 2px;
         background: #f7a01a;
       }
-      .nav-links a.login-btn {
+      .login-nav-links a{
+        text-decoration: none;
+      }
+      .login-nav-links a.login-donate-btn {
         background: linear-gradient(135deg, #f7a01a, #d35400);
         color: white;
         padding: 7px 18px;
@@ -330,14 +333,23 @@
         margin-left: 6px;
         box-shadow: 0 3px 12px rgba(247, 160, 26, 0.4);
       }
-      .nav-links a.login-btn:hover {
+
+      .login-nav-links a.login-btn {
+        background: linear-gradient(135deg, #f7a01a, #d35400);
+        color: white;
+        padding: 7px 18px;
+        border-radius: 8px;
+        margin-left: 6px;
+        box-shadow: 0 3px 12px rgba(247, 160, 26, 0.4);
+      }
+      .login-nav-links a.login-btn:hover {
         background: linear-gradient(135deg, #ffb833, #e56000);
         color: white;
         transform: translateY(-1px);
         box-shadow: 0 5px 18px rgba(247,160,26,0.55);
       }
-      .nav-links a.login-btn i { color: white; }
-      .nav-links a.login-btn::after { display: none; }
+      .login-nav-links a.login-btn i { color: white; }
+      .login-nav-links a.login-btn::after { display: none; }
 
       /* ── Hamburger button (hidden on desktop) ── */
       .hamburger-btn {
@@ -442,6 +454,7 @@
         .header-brand-text .brand-main { font-size: 0.88rem; }
         .header-brand-text .brand-sub  { display: none; }
         .nav-links { display: none; }
+        .login-nav-links { display: none; }
         .hamburger-btn { display: flex; }
         .nav-menu { top: 56px; }
       }
@@ -2173,30 +2186,38 @@
 
     <!-- Header: desktop inline nav + mobile hamburger -->
     <div class="header" id="mainHeader">
-      <a class="header-brand" href="#home">
-        <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo"
-          onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
-        <i id="hdrIcon" class="fa-solid fa-place-of-worship"
-           style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
-        <div class="header-brand-text">
-          <span class="brand-main">Shree Hanuman Mandir</span>
-          <span class="brand-sub">Paliya · Ram Yagya Vishwakarma</span>
-        </div>
-      </a>
+      <div>
+        <a class="header-brand" href="#home">
+          <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo"
+            onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
+          <i id="hdrIcon" class="fa-solid fa-place-of-worship"
+            style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
+          <div class="header-brand-text">
+            <span class="brand-main">Shree Hanuman Mandir</span>
+            <span class="brand-sub">Paliya · Ram Yagya Vishwakarma</span>
+          </div>
+        </a>
+      </div>
       <!-- Desktop nav -->
-      <nav class="nav-links">
-        <a href="#about">Home</a>
-        <a href="#about">About</a>
-        <a href="#membersSection">Member</a>
-        <a href="#features">Features</a>
-        <a href="#gallery">Gallery</a>
-        <!-- FINANCES NAV LINK — disabled until Temple Finances section is re-enabled
-        <a href="#financesSection">Finances</a>
-        -->
-        <a href="#feedbackSection">Feedback</a>
-        <a href="#" onclick="openPayModal();return false;" style="color:#f7c35a;"><i class="fa-solid fa-hand-holding-heart" style="color:#f7a01a;"></i> Donate</a>
+       <div>
+        <nav class="nav-links">
+          <a href="#hero">Home</a>
+          <a href="#about">About</a>
+          <a href="#membersSection">Member</a>
+          <a href="#features">Features</a>
+          <a href="#gallery">Gallery</a>
+          <!-- FINANCES NAV LINK — disabled until Temple Finances section is re-enabled
+          <a href="#financesSection">Finances</a>
+          -->
+          <a href="#feedbackSection">Feedback</a>
+         
+        </nav>
+       </div>
+       <div class="login-nav-links">
+        <a href="#" onclick="openPayModal();return false;" class="login-donate-btn"><i class="fa-solid fa-hand-holding-heart"></i> Donate</a>
         <a href="login.html" class="login-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
-      </nav>
+       </div>
+      
       <!-- Mobile hamburger -->
       <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
         <i class="fa-solid fa-bars" id="hamburgerIcon"></i>
@@ -2240,7 +2261,7 @@
       >
     </div>
 
-    <div class="hero">
+    <div class="hero" id="hero">
       <div class="hero-box">
         <h1>|| श्री हनुमत आश्रम ||<span>राम यज्ञ विश्‍वकर्मा</span></h1>
       </div>
@@ -2297,7 +2318,7 @@
       <div class="sd-center">
         <div class="sd-petal"></div>
         <div class="sd-dot"></div>
-        <div class="sd-symbol">🕉️</div>
+        <div class="sd-symbol">🔱</div>
         <div class="sd-dot"></div>
         <div class="sd-petal"></div>
       </div>
@@ -2320,7 +2341,7 @@
       <div class="sd-center">
         <div class="sd-petal"></div>
         <div class="sd-dot"></div>
-        <div class="sd-symbol">🕉️</div>
+        <div class="sd-symbol">🙏</div>
         <div class="sd-dot"></div>
         <div class="sd-petal"></div>
       </div>

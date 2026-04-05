@@ -709,12 +709,12 @@
       }
 
       /* Audit — red tint */
-      .nav-audit-item { color: #fca5a5; }
-      #nav_audit { color: #fca5a5; }
+      .nav-audit-item { color: #6ee7b7 ; }
+      #nav_audit { color: #6ee7b7; }
       .nav-audit-item:hover:not(.active-nav),
       #nav_audit:hover, #nav_audit.active-nav {
-        background: rgba(239,68,68,0.18) !important;
-        color: #fecaca !important;
+        background: rgba(16,185,129,0.18) !important;
+        color: #bbf7d0 !important;
       }
       .card-box {
         position: relative;
@@ -800,15 +800,15 @@
       }
 
       /* ── ANNOUNCEMENT ADMIN ── */
-      #nav_announcement { color: #fbbf24; }
+      #nav_announcement { color: #c4b5fd; }
       #nav_announcement:hover, #nav_announcement.active-nav {
         background: rgba(251,191,36,0.18) !important;
-        color: #fde68a !important;
+        color: #ede9fe !important;
       }
-      #nav_tracker { color: #a78bfa; }
+      #nav_tracker { color: #fcd34d; }
       #nav_tracker:hover, #nav_tracker.active-nav {
         background: rgba(124,58,237,0.25) !important;
-        color: #c4b5fd !important;
+        color: #fcd34d !important;
       }
       #nav_emailauto { color: #34d399; }
       #nav_emailauto:hover, #nav_emailauto.active-nav {
@@ -1057,11 +1057,11 @@ tr.row-rejected td { background: #fff5f5 !important; }
   padding: 14px 0 4px; margin-top: 8px; display: flex; gap: 10px; align-items: center;
 }
 
-.nav-event { color: #fb923c; }
+.nav-event { color: #fcd34d; }
 .nav-event:hover:not(.active-nav), .nav-event.active-nav {
-  background: rgba(251,146,60,0.15); color: #fb923c;
+  background: rgba(251,146,60,0.15); color: #fcd34d;
 }
-.nav-event.active-nav { border-left: 3px solid #fb923c; }
+.nav-event.active-nav { border-left: 3px solid #fcd34d; }
  
 .ev-status-upcoming  { background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe; }
 .ev-status-active    { background:#f0fdf4;color:#166534;border:1px solid #bbf7d0; }
@@ -2152,22 +2152,26 @@ tr.row-rejected td { background: #fff5f5 !important; }
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
       <h3 style="margin:0;"><i class="fa-solid fa-calendar-days"></i> All Events</h3>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <select id="ev_filter_status" onchange="renderEvents()"
-          style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
-          <option value="">All Status</option>
-          <option value="Upcoming">Upcoming</option>
-          <option value="Active">Active</option>
-          <option value="Completed">Completed</option>
-        </select>
-        <select id="ev_filter_cat" onchange="renderEvents()"
-          style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
-          <option value="">All Categories</option>
-          <option>Festival</option>
-          <option>Pooja</option>
-          <option>Maintenance</option>
-          <option>Community</option>
-          <option>Other</option>
-        </select>
+        <span>
+          <select id="ev_filter_status" onchange="renderEvents()"
+            style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
+            <option value="">All Status</option>
+            <option value="Upcoming">Upcoming</option>
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </span>
+        <span>
+          <select id="ev_filter_cat" onchange="renderEvents()"
+            style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
+            <option value="">All Categories</option>
+            <option>Festival</option>
+            <option>Pooja</option>
+            <option>Maintenance</option>
+            <option>Community</option>
+            <option>Other</option>
+          </select>
+        </span> 
       </div>
     </div>
     <div id="ev_list">
@@ -4880,11 +4884,12 @@ function _ysShow(visibleId) {
         <td style="font-size:12px;color:#888;">${formatPaymentDate(e.PaymentDate)}</td>
             <td onclick="event.stopPropagation()">
       <div class="action-btns">
-        <button class="btn-sm ${e.ReceiptURL ? 'btn-green' : ''}"
+        <button class="btn-sm ${(_getReceiptUrls(e).length > 0) ? 'btn-green' : ''}"
           onclick="openReceiptAttach('${e.Id}')"
-          title="${e.ReceiptURL ? 'View/Change Receipt' : 'Attach Receipt Photo'}"
-          style="${e.ReceiptURL ? 'background:#27ae60;' : 'background:#94a3b8;'}">
+          title="${(_getReceiptUrls(e).length > 0) ? 'Manage Receipts (' + _getReceiptUrls(e).length + ')' : 'Attach Receipt Photo'}"
+          style="${(_getReceiptUrls(e).length > 0) ? 'background:#27ae60;' : 'background:#94a3b8;'}">
           <i class="fa-solid fa-paperclip"></i>
+          ${_getReceiptUrls(e).length > 1 ? `<span style="font-size:10px;margin-left:2px;">${_getReceiptUrls(e).length}</span>` : ''}
         </button>
         <button class="btn-sm" onclick="openEditExpense('${e.Id}')" title="Edit">
           <i class="fa-solid fa-pen"></i>
@@ -4985,9 +4990,9 @@ function _ysShow(visibleId) {
             ["Month", escapeHtml(e.ForMonth || e.Note || "—")],
             ["Year", escapeHtml(String(e.Year || "—"))],
             ["Date", escapeHtml(formatPaymentDate(e.PaymentDate))],
-            ...(e.ReceiptURL ? [["Receipt", `<a href="${escapeHtml(e.ReceiptURL)}" target="_blank"
-      style="display:inline-flex;align-items:center;gap:6px;color:#27ae60;font-weight:600;font-size:12px;">
-      <i class="fa-solid fa-image"></i> View Receipt Photo</a>`]] : []),
+            ...(_getReceiptUrls(e).length > 0 ? [["Receipts", _getReceiptUrls(e).map((url, i) => `<a href="${escapeHtml(url)}" target="_blank"
+      style="display:inline-flex;align-items:center;gap:6px;color:#27ae60;font-weight:600;font-size:12px;margin-right:8px;">
+      <i class="fa-solid fa-image"></i> Photo ${i+1}</a>`).join("")]] : []),
           ],
           `openEditExpense('${id}')`
         );
@@ -5735,37 +5740,93 @@ function _ysShow(visibleId) {
       }
 
       /* ═══ EXPENSE RECEIPT ATTACHMENT ════════════════════════════════
-   Opens a modal to attach or replace a receipt photo for an
-   existing expense. Uses same Drive upload as gallery/profile.
+   Opens a modal to manage multiple receipt photos for an expense.
+   Supports upload, view and delete of individual photos.
    ═══════════════════════════════════════════════════════════════ */
- 
+
 var _rcptB64      = null;  // base64 of selected image
 var _rcptFileName = "";    // filename for upload
 var _rcptExpId    = null;  // which expense we are attaching to
- 
+
+/* ── Convert a Google Drive URL to a reliable thumbnail src for <img> tags ──
+   lh3.googleusercontent.com/d/FILE_ID can fail for newly-uploaded files.
+   drive.google.com/thumbnail?id=FILE_ID&sz=w400 is always reliable.       ── */
+function _driveImgSrc(url) {
+  if (!url) return "";
+  // Already a thumbnail URL — return as-is
+  if (url.includes("drive.google.com/thumbnail")) return url;
+  // Extract file ID from lh3.googleusercontent.com/d/FILE_ID
+  if (url.includes("lh3.googleusercontent.com/d/")) {
+    const id = url.split("/d/")[1].split("?")[0].split("=")[0].trim();
+    if (id) return "https://drive.google.com/thumbnail?id=" + id + "&sz=w400";
+  }
+  // Extract file ID from drive.google.com/uc?id=FILE_ID
+  if (url.includes("drive.google.com/uc")) {
+    const m = url.match(/[?&]id=([^&]+)/);
+    if (m) return "https://drive.google.com/thumbnail?id=" + m[1] + "&sz=w400";
+  }
+  return url;
+}
+
+/* ── Parse ReceiptURLs from expense object (JSON array or legacy single URL) ── */
+function _getReceiptUrls(e) {
+  if (!e) return [];
+  // New format: ReceiptURLs is a JSON array string e.g. '["url1","url2"]'
+  if (e.ReceiptURLs) {
+    try {
+      const parsed = JSON.parse(e.ReceiptURLs);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch(ex) {
+      if (String(e.ReceiptURLs).startsWith("http")) return [e.ReceiptURLs];
+    }
+  }
+  // Legacy fallback: single ReceiptURL
+  if (e.ReceiptURL && String(e.ReceiptURL).startsWith("http")) return [e.ReceiptURL];
+  return [];
+}
+
+/* ── Open multi-receipt manager modal ── */
 function openReceiptAttach(expId) {
   const e = expenses.find(function(x) { return String(x.Id) === String(expId); });
   if (!e) return;
   _rcptExpId    = expId;
   _rcptB64      = null;
   _rcptFileName = "";
- 
-  const hasReceipt = !!e.ReceiptURL;
-  const previewHTML = hasReceipt
-    ? `<div style="margin-bottom:14px;text-align:center;">
-        <p style="font-size:11px;color:#64748b;margin:0 0 6px;">Current receipt:</p>
-        <a href="${escapeHtml(e.ReceiptURL)}" target="_blank">
-          <img src="${escapeHtml(e.ReceiptURL)}"
-            style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid #e2e8f0;object-fit:contain;"
-            onerror="this.style.display='none'"/>
-        </a>
+  _renderReceiptModal(e);
+}
+
+function _renderReceiptModal(e) {
+  const expId = String(e.Id);
+  const urls  = _getReceiptUrls(e);
+
+  const photosHTML = urls.length === 0
+    ? `<div style="text-align:center;padding:18px 0;color:#94a3b8;font-size:13px;">
+        <i class="fa-solid fa-image" style="font-size:2rem;display:block;margin-bottom:8px;opacity:0.4;"></i>
+        No receipts attached yet.
       </div>`
-    : "";
- 
+    : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
+        ${urls.map((url, i) => `
+          <div style="position:relative;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#f8fafc;">
+            <a href="${escapeHtml(url)}" target="_blank">
+              <img src="${_driveImgSrc(url)}"
+                style="width:100%;height:90px;object-fit:cover;display:block;"
+                onerror="this.src='${_driveImgSrc(url)}&t='+Date.now();this.onerror=function(){this.parentElement.parentElement.style.opacity='0.5';this.style.display='none';};"/>
+            </a>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;background:#fff;border-top:1px solid #f1f5f9;">
+              <span style="font-size:10px;color:#64748b;">Photo ${i + 1}</span>
+              <button onclick="_deleteOneReceipt('${expId}','${escapeHtml(url)}')"
+                style="background:#ef4444;border:none;border-radius:4px;color:#fff;
+                  cursor:pointer;padding:2px 6px;font-size:11px;line-height:1.6;">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>`).join("")}
+      </div>`;
+
   const html = `
     <div class="_mhdr">
       <h3><i class="fa-solid fa-paperclip" style="color:#27ae60;"></i>
-        ${hasReceipt ? "Replace" : "Attach"} Receipt Photo
+        Receipt Photos ${urls.length > 0 ? '<span style="font-size:13px;font-weight:500;color:#94a3b8;margin-left:6px;">('+urls.length+' attached)</span>' : ""}
       </h3>
       <button class="_mcls" onclick="closeModal()">×</button>
     </div>
@@ -5774,34 +5835,33 @@ function openReceiptAttach(expId) {
         <b style="color:#334155;">${escapeHtml(e.Title || "Expense")}</b><br>
         ₹${fmt(e.Amount)} · ${escapeHtml(e.ForMonth || "")} ${escapeHtml(String(e.Year || ""))}
       </p>
-      ${previewHTML}
-      <label class="_fl">${hasReceipt ? "Replace with new photo" : "Select receipt photo"}</label>
-      <input type="file" id="rcpt_file" accept="image/*"
-        style="display:block;width:100%;padding:10px;border:1.5px dashed #e2e8f0;
-          border-radius:8px;font-size:13px;cursor:pointer;background:#fafafa;margin-bottom:12px;"
-        onchange="rcptPreviewSelected(this)"/>
-      <div id="rcpt_preview_wrap" style="display:none;text-align:center;margin-bottom:12px;">
-        <img id="rcpt_preview_img"
-          style="max-width:100%;max-height:180px;border-radius:8px;
-            border:1px solid #e2e8f0;object-fit:contain;"/>
-        <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">Preview — tap Upload to save</p>
+      ${photosHTML}
+      <div style="border-top:1px dashed #e2e8f0;padding-top:14px;margin-top:4px;">
+        <label class="_fl" style="margin-bottom:6px;">Add another photo</label>
+        <input type="file" id="rcpt_file" accept="image/*" multiple
+          style="display:block;width:100%;padding:10px;border:1.5px dashed #e2e8f0;
+            border-radius:8px;font-size:13px;cursor:pointer;background:#fafafa;margin-bottom:10px;box-sizing:border-box;"
+          onchange="rcptPreviewSelected(this)"/>
+        <div id="rcpt_preview_wrap" style="display:none;text-align:center;margin-bottom:10px;">
+          <img id="rcpt_preview_img"
+            style="max-width:100%;max-height:160px;border-radius:8px;
+              border:1px solid #e2e8f0;object-fit:contain;"/>
+          <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">Preview — tap Upload to save</p>
+        </div>
+        <div id="rcpt_msg" style="font-size:12px;min-height:16px;color:#ef4444;margin-bottom:4px;"></div>
       </div>
-      <div id="rcpt_msg" style="font-size:12px;min-height:16px;color:#ef4444;"></div>
     </div>
     <div class="_mft">
-      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Cancel</button>
-      ${hasReceipt ? `<button class="_mbtn" style="background:#ef4444;" onclick="removeExpenseReceipt('${expId}')">
-        <i class="fa-solid fa-trash"></i> Remove
-      </button>` : ""}
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Close</button>
       <button class="_mbtn" id="rcpt_upload_btn" style="background:#27ae60;" disabled
         onclick="uploadExpenseReceipt('${expId}')">
-        <i class="fa-solid fa-upload"></i> Upload Receipt
+        <i class="fa-solid fa-upload"></i> Upload Photo
       </button>
     </div>`;
- 
-  openModal(html, "460px");
+
+  openModal(html, "500px");
 }
- 
+
 /* Preview selected image before upload */
 function rcptPreviewSelected(input) {
   const file = input.files[0];
@@ -5824,8 +5884,8 @@ function rcptPreviewSelected(input) {
   };
   reader.readAsDataURL(file);
 }
- 
-/* Upload to Drive, save URL to EXPENSES sheet */
+
+/* Upload photo → appends to ReceiptURLs array */
 async function uploadExpenseReceipt(expId) {
   if (!_rcptB64) {
     document.getElementById("rcpt_msg").textContent = "Please select a photo first.";
@@ -5833,59 +5893,98 @@ async function uploadExpenseReceipt(expId) {
   }
   const btn = document.getElementById("rcpt_upload_btn");
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...'; }
- 
+
   try {
     const s = JSON.parse(localStorage.getItem("session") || "{}");
-    // Upload to Drive using same endpoint as gallery/profile photos
+    const e = expenses.find(function(x) { return String(x.Id) === String(expId); });
+    const existingUrls = _getReceiptUrls(e);
+
     const response = await fetch(API_URL, {
       method: "POST",
       body: JSON.stringify({
-        action:    "uploadExpenseReceipt",
-        expenseId: expId,
-        base64:    _rcptB64,
-        fileName:  _rcptFileName,
-        AdminName: s.name || "Admin"
+        action:       "uploadExpenseReceipt",
+        expenseId:    expId,
+        base64:       _rcptB64,
+        fileName:     _rcptFileName,
+        existingURLs: JSON.stringify(existingUrls),
+        AdminName:    s.name || "Admin"
       })
     });
     const res = await response.json();
- 
+
     if (res.status === "success") {
-      // Update local expenses array so renderExpenses reflects change immediately
       const idx = expenses.findIndex(function(x) { return String(x.Id) === String(expId); });
-      if (idx !== -1) expenses[idx].ReceiptURL = res.receiptUrl;
-      closeModal();
-      toast("✅ Receipt uploaded and saved.", "");
-      renderExpenses();  // re-render table so clip icon turns green
+      if (idx !== -1) {
+        expenses[idx].ReceiptURLs = res.receiptUrls;
+        expenses[idx].ReceiptURL  = res.receiptUrl; // keep legacy field too
+      }
+      toast("✅ Receipt photo uploaded.", "");
+      renderExpenses();
+      // Re-open modal to show updated photos
+      const updatedExp = expenses.find(function(x) { return String(x.Id) === String(expId); });
+      _rcptB64 = null; _rcptFileName = "";
+      _renderReceiptModal(updatedExp);
     } else {
       document.getElementById("rcpt_msg").textContent = "Upload failed: " + (res.message || "Unknown error");
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload Receipt'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload Photo'; }
     }
   } catch(err) {
     document.getElementById("rcpt_msg").textContent = "Error: " + err.message;
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload Receipt'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload Photo'; }
   }
 }
- 
-/* Remove receipt from expense */
-async function removeExpenseReceipt(expId) {
-  const e = expenses.find(function(x) { return String(x.Id) === String(expId); });
-  confirmModal("Remove the receipt photo from this expense?", async function() {
+
+/* Delete one specific photo from the receipt list */
+async function _deleteOneReceipt(expId, urlToDelete) {
+  confirmModal("Remove this receipt photo?", async function() {
     try {
       const s = JSON.parse(localStorage.getItem("session") || "{}");
       const res = await postData({
-        action:     "removeExpenseReceipt",
-        Id:         expId,
-        AdminName:  s.name || "Admin",
-        OldReceiptURL: e?.ReceiptURL || ""
+        action:        "removeOneExpenseReceipt",
+        Id:            expId,
+        ReceiptURL:    urlToDelete,
+        AdminName:     s.name || "Admin"
       });
       if (res.status === "success") {
         const idx = expenses.findIndex(function(x) { return String(x.Id) === String(expId); });
-        if (idx !== -1) expenses[idx].ReceiptURL = "";
+        if (idx !== -1) {
+          expenses[idx].ReceiptURLs = res.receiptUrls;
+          expenses[idx].ReceiptURL  = res.receiptUrl;
+        }
+        toast("Receipt photo removed.", "");
+        renderExpenses();
+        const updatedExp = expenses.find(function(x) { return String(x.Id) === String(expId); });
+        _renderReceiptModal(updatedExp);
+      } else {
+        toast("❌ " + (res.message || "Failed to remove photo."), "error");
+      }
+    } catch(err) {
+      toast("❌ " + err.message, "error");
+    }
+  });
+}
+
+/* Legacy: remove ALL receipts (kept for any existing references) */
+async function removeExpenseReceipt(expId) {
+  const e = expenses.find(function(x) { return String(x.Id) === String(expId); });
+  const urls = _getReceiptUrls(e);
+  confirmModal("Remove all receipt photos from this expense?", async function() {
+    try {
+      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const res = await postData({
+        action:        "removeAllExpenseReceipts",
+        Id:            expId,
+        AdminName:     s.name || "Admin",
+        OldReceiptURLs: JSON.stringify(urls)
+      });
+      if (res.status === "success") {
+        const idx = expenses.findIndex(function(x) { return String(x.Id) === String(expId); });
+        if (idx !== -1) { expenses[idx].ReceiptURLs = "[]"; expenses[idx].ReceiptURL = ""; }
         closeModal();
-        toast("Receipt removed.", "");
+        toast("All receipts removed.", "");
         renderExpenses();
       } else {
-        toast("❌ " + (res.message || "Failed to remove receipt."), "error");
+        toast("❌ " + (res.message || "Failed to remove receipts."), "error");
       }
     } catch(err) {
       toast("❌ " + err.message, "error");
@@ -6212,7 +6311,7 @@ function renderEvents() {
         </div>
       </div>` : "";
  
-    const dateStr = [ev.StartDate, ev.EndDate].filter(Boolean).map(_toDateDisplay).join(" → ") || "—";
+    const dateStr = [ev.StartDate, ev.EndDate].filter(Boolean).join(" → ") || "—";
  
     return `<div class="ev-card">
       <div class="ev-card-header">
@@ -6318,33 +6417,6 @@ async function addEvent() {
   }
 }
  
-/* ── Convert any date value → YYYY-MM-DD for <input type="date"> ── */
-function _toDateInput(val) {
-  if (!val) return "";
-  // Already YYYY-MM-DD string
-  if (typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) return val.trim();
-  // Google Sheets Date object or parseable string
-  try {
-    const d = (val instanceof Date) ? val : new Date(val);
-    if (isNaN(d.getTime())) return "";
-    const yyyy = d.getFullYear();
-    const mm   = String(d.getMonth() + 1).padStart(2, "0");
-    const dd   = String(d.getDate()).padStart(2, "0");
-    return yyyy + "-" + mm + "-" + dd;
-  } catch(e) { return ""; }
-}
-
-/* ── Convert any date value → DD-MM-YYYY for display ── */
-function _toDateDisplay(val) {
-  if (!val) return "";
-  try {
-    const iso = _toDateInput(val);
-    if (!iso) return String(val);
-    const [y, m, d] = iso.split("-");
-    return d + "-" + m + "-" + y;
-  } catch(e) { return String(val); }
-}
-
 /* ── Edit event modal ── */
 function openEditEvent(eventId) {
   const ev = _events.find(function(x) { return String(x.EventId) === String(eventId); });
@@ -6368,9 +6440,9 @@ function openEditEvent(eventId) {
       <label class="_fl">Status</label>
       <select class="_fi" id="ee_status">${stOpts}</select>
       <label class="_fl">Start Date</label>
-      <input class="_fi" type="date" id="ee_start" value="${_toDateInput(ev.StartDate)}"/>
+      <input class="_fi" type="date" id="ee_start" value="${escapeHtml(ev.StartDate||'')}"/>
       <label class="_fl">End Date</label>
-      <input class="_fi" type="date" id="ee_end" value="${_toDateInput(ev.EndDate)}"/>
+      <input class="_fi" type="date" id="ee_end" value="${escapeHtml(ev.EndDate||'')}"/>
       <label class="_fl">Budget (₹)</label>
       <input class="_fi" type="number" id="ee_budget" value="${Number(ev.Budget||0)}" min="0"/>
       <label class="_fl">Description</label>

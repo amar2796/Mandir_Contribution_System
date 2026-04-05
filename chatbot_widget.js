@@ -148,6 +148,19 @@
     display: flex; align-items: center; gap: 10px;
     border-top: 3px solid #f7a01a; flex-shrink: 0;
   }
+
+  /* login logo */
+      #_mbotHdr .mbot-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(247,160,26,0.55);
+        box-shadow: 0 0 10px rgba(247,160,26,0.35);
+        flex-shrink: 0;
+        background: #78501e;
+  }
+
   #_mbotHdr .mbot-avatar {
     width: 34px; height: 34px; border-radius: 50%;
     background: #f7a01a; display: flex; align-items: center;
@@ -293,7 +306,10 @@
       win.id = "_mbotWin";
       win.innerHTML = `
         <div id="_mbotHdr">
-          <div class="mbot-avatar">🕉️</div>
+          <div class="mbot-avatar">
+             <img src="Image/logo.PNG" alt="Mandir Logo" class="mbot-logo" onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
+            <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
+          </div>
           <div class="mbot-title">
             <div>Mandir Assistant</div>
             <div>Online · Jai Shree Ram</div>
