@@ -2272,6 +2272,240 @@
       </div>
     </div>
 
+    <!-- ══ CHAUPAI TICKER — above About ══ -->
+    <style>
+      .cp-ticker-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 24px 4px;
+        overflow: hidden;
+      }
+      .cp-word {
+        display: inline-block;
+        overflow: hidden;
+        vertical-align: bottom;
+        margin: 0 3px;
+      }
+      .cp-word span {
+        display: inline-block;
+        transform-origin: left center;
+        transform: rotateY(90deg) translateZ(0);
+        opacity: 0;
+        transition: transform 0.55s cubic-bezier(0.23,1,0.32,1), opacity 0.45s ease;
+        color: #946c44;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.08rem;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        line-height: 1.7;
+        white-space: nowrap;
+        will-change: transform, opacity;
+      }
+      .cp-word span.cp-open {
+        transform: rotateY(0deg) translateZ(0);
+        opacity: 1;
+      }
+      .cp-word span.cp-close {
+        transform: rotateY(-90deg) translateZ(0);
+        opacity: 0;
+        transition: transform 0.38s ease-in, opacity 0.32s ease-in;
+      }
+      @media (max-width: 600px) {
+        .cp-word span { font-size: 0.88rem; letter-spacing: 0.2px; }
+        .cp-ticker-wrap { padding: 6px 10px 4px; }
+      }
+    </style>
+
+    <!-- Divider above Chaupai — FIXED, never collapses -->
+    <div class="section-divider reveal">
+      <div class="sd-line"></div>
+      <div class="sd-center">
+        <div class="sd-petal"></div>
+        <div class="sd-dot"></div>
+        <div class="sd-symbol">🕉️</div>
+        <div class="sd-dot"></div>
+        <div class="sd-petal"></div>
+      </div>
+      <div class="sd-line"></div>
+    </div>
+
+    <!-- Chaupai ticker: spacer always holds the LONGEST chaupai so height never collapses -->
+    <div class="cp-ticker-wrap reveal" aria-live="polite">
+      <div class="cp-ticker-inner">
+        <!-- Spacer always = longest chaupai → layout never jumps -->
+        <div id="chaupaiSpacer" class="cp-spacer"></div>
+        <!-- Animated words render on top -->
+        <div id="chaupaiDisplay" class="cp-display"></div>
+      </div>
+    </div>
+
+    <!-- Divider below Chaupai — FIXED, never collapses -->
+    <div class="section-divider reveal">
+      <div class="sd-line"></div>
+      <div class="sd-center">
+        <div class="sd-petal"></div>
+        <div class="sd-dot"></div>
+        <div class="sd-symbol">🕉️</div>
+        <div class="sd-dot"></div>
+        <div class="sd-petal"></div>
+      </div>
+      <div class="sd-line"></div>
+    </div>
+
+    <style>
+      .cp-ticker-inner {
+        position: relative;
+        display: inline-block;
+        text-align: center;
+        max-width: 100%;
+      }
+      /* Spacer: always = longest chaupai → height/width never collapses, OM stays fixed */
+      .cp-spacer {
+        visibility: hidden;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.08rem;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        line-height: 1.7;
+        white-space: nowrap;
+        pointer-events: none;
+        user-select: none;
+      }
+      /* Display layer sits on top of spacer */
+      .cp-display {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        white-space: nowrap;
+        text-align: center;
+      }
+      /* Each character wrapper — clips the sliding span */
+      .cp-char {
+        display: inline-block;
+        overflow: hidden;
+        vertical-align: bottom;
+      }
+      /* The actual character — slides up to appear, slides down to disappear */
+      .cp-char span {
+        display: inline-block;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.08rem;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        line-height: 1.7;
+        color: #946c44;
+        white-space: pre;
+        will-change: transform, opacity;
+        /* start hidden — below */
+        transform: translateY(110%);
+        opacity: 0;
+        transition: transform 0.42s cubic-bezier(0.23,1,0.32,1),
+                    opacity   0.35s ease;
+      }
+      /* revealed */
+      .cp-char span.cp-in {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      /* hiding — slide up & out */
+      .cp-char span.cp-out {
+        transform: translateY(-110%);
+        opacity: 0;
+        transition: transform 0.3s ease-in,
+                    opacity   0.25s ease-in;
+      }
+      @media (max-width: 600px) {
+        .cp-char span,
+        .cp-spacer { font-size: 0.88rem; letter-spacing: 0.2px; }
+        .cp-ticker-wrap { padding: 6px 10px 4px; }
+      }
+    </style>
+
+    <script>
+      (function(){
+        var chaupais = [
+          'प्रबिसि नगर कीजे सब काजा। हृदयँ राखि कोसलपुर राजा॥',
+          'मंगल भवन अमंगल हारी। द्रवहु सुदसरथ अजर बिहारी।।',
+          'जा पर कृपा राम की होई। ता पर कृपा करहिं सब कोई॥',
+          'दीन दयाल बिरिदु संभारी। हरहु नाथ मम संकट भारी॥',
+          'होइहि सोइ जो राम रचि राखा। को करि तर्क बढ़ावै साखा॥'
+        ];
+
+        var container = document.getElementById('chaupaiDisplay');
+        var spacer    = document.getElementById('chaupaiSpacer');
+        var ci = 0;
+
+        /* Spacer always = longest string → layout is permanently locked */
+        function getLongest(){
+          return chaupais.reduce(function(a, b){ return b.length > a.length ? b : a; }, '');
+        }
+        spacer.textContent = getLongest();
+
+        /* Split string into Unicode-aware grapheme clusters (handles Hindi matras correctly) */
+        function getChars(str){
+          /* Segmenter available in modern browsers */
+          if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+            var seg = new Intl.Segmenter('hi', { granularity: 'grapheme' });
+            return Array.from(seg.segment(str), function(s){ return s.segment; });
+          }
+          /* Fallback: spread operator (may split some combined characters) */
+          return Array.from(str);
+        }
+
+        /* Build one <span class="cp-char"><span>c</span></span> per grapheme */
+        function buildCharEls(chars){
+          container.innerHTML = '';
+          var els = [];
+          chars.forEach(function(ch){
+            var wrap  = document.createElement('span');
+            wrap.className = 'cp-char';
+            var inner = document.createElement('span');
+            inner.textContent = ch;
+            wrap.appendChild(inner);
+            container.appendChild(wrap);
+            els.push(inner);
+          });
+          return els;
+        }
+
+        function showChaupai(){
+          var chars = getChars(chaupais[ci]);
+          var els   = buildCharEls(chars);
+          var i = 0;
+
+          /* Reveal one character at a time, left → right */
+          function revealNext(){
+            if(i < els.length){
+              els[i].classList.add('cp-in');
+              i++;
+              setTimeout(revealNext, 55);   /* 55 ms per character */
+            } else {
+              /* Hold fully visible, then hide */
+              setTimeout(function(){ hideFrom(els.length - 1); }, 2600);
+            }
+          }
+
+          /* Hide one character at a time, right → left */
+          function hideFrom(j){
+            if(j >= 0){
+              els[j].classList.remove('cp-in');
+              els[j].classList.add('cp-out');
+              j--;
+              setTimeout(function(){ hideFrom(j); }, 40);  /* 40 ms per character */
+            } else {
+              /* Next chaupai — spacer stays, no layout shift, OM never moves */
+              ci = (ci + 1) % chaupais.length;
+              setTimeout(showChaupai, 500);
+            }
+          }
+
+          revealNext();
+        }
+
+        showChaupai();
+      })();
+    </script>
+
     <div class="section reveal" id="about">
       <h2>About The Mandir</h2>
       <p>
@@ -2279,6 +2513,7 @@
         expenses, and maintain the yearly financial balance in a highly secure
         and transparent manner.
       </p>
+
     </div>
 
     <!-- ══ OUR MEMBERS SECTION ══ -->
