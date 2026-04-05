@@ -5305,6 +5305,7 @@ function _ysShow(visibleId) {
             Email: document.getElementById("eu_email").value,
             Password: "",
             PhotoURL: photoURL,
+            MonthlyTarget: Number(document.getElementById("eu_monthly_target")?.value||0),
             AdminName: s.name,
           });
           toast(
