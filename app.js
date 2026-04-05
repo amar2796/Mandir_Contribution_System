@@ -188,6 +188,7 @@ const _CACHE_TTL = {
   getTypes:        10 * 60 * 1000, // 10 min — rarely changes
   getOccasions:    10 * 60 * 1000, // 10 min
   getExpenseTypes: 10 * 60 * 1000, // 10 min
+  getEventData:     2 * 60 * 1000, // 2 min
   getGallery:       5 * 60 * 1000, // 5 min
   getEmailSettings: 5 * 60 * 1000, // 5 min
   getChatbotConfig: 5 * 60 * 1000, // 5 min
@@ -217,6 +218,10 @@ const _CACHE_BUST_ON_WRITE = {
   addGoal:            ["getAllData"],
   updateGoal:         ["getAllData"],
   deleteGoal:         ["getAllData"],
+  addEvent:           ["getEventData"],
+  updateEvent:        ["getEventData"],
+  deleteEvent:        ["getEventData"],
+  addEventExpense:    ["getEventData"],
   deleteGalleryPhoto: ["getGallery"],
   saveChatbotConfig:  ["getChatbotConfig"],
   saveEmailSettings:  ["getEmailSettings"],

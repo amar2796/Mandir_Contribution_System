@@ -6212,7 +6212,7 @@ function renderEvents() {
         </div>
       </div>` : "";
  
-    const dateStr = [ev.StartDate, ev.EndDate].filter(Boolean).join(" → ") || "—";
+    const dateStr = [ev.StartDate, ev.EndDate].filter(Boolean).map(_toDateDisplay).join(" → ") || "—";
  
     return `<div class="ev-card">
       <div class="ev-card-header">
@@ -6318,6 +6318,33 @@ async function addEvent() {
   }
 }
  
+/* ── Convert any date value → YYYY-MM-DD for <input type="date"> ── */
+function _toDateInput(val) {
+  if (!val) return "";
+  // Already YYYY-MM-DD string
+  if (typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) return val.trim();
+  // Google Sheets Date object or parseable string
+  try {
+    const d = (val instanceof Date) ? val : new Date(val);
+    if (isNaN(d.getTime())) return "";
+    const yyyy = d.getFullYear();
+    const mm   = String(d.getMonth() + 1).padStart(2, "0");
+    const dd   = String(d.getDate()).padStart(2, "0");
+    return yyyy + "-" + mm + "-" + dd;
+  } catch(e) { return ""; }
+}
+
+/* ── Convert any date value → DD-MM-YYYY for display ── */
+function _toDateDisplay(val) {
+  if (!val) return "";
+  try {
+    const iso = _toDateInput(val);
+    if (!iso) return String(val);
+    const [y, m, d] = iso.split("-");
+    return d + "-" + m + "-" + y;
+  } catch(e) { return String(val); }
+}
+
 /* ── Edit event modal ── */
 function openEditEvent(eventId) {
   const ev = _events.find(function(x) { return String(x.EventId) === String(eventId); });
@@ -6341,9 +6368,9 @@ function openEditEvent(eventId) {
       <label class="_fl">Status</label>
       <select class="_fi" id="ee_status">${stOpts}</select>
       <label class="_fl">Start Date</label>
-      <input class="_fi" type="date" id="ee_start" value="${escapeHtml(ev.StartDate||'')}"/>
+      <input class="_fi" type="date" id="ee_start" value="${_toDateInput(ev.StartDate)}"/>
       <label class="_fl">End Date</label>
-      <input class="_fi" type="date" id="ee_end" value="${escapeHtml(ev.EndDate||'')}"/>
+      <input class="_fi" type="date" id="ee_end" value="${_toDateInput(ev.EndDate)}"/>
       <label class="_fl">Budget (₹)</label>
       <input class="_fi" type="number" id="ee_budget" value="${Number(ev.Budget||0)}" min="0"/>
       <label class="_fl">Description</label>
