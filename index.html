@@ -455,13 +455,14 @@
       .hero {
         background-image: url("Image/Background_pic.jpg");
         background-color: #f7a01a;
-        height: 70vh;
-        min-height: 320px;
         width: 100%;
+        aspect-ratio: 1440 / 560;
+        height: auto;
+        min-height: unset;
         color: white;
         background-repeat: no-repeat;
-        background-position: center;
-        background-size: cover;
+        background-position: center center;
+        background-size: 100% 100%;
         margin: 0;
         display: flex;
         align-items: center;
@@ -498,29 +499,31 @@
         }
       }
       .hero-box {
-        width: 100%;
-        padding-left: 15%;
-        margin-top: 8%;
-        position: relative;
+        position: absolute;
+        bottom: 21%;
+        left: 14.1%;
         z-index: 2;
+        margin: 0;
+        padding: 0;
       }
       .hero-box h1 {
-        font-size: 2.8rem;
+        font-size: 3.2vw;
         margin: 0;
         font-weight: 700;
-        line-height: 1.2;
+        line-height: 1.25;
         text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.5);
         text-align: left;
-        width: fit-content;
+        white-space: nowrap;
         animation: slideUp 1s ease-out 2s both;
       }
       .hero-box h1 span {
         display: block;
-        font-size: 1.4rem;
+        font-size: 1.65vw;
         font-weight: 400;
-        margin-top: 5px;
+        margin-top: 0.4vw;
         color: #fffdf8;
-        padding-left: 9.2em;
+        text-align: right;
+        white-space: nowrap;
       }
 
       /* SECTION */
@@ -1193,29 +1196,9 @@
           font-size: 1.2rem;
           padding: 6px 10px;
         }
+        /* hero: aspect-ratio + vw font sizes handle all screen widths automatically */
         .hero {
-          background-size: cover;
-          height: 50vw;
-          min-height: 220px;
-          align-items: flex-end;
-          padding-bottom: 6vw;
-        }
-        .hero-box {
-          width: 60%;
-          margin-top: 0;
-          padding-left: 4%;
-          display: flex;
-          justify-content: flex-start;
-        }
-        .hero-box h1 {
-          font-size: 4.5vw;
-          text-align: left;
-          width: fit-content;
-        }
-        .hero-box h1 span {
-          font-size: 2.5vw;
-          margin-top: 1vw;
-          padding-left: 0;
+          background-size: 100% 100%;
         }
         .section {
           padding: 36px 16px;
@@ -1263,12 +1246,6 @@
       @media (max-width: 420px) {
         .cards {
           grid-template-columns: 1fr;
-        }
-        .hero-box h1 {
-          font-size: 5.5vw;
-        }
-        .hero-box h1 span {
-          font-size: 3vw;
         }
         .nav-menu {
           top: 52px;
@@ -2265,10 +2242,7 @@
 
     <div class="hero">
       <div class="hero-box">
-        <h1>
-          || श्री हनुमत आश्रम || <br />
-          <span>राम यज्ञ विश्‍वकर्मा</span>
-        </h1>
+        <h1>|| श्री हनुमत आश्रम ||<span>राम यज्ञ विश्‍वकर्मा</span></h1>
       </div>
     </div>
 
@@ -2425,10 +2399,7 @@
       (function(){
         var chaupais = [
           'प्रबिसि नगर कीजे सब काजा। हृदयँ राखि कोसलपुर राजा॥',
-          'मंगल भवन अमंगल हारी। द्रवहु सुदसरथ अजर बिहारी।।',
-          'जा पर कृपा राम की होई। ता पर कृपा करहिं सब कोई॥',
-          'दीन दयाल बिरिदु संभारी। हरहु नाथ मम संकट भारी॥',
-          'होइहि सोइ जो राम रचि राखा। को करि तर्क बढ़ावै साखा॥'
+          'मंगल भवन अमंगल हारी। द्रवहु सुदसरथ अजर बिहारी।।'
         ];
 
         var container = document.getElementById('chaupaiDisplay');
