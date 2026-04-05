@@ -2012,7 +2012,10 @@
         flex-shrink: 0;
       }
 
-/* ── Transparency / Finances Section ── */
+/* ══ TEMPLE FINANCES SECTION — DISABLED (enable when ready) ══
+   To re-enable: remove the opening and closing CSS comment markers
+   around this entire block.
+
 .transparency-section {
   padding: 64px 24px;
   background: linear-gradient(180deg, #fdfbf7 0%, #f9f5ef 100%);
@@ -2038,7 +2041,6 @@
   margin-top: -28px;
   margin-bottom: 32px;
 }
-/* Summary cards */
 .tr-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -2071,7 +2073,6 @@
 .tr-card.green .tr-card-value { color: #27ae60; }
 .tr-card.red   .tr-card-value { color: #e74c3c; }
 .tr-card.blue  .tr-card-value { color: #3b82f6; }
-/* Year table */
 .tr-table-wrap {
   max-width: 800px;
   margin: 0 auto 36px;
@@ -2115,7 +2116,6 @@
   color: #334155;
 }
 .tr-table tfoot td:first-child { text-align: center; }
-/* Goals */
 .tr-goals {
   max-width: 680px;
   margin: 0 auto;
@@ -2156,7 +2156,6 @@
   display: flex; justify-content: space-between;
   font-size: 11px; color: #94a3b8; margin-top: 6px;
 }
-/* Loading / empty states */
 .tr-loading { color: #bbb; font-size: 14px; padding: 32px 0; }
 .tr-privacy-note {
   font-size: 11px; color: #ccc; margin-top: 24px; text-align: center;
@@ -2167,6 +2166,7 @@
   .tr-table { font-size: 12px; }
   .tr-table thead th, .tr-table tbody td, .tr-table tfoot td { padding: 9px 10px; }
 }
+══ END TEMPLE FINANCES CSS ══ */
 
     </style>
   </head>
@@ -2213,7 +2213,9 @@
         <a href="#membersSection">Member</a>
         <a href="#features">Features</a>
         <a href="#gallery">Gallery</a>
+        <!-- FINANCES NAV LINK — disabled until Temple Finances section is re-enabled
         <a href="#financesSection">Finances</a>
+        -->
         <a href="#feedbackSection">Feedback</a>
         <a href="#" onclick="openPayModal();return false;" style="color:#f7c35a;"><i class="fa-solid fa-hand-holding-heart" style="color:#f7a01a;"></i> Donate</a>
         <a href="login.html" class="login-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
@@ -2247,9 +2249,11 @@
         <i class="fa-solid fa-comment-dots"></i> 
         Feedback</a
       >
+      <!-- FINANCES NAV LINK — disabled until Temple Finances section is re-enabled
       <a href="#financesSection" onclick="closeNavMenu()">
         <i class="fa-solid fa-scale-balanced"></i> Finances
       </a>
+      -->
       <a href="#" onclick="closeNavMenu();openPayModal();return false;">
         <i class="fa-solid fa-hand-holding-heart"></i>
         Donate / Pay</a
@@ -2519,6 +2523,9 @@
 
     </div>
 
+    <!-- ══ TEMPLE FINANCES SECTION — DISABLED
+         To re-enable: remove this HTML comment block wrapper,
+         and also uncomment the CSS block and JS block marked the same way.
     <div class="section-divider reveal">
       <div class="sd-line"></div>
       <div class="sd-center">
@@ -2540,12 +2547,10 @@
       </p>
       <div class="tr-updated" id="tr_updated"></div>
      
-      <!-- Summary cards -->
       <div class="tr-cards" id="tr_cards">
         <div class="tr-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div>
       </div>
      
-      <!-- Year-by-year table -->
       <div class="tr-table-wrap" id="tr_table_wrap" style="display:none;">
         <table class="tr-table">
           <thead>
@@ -2562,7 +2567,6 @@
         </table>
       </div>
      
-      <!-- Goals -->
       <div class="tr-goals" id="tr_goals" style="display:none;">
         <div class="tr-goals-title">
           <i class="fa-solid fa-bullseye" style="color:#f7a01a;margin-right:6px;"></i>
@@ -2577,6 +2581,7 @@
       </p>
      
     </div>
+    ══ END TEMPLE FINANCES HTML ══ -->
 
     <div class="section-divider reveal">
       <div class="sd-line"></div>
@@ -2856,7 +2861,10 @@
         }).catch(function() {});
       }
 
-      /* ── Public Finances / Transparency Section ── */
+      /* ══ TEMPLE FINANCES JS — DISABLED
+         To re-enable: remove the opening slash-star and closing star-slash
+         around this entire block (match with CSS and HTML blocks above).
+
 var _trLoaded = false;
  
  function loadTransparency() {
@@ -2993,6 +3001,7 @@ var _trLoaded = false;
    }
  }
  document.addEventListener("DOMContentLoaded", _watchTransparency);
+ ══ END TEMPLE FINANCES JS ══ */
 
       function _checkStatsVisible() {
         if (_statsAnimated) return;
@@ -3490,7 +3499,7 @@ var _trLoaded = false;
       }
     </script>
 
-<script>
+    <script>
   /* ── Service Worker registration ── */
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function() {

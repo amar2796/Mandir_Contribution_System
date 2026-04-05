@@ -47,8 +47,22 @@
         text-align: center; margin-bottom: 10px; font-size: 0.85rem;
         color: #946c44; font-weight: 600; letter-spacing: 0.3px;
       }
+
+      /* login logo */
+       .login-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(247,160,26,0.55);
+        box-shadow: 0 0 10px rgba(247,160,26,0.35);
+        flex-shrink: 0;
+        background: #78501e;
+      }
+
+
       .login-brand i { color: #f7a01a; margin-right: 5px; }
-      .card h2 { margin-top: 0; margin-bottom: 6px; color: #946c44; font-size: 1.75rem; font-weight: 700; }
+      .card h2 { margin-top: 0; margin-bottom: 6px; color: #946c44; font-size: 1.75rem; font-weight: 700; display:flex; align-items:center; justify-content:center; gap:10px; }
       .card h2 i { color: #f7a01a; margin-right: 8px; }
       .card-subtitle { font-size: 0.82rem; color: #aaa; margin-bottom: 22px; display: block; }
       .input-group { position: relative; margin-bottom: 16px; }
@@ -194,9 +208,12 @@
   <body>
     <div class="container">
       <div class="card">
-        <h2><i class="fa-solid fa-om"></i> Mandir Login</h2>
+        <h2>
+          <img src="Image/logo.PNG" alt="Mandir Logo" class="login-logo" onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
+          <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
+          Mandir Login</h2>
         <span class="card-subtitle">
-          <i class="fa-solid fa-place-of-worship" style="color:#f7a01a;margin-right:4px;"></i>Shree Hanuman Mandir, Paliya
+          Shree Hanuman Mandir, Paliya
         </span>
         <div class="msg-box" id="loginMsg"></div>
         <div class="input-group">

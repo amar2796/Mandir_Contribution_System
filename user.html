@@ -14,7 +14,7 @@
     <title>My Dashboard — Mandir</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -35,6 +35,7 @@
         --green:     #22c55e;
         --red:       #ef4444;
         --blue:      #3b82f6;
+        --idcolor:   #6366f1;
         --rad-xl:    22px;
         --rad-lg:    16px;
         --rad-md:    12px;
@@ -68,9 +69,20 @@
       .header-left { display:flex; align-items:center; gap:10px; min-width:0; flex:1; }
       .hdr-icon {
         width:34px; height:34px; border-radius:10px; flex-shrink:0;
-        background: linear-gradient(135deg,var(--ink) 0%,var(--ink-mid) 100%);
+        /* background: linear-gradient(135deg,var(--ink) 0%,var(--ink-mid) 100%); */
         display:flex; align-items:center; justify-content:center;
-        font-size:16px; box-shadow:0 3px 10px rgba(0,0,0,0.18);
+        font-size:16px; 
+        /* box-shadow:0 3px 10px rgba(0,0,0,0.18); */
+      }
+      .header-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(247,160,26,0.55);
+        box-shadow: 0 0 10px rgba(247,160,26,0.35);
+        flex-shrink: 0;
+        background: #78501e;
       }
       .hdr-text { min-width:0; }
       .hdr-welcome { font-size:10px; color:var(--ink-faint); font-weight:400; letter-spacing:.3px; line-height:1.1; }
@@ -94,7 +106,8 @@
       @keyframes dropFade { from{opacity:0;transform:translateY(-5px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
       .hdr-dropdown.open { display:block; }
       .hdr-drop-head {
-        background:linear-gradient(135deg,var(--ink),var(--ink-mid));
+        /* background:linear-gradient(135deg,var(--ink),var(--ink-mid)); */
+        background:linear-gradient(135deg, #2a0f00 0%, #3c1a00 60%, #2a0f00 100%);
         padding:13px 16px; display:flex; align-items:center; gap:10px;
       }
       .hdr-drop-head img { width:34px;height:34px;border-radius:50%;border:2px solid var(--gold);object-fit:cover;background:#faeeda;flex-shrink:0; }
@@ -111,6 +124,8 @@
       .hdr-drop-item i { width:16px; text-align:center; color:var(--gold); font-size:13px; }
       .hdr-drop-item.danger { color:var(--red); }
       .hdr-drop-item.danger i { color:var(--red); }
+      .hdr-drop-item.idcard { color:var(--idcolor); }
+      .hdr-drop-item.idcard i { color:var(--idcolor); }
       .hdr-drop-item.danger:hover { background:#fff5f5; }
 
       /* ─── LAYOUT ─── */
@@ -118,7 +133,7 @@
 
       /* ─── HERO ─── */
       .hero {
-        background:linear-gradient(135deg,#141b2d 0%,#1e293b 50%,#1a2535 100%);
+        background:linear-gradient(180deg, #2a0f00 0%, #3c1a00 60%, #2a0f00 100%);
         border-radius:var(--rad-xl); padding:26px 22px 20px;
         margin-bottom:16px; position:relative; overflow:hidden;
         box-shadow:var(--sh-lg);
@@ -129,7 +144,7 @@
         background:radial-gradient(circle, rgba(247,160,26,.16) 0%, transparent 68%);
         border-radius:50%;
       }
-      .hero::after { content:'🕉️'; position:absolute; bottom:-10px; right:16px; font-size:5.5rem; opacity:.05; pointer-events:none; line-height:1; }
+      .hero::after { content:'🕉️'; position:absolute; bottom:26px; right:16px; font-size:5.5rem; opacity:.05; pointer-events:none; line-height:1; }
       .hero-label { font-size:10.5px; font-weight:500; color:var(--ink-faint); letter-spacing:1.2px; text-transform:uppercase; margin-bottom:4px; }
       .hero-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; gap:10px; flex-wrap:wrap; }
       .hero-amount { font-family:var(--font-h); font-size:2.7rem; font-weight:800; color:#fff; line-height:1; letter-spacing:-1.5px; }
@@ -306,6 +321,24 @@
       .btn-ghost:hover { border-color:var(--gold); color:var(--gold); }
       .btn-sm { padding:6px 12px; font-size:11.5px; border-radius:7px; box-shadow:none; }
 
+      /* ─── PAGINATION ─── */
+      .pagination {
+        display:flex; align-items:center; justify-content:center;
+        gap:6px; padding:14px 16px 12px; flex-wrap:wrap;
+      }
+      .pg-btn {
+        display:inline-flex; align-items:center; justify-content:center;
+        min-width:34px; height:34px; padding:0 10px;
+        border-radius:8px; font-family:var(--font-b); font-size:13px; font-weight:600;
+        border:1.5px solid #e4e9f4; cursor:pointer;
+        background:var(--white); color:var(--ink-mid);
+        transition:all var(--t); box-shadow:none;
+      }
+      .pg-btn:hover:not(:disabled) { border-color:var(--gold); color:var(--gold); background:#fffbf2; }
+      .pg-btn:disabled { opacity:.4; cursor:not-allowed; }
+      .pg-btn.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+      .pg-info { font-size:12px; color:var(--ink-faint); padding:0 6px; }
+
       /* ─── PHOTO ─── */
       .photo-preview { width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);background:#faeeda;display:block;margin:0 auto 12px;box-shadow:0 4px 16px var(--gold-glow); }
 
@@ -329,9 +362,10 @@
         th,td { padding:9px 10px; font-size:12px; }
         .card-body { padding:13px 13px; }
         .card-hdr  { padding:12px 13px 10px; }
+        .header-logo { width:37px; height:37px; }
+        .hdr-icon { width:32px; height:32px; }
       }
       @media(max-width:400px){
-        .hdr-icon { display:none; }
         .hero-stat { min-width:80px; padding:8px 11px; }
         .hero-stat-v { font-size:.92rem; }
       }
@@ -348,7 +382,10 @@
     <!-- HEADER -->
     <header class="header">
       <div class="header-left">
-        <div class="hdr-icon">🕉️</div>
+        <div class="hdr-icon">
+          <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo" onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
+          <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
+        </div>
         <div class="hdr-text">
           <div class="hdr-welcome">Welcome back,</div>
           <span class="hdr-name" id="hdr_name">Loading…</span>
@@ -370,6 +407,9 @@
             </div>
             <div class="hdr-drop-item" onclick="closeDropdown();openMyProfile()">
               <i class="fa-solid fa-id-card"></i> My Profile
+            </div>
+            <div class="hdr-drop-item idcard" onclick="closeDropdown();downloadMemberIDCard()">
+              <i class="fa-solid fa-address-card"></i> ID Card
             </div>
             <div class="hdr-drop-item danger" onclick="logout()">
               <i class="fa-solid fa-power-off"></i> Logout
@@ -403,10 +443,6 @@
         </button>
         <button class="qa-btn qa-dark" onclick="shareStatementWhatsApp()">
           <i class="fa-brands fa-whatsapp"></i> WhatsApp
-        </button>
-        <button class="qa-btn" style="background:#6366f1;color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.28);"
-          onclick="downloadMemberIDCard()">
-          <i class="fa-solid fa-id-card"></i> ID Card
         </button>
       </div>
 
@@ -476,6 +512,7 @@
               <tbody id="tableBody"></tbody>
             </table>
           </div>
+          <div id="paginationBar"></div>
         </div>
       </div>
 
@@ -825,7 +862,7 @@ async function saveNewPassword() {
 
       async function init(){
         try{
-          let allData=(await getData("getAllData"))||{};
+          let allData=(await getCached("getAllData"))||{};
           let s=JSON.parse(localStorage.getItem("session"));
           users=allData.users||[];types=allData.types||[];occasions=allData.occasions||[];
           allContributions=allData.contributions||[];allGoals=allData.goals||[];
@@ -914,18 +951,37 @@ async function saveNewPassword() {
         document.getElementById("filterType").innerHTML=`<option value="">All Types</option>`+types.map(t=>`<option value="${t.TypeId}">${t.TypeName}</option>`).join("");
       }
 
+      let _pgList=[], _pgPage=1;
+      const _pgSize=10;
+
       function renderTable(list){
+        _pgList=list;
+        _pgPage=1;
+        _renderPage();
+      }
+
+      function _renderPage(){
+        const list=_pgList;
+        const totalPages=Math.max(1,Math.ceil(list.length/_pgSize));
+        if(_pgPage<1)_pgPage=1;
+        if(_pgPage>totalPages)_pgPage=totalPages;
+
         const ce=document.getElementById("recordsCount");if(ce)ce.textContent=list.length;
+
+        const start=(_pgPage-1)*_pgSize;
+        const pageItems=list.slice(start,start+_pgSize);
+
         document.getElementById("tableBody").innerHTML=list.length===0
           ?`<tr><td colspan="7"><div class="empty"><i class="fa-solid fa-receipt"></i><p>No records found</p></div></td></tr>`
-          :list.map((c,i)=>{
+          :pageItems.map((c,i)=>{
+            const globalIdx=start+i;
             let type=types.find(t=>String(t.TypeId)===String(c.TypeId))?.TypeName||"Contribution";
             let oName=occasions.find(o=>String(o.OccasionId)===String(c.OccasionId))?.OccasionName||"—";
             let uName=users.find(u=>String(u.UserId)===String(c.UserId))?.Name||"Me";
             const rid=_storeReceipt(c,uName,type,oName);
             let dRID=(c.ReceiptID||"").replace(/^TRX-/,"MNR-");
             return `<tr onclick="showReceiptById('${rid}')" title="Click for receipt">
-              <td style="color:var(--ink-faint);font-size:12px;">${i+1}</td>
+              <td style="color:var(--ink-faint);font-size:12px;">${globalIdx+1}</td>
               <td class="amt-col">₹ ${fmt(c.Amount)}</td>
               <td><b>${escapeHtml(c.ForMonth||"—")}</b></td>
               <td class="col-year" style="color:var(--ink-soft);">${c.Year||"—"}</td>
@@ -934,6 +990,38 @@ async function saveNewPassword() {
               <td class="col-rcpt"><button class="btn-blue btn-sm" onclick="event.stopPropagation();showReceiptById('${rid}')"><i class="fa-solid fa-receipt"></i></button></td>
             </tr>`;
           }).join("");
+
+        // Pagination bar
+        const bar=document.getElementById("paginationBar");
+        if(!bar)return;
+        if(list.length<=_pgSize){bar.innerHTML="";return;}
+
+        let pages="";
+        // Always show first, last, current ±1
+        const show=new Set([1,totalPages,_pgPage,_pgPage-1,_pgPage+1].filter(p=>p>=1&&p<=totalPages));
+        const sorted=Array.from(show).sort((a,b)=>a-b);
+        let prev=-1;
+        for(const p of sorted){
+          if(prev!==-1&&p-prev>1)pages+=`<span class="pg-info">…</span>`;
+          pages+=`<button class="pg-btn${p===_pgPage?" active":""}" onclick="_goPage(${p})">${p}</button>`;
+          prev=p;
+        }
+
+        bar.innerHTML=`<div class="pagination">
+          <button class="pg-btn" onclick="_goPage(${_pgPage-1})" ${_pgPage===1?"disabled":""}>‹</button>
+          ${pages}
+          <button class="pg-btn" onclick="_goPage(${_pgPage+1})" ${_pgPage===totalPages?"disabled":""}>›</button>
+          <span class="pg-info">${start+1}–${Math.min(start+_pgSize,list.length)} of ${list.length}</span>
+        </div>`;
+      }
+
+      function _goPage(p){
+        const totalPages=Math.max(1,Math.ceil(_pgList.length/_pgSize));
+        if(p<1||p>totalPages)return;
+        _pgPage=p;
+        const scrollY=window.scrollY;
+        _renderPage();
+        window.scrollTo({top:scrollY,behavior:"instant"});
       }
 
       function showReceiptById(rid){const d=window._rcptStore[rid];if(!d)return;showReceipt(d.c,d.userName,d.typeName,d.occasionName,false);}
@@ -952,7 +1040,7 @@ async function saveNewPassword() {
 
       function applyFilter(){_applyAllFilters();}
       function searchData(){_applyAllFilters();}
-      function resetFilter(){["filterYear","filterMonth","filterType"].forEach(id=>document.getElementById(id).value="");document.getElementById("searchInput").value="";renderTable(data);}
+      function resetFilter(){["filterYear","filterMonth","filterType"].forEach(id=>document.getElementById(id).value="");document.getElementById("searchInput").value="";_pgPage=1;renderTable(data);}
       function _applyAllFilters(){
         let y=document.getElementById("filterYear").value,m=document.getElementById("filterMonth").value,
             t=document.getElementById("filterType").value,txt=document.getElementById("searchInput").value.toLowerCase();

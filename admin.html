@@ -573,12 +573,34 @@
         border-bottom: 1px solid rgba(255,255,255,0.08);
         margin-bottom: 4px;
       }
-      .sidebar-brand-icon {
+
+      .hdr-icon {
+        width:34px; height:34px; border-radius:10px; flex-shrink:0;
+        /* background: linear-gradient(135deg,var(--ink) 0%,var(--ink-mid) 100%); */
+        display:flex; align-items:center; justify-content:center;
+        font-size:16px; 
+        /* box-shadow:0 3px 10px rgba(0,0,0,0.18); */
+      }
+
+      /* header Logo  */
+      .header-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(247,160,26,0.55);
+        box-shadow: 0 0 10px rgba(247,160,26,0.35);
+        flex-shrink: 0;
+        background: #78501e;
+      }
+
+
+      /* .sidebar-brand-icon {
         font-size: 2rem;
         line-height: 1;
         filter: drop-shadow(0 0 8px rgba(247,160,26,0.7));
         flex-shrink: 0;
-      }
+      } */
       .sidebar-brand-title {
         font-size: 1.05rem;
         font-weight: 700;
@@ -1094,7 +1116,10 @@ tr.row-rejected td { background: #fff5f5 !important; }
     <div class="layout">
       <div class="sidebar">
         <div class="sidebar-brand">
-          <div class="sidebar-brand-icon">🕉️</div>
+          <div class="hdr-icon">
+            <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo" onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
+            <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
+          </div>
           <div class="sidebar-brand-text">
             <div class="sidebar-brand-title">Admin Panel</div>
             <div class="sidebar-brand-sub">Shree Hanuman Mandir</div>
