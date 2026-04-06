@@ -3,6 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="manifest" href="manifest.json"/>
+    <link rel="apple-touch-icon" href="icon-192.svg"/>
+    <meta name="theme-color" content="#f7a01a"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <meta name="apple-mobile-web-app-title" content="SHM"/>
+
     <title>Login - Mandir System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -39,8 +47,22 @@
         text-align: center; margin-bottom: 10px; font-size: 0.85rem;
         color: #946c44; font-weight: 600; letter-spacing: 0.3px;
       }
+
+      /* login logo */
+       .login-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(247,160,26,0.55);
+        box-shadow: 0 0 10px rgba(247,160,26,0.35);
+        flex-shrink: 0;
+        background: #78501e;
+      }
+
+
       .login-brand i { color: #f7a01a; margin-right: 5px; }
-      .card h2 { margin-top: 0; margin-bottom: 6px; color: #946c44; font-size: 1.75rem; font-weight: 700; }
+      .card h2 { margin-top: 0; margin-bottom: 6px; color: #946c44; font-size: 1.75rem; font-weight: 700; display:flex; align-items:center; justify-content:center; gap:10px; }
       .card h2 i { color: #f7a01a; margin-right: 8px; }
       .card-subtitle { font-size: 0.82rem; color: #aaa; margin-bottom: 22px; display: block; }
       .input-group { position: relative; margin-bottom: 16px; }
@@ -186,9 +208,12 @@
   <body>
     <div class="container">
       <div class="card">
-        <h2><i class="fa-solid fa-om"></i> Mandir Login</h2>
+        <h2>
+          <img src="Image/logo.PNG" alt="Mandir Logo" class="login-logo" onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
+          <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
+          Mandir Login</h2>
         <span class="card-subtitle">
-          <i class="fa-solid fa-place-of-worship" style="color:#f7a01a;margin-right:4px;"></i>Shree Hanuman Mandir, Paliya
+          Shree Hanuman Mandir, Paliya
         </span>
         <div class="msg-box" id="loginMsg"></div>
         <div class="input-group">
@@ -455,6 +480,7 @@
 
       // ── LOGIN
       async function login() {
+        if (!_loginGuard()) return;
         let mobile   = document.getElementById("mobile").value.trim();
         let password = document.getElementById("password").value;
         if (!mobile || !password) { setMsg("loginMsg","Please enter both mobile number and password.","error"); return; }
@@ -486,13 +512,16 @@
                 setTimeout(() => _bc.close(), 500);
               } catch(e){}
               setMsg("loginMsg","✓ Login successful! Redirecting...","success");
+              _loginSuccess();
               setTimeout(() => { location.href = user.Role === "Admin" ? "admin.html" : "user.html"; }, 600);
             } else if (res.status === "pending") {
               setMsg("loginMsg", "Your account is awaiting approval. You'll receive an email with your login details once the temple admin reviews your request.", "pending");
             } else if (res.status === "error") {
               setMsg("loginMsg","❌ " + (res.message || "Account issue."),"error");
+              _loginFail();
             } else {
               setMsg("loginMsg","❌ Invalid mobile number or password.","error");
+              _loginFail();
             }
           });
         } catch(err) { setMsg("loginMsg","❌ " + err.message,"error"); }
@@ -622,8 +651,154 @@
           btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Registration';
         }
       }
+    
+      const _LR = {
+  MAX_ATTEMPTS : 5,
+  LOCKOUT_MS   : 5 * 60 * 1000,  // 5 minutes
+  KEY_COUNT    : "_lr_count",
+  KEY_LOCK_END : "_lr_lock",
+ 
+  getCount  : function() { return parseInt(sessionStorage.getItem(_LR.KEY_COUNT)  || "0", 10); },
+  getLockEnd: function() { return parseInt(sessionStorage.getItem(_LR.KEY_LOCK_END) || "0", 10); },
+ 
+  isLocked: function() {
+    const end = _LR.getLockEnd();
+    if (end && Date.now() < end) return true;
+    // Lock expired — clear it
+    if (end && Date.now() >= end) {
+      sessionStorage.removeItem(_LR.KEY_LOCK_END);
+      sessionStorage.removeItem(_LR.KEY_COUNT);
+    }
+    return false;
+  },
+ 
+  recordFail: function() {
+    let count = _LR.getCount() + 1;
+    sessionStorage.setItem(_LR.KEY_COUNT, String(count));
+    if (count >= _LR.MAX_ATTEMPTS) {
+      const lockEnd = Date.now() + _LR.LOCKOUT_MS;
+      sessionStorage.setItem(_LR.KEY_LOCK_END, String(lockEnd));
+      return { locked: true, lockEnd: lockEnd };
+    }
+    return { locked: false, remaining: _LR.MAX_ATTEMPTS - count };
+  },
+ 
+  clear: function() {
+    sessionStorage.removeItem(_LR.KEY_COUNT);
+    sessionStorage.removeItem(_LR.KEY_LOCK_END);
+  },
+ 
+  remainingMs: function() {
+    return Math.max(0, _LR.getLockEnd() - Date.now());
+  }
+};
+ 
+/* ── _loginGuard() — call at the TOP of login() ─────────────────
+   Returns false (and shows message) if locked out.
+   Returns true if login should proceed.
+   ─────────────────────────────────────────────────────────────── */
+function _loginGuard() {
+  // Validate mobile format first (10 digits, Indian mobile)
+  const mobile = (document.getElementById("mobile")?.value || "").trim();
+  if (mobile && !/^[6-9]\d{9}$/.test(mobile)) {
+    setMsg("loginMsg", "❌ Please enter a valid 10-digit mobile number.", "error");
+    return false;
+  }
+ 
+  // Check lockout
+  if (_LR.isLocked()) {
+    const mins = Math.ceil(_LR.remainingMs() / 60000);
+    setMsg(
+      "loginMsg",
+      "🔒 Too many failed attempts. Please wait " + mins + " minute" + (mins > 1 ? "s" : "") + " before trying again.",
+      "error"
+    );
+    const btn = document.getElementById("loginBtn");
+    if (btn) btn.disabled = true;
+    // Auto-enable button when lockout expires
+    setTimeout(function() {
+      if (!_LR.isLocked()) {
+        const b = document.getElementById("loginBtn");
+        if (b) b.disabled = false;
+        setMsg("loginMsg", "", "");
+      }
+    }, _LR.remainingMs() + 500);
+    return false;
+  }
+  return true;
+}
+ 
+/* ── _loginFail() — call when server returns status !== "success" */
+function _loginFail() {
+  const result = _LR.recordFail();
+  if (result.locked) {
+    const mins = Math.ceil(_LR.LOCKOUT_MS / 60000);
+    setMsg(
+      "loginMsg",
+      "🔒 Too many failed attempts. Account locked for " + mins + " minutes.",
+      "error"
+    );
+    const btn = document.getElementById("loginBtn");
+    if (btn) btn.disabled = true;
+  } else {
+    // Show remaining attempts warning from attempt 3 onwards
+    if (result.remaining <= 2) {
+      // Append warning to existing message
+      setTimeout(function() {
+        const el = document.getElementById("loginMsg");
+        if (el && el.textContent) {
+          el.textContent += " (" + result.remaining + " attempt" + (result.remaining !== 1 ? "s" : "") + " remaining)";
+        }
+      }, 50);
+    }
+  }
+}
+ 
+/* ── _loginSuccess() — call on successful login ─────────────────
+   Clears the attempt counter so a legitimate user who
+   had some failed attempts doesn't stay throttled.
+   ─────────────────────────────────────────────────────────────── */
+function _loginSuccess() {
+  _LR.clear();
+}
     </script>
     <!-- Chatbot widget -->
     <script src="chatbot_widget.js"></script>
+
+    <script>
+      /* ── Service Worker registration ── */
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function() {
+          navigator.serviceWorker.register("./sw.js").then(function(reg) {
+       
+            // Detect when a new SW version is waiting — prompt user to refresh
+            reg.addEventListener("updatefound", function() {
+              const newWorker = reg.installing;
+              if (!newWorker) return;
+              newWorker.addEventListener("statechange", function() {
+                if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                  // New version available — show update toast if toast() is available
+                  // Otherwise show a simple confirm dialog
+                  if (typeof toast === "function") {
+                    toast("🔄 App updated — tap here to refresh", "warn");
+                    // Auto-reload after 4 seconds so admin always gets latest code
+                    setTimeout(function() { location.reload(); }, 4000);
+                  } else {
+                    if (confirm("App updated. Reload now for the latest version?")) {
+                      location.reload();
+                    }
+                  }
+                }
+              });
+            });
+       
+          }).catch(function(err) {
+            // SW registration failed — app still works normally without it
+            console.warn("Service Worker registration failed:", err);
+          });
+        });
+      }
+      </script>
+
   </body>
 </html>

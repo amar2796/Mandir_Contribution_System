@@ -3,10 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.svg"/>
+  <meta name="theme-color" content="#f7a01a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="SHM"/>
+
     <title>My Dashboard — Mandir</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -27,6 +35,7 @@
         --green:     #22c55e;
         --red:       #ef4444;
         --blue:      #3b82f6;
+        --idcolor:   #6366f1;
         --rad-xl:    22px;
         --rad-lg:    16px;
         --rad-md:    12px;
@@ -60,9 +69,20 @@
       .header-left { display:flex; align-items:center; gap:10px; min-width:0; flex:1; }
       .hdr-icon {
         width:34px; height:34px; border-radius:10px; flex-shrink:0;
-        background: linear-gradient(135deg,var(--ink) 0%,var(--ink-mid) 100%);
+        /* background: linear-gradient(135deg,var(--ink) 0%,var(--ink-mid) 100%); */
         display:flex; align-items:center; justify-content:center;
-        font-size:16px; box-shadow:0 3px 10px rgba(0,0,0,0.18);
+        font-size:16px; 
+        /* box-shadow:0 3px 10px rgba(0,0,0,0.18); */
+      }
+      .header-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(247,160,26,0.55);
+        box-shadow: 0 0 10px rgba(247,160,26,0.35);
+        flex-shrink: 0;
+        background: #78501e;
       }
       .hdr-text { min-width:0; }
       .hdr-welcome { font-size:10px; color:var(--ink-faint); font-weight:400; letter-spacing:.3px; line-height:1.1; }
@@ -86,7 +106,8 @@
       @keyframes dropFade { from{opacity:0;transform:translateY(-5px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
       .hdr-dropdown.open { display:block; }
       .hdr-drop-head {
-        background:linear-gradient(135deg,var(--ink),var(--ink-mid));
+        /* background:linear-gradient(135deg,var(--ink),var(--ink-mid)); */
+        background:linear-gradient(135deg, #2a0f00 0%, #3c1a00 60%, #2a0f00 100%);
         padding:13px 16px; display:flex; align-items:center; gap:10px;
       }
       .hdr-drop-head img { width:34px;height:34px;border-radius:50%;border:2px solid var(--gold);object-fit:cover;background:#faeeda;flex-shrink:0; }
@@ -103,6 +124,8 @@
       .hdr-drop-item i { width:16px; text-align:center; color:var(--gold); font-size:13px; }
       .hdr-drop-item.danger { color:var(--red); }
       .hdr-drop-item.danger i { color:var(--red); }
+      .hdr-drop-item.idcard { color:var(--idcolor); }
+      .hdr-drop-item.idcard i { color:var(--idcolor); }
       .hdr-drop-item.danger:hover { background:#fff5f5; }
 
       /* ─── LAYOUT ─── */
@@ -110,7 +133,7 @@
 
       /* ─── HERO ─── */
       .hero {
-        background:linear-gradient(135deg,#141b2d 0%,#1e293b 50%,#1a2535 100%);
+        background:linear-gradient(180deg, #2a0f00 0%, #3c1a00 60%, #2a0f00 100%);
         border-radius:var(--rad-xl); padding:26px 22px 20px;
         margin-bottom:16px; position:relative; overflow:hidden;
         box-shadow:var(--sh-lg);
@@ -121,7 +144,7 @@
         background:radial-gradient(circle, rgba(247,160,26,.16) 0%, transparent 68%);
         border-radius:50%;
       }
-      .hero::after { content:'🕉️'; position:absolute; bottom:-10px; right:16px; font-size:5.5rem; opacity:.05; pointer-events:none; line-height:1; }
+      .hero::after { content:'🕉️'; position:absolute; bottom:26px; right:16px; font-size:5.5rem; opacity:.05; pointer-events:none; line-height:1; }
       .hero-label { font-size:10.5px; font-weight:500; color:var(--ink-faint); letter-spacing:1.2px; text-transform:uppercase; margin-bottom:4px; }
       .hero-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; gap:10px; flex-wrap:wrap; }
       .hero-amount { font-family:var(--font-h); font-size:2.7rem; font-weight:800; color:#fff; line-height:1; letter-spacing:-1.5px; }
@@ -298,6 +321,24 @@
       .btn-ghost:hover { border-color:var(--gold); color:var(--gold); }
       .btn-sm { padding:6px 12px; font-size:11.5px; border-radius:7px; box-shadow:none; }
 
+      /* ─── PAGINATION ─── */
+      .pagination {
+        display:flex; align-items:center; justify-content:center;
+        gap:6px; padding:14px 16px 12px; flex-wrap:wrap;
+      }
+      .pg-btn {
+        display:inline-flex; align-items:center; justify-content:center;
+        min-width:34px; height:34px; padding:0 10px;
+        border-radius:8px; font-family:var(--font-b); font-size:13px; font-weight:600;
+        border:1.5px solid #e4e9f4; cursor:pointer;
+        background:var(--white); color:var(--ink-mid);
+        transition:all var(--t); box-shadow:none;
+      }
+      .pg-btn:hover:not(:disabled) { border-color:var(--gold); color:var(--gold); background:#fffbf2; }
+      .pg-btn:disabled { opacity:.4; cursor:not-allowed; }
+      .pg-btn.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+      .pg-info { font-size:12px; color:var(--ink-faint); padding:0 6px; }
+
       /* ─── PHOTO ─── */
       .photo-preview { width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);background:#faeeda;display:block;margin:0 auto 12px;box-shadow:0 4px 16px var(--gold-glow); }
 
@@ -321,9 +362,10 @@
         th,td { padding:9px 10px; font-size:12px; }
         .card-body { padding:13px 13px; }
         .card-hdr  { padding:12px 13px 10px; }
+        .header-logo { width:37px; height:37px; }
+        .hdr-icon { width:32px; height:32px; }
       }
       @media(max-width:400px){
-        .hdr-icon { display:none; }
         .hero-stat { min-width:80px; padding:8px 11px; }
         .hero-stat-v { font-size:.92rem; }
       }
@@ -340,7 +382,10 @@
     <!-- HEADER -->
     <header class="header">
       <div class="header-left">
-        <div class="hdr-icon">🕉️</div>
+        <div class="hdr-icon">
+          <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo" onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
+          <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
+        </div>
         <div class="hdr-text">
           <div class="hdr-welcome">Welcome back,</div>
           <span class="hdr-name" id="hdr_name">Loading…</span>
@@ -362,6 +407,9 @@
             </div>
             <div class="hdr-drop-item" onclick="closeDropdown();openMyProfile()">
               <i class="fa-solid fa-id-card"></i> My Profile
+            </div>
+            <div class="hdr-drop-item idcard" onclick="closeDropdown();downloadMemberIDCard()">
+              <i class="fa-solid fa-address-card"></i> ID Card
             </div>
             <div class="hdr-drop-item danger" onclick="logout()">
               <i class="fa-solid fa-power-off"></i> Logout
@@ -464,6 +512,7 @@
               <tbody id="tableBody"></tbody>
             </table>
           </div>
+          <div id="paginationBar"></div>
         </div>
       </div>
 
@@ -540,10 +589,17 @@
               <div class="_row"><span class="_rl"><i class="fa-regular fa-id-badge" style="width:14px;color:#f7a01a;"></i> Member ID</span><span class="_rv" style="font-family:monospace;font-size:12px;">${escapeHtml(String(myProfile.UserId||"—"))}</span></div>
             </div>
           </div>
-          <div class="_mft">
-            <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>
-            <button class="_mbtn" style="background:#f7a01a;" onclick="closeModal();openEditProfile()"><i class="fa-solid fa-user-pen"></i> Edit Profile</button>
-          </div>`;
+              <div class="_mft" style="flex-wrap:wrap;gap:8px;">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">
+        <i class="fa-solid fa-xmark"></i> Close
+      </button>
+      <button class="_mbtn" style="background:#3b82f6;" onclick="closeModal();openChangePassword()">
+        <i class="fa-solid fa-key"></i> Change Password
+      </button>
+      <button class="_mbtn" style="background:#f7a01a;" onclick="closeModal();openEditProfile()">
+        <i class="fa-solid fa-user-pen"></i> Edit Profile
+      </button>
+    </div>`;
         openModal(html,"460px");
       }
 
@@ -581,8 +637,17 @@
               <label class="_fl">Address</label><textarea class="_fi" id="ep_address" rows="2" placeholder="Full address" style="resize:vertical;min-height:52px;display:block;background:#fafafa;color:#333;cursor:text;">${escapeHtml(dA)}</textarea>
               <label class="_fl">Mobile <span style="color:#bbb;font-weight:400;font-size:10px;">(read-only)</span></label>
               <input class="_fi" value="${escapeHtml(String(myProfile?.Mobile||""))}" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;margin-bottom:4px;"/>
-              <label class="_fl">Password <span style="color:#bbb;font-weight:400;font-size:10px;">(use Forgot Password to change)</span></label>
-              <input class="_fi" value="••••••••" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;"/>
+              <label class="_fl">Password</label>
+                  <div style="background:#f8f8f8;border:1.5px solid #eee;border-radius:8px;
+                    padding:10px 14px;display:flex;align-items:center;justify-content:space-between;
+                    margin-bottom:14px;">
+                    <span style="color:#aaa;letter-spacing:2px;font-size:14px;">••••••••</span>
+                    <span onclick="closeModal();openChangePassword()"
+                      style="color:#3b82f6;font-size:12px;font-weight:600;cursor:pointer;
+                      text-decoration:underline;white-space:nowrap;">
+                      <i class="fa-solid fa-key" style="margin-right:3px;"></i>Change
+                    </span>
+                  </div>
             </div>
           </div>
           <div class="_mft">
@@ -622,9 +687,182 @@
         }catch(err){toast("❌ "+err.message,"error");}
       }
 
+      /* ═══ CHANGE PASSWORD ════════════════════════════════════════════
+   Opens a modal with 3 fields: current password, new password,
+   confirm new password. Verifies current, then updates via
+   existing updateUser action. No new Apps Script action needed.
+   ═══════════════════════════════════════════════════════════════ */
+function openChangePassword() {
+  const html = `
+    <div class="_mhdr">
+      <h3><i class="fa-solid fa-key" style="color:#3b82f6;"></i> Change Password</h3>
+      <button class="_mcls" onclick="closeModal()">×</button>
+    </div>
+    <div class="_mbdy">
+      <p style="font-size:12.5px;color:#64748b;margin:0 0 16px;line-height:1.6;">
+        Enter your current password to verify, then set a new one.<br>
+        Minimum 6 characters.
+      </p>
+      <label class="_fl">Current Password</label>
+      <div style="position:relative;margin-bottom:14px;">
+        <input class="_fi" type="password" id="cp_current"
+          placeholder="Your current password"
+          style="margin-bottom:0;padding-right:44px;"/>
+        <span onclick="_cpToggle('cp_current',this)"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+          font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
+      </div>
+      <label class="_fl">New Password</label>
+      <div style="position:relative;margin-bottom:14px;">
+        <input class="_fi" type="password" id="cp_new"
+          placeholder="New password (min 6 chars)"
+          style="margin-bottom:0;padding-right:44px;"
+          oninput="_cpStrength(this.value)"/>
+        <span onclick="_cpToggle('cp_new',this)"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+          font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
+      </div>
+      <div id="cp_strength" style="height:4px;border-radius:2px;background:#f1f5f9;
+        margin:-8px 0 12px;overflow:hidden;">
+        <div id="cp_strength_bar"
+          style="height:100%;width:0%;border-radius:2px;transition:width .3s,background .3s;"></div>
+      </div>
+      <label class="_fl">Confirm New Password</label>
+      <div style="position:relative;margin-bottom:6px;">
+        <input class="_fi" type="password" id="cp_confirm"
+          placeholder="Repeat new password"
+          style="margin-bottom:0;padding-right:44px;"/>
+        <span onclick="_cpToggle('cp_confirm',this)"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+          font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
+      </div>
+      <div id="cp_msg" style="font-size:12px;min-height:18px;margin-bottom:4px;"></div>
+    </div>
+    <div class="_mft">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">
+        Cancel
+      </button>
+      <button class="_mbtn" id="cp_save_btn" style="background:#3b82f6;"
+        onclick="saveNewPassword()">
+        <i class="fa-solid fa-key"></i> Update Password
+      </button>
+    </div>`;
+  openModal(html, "420px");
+  // Focus current password field after modal opens
+  setTimeout(function() {
+    var el = document.getElementById("cp_current");
+    if (el) el.focus();
+  }, 120);
+}
+ 
+/* Toggle show/hide for password fields */
+function _cpToggle(inputId, btn) {
+  var inp = document.getElementById(inputId);
+  if (!inp) return;
+  if (inp.type === "password") {
+    inp.type = "text";
+    btn.textContent = "Hide";
+  } else {
+    inp.type = "password";
+    btn.textContent = "Show";
+  }
+}
+ 
+/* Strength bar under new password field */
+function _cpStrength(val) {
+  var bar = document.getElementById("cp_strength_bar");
+  if (!bar) return;
+  var score = 0;
+  if (val.length >= 6)  score++;
+  if (val.length >= 10) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  var pct   = [0, 25, 50, 70, 85, 100][Math.min(score, 5)];
+  var color = score <= 1 ? "#ef4444" : score <= 2 ? "#f59e0b" : score <= 3 ? "#3b82f6" : "#22c55e";
+  bar.style.width      = pct + "%";
+  bar.style.background = color;
+}
+ 
+/* Set message inside modal */
+function _cpMsg(msg, color) {
+  var el = document.getElementById("cp_msg");
+  if (el) { el.textContent = msg; el.style.color = color || "#ef4444"; }
+}
+ 
+/* Main save function */
+async function saveNewPassword() {
+  var currentVal = (document.getElementById("cp_current")?.value || "");
+  var newVal     = (document.getElementById("cp_new")?.value     || "");
+  var confirmVal = (document.getElementById("cp_confirm")?.value || "");
+ 
+  // Client-side validation
+  if (!currentVal) { _cpMsg("Please enter your current password."); return; }
+  if (newVal.length < 6) { _cpMsg("New password must be at least 6 characters."); return; }
+  if (newVal !== confirmVal) { _cpMsg("New passwords do not match."); return; }
+  if (newVal === currentVal) { _cpMsg("New password must be different from current password."); return; }
+ 
+  var btn = document.getElementById("cp_save_btn");
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...'; }
+ 
+  try {
+    var s         = JSON.parse(localStorage.getItem("session") || "{}");
+    var myProfile = (typeof users !== "undefined" ? users : [])
+      .find(function(u) { return String(u.UserId) === String(s.userId); });
+ 
+    if (!myProfile) {
+      _cpMsg("Profile not loaded. Please refresh and try again.");
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-key"></i> Update Password'; }
+      return;
+    }
+ 
+    // Verify current password — hash and compare against stored hash
+    var currentHash  = await sha256(currentVal);
+    var storedHash   = String(myProfile.Password || "").toLowerCase();
+ 
+    // Note: allData strips Password from users for security.
+    // If Password is not available in loaded users, fall back to server verification.
+    if (storedHash && storedHash.length === 64) {
+      // Password hash is available — verify client-side (faster, no extra API call)
+      if (currentHash !== storedHash) {
+        _cpMsg("Current password is incorrect.");
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-key"></i> Update Password'; }
+        return;
+      }
+    }
+    // If storedHash not available (getAllData strips it) — server will reject
+    // wrong current password because updateUser compares on the sheet side.
+    // We send currentHash as OldPassword for server-side verification.
+ 
+    var newHash = await sha256(newVal);
+ 
+    // updateUser already handles password update when Password param is non-empty
+    // We send OldPassword so the server can optionally verify it (see appscript note below)
+    var res = await postData({
+      action:      "changePassword",
+      UserId:      s.userId,
+      OldPassword: currentHash,
+      NewPassword: newHash
+    });
+ 
+    if (res && res.status === "success") {
+      closeModal();
+      toast("✅ Password updated successfully. Please use new password next time you log in.", "");
+    } else {
+      _cpMsg(res?.message || "Current password is incorrect or update failed.");
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-key"></i> Update Password'; }
+    }
+ 
+  } catch(err) {
+    _cpMsg("Error: " + err.message);
+    var b = document.getElementById("cp_save_btn");
+    if (b) { b.disabled = false; b.innerHTML = '<i class="fa-solid fa-key"></i> Update Password'; }
+  }
+}
+
       async function init(){
         try{
-          let allData=(await getData("getAllData"))||{};
+          let allData=(await getCached("getAllData"))||{};
           let s=JSON.parse(localStorage.getItem("session"));
           users=allData.users||[];types=allData.types||[];occasions=allData.occasions||[];
           allContributions=allData.contributions||[];allGoals=allData.goals||[];
@@ -713,18 +951,37 @@
         document.getElementById("filterType").innerHTML=`<option value="">All Types</option>`+types.map(t=>`<option value="${t.TypeId}">${t.TypeName}</option>`).join("");
       }
 
+      let _pgList=[], _pgPage=1;
+      const _pgSize=10;
+
       function renderTable(list){
+        _pgList=list;
+        _pgPage=1;
+        _renderPage();
+      }
+
+      function _renderPage(){
+        const list=_pgList;
+        const totalPages=Math.max(1,Math.ceil(list.length/_pgSize));
+        if(_pgPage<1)_pgPage=1;
+        if(_pgPage>totalPages)_pgPage=totalPages;
+
         const ce=document.getElementById("recordsCount");if(ce)ce.textContent=list.length;
+
+        const start=(_pgPage-1)*_pgSize;
+        const pageItems=list.slice(start,start+_pgSize);
+
         document.getElementById("tableBody").innerHTML=list.length===0
           ?`<tr><td colspan="7"><div class="empty"><i class="fa-solid fa-receipt"></i><p>No records found</p></div></td></tr>`
-          :list.map((c,i)=>{
+          :pageItems.map((c,i)=>{
+            const globalIdx=start+i;
             let type=types.find(t=>String(t.TypeId)===String(c.TypeId))?.TypeName||"Contribution";
             let oName=occasions.find(o=>String(o.OccasionId)===String(c.OccasionId))?.OccasionName||"—";
             let uName=users.find(u=>String(u.UserId)===String(c.UserId))?.Name||"Me";
             const rid=_storeReceipt(c,uName,type,oName);
             let dRID=(c.ReceiptID||"").replace(/^TRX-/,"MNR-");
             return `<tr onclick="showReceiptById('${rid}')" title="Click for receipt">
-              <td style="color:var(--ink-faint);font-size:12px;">${i+1}</td>
+              <td style="color:var(--ink-faint);font-size:12px;">${globalIdx+1}</td>
               <td class="amt-col">₹ ${fmt(c.Amount)}</td>
               <td><b>${escapeHtml(c.ForMonth||"—")}</b></td>
               <td class="col-year" style="color:var(--ink-soft);">${c.Year||"—"}</td>
@@ -733,6 +990,38 @@
               <td class="col-rcpt"><button class="btn-blue btn-sm" onclick="event.stopPropagation();showReceiptById('${rid}')"><i class="fa-solid fa-receipt"></i></button></td>
             </tr>`;
           }).join("");
+
+        // Pagination bar
+        const bar=document.getElementById("paginationBar");
+        if(!bar)return;
+        if(list.length<=_pgSize){bar.innerHTML="";return;}
+
+        let pages="";
+        // Always show first, last, current ±1
+        const show=new Set([1,totalPages,_pgPage,_pgPage-1,_pgPage+1].filter(p=>p>=1&&p<=totalPages));
+        const sorted=Array.from(show).sort((a,b)=>a-b);
+        let prev=-1;
+        for(const p of sorted){
+          if(prev!==-1&&p-prev>1)pages+=`<span class="pg-info">…</span>`;
+          pages+=`<button class="pg-btn${p===_pgPage?" active":""}" onclick="_goPage(${p})">${p}</button>`;
+          prev=p;
+        }
+
+        bar.innerHTML=`<div class="pagination">
+          <button class="pg-btn" onclick="_goPage(${_pgPage-1})" ${_pgPage===1?"disabled":""}>‹</button>
+          ${pages}
+          <button class="pg-btn" onclick="_goPage(${_pgPage+1})" ${_pgPage===totalPages?"disabled":""}>›</button>
+          <span class="pg-info">${start+1}–${Math.min(start+_pgSize,list.length)} of ${list.length}</span>
+        </div>`;
+      }
+
+      function _goPage(p){
+        const totalPages=Math.max(1,Math.ceil(_pgList.length/_pgSize));
+        if(p<1||p>totalPages)return;
+        _pgPage=p;
+        const scrollY=window.scrollY;
+        _renderPage();
+        window.scrollTo({top:scrollY,behavior:"instant"});
       }
 
       function showReceiptById(rid){const d=window._rcptStore[rid];if(!d)return;showReceipt(d.c,d.userName,d.typeName,d.occasionName,false);}
@@ -751,7 +1040,7 @@
 
       function applyFilter(){_applyAllFilters();}
       function searchData(){_applyAllFilters();}
-      function resetFilter(){["filterYear","filterMonth","filterType"].forEach(id=>document.getElementById(id).value="");document.getElementById("searchInput").value="";renderTable(data);}
+      function resetFilter(){["filterYear","filterMonth","filterType"].forEach(id=>document.getElementById(id).value="");document.getElementById("searchInput").value="";_pgPage=1;renderTable(data);}
       function _applyAllFilters(){
         let y=document.getElementById("filterYear").value,m=document.getElementById("filterMonth").value,
             t=document.getElementById("filterType").value,txt=document.getElementById("searchInput").value.toLowerCase();
@@ -787,6 +1076,198 @@
         doc.save(`Mandir_Statement_${s.name.replace(/\s+/g,"_")}_${Date.now()}.pdf`);
       }
 
+      /* ═══ MEMBER ID CARD PDF ═════════════════════════════════════════
+   Generates a CR80 landscape ID card (85.6 × 54 mm).
+   Uses jsPDF already loaded. No server call needed.
+   ═══════════════════════════════════════════════════════════════ */
+ // ✅ Helper: load image → base64
+ function loadImageAsBase64(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+
+    img.onload = function () {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      resolve(canvas.toDataURL("image/png"));
+    };
+
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+async function downloadMemberIDCard() {
+  try {
+    const { jsPDF } = window.jspdf;
+
+    const s = JSON.parse(localStorage.getItem("session") || "{}");
+    const myProfile = (typeof users !== "undefined" ? users : [])
+      .find(u => String(u.UserId) === String(s.userId));
+
+    if (!myProfile) {
+      toast("Profile not loaded", "warn");
+      return;
+    }
+
+    const W = 85.6;
+    const H = 54;
+
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: [H, W]
+    });
+
+    const INK   = [30, 41, 59];
+    const GOLD  = [247, 160, 26];
+    const WHITE = [255, 255, 255];
+    const LIGHT = [248, 250, 252];
+    const MUTED = [100, 116, 139];
+
+    // ✅ Load logo
+    let LOGO = null;
+    try {
+      LOGO = await loadImageAsBase64("image/logo.png");
+    } catch (e) {
+      console.log("Logo load failed");
+    }
+
+    // Background
+    doc.setFillColor(...LIGHT);
+    doc.rect(0, 0, W, H, "F");
+
+    // Header
+    doc.setFillColor(...INK);
+    doc.rect(0, 0, W, 14, "F");
+
+    // ✅ LOGO (perfect aligned box area)
+    if (LOGO) {
+      const logoSize = 15;      // bigger size
+      const logoX = 1.8;          // left margin
+      const logoY = 0.4;          // vertical center in header
+
+      doc.addImage(LOGO, "PNG", logoX, logoY, logoSize, logoSize);
+    }
+
+    // Gold line
+    doc.setFillColor(...GOLD);
+    doc.rect(0, 14, W, 1.2, "F");
+
+    // ✅ Title aligned after logo
+    const textStartX = 18; // shifted based on logo
+
+    doc.setTextColor(...GOLD);
+    doc.setFontSize(10);
+    doc.setFont(undefined, "bold");
+    doc.text("SHREE HANUMAN MANDIR", textStartX, 6);
+
+    // Address
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(6);
+    doc.setFont(undefined, "normal");
+    doc.text("Paliya, Sultanpur, Uttar Pradesh", textStartX, 11);
+
+    // 🔲 Square Photo
+    const photoSize = 20;
+    const photoX = 4;
+    const photoY = 22;
+
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.8);
+    doc.rect(photoX, photoY, photoSize, photoSize, "S");
+
+    doc.setFillColor(...INK);
+    doc.rect(photoX + 0.5, photoY + 0.5, photoSize - 1, photoSize - 1, "F");
+
+    const initials = (myProfile.Name || "?")
+      .split(" ")
+      .map(w => w[0] || "")
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
+    doc.setTextColor(...GOLD);
+    doc.setFontSize(10);
+    doc.setFont(undefined, "bold");
+    doc.text(
+      initials,
+      photoX + photoSize / 2,
+      photoY + photoSize / 2 + 3,
+      { align: "center" }
+    );
+
+    // Details
+    const detX = photoX + photoSize + 4;
+
+    doc.setTextColor(...INK);
+    doc.setFontSize(10);
+    doc.setFont(undefined, "bold");
+    doc.text(String(myProfile.Name || "—"), detX, 22);
+
+    doc.setFontSize(6.5);
+    doc.setTextColor(...MUTED);
+    doc.text(String(myProfile.Role || "User"), detX, 27);
+
+    doc.setDrawColor(226, 232, 240);
+    doc.line(detX, 29, W - 4, 29);
+
+    doc.setFontSize(7);
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(...MUTED);
+    doc.text("MEMBER ID", detX, 34);
+
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(...INK);
+    doc.text(String(myProfile.UserId || "—"), detX + 22, 34);
+
+    doc.setFont(undefined, "bold");
+    doc.setTextColor(...MUTED);
+    doc.text("MOBILE", detX, 39);
+
+    doc.setFont(undefined, "normal");
+    doc.setTextColor(...INK);
+    doc.text(String(myProfile.Mobile || "—"), detX + 22, 39);
+
+    if (myProfile.Village) {
+      doc.setFont(undefined, "bold");
+      doc.setTextColor(...MUTED);
+      doc.text("VILLAGE", detX, 44);
+
+      doc.setFont(undefined, "normal");
+      doc.setTextColor(...INK);
+      doc.text(String(myProfile.Village), detX + 22, 44);
+    }
+
+    // Footer
+    doc.setFillColor(...INK);
+    doc.rect(0, H - 8, W, 8, "F");
+
+    doc.setTextColor(...GOLD);
+    doc.setFontSize(6);
+    doc.setFont(undefined, "bold");
+    doc.text("Jai Shree Ram", 4, H - 3);
+
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(5.5);
+    const issued = "Issued: " + new Date().toLocaleDateString("en-IN");
+    doc.text(issued, W - 4, H - 3, { align: "right" });
+
+    // Border
+    doc.setDrawColor(203, 213, 225);
+    doc.rect(0.2, 0.2, W - 0.4, H - 0.4);
+
+    doc.save("IDCard_" + (myProfile.Name || "member") + ".pdf");
+
+  } catch (err) {
+    toast("❌ Error: " + err.message, "error");
+  }
+}
       function shareStatementWhatsApp(){
         let s=JSON.parse(localStorage.getItem("session")),fY=document.getElementById("filterYear").value,fM=document.getElementById("filterMonth").value;
         let filtered=data.filter(c=>(!fY||String(c.Year)===fY)&&(!fM||c.ForMonth===fM));
@@ -801,5 +1282,41 @@
       init();
       (function(){const s=JSON.parse(localStorage.getItem("session")||"null");if(s&&s.userId)broadcastSessionRevoke(s.userId);})();
     </script>
+
+<script>
+  /* ── Service Worker registration ── */
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("./sw.js").then(function(reg) {
+   
+        // Detect when a new SW version is waiting — prompt user to refresh
+        reg.addEventListener("updatefound", function() {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", function() {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              // New version available — show update toast if toast() is available
+              // Otherwise show a simple confirm dialog
+              if (typeof toast === "function") {
+                toast("🔄 App updated — tap here to refresh", "warn");
+                // Auto-reload after 4 seconds so admin always gets latest code
+                setTimeout(function() { location.reload(); }, 4000);
+              } else {
+                if (confirm("App updated. Reload now for the latest version?")) {
+                  location.reload();
+                }
+              }
+            }
+          });
+        });
+   
+      }).catch(function(err) {
+        // SW registration failed — app still works normally without it
+        console.warn("Service Worker registration failed:", err);
+      });
+    });
+  }
+  </script>
+
   </body>
 </html>

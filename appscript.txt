@@ -20,7 +20,7 @@ const CFG = {
   // For emails, host logo.PNG on Google Drive (share publicly) and paste the
   // direct image URL below. Format: https://lh3.googleusercontent.com/d/FILE_ID
   // Leave empty to use the Om symbol fallback in emails.
-  logoEmailUrl:  "",             // e.g. "https://lh3.googleusercontent.com/d/YOUR_FILE_ID"
+  logoEmailUrl: "https://lh3.googleusercontent.com/d/1S0RbjNkxhhGsTMI1fPlLSOlkLi87ZHhs",            // e.g. "https://lh3.googleusercontent.com/d/YOUR_FILE_ID"
 };
 
 const SHEETS = {
@@ -36,6 +36,8 @@ const SHEETS = {
   ANNOUNCEMENT:  "ANNOUNCEMENT",
   BROADCAST:     "BROADCAST",
   SETTINGS:      "SETTINGS",      // NEW: stores email automation toggles
+  EVENTS:         "EVENTS",
+  EVENT_EXPENSES: "EVENT_EXPENSES",
 };
 
 // ── Hash password (SHA-256, matches client-side sha256())
@@ -552,26 +554,33 @@ function doGet(e) {
     let users   = getSheetData(SHEETS.USERS);
     let mobile  = sanitize(e.parameter.mobile, 15);
     let pwdHash = sanitize(e.parameter.password, 128);
-    let user = users.find(u => String(u.Mobile) === mobile && String(u.Password) === pwdHash);
-    if (!user) {
-      result = { status: "fail" };
-    } else if (String(user.Status||"").toLowerCase() === "pending") {
-      result = { status: "pending", message: "Your registration is pending admin approval. You will receive an email once approved." };
-    } else if (String(user.Status||"").toLowerCase() === "rejected") {
-      result = { status: "error", message: "Your registration was not approved. Please contact the temple admin." };
-    } else if (user.Status === "Inactive") {
-      result = { status: "error", message: "Account is deactivated. Please contact admin." };
+     const _rl = _checkLoginRate(mobile);
+     if (_rl.blocked) {
+       result = { status: "fail", message: _rl.message };
     } else {
-      let safeUser = Object.assign({}, user);
-      delete safeUser.Password;
-      const deviceInfo = sanitize(e.parameter.deviceInfo || "", 200);
-      logAction(
-        safeUser.Name || "User",
-        "Login",
-        "Mobile: " + mobile + " | Role: " + (safeUser.Role || "User") + " | UserId: " + (safeUser.UserId || ""),
-        deviceInfo
-      );
-      result = { status: "success", user: safeUser };
+      let user = users.find(u => String(u.Mobile) === mobile && String(u.Password) === pwdHash);
+      if (!user  || user.Status !== "Active") {
+        _recordLoginFail(mobile);
+        result = { status: "fail" };
+      } else if (String(user.Status||"").toLowerCase() === "pending") {
+        result = { status: "pending", message: "Your registration is pending admin approval. You will receive an email once approved." };
+      } else if (String(user.Status||"").toLowerCase() === "rejected") {
+        result = { status: "error", message: "Your registration was not approved. Please contact the temple admin." };
+      } else if (user.Status === "Inactive") {
+        result = { status: "error", message: "Account is deactivated. Please contact admin." };
+      } else {
+        _clearLoginFail(mobile);
+        let safeUser = Object.assign({}, user);
+        delete safeUser.Password;
+        const deviceInfo = sanitize(e.parameter.deviceInfo || "", 200);
+        logAction(
+          safeUser.Name || "User",
+          "Login",
+          "Mobile: " + mobile + " | Role: " + (safeUser.Role || "User") + " | UserId: " + (safeUser.UserId || ""),
+          deviceInfo
+        );
+        result = { status: "success", user: safeUser };
+      }
     }
   }
 
@@ -654,11 +663,16 @@ function doGet(e) {
 
   // ── READ DATA
   else if (action === "getUsers")         result = getSheetData(SHEETS.USERS);
-  else if (action === "getTypes")         result = getSheetData(SHEETS.TYPES);
-  else if (action === "getExpenseTypes")  result = getSheetData(SHEETS.EXPENSE_TYPES);
-  else if (action === "getOccasions")     result = getSheetData(SHEETS.OCCASIONS);
+  else if (action === "getTypes")         result = _cachedSheet(SHEETS.TYPES,         "c_types",    600);
+  else if (action === "getExpenseTypes")  result = _cachedSheet(SHEETS.EXPENSE_TYPES, "c_exptypes", 600);
+  else if (action === "getOccasions")     result = _cachedSheet(SHEETS.OCCASIONS,     "c_occasions",600);
   else if (action === "getContributions") result = getSheetData(SHEETS.CONTRIBUTIONS);
   else if (action === "getExpenses")      result = getSheetData(SHEETS.EXPENSES);
+  else if (action === "getEventData")     { result = { events: getSheetData(SHEETS.EVENTS), eventExpenses: getSheetData(SHEETS.EVENT_EXPENSES) }; }
+  else if (action === "addEvent")         { result = _addEvent(e.parameter); }
+  else if (action === "updateEvent")      { result = _updateEvent(e.parameter); }
+  else if (action === "deleteEvent")      { result = _deleteEvent(e.parameter); }
+  else if (action === "addEventExpense")  { result = _addEventExpense(e.parameter); }
   else if (action === "getYearConfig")    result = getSheetData("YEAR_CONFIG");
 
   // ── IMPROVEMENT #1: SEND RECEIPT EMAIL ON DEMAND (from admin Email button)
@@ -1011,6 +1025,12 @@ function doGet(e) {
       result = { count: all.filter(u => String(u.Status || "").toLowerCase() === "pending").length };
     } catch(err) { result = { count: 0 }; }
   }
+
+  else if (action === "getYearlySummary") { result = getYearlySummary(); }
+
+  else if (action === "getPublicStats") {
+      result = getPublicStats();
+  }
  
   else if (action === "getUsersByStatus") {
     const filterStatus = sanitize(e.parameter.status || "all", 20);
@@ -1103,6 +1123,10 @@ function doGet(e) {
     }
   }
 
+  else if (action === "changePassword") {
+      result = _changePassword(e.parameter);
+  }
+
   else if (action === "deleteUser") {
     let id = sanitize(e.parameter.UserId, 30);
     result = deleteRow(SHEETS.USERS, id);
@@ -1112,20 +1136,22 @@ function doGet(e) {
   else if (action === "addType") {
     addRow(SHEETS.TYPES, [generateId(), sanitize(e.parameter.TypeName, 100)]);
     logAction("Admin", "Add Type", e.parameter.TypeName);
+    _bustSheetCache("c_types");
     result = { status: "success" };
   }
   else if (action === "deleteType") {
     let id = sanitize(e.parameter.TypeId, 30);
     result = deleteRow(SHEETS.TYPES, id);
+    _bustSheetCache("c_types");
     if (result.status === "deleted") logAction("Admin", "Delete Type", "TypeId: " + id);
   }
-  else if (action === "updateType")      { result = updateSingle(SHEETS.TYPES, sanitize(e.parameter.TypeId,30), sanitize(e.parameter.TypeName,100)); }
-  else if (action === "addOccasion")     { addRow(SHEETS.OCCASIONS,[generateId(),sanitize(e.parameter.OccasionName,100)]); result={status:"success"}; }
-  else if (action === "deleteOccasion")  { result = deleteRow(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30)); }
-  else if (action === "updateOccasion")  { result = updateSingle(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30), sanitize(e.parameter.OccasionName,100)); }
-  else if (action === "addExpenseType")  { addRow(SHEETS.EXPENSE_TYPES,[generateId(),sanitize(e.parameter.Name,100)]); result={status:"success"}; }
-  else if (action === "deleteExpenseType"){ result=deleteRow(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30)); }
-  else if (action === "updateExpenseType"){ result=updateSingle(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30),sanitize(e.parameter.Name,100)); }
+  else if (action === "updateType")      { result = updateSingle(SHEETS.TYPES, sanitize(e.parameter.TypeId,30), sanitize(e.parameter.TypeName,100)); _bustSheetCache("c_types");}
+  else if (action === "addOccasion")     { addRow(SHEETS.OCCASIONS,[generateId(),sanitize(e.parameter.OccasionName,100)]); _bustSheetCache("c_occasions"); result={status:"success"}; }
+  else if (action === "deleteOccasion")  { result = deleteRow(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30)); _bustSheetCache("c_occasions");}
+  else if (action === "updateOccasion")  { result = updateSingle(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30), sanitize(e.parameter.OccasionName,100)); _bustSheetCache("c_occasions");}
+  else if (action === "addExpenseType")  { addRow(SHEETS.EXPENSE_TYPES,[generateId(),sanitize(e.parameter.Name,100)]); _bustSheetCache("c_exptypes"); result={status:"success"}; }
+  else if (action === "deleteExpenseType"){ result=deleteRow(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30));  _bustSheetCache("c_exptypes");}
+  else if (action === "updateExpenseType"){ result=updateSingle(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30),sanitize(e.parameter.Name,100)); _bustSheetCache("c_exptypes");}
 
   // ════════════════════════════════════════════════════════════════
   //  IMPROVEMENT #1 + #3 — ADD CONTRIBUTION
@@ -1264,6 +1290,88 @@ function doGet(e) {
   else if (action === "clearAnnouncement")      { result = _clearAnnouncement(e); }
   else if (action === "saveBroadcast")          { result = _saveBroadcast(e); }
 
+      else if (action === "removeExpenseReceipt" || action === "removeOneExpenseReceipt") {
+      // removeOneExpenseReceipt: removes a single URL from the ReceiptURLs array
+      try {
+        const expId     = sanitize(e.parameter.Id, 30);
+        const urlToRemove = sanitize(e.parameter.ReceiptURL || e.parameter.OldReceiptURL, 500);
+        const adminName = sanitize(e.parameter.AdminName, 100) || "Admin";
+        const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EXPENSES);
+        const data2   = sheet.getDataRange().getValues();
+        const hdrs    = data2[0];
+        const rcptCol  = hdrs.indexOf("ReceiptURL");
+        const urlsCol  = hdrs.indexOf("ReceiptURLs");
+        for (let i = 1; i < data2.length; i++) {
+          if (String(data2[i][0]) === expId) {
+            // Parse existing array
+            let urls = [];
+            if (urlsCol !== -1 && data2[i][urlsCol]) {
+              try { urls = JSON.parse(data2[i][urlsCol]); } catch(ex) {}
+            }
+            if (!Array.isArray(urls) || urls.length === 0) {
+              // Legacy: single URL in ReceiptURL column
+              if (rcptCol !== -1) urls = [String(data2[i][rcptCol] || "")].filter(Boolean);
+            }
+            // Trash the Drive file being removed
+            if (urlToRemove && urlToRemove.includes("lh3.googleusercontent.com/d/")) {
+              try {
+                const fid = urlToRemove.split("/d/")[1].split("?")[0].trim();
+                if (fid && fid.length > 10) DriveApp.getFileById(fid).setTrashed(true);
+              } catch(driveErr) {}
+            }
+            // Remove the URL from array
+            urls = urls.filter(function(u) { return u !== urlToRemove; });
+            const newJson = JSON.stringify(urls);
+            const firstUrl = urls[0] || "";
+            if (urlsCol !== -1) sheet.getRange(i + 1, urlsCol + 1).setValue(newJson);
+            if (rcptCol !== -1) sheet.getRange(i + 1, rcptCol + 1).setValue(firstUrl);
+            SpreadsheetApp.flush();
+            logAction(adminName, "removeOneExpenseReceipt", "ExpenseId: " + expId);
+            result = { status: "success", receiptUrls: newJson, receiptUrl: firstUrl };
+            break;
+          }
+        }
+        if (!result || !result.status) result = { status: "error", message: "Expense not found." };
+      } catch(err) {
+        result = { status: "error", message: err.message };
+      }
+    }
+
+    else if (action === "removeAllExpenseReceipts") {
+      try {
+        const expId     = sanitize(e.parameter.Id, 30);
+        const adminName = sanitize(e.parameter.AdminName, 100) || "Admin";
+        const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EXPENSES);
+        const data2   = sheet.getDataRange().getValues();
+        const hdrs    = data2[0];
+        const rcptCol  = hdrs.indexOf("ReceiptURL");
+        const urlsCol  = hdrs.indexOf("ReceiptURLs");
+        // Parse URLs to trash from client-sent list
+        let urlsToTrash = [];
+        try { urlsToTrash = JSON.parse(sanitize(e.parameter.OldReceiptURLs, 5000) || "[]"); } catch(ex) {}
+        urlsToTrash.forEach(function(u) {
+          if (u && u.includes("lh3.googleusercontent.com/d/")) {
+            try {
+              const fid = u.split("/d/")[1].split("?")[0].trim();
+              if (fid && fid.length > 10) DriveApp.getFileById(fid).setTrashed(true);
+            } catch(driveErr) {}
+          }
+        });
+        for (let i = 1; i < data2.length; i++) {
+          if (String(data2[i][0]) === expId) {
+            if (urlsCol !== -1) sheet.getRange(i + 1, urlsCol + 1).setValue("[]");
+            if (rcptCol !== -1) sheet.getRange(i + 1, rcptCol + 1).setValue("");
+            SpreadsheetApp.flush();
+            break;
+          }
+        }
+        logAction(adminName, "removeAllExpenseReceipts", "ExpenseId: " + expId);
+        result = { status: "success" };
+      } catch(err) {
+        result = { status: "error", message: err.message };
+      }
+    }
+
   else { result = { error: "Invalid action: " + action }; }
 
   return ContentService
@@ -1274,6 +1382,162 @@ function doGet(e) {
 // ════════════════════════════════════════════════════════════════
 //  HELPERS
 // ════════════════════════════════════════════════════════════════
+
+function _loginCacheKey(mobile) {
+  // Short key: "lfail_" + last 4 digits of mobile
+  // Not truly secure but prevents raw mobile exposure in cache keys
+  // and is sufficient for rate-limiting purposes
+  return "lfail_" + String(mobile).slice(-4) + "_" + String(mobile).length;
+}
+ 
+function _checkLoginRate(mobile) {
+  if (!mobile) return { blocked: false };
+  try {
+    const cache = CacheService.getScriptCache();
+    const key   = _loginCacheKey(mobile);
+    const raw   = cache.get(key);
+    if (!raw) return { blocked: false };
+ 
+    const rec = JSON.parse(raw);
+    if (!rec || !rec.count) return { blocked: false };
+ 
+    // Block after 10 server-side attempts within 15 minutes
+    if (rec.count >= 10) {
+      return {
+        blocked: true,
+        message: "Too many login attempts. Please wait 15 minutes before trying again."
+      };
+    }
+    return { blocked: false };
+  } catch(e) {
+    return { blocked: false }; // on cache error, never block legitimate users
+  }
+}
+ 
+function _recordLoginFail(mobile) {
+  if (!mobile) return;
+  try {
+    const cache = CacheService.getScriptCache();
+    const key   = _loginCacheKey(mobile);
+    const raw   = cache.get(key);
+    let rec     = raw ? JSON.parse(raw) : { count: 0 };
+    rec.count   = (rec.count || 0) + 1;
+    // TTL: 15 minutes (900 seconds) — resets window on each failure
+    cache.put(key, JSON.stringify(rec), 900);
+  } catch(e) { /* silent — never crash login on cache error */ }
+}
+ 
+function _clearLoginFail(mobile) {
+  if (!mobile) return;
+  try {
+    CacheService.getScriptCache().remove(_loginCacheKey(mobile));
+  } catch(e) {}
+}
+
+// ── Server-side sheet cache helper (10-min TTL via CacheService)
+// Used for master data that rarely changes: Types, Occasions, ExpenseTypes.
+// Cache key is short (c_types etc.) to stay under CacheService 250-char key limit.
+// On any write that modifies these sheets, call _bustSheetCache(key) to invalidate.
+function _cachedSheet(sheetName, cacheKey, ttlSeconds) {
+  const cache = CacheService.getScriptCache();
+  const hit   = cache.get(cacheKey);
+  if (hit) {
+    try { return JSON.parse(hit); } catch(e) { /* corrupt cache — fall through */ }
+  }
+  const fresh = getSheetData(sheetName);
+  try { cache.put(cacheKey, JSON.stringify(fresh), ttlSeconds); } catch(e) { /* silent */ }
+  return fresh;
+}
+ 
+// ── Bust a specific server-side cache key after a write
+// Call this inside addType, deleteType, addOccasion etc. after the write completes.
+function _bustSheetCache(cacheKey) {
+  try { CacheService.getScriptCache().remove(cacheKey); } catch(e) {}
+}
+
+function getYearlySummary() {
+  try {
+    const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
+    const expenses      = getSheetData(SHEETS.EXPENSES);
+    const yearConfigRaw = getSheetData("YEAR_CONFIG");
+ 
+    // ── Collect all years present in contributions or expenses
+    const yearSet = new Set();
+    contributions.forEach(c => {
+      const y = parseInt(c.Year, 10);
+      if (!isNaN(y) && y > 2000) yearSet.add(y);
+    });
+    expenses.forEach(e => {
+      const y = parseInt(e.Year, 10);
+      if (!isNaN(y) && y > 2000) yearSet.add(y);
+    });
+ 
+    // Also include any years defined in YEAR_CONFIG even if no transactions yet
+    yearConfigRaw.forEach(row => {
+      const y = parseInt(row.Year || row.year, 10);
+      if (!isNaN(y) && y > 2000) yearSet.add(y);
+    });
+ 
+    // Sort years ascending
+    const years = Array.from(yearSet).sort((a, b) => a - b);
+ 
+    // ── Build a lookup for opening balances from YEAR_CONFIG
+    // Supports column names: OpeningBalance, Opening_Balance, opening_balance, Balance, balance
+    const openingMap = {};
+    yearConfigRaw.forEach(row => {
+      const y = parseInt(row.Year || row.year, 10);
+      if (isNaN(y)) return;
+      const ob = Number(
+        row.OpeningBalance  || row.Opening_Balance  ||
+        row.opening_balance || row.Balance          ||
+        row.balance         || 0
+      );
+      openingMap[y] = isNaN(ob) ? 0 : ob;
+    });
+ 
+    // ── Build summary rows with carry-forward chain
+    const rows = [];
+    let carryForward = 0; // running carry-forward from previous year
+ 
+    years.forEach(year => {
+      // Opening balance = YEAR_CONFIG value OR carry-forward from last year
+      // YEAR_CONFIG takes priority (admin may have set an explicit opening)
+      const configOpening = openingMap[year] || 0;
+      // Use explicit config opening if set, else use carry-forward
+      const openingBalance = configOpening > 0 ? configOpening : carryForward;
+ 
+      // Total contributions for this year
+      const totalCollection = contributions
+        .filter(c => parseInt(c.Year, 10) === year)
+        .reduce((sum, c) => sum + Number(c.Amount || 0), 0);
+ 
+      // Total expenses for this year
+      const totalExpense = expenses
+        .filter(e => parseInt(e.Year, 10) === year)
+        .reduce((sum, e) => sum + Number(e.Amount || 0), 0);
+ 
+      // Closing balance = opening + collection - expense
+      const closingBalance = openingBalance + totalCollection - totalExpense;
+ 
+      // This year's closing becomes next year's carry-forward
+      carryForward = closingBalance;
+ 
+      rows.push({
+        year:            year,
+        openingBalance:  openingBalance,
+        totalCollection: totalCollection,
+        totalExpense:    totalExpense,
+        closingBalance:  closingBalance,
+        carryForward:    closingBalance  // same value — explicit for UI clarity
+      });
+    });
+ 
+    return { status: "ok", rows: rows };
+ 
+  } catch(err) {
+    return { status: "error", message: err.message, rows: [] };
+  }
+}
 
 function updateSingle(sheetName, id, value) {
   let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
@@ -1313,6 +1577,7 @@ function updateUser(p) {
       // Village and Address — only update when explicitly provided (not undefined)
       if (p.Village !== undefined) setCol("Village", sanitize(p.Village, 100));
       if (p.Address !== undefined) setCol("Address", sanitize(p.Address, 300));
+      if (p.MonthlyTarget !== undefined) setCol("MonthlyTarget", Number(p.MonthlyTarget||0));
       SpreadsheetApp.flush();
       found = true; break;
     }
@@ -1366,6 +1631,11 @@ function updateExpenseRow(name, body) {
       sheet.getRange(i+1,5).setValue(sanitize(body.Year,          10));
       sheet.getRange(i+1,6).setValue(sanitize(body.ExpenseTypeId, 30));
       sheet.getRange(i+1,7).setValue(sanitize(body.ForMonth,      20));
+      const rcpHdrs = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+    const rcpCol  = rcpHdrs.indexOf("ReceiptURL");
+    if (body.ReceiptURL !== undefined && rcpCol !== -1)
+      sheet.getRange(i+1, rcpCol+1).setValue(sanitize(body.ReceiptURL||"", 500));
+    return { status: "updated" };
       return { status: "updated" };
     }
   }
@@ -1524,6 +1794,43 @@ function doPost(e) {
       const userUpdateRes = updateUser({ UserId:data.UserId, Name:data.Name, Mobile:data.Mobile||"", Role:data.Role, Password:"", Email:data.Email||"", Status:data.Status||"Active", PhotoURL:photoUrl, AdminName:data.AdminName||"User", Village:data.Village||"", Address:data.Address||"" });
       logAction(data.AdminName||"User","Upload Photo","UserId: "+data.UserId);
       result = { status:"success", photoUrl:photoUrl };
+          } else if (data.action === "uploadExpenseReceipt") {
+      if (!data.base64 || !data.fileName || !data.expenseId) {
+        return ContentService.createTextOutput(
+          JSON.stringify({status:"error",message:"Missing fields."})
+        ).setMimeType(ContentService.MimeType.JSON);
+      }
+      const receiptUrl = uploadUserPhoto(data.base64, sanitize(data.fileName, 100));
+      // Parse existing URLs array (sent from client) and append new URL
+      let existingUrls = [];
+      try { existingUrls = JSON.parse(data.existingURLs || "[]"); } catch(ex) {}
+      if (!Array.isArray(existingUrls)) existingUrls = [];
+      existingUrls.push(receiptUrl);
+      const newUrlsJson = JSON.stringify(existingUrls);
+      // Save to EXPENSES sheet — update both ReceiptURLs (array) and ReceiptURL (legacy first item)
+      const expSheet  = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EXPENSES);
+      const expData   = expSheet.getDataRange().getValues();
+      const expHdrs   = expData[0];
+      // Ensure ReceiptURLs column exists (add if missing)
+      let urlsCol = expHdrs.indexOf("ReceiptURLs");
+      if (urlsCol === -1) {
+        urlsCol = expHdrs.length;
+        expSheet.getRange(1, urlsCol + 1).setValue("ReceiptURLs");
+      }
+      const rcptCol = expHdrs.indexOf("ReceiptURL");
+      for (let i = 1; i < expData.length; i++) {
+        if (String(expData[i][0]) === String(sanitize(data.expenseId, 30))) {
+          expSheet.getRange(i + 1, urlsCol + 1).setValue(newUrlsJson);
+          if (rcptCol !== -1) expSheet.getRange(i + 1, rcptCol + 1).setValue(existingUrls[0] || receiptUrl);
+          SpreadsheetApp.flush();
+          break;
+        }
+      }
+      logAction(sanitize(data.AdminName,100)||"Admin", "uploadExpenseReceipt", "ExpenseId: " + data.expenseId);
+      return ContentService.createTextOutput(
+        JSON.stringify({status:"success", receiptUrl: existingUrls[0] || receiptUrl, receiptUrls: newUrlsJson})
+      ).setMimeType(ContentService.MimeType.JSON);
+ 
     } else if (data.action === "uploadGalleryPhoto") {
       if (!data.base64 || !data.fileName) return ContentService.createTextOutput(JSON.stringify({status:"error",message:"Missing base64 or fileName."})).setMimeType(ContentService.MimeType.JSON);
       const photoUrl = uploadUserPhoto(data.base64, sanitize(data.fileName,100));
@@ -1935,3 +2242,214 @@ function _buildRejectionEmail(user, reason) {
   </td></tr>
 </table></td></tr></table></body></html>`;
 }
+
+// ── Public stats — safe aggregated data only, no personal info
+function getPublicStats() {
+  try {
+    const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
+    const expenses      = getSheetData(SHEETS.EXPENSES);
+    const users         = getSheetData(SHEETS.USERS);
+    const goals         = getSheetData(SHEETS.GOALS);
+    const yearConfigRaw = getSheetData("YEAR_CONFIG");
+ 
+    const curYear = new Date().getFullYear();
+ 
+    // ── This year totals
+    const thisYearCollection = contributions
+      .filter(c => parseInt(c.Year,10) === curYear)
+      .reduce((s,c) => s + Number(c.Amount||0), 0);
+ 
+    const thisYearExpense = expenses
+      .filter(e => parseInt(e.Year,10) === curYear)
+      .reduce((s,e) => s + Number(e.Amount||0), 0);
+ 
+    // ── Active member count (no Admin, no Inactive)
+    const memberCount = users.filter(u =>
+      String(u.Role||"").toLowerCase() !== "admin" &&
+      String(u.Status||"Active").toLowerCase() === "active"
+    ).length;
+ 
+    // ── Year summary rows (reuse getYearlySummary logic)
+    const summary = getYearlySummary();
+    const yearRows = summary.rows || [];
+ 
+    // ── Current balance = last year's closing balance
+    const balance = yearRows.length > 0
+      ? yearRows[yearRows.length - 1].closingBalance
+      : 0;
+ 
+    // ── Goals — return only Name, Target, Current, Status (no IDs)
+    const safeGoals = goals.map(g => ({
+      Name:    g.Name    || g.GoalName || "",
+      Target:  Number(g.Target  || g.TargetAmount  || 0),
+      Current: Number(g.Current || g.CurrentAmount || 0),
+      Status:  g.Status || "Enabled"
+    }));
+ 
+    const updatedAt = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MMM-yyyy hh:mm a");
+ 
+    return {
+      status:             "ok",
+      thisYearCollection: thisYearCollection,
+      thisYearExpense:    thisYearExpense,
+      balance:            balance,
+      memberCount:        memberCount,
+      yearRows:           yearRows,
+      goals:              safeGoals,
+      updatedAt:          updatedAt
+    };
+ 
+  } catch(err) {
+    return { status: "error", message: err.message };
+  }
+}
+
+  function _changePassword(p) {
+    try {
+      const userId     = sanitize(p.UserId,      30);
+      const oldHashRaw = sanitize(p.OldPassword, 128);
+      const newHashRaw = sanitize(p.NewPassword, 128);
+ 
+      if (!userId || !oldHashRaw || !newHashRaw) {
+        return { status: "error", message: "Missing required fields." };
+      }
+      // Both must be 64-char SHA-256 hashes (client always sends hashed values)
+      if (oldHashRaw.length !== 64 || newHashRaw.length !== 64) {
+        return { status: "error", message: "Invalid password format." };
+      }
+      // Cannot set same password
+      if (oldHashRaw === newHashRaw) {
+        return { status: "error", message: "New password must be different." };
+      }
+ 
+      const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+      const data    = sheet.getDataRange().getValues();
+      const headers = data[0];
+      const pwdCol  = headers.indexOf("Password");
+      const idCol   = 0; // UserId is always first column
+ 
+      if (pwdCol === -1) return { status: "error", message: "Password column not found." };
+ 
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][idCol]) === userId) {
+          const storedHash = String(data[i][pwdCol] || "").trim().toLowerCase();
+          // Verify old password matches stored hash
+          if (storedHash !== oldHashRaw.toLowerCase()) {
+            return { status: "error", message: "Current password is incorrect." };
+          }
+          // Write new password hash
+          sheet.getRange(i + 1, pwdCol + 1).setValue(newHashRaw.toLowerCase());
+          SpreadsheetApp.flush();
+          logAction("User", "Change Password", "UserId: " + userId);
+          return { status: "success" };
+        }
+      }
+      return { status: "error", message: "User not found." };
+    } catch(err) {
+      return { status: "error", message: err.message };
+    }
+  }
+    function _addEvent(p) {
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EVENTS);
+      if (!sheet) return { status:"error", message:"EVENTS sheet not found." };
+      const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+      const row = headers.map(function(h) {
+        if (h === "EventId")     return sanitize(p.EventId, 50) || generateId();
+        if (h === "EventName")   return sanitize(p.EventName, 200);
+        if (h === "Category")    return sanitize(p.Category, 50);
+        if (h === "StartDate")   return sanitize(p.StartDate, 20);
+        if (h === "EndDate")     return sanitize(p.EndDate, 20);
+        if (h === "Budget")      return Number(p.Budget || 0);
+        if (h === "Status")      return sanitize(p.Status, 30) || "Upcoming";
+        if (h === "Description") return sanitize(p.Description, 500);
+        if (h === "CreatedAt")   return formatDate();
+        if (h === "AdminName")   return sanitize(p.AdminName, 100);
+        return "";
+      });
+      sheet.appendRow(row);
+      logAction(sanitize(p.AdminName,100)||"Admin", "addEvent", sanitize(p.EventName,100));
+      return { status:"success" };
+    } catch(err) { return { status:"error", message:err.message }; }
+  }
+ 
+  function _updateEvent(p) {
+    try {
+      const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EVENTS);
+      const data    = sheet.getDataRange().getValues();
+      const headers = data[0];
+      const eventId = sanitize(p.EventId, 50);
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][headers.indexOf("EventId")]) === eventId) {
+          function setECol(h, v) {
+            const c = headers.indexOf(h);
+            if (c !== -1) sheet.getRange(i+1, c+1).setValue(v);
+          }
+          setECol("EventName",   sanitize(p.EventName,200));
+          setECol("Category",    sanitize(p.Category,50));
+          setECol("Status",      sanitize(p.Status,30));
+          setECol("StartDate",   sanitize(p.StartDate,20));
+          setECol("EndDate",     sanitize(p.EndDate,20));
+          setECol("Budget",      Number(p.Budget||0));
+          setECol("Description", sanitize(p.Description,500));
+          SpreadsheetApp.flush();
+          logAction(sanitize(p.AdminName,100)||"Admin","updateEvent",eventId);
+          return { status:"updated" };
+        }
+      }
+      return { status:"not found" };
+    } catch(err) { return { status:"error", message:err.message }; }
+  }
+ 
+  function _deleteEvent(p) {
+    try {
+      const eventId  = sanitize(p.EventId, 50);
+      const adminName = sanitize(p.AdminName,100) || "Admin";
+      // Delete event row
+      const evSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EVENTS);
+      const evData  = evSheet.getDataRange().getValues();
+      const evHdrs  = evData[0];
+      for (let i = evData.length-1; i >= 1; i--) {
+        if (String(evData[i][evHdrs.indexOf("EventId")]) === eventId) {
+          evSheet.deleteRow(i+1); break;
+        }
+      }
+      // Delete all linked event expenses
+      const exSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EVENT_EXPENSES);
+      if (exSheet) {
+        const exData = exSheet.getDataRange().getValues();
+        const exHdrs = exData[0];
+        const eidCol = exHdrs.indexOf("EventId");
+        for (let i = exData.length-1; i >= 1; i--) {
+          if (String(exData[i][eidCol]) === eventId) exSheet.deleteRow(i+1);
+        }
+      }
+      SpreadsheetApp.flush();
+      logAction(adminName, "deleteEvent", eventId);
+      return { status:"deleted" };
+    } catch(err) { return { status:"error", message:err.message }; }
+  }
+ 
+  function _addEventExpense(p) {
+    try {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EVENT_EXPENSES);
+      if (!sheet) return { status:"error", message:"EVENT_EXPENSES sheet not found." };
+      const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+      const row = headers.map(function(h) {
+        if (h === "Id")           return sanitize(p.Id, 50) || generateId();
+        if (h === "EventId")      return sanitize(p.EventId, 50);
+        if (h === "Title")        return sanitize(p.Title, 200);
+        if (h === "Amount")       return Number(p.Amount || 0);
+        if (h === "PaymentDate")  return formatDate();
+        if (h === "ExpenseTypeId")return sanitize(p.ExpenseTypeId, 30);
+        if (h === "ForMonth")     return sanitize(p.ForMonth, 20);
+        if (h === "Note")         return sanitize(p.Note, 300);
+        if (h === "AdminName")    return sanitize(p.AdminName, 100);
+        return "";
+      });
+      sheet.appendRow(row);
+      logAction(sanitize(p.AdminName,100)||"Admin","addEventExpense",
+        "EventId:"+sanitize(p.EventId,50)+" Title:"+sanitize(p.Title,100));
+      return { status:"success" };
+    } catch(err) { return { status:"error", message:err.message }; }
+  }

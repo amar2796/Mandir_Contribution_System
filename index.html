@@ -3,6 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.svg"/>
+  <meta name="theme-color" content="#f7a01a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="SHM"/>
+
     <title>Mandir System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -314,7 +322,10 @@
         height: 2px; border-radius: 2px;
         background: #f7a01a;
       }
-      .nav-links a.login-btn {
+      .login-nav-links a{
+        text-decoration: none;
+      }
+      .login-nav-links a.login-donate-btn {
         background: linear-gradient(135deg, #f7a01a, #d35400);
         color: white;
         padding: 7px 18px;
@@ -322,14 +333,23 @@
         margin-left: 6px;
         box-shadow: 0 3px 12px rgba(247, 160, 26, 0.4);
       }
-      .nav-links a.login-btn:hover {
+
+      .login-nav-links a.login-btn {
+        background: linear-gradient(135deg, #f7a01a, #d35400);
+        color: white;
+        padding: 7px 18px;
+        border-radius: 8px;
+        margin-left: 6px;
+        box-shadow: 0 3px 12px rgba(247, 160, 26, 0.4);
+      }
+      .login-nav-links a.login-btn:hover {
         background: linear-gradient(135deg, #ffb833, #e56000);
         color: white;
         transform: translateY(-1px);
         box-shadow: 0 5px 18px rgba(247,160,26,0.55);
       }
-      .nav-links a.login-btn i { color: white; }
-      .nav-links a.login-btn::after { display: none; }
+      .login-nav-links a.login-btn i { color: white; }
+      .login-nav-links a.login-btn::after { display: none; }
 
       /* ── Hamburger button (hidden on desktop) ── */
       .hamburger-btn {
@@ -434,6 +454,7 @@
         .header-brand-text .brand-main { font-size: 0.88rem; }
         .header-brand-text .brand-sub  { display: none; }
         .nav-links { display: none; }
+        .login-nav-links { display: none; }
         .hamburger-btn { display: flex; }
         .nav-menu { top: 56px; }
       }
@@ -447,13 +468,14 @@
       .hero {
         background-image: url("Image/Background_pic.jpg");
         background-color: #f7a01a;
-        height: 70vh;
-        min-height: 320px;
         width: 100%;
+        aspect-ratio: 1440 / 560;
+        height: auto;
+        min-height: unset;
         color: white;
         background-repeat: no-repeat;
-        background-position: center;
-        background-size: cover;
+        background-position: center center;
+        background-size: 100% 100%;
         margin: 0;
         display: flex;
         align-items: center;
@@ -490,29 +512,31 @@
         }
       }
       .hero-box {
-        width: 100%;
-        padding-left: 15%;
-        margin-top: 8%;
-        position: relative;
+        position: absolute;
+        bottom: 21%;
+        left: 14.1%;
         z-index: 2;
+        margin: 0;
+        padding: 0;
       }
       .hero-box h1 {
-        font-size: 2.8rem;
+        font-size: 3.2vw;
         margin: 0;
         font-weight: 700;
-        line-height: 1.2;
+        line-height: 1.25;
         text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.5);
         text-align: left;
-        width: fit-content;
+        white-space: nowrap;
         animation: slideUp 1s ease-out 2s both;
       }
       .hero-box h1 span {
         display: block;
-        font-size: 1.4rem;
+        font-size: 1.65vw;
         font-weight: 400;
-        margin-top: 5px;
+        margin-top: 0.4vw;
         color: #fffdf8;
-        padding-left: 9.2em;
+        text-align: right;
+        white-space: nowrap;
       }
 
       /* SECTION */
@@ -1185,29 +1209,9 @@
           font-size: 1.2rem;
           padding: 6px 10px;
         }
+        /* hero: aspect-ratio + vw font sizes handle all screen widths automatically */
         .hero {
-          background-size: cover;
-          height: 50vw;
-          min-height: 220px;
-          align-items: flex-end;
-          padding-bottom: 6vw;
-        }
-        .hero-box {
-          width: 60%;
-          margin-top: 0;
-          padding-left: 4%;
-          display: flex;
-          justify-content: flex-start;
-        }
-        .hero-box h1 {
-          font-size: 4.5vw;
-          text-align: left;
-          width: fit-content;
-        }
-        .hero-box h1 span {
-          font-size: 2.5vw;
-          margin-top: 1vw;
-          padding-left: 0;
+          background-size: 100% 100%;
         }
         .section {
           padding: 36px 16px;
@@ -1255,12 +1259,6 @@
       @media (max-width: 420px) {
         .cards {
           grid-template-columns: 1fr;
-        }
-        .hero-box h1 {
-          font-size: 5.5vw;
-        }
-        .hero-box h1 span {
-          font-size: 3vw;
         }
         .nav-menu {
           top: 52px;
@@ -2003,6 +2001,163 @@
         transform: rotate(45deg);
         flex-shrink: 0;
       }
+
+/* ══ TEMPLE FINANCES SECTION — DISABLED (enable when ready) ══
+   To re-enable: remove the opening and closing CSS comment markers
+   around this entire block.
+
+.transparency-section {
+  padding: 64px 24px;
+  background: linear-gradient(180deg, #fdfbf7 0%, #f9f5ef 100%);
+  text-align: center;
+}
+.transparency-section h2 {
+  font-size: 2.1rem;
+  color: #946c44;
+  margin-bottom: 6px;
+}
+.transparency-section .tr-subtitle {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 36px;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+.tr-updated {
+  font-size: 11px;
+  color: #bbb;
+  margin-top: -28px;
+  margin-bottom: 32px;
+}
+.tr-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  max-width: 720px;
+  margin: 0 auto 40px;
+}
+.tr-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px 16px 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  border-top: 3px solid #f7a01a;
+}
+.tr-card.green  { border-top-color: #27ae60; }
+.tr-card.red    { border-top-color: #e74c3c; }
+.tr-card.blue   { border-top-color: #3b82f6; }
+.tr-card .tr-card-label {
+  font-size: 11px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.tr-card .tr-card-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #334155;
+}
+.tr-card.green .tr-card-value { color: #27ae60; }
+.tr-card.red   .tr-card-value { color: #e74c3c; }
+.tr-card.blue  .tr-card-value { color: #3b82f6; }
+.tr-table-wrap {
+  max-width: 800px;
+  margin: 0 auto 36px;
+  overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+}
+.tr-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 13.5px;
+}
+.tr-table thead tr {
+  background: #334155;
+  color: #fff;
+}
+.tr-table thead th {
+  padding: 12px 16px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+.tr-table thead th:first-child { text-align: center; }
+.tr-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+.tr-table tbody tr:last-child { border-bottom: none; }
+.tr-table tbody tr.tr-current-year { background: #fffbf2; font-weight: 600; }
+.tr-table tbody td {
+  padding: 11px 16px;
+  text-align: right;
+  color: #475569;
+}
+.tr-table tbody td:first-child { text-align: center; color: #334155; font-weight: 700; }
+.tr-table tfoot tr { background: #f8fafc; border-top: 2px solid #e2e8f0; }
+.tr-table tfoot td {
+  padding: 11px 16px;
+  text-align: right;
+  font-weight: 700;
+  font-size: 13px;
+  color: #334155;
+}
+.tr-table tfoot td:first-child { text-align: center; }
+.tr-goals {
+  max-width: 680px;
+  margin: 0 auto;
+  text-align: left;
+}
+.tr-goals-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.tr-goal-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.tr-goal-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.tr-goal-name { font-size: 14px; font-weight: 600; color: #334155; }
+.tr-goal-pct  { font-size: 13px; font-weight: 700; color: #f7a01a; }
+.tr-goal-bar-bg {
+  height: 8px; border-radius: 4px;
+  background: #f1f5f9; overflow: hidden;
+}
+.tr-goal-bar-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, #f7a01a, #e08e12);
+  transition: width 1s ease;
+}
+.tr-goal-amounts {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: #94a3b8; margin-top: 6px;
+}
+.tr-loading { color: #bbb; font-size: 14px; padding: 32px 0; }
+.tr-privacy-note {
+  font-size: 11px; color: #ccc; margin-top: 24px; text-align: center;
+}
+@media (max-width: 600px) {
+  .transparency-section h2 { font-size: 1.6rem; }
+  .tr-card .tr-card-value { font-size: 1.3rem; }
+  .tr-table { font-size: 12px; }
+  .tr-table thead th, .tr-table tbody td, .tr-table tfoot td { padding: 9px 10px; }
+}
+══ END TEMPLE FINANCES CSS ══ */
+
     </style>
   </head>
   <body>
@@ -2031,26 +2186,38 @@
 
     <!-- Header: desktop inline nav + mobile hamburger -->
     <div class="header" id="mainHeader">
-      <a class="header-brand" href="#home">
-        <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo"
-          onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
-        <i id="hdrIcon" class="fa-solid fa-place-of-worship"
-           style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
-        <div class="header-brand-text">
-          <span class="brand-main">Shree Hanuman Mandir</span>
-          <span class="brand-sub">Paliya · Ram Yagya Vishwakarma</span>
-        </div>
-      </a>
+      <div>
+        <a class="header-brand" href="#home">
+          <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo"
+            onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
+          <i id="hdrIcon" class="fa-solid fa-place-of-worship"
+            style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
+          <div class="header-brand-text">
+            <span class="brand-main">Shree Hanuman Mandir</span>
+            <span class="brand-sub">Paliya · Ram Yagya Vishwakarma</span>
+          </div>
+        </a>
+      </div>
       <!-- Desktop nav -->
-      <nav class="nav-links">
-        <a href="#about">Home</a>
-        <a href="#about">About</a>
-        <a href="#features">Features</a>
-        <a href="#gallery">Gallery</a>
-        <a href="#feedbackSection">Feedback</a>
-        <a href="#" onclick="openPayModal();return false;" style="color:#f7c35a;"><i class="fa-solid fa-hand-holding-heart" style="color:#f7a01a;"></i> Donate</a>
+       <div>
+        <nav class="nav-links">
+          <a href="#hero">Home</a>
+          <a href="#about">About</a>
+          <a href="#membersSection">Member</a>
+          <a href="#features">Features</a>
+          <a href="#gallery">Gallery</a>
+          <!-- FINANCES NAV LINK — disabled until Temple Finances section is re-enabled
+          <a href="#financesSection">Finances</a>
+          -->
+          <a href="#feedbackSection">Feedback</a>
+         
+        </nav>
+       </div>
+       <div class="login-nav-links">
+        <a href="#" onclick="openPayModal();return false;" class="login-donate-btn"><i class="fa-solid fa-hand-holding-heart"></i> Donate</a>
         <a href="login.html" class="login-btn"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
-      </nav>
+       </div>
+      
       <!-- Mobile hamburger -->
       <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleNavMenu()" aria-label="Menu">
         <i class="fa-solid fa-bars" id="hamburgerIcon"></i>
@@ -2080,6 +2247,11 @@
         <i class="fa-solid fa-comment-dots"></i> 
         Feedback</a
       >
+      <!-- FINANCES NAV LINK — disabled until Temple Finances section is re-enabled
+      <a href="#financesSection" onclick="closeNavMenu()">
+        <i class="fa-solid fa-scale-balanced"></i> Finances
+      </a>
+      -->
       <a href="#" onclick="closeNavMenu();openPayModal();return false;">
         <i class="fa-solid fa-hand-holding-heart"></i>
         Donate / Pay</a
@@ -2089,14 +2261,242 @@
       >
     </div>
 
-    <div class="hero">
+    <div class="hero" id="hero">
       <div class="hero-box">
-        <h1>
-          || श्री हनुमत आश्रम || <br />
-          <span>राम यज्ञ विश्‍वकर्मा</span>
-        </h1>
+        <h1>|| श्री हनुमत आश्रम ||<span>राम यज्ञ विश्‍वकर्मा</span></h1>
       </div>
     </div>
+
+    <!-- ══ CHAUPAI TICKER — above About ══ -->
+    <style>
+      .cp-ticker-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 24px 4px;
+        overflow: hidden;
+      }
+      .cp-word {
+        display: inline-block;
+        overflow: hidden;
+        vertical-align: bottom;
+        margin: 0 3px;
+      }
+      .cp-word span {
+        display: inline-block;
+        transform-origin: left center;
+        transform: rotateY(90deg) translateZ(0);
+        opacity: 0;
+        transition: transform 0.55s cubic-bezier(0.23,1,0.32,1), opacity 0.45s ease;
+        color: #946c44;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.08rem;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        line-height: 1.7;
+        white-space: nowrap;
+        will-change: transform, opacity;
+      }
+      .cp-word span.cp-open {
+        transform: rotateY(0deg) translateZ(0);
+        opacity: 1;
+      }
+      .cp-word span.cp-close {
+        transform: rotateY(-90deg) translateZ(0);
+        opacity: 0;
+        transition: transform 0.38s ease-in, opacity 0.32s ease-in;
+      }
+      @media (max-width: 600px) {
+        .cp-word span { font-size: 0.88rem; letter-spacing: 0.2px; }
+        .cp-ticker-wrap { padding: 6px 10px 4px; }
+      }
+    </style>
+
+    <!-- Divider above Chaupai — FIXED, never collapses -->
+    <div class="section-divider reveal">
+      <div class="sd-line"></div>
+      <div class="sd-center">
+        <div class="sd-petal"></div>
+        <div class="sd-dot"></div>
+        <div class="sd-symbol">🔱</div>
+        <div class="sd-dot"></div>
+        <div class="sd-petal"></div>
+      </div>
+      <div class="sd-line"></div>
+    </div>
+
+    <!-- Chaupai ticker: spacer always holds the LONGEST chaupai so height never collapses -->
+    <div class="cp-ticker-wrap reveal" aria-live="polite">
+      <div class="cp-ticker-inner">
+        <!-- Spacer always = longest chaupai → layout never jumps -->
+        <div id="chaupaiSpacer" class="cp-spacer"></div>
+        <!-- Animated words render on top -->
+        <div id="chaupaiDisplay" class="cp-display"></div>
+      </div>
+    </div>
+
+    <!-- Divider below Chaupai — FIXED, never collapses -->
+    <div class="section-divider reveal">
+      <div class="sd-line"></div>
+      <div class="sd-center">
+        <div class="sd-petal"></div>
+        <div class="sd-dot"></div>
+        <div class="sd-symbol">🙏</div>
+        <div class="sd-dot"></div>
+        <div class="sd-petal"></div>
+      </div>
+      <div class="sd-line"></div>
+    </div>
+
+    <style>
+      .cp-ticker-inner {
+        position: relative;
+        display: inline-block;
+        text-align: center;
+        max-width: 100%;
+      }
+      /* Spacer: always = longest chaupai → height/width never collapses, OM stays fixed */
+      .cp-spacer {
+        visibility: hidden;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.08rem;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        line-height: 1.7;
+        white-space: nowrap;
+        pointer-events: none;
+        user-select: none;
+      }
+      /* Display layer sits on top of spacer */
+      .cp-display {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        white-space: nowrap;
+        text-align: center;
+      }
+      /* Each character wrapper — clips the sliding span */
+      .cp-char {
+        display: inline-block;
+        overflow: hidden;
+        vertical-align: bottom;
+      }
+      /* The actual character — slides up to appear, slides down to disappear */
+      .cp-char span {
+        display: inline-block;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.08rem;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        line-height: 1.7;
+        color: #946c44;
+        white-space: pre;
+        will-change: transform, opacity;
+        /* start hidden — below */
+        transform: translateY(110%);
+        opacity: 0;
+        transition: transform 0.42s cubic-bezier(0.23,1,0.32,1),
+                    opacity   0.35s ease;
+      }
+      /* revealed */
+      .cp-char span.cp-in {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      /* hiding — slide up & out */
+      .cp-char span.cp-out {
+        transform: translateY(-110%);
+        opacity: 0;
+        transition: transform 0.3s ease-in,
+                    opacity   0.25s ease-in;
+      }
+      @media (max-width: 600px) {
+        .cp-char span,
+        .cp-spacer { font-size: 0.88rem; letter-spacing: 0.2px; }
+        .cp-ticker-wrap { padding: 6px 10px 4px; }
+      }
+    </style>
+
+    <script>
+      (function(){
+        var chaupais = [
+          'प्रबिसि नगर कीजे सब काजा। हृदयँ राखि कोसलपुर राजा॥',
+          'मंगल भवन अमंगल हारी। द्रवहु सुदसरथ अजर बिहारी।।'
+        ];
+
+        var container = document.getElementById('chaupaiDisplay');
+        var spacer    = document.getElementById('chaupaiSpacer');
+        var ci = 0;
+
+        /* Spacer always = longest string → layout is permanently locked */
+        function getLongest(){
+          return chaupais.reduce(function(a, b){ return b.length > a.length ? b : a; }, '');
+        }
+        spacer.textContent = getLongest();
+
+        /* Split string into Unicode-aware grapheme clusters (handles Hindi matras correctly) */
+        function getChars(str){
+          /* Segmenter available in modern browsers */
+          if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+            var seg = new Intl.Segmenter('hi', { granularity: 'grapheme' });
+            return Array.from(seg.segment(str), function(s){ return s.segment; });
+          }
+          /* Fallback: spread operator (may split some combined characters) */
+          return Array.from(str);
+        }
+
+        /* Build one <span class="cp-char"><span>c</span></span> per grapheme */
+        function buildCharEls(chars){
+          container.innerHTML = '';
+          var els = [];
+          chars.forEach(function(ch){
+            var wrap  = document.createElement('span');
+            wrap.className = 'cp-char';
+            var inner = document.createElement('span');
+            inner.textContent = ch;
+            wrap.appendChild(inner);
+            container.appendChild(wrap);
+            els.push(inner);
+          });
+          return els;
+        }
+
+        function showChaupai(){
+          var chars = getChars(chaupais[ci]);
+          var els   = buildCharEls(chars);
+          var i = 0;
+
+          /* Reveal one character at a time, left → right */
+          function revealNext(){
+            if(i < els.length){
+              els[i].classList.add('cp-in');
+              i++;
+              setTimeout(revealNext, 55);   /* 55 ms per character */
+            } else {
+              /* Hold fully visible, then hide */
+              setTimeout(function(){ hideFrom(els.length - 1); }, 2600);
+            }
+          }
+
+          /* Hide one character at a time, right → left */
+          function hideFrom(j){
+            if(j >= 0){
+              els[j].classList.remove('cp-in');
+              els[j].classList.add('cp-out');
+              j--;
+              setTimeout(function(){ hideFrom(j); }, 40);  /* 40 ms per character */
+            } else {
+              /* Next chaupai — spacer stays, no layout shift, OM never moves */
+              ci = (ci + 1) % chaupais.length;
+              setTimeout(showChaupai, 500);
+            }
+          }
+
+          revealNext();
+        }
+
+        showChaupai();
+      })();
+    </script>
 
     <div class="section reveal" id="about">
       <h2>About The Mandir</h2>
@@ -2105,6 +2505,7 @@
         expenses, and maintain the yearly financial balance in a highly secure
         and transparent manner.
       </p>
+
     </div>
 
     <!-- ══ OUR MEMBERS SECTION ══ -->
@@ -2149,7 +2550,7 @@
       <!-- Member 1 -->
       <div class="member-card active" id="memberCard0">
         <div class="member-photo-side">
-          <img class="member-avatar" src="Image/AmarjeetPic.jpeg" alt="Amarjeet" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <img class="member-avatar" src="Image/AmarjeetPic.png" alt="Amarjeet" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
           <div class="member-photo-overlay"></div>
           <div class="member-avatar-placeholder" style="display:none;">अ</div>
         </div>
@@ -2349,6 +2750,65 @@
 
     </div>
 
+    <!-- ══ TEMPLE FINANCES SECTION — DISABLED
+         To re-enable: remove this HTML comment block wrapper,
+         and also uncomment the CSS block and JS block marked the same way.
+    <div class="section-divider reveal">
+      <div class="sd-line"></div>
+      <div class="sd-center">
+        <div class="sd-petal"></div>
+        <div class="sd-dot"></div>
+        <div class="sd-symbol">🙏</div>
+        <div class="sd-dot"></div>
+        <div class="sd-petal"></div>
+      </div>
+      <div class="sd-line"></div>
+    </div>
+     
+    <div class="transparency-section reveal" id="financesSection">
+     
+      <h2><i class="fa-solid fa-scale-balanced" style="color:#f7a01a;margin-right:10px;"></i>Temple Finances</h2>
+      <p class="tr-subtitle">
+        पारदर्शिता हमारी प्राथमिकता है — We believe in complete transparency.<br>
+        All funds collected are used solely for temple maintenance and activities.
+      </p>
+      <div class="tr-updated" id="tr_updated"></div>
+     
+      <div class="tr-cards" id="tr_cards">
+        <div class="tr-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div>
+      </div>
+     
+      <div class="tr-table-wrap" id="tr_table_wrap" style="display:none;">
+        <table class="tr-table">
+          <thead>
+            <tr>
+              <th style="text-align:center;">Year</th>
+              <th>Opening Balance</th>
+              <th>Collection</th>
+              <th>Expenses</th>
+              <th>Closing Balance</th>
+            </tr>
+          </thead>
+          <tbody id="tr_tbody"></tbody>
+          <tfoot id="tr_tfoot"></tfoot>
+        </table>
+      </div>
+     
+      <div class="tr-goals" id="tr_goals" style="display:none;">
+        <div class="tr-goals-title">
+          <i class="fa-solid fa-bullseye" style="color:#f7a01a;margin-right:6px;"></i>
+          Active Fundraising Goals
+        </div>
+        <div id="tr_goals_list"></div>
+      </div>
+     
+      <p class="tr-privacy-note">
+        Individual donor names and amounts are never shown publicly.
+        Only aggregated totals are displayed here.
+      </p>
+     
+    </div>
+    ══ END TEMPLE FINANCES HTML ══ -->
 
     <div class="section-divider reveal">
       <div class="sd-line"></div>
@@ -2627,6 +3087,149 @@
           _animateMemberCount(document.getElementById("csMembers"), members, 1800);
         }).catch(function() {});
       }
+
+      /* ══ TEMPLE FINANCES JS — DISABLED
+         To re-enable: remove the opening slash-star and closing star-slash
+         around this entire block (match with CSS and HTML blocks above).
+
+var _trLoaded = false;
+ 
+ function loadTransparency() {
+   if (_trLoaded) return; // load once per page visit
+   if (typeof getData !== "function") return;
+  
+   getData("getPublicStats").then(function(res) {
+     if (!res || res.status === "error") return;
+     _trLoaded = true;
+     _renderTransparency(res);
+   }).catch(function() {});
+ }
+  
+ function _renderTransparency(res) {
+   var f = function(n) { return "₹" + Number(n||0).toLocaleString("en-IN"); };
+   var curYear = new Date().getFullYear();
+  
+   // ── Updated timestamp
+   var upd = document.getElementById("tr_updated");
+   if (upd && res.updatedAt) upd.textContent = "Last updated: " + res.updatedAt;
+  
+   // ── Summary cards
+   var cards = document.getElementById("tr_cards");
+   var balance = Number(res.balance || 0);
+   var balColor = balance >= 0 ? "green" : "red";
+   if (cards) {
+     cards.innerHTML =
+       '<div class="tr-card green">'  +
+         '<div class="tr-card-label">This Year Collection</div>' +
+         '<div class="tr-card-value">' + f(res.thisYearCollection) + '</div>' +
+       '</div>' +
+       '<div class="tr-card red">'    +
+         '<div class="tr-card-label">This Year Expenses</div>' +
+         '<div class="tr-card-value">' + f(res.thisYearExpense) + '</div>' +
+       '</div>' +
+       '<div class="tr-card ' + balColor + '">' +
+         '<div class="tr-card-label">Current Balance</div>' +
+         '<div class="tr-card-value">' + f(balance) + '</div>' +
+       '</div>' +
+       '<div class="tr-card blue">' +
+         '<div class="tr-card-label">Active Members</div>' +
+         '<div class="tr-card-value">' + Number(res.memberCount||0) + '</div>' +
+       '</div>';
+   }
+  
+   // ── Year table
+   var rows = res.yearRows || [];
+   if (rows.length > 0) {
+     var tbody = document.getElementById("tr_tbody");
+     var tfoot = document.getElementById("tr_tfoot");
+     var sumC = 0, sumE = 0;
+  
+     if (tbody) {
+       tbody.innerHTML = rows.map(function(r) {
+         sumC += Number(r.totalCollection||0);
+         sumE += Number(r.totalExpense||0);
+         var isCur = Number(r.year) === curYear;
+         var cls   = isCur ? " class=\"tr-current-year\"" : "";
+         var closing = Number(r.closingBalance||0);
+         return "<tr" + cls + ">" +
+           "<td>" + r.year + (isCur ? " 🟡" : "") + "</td>" +
+           "<td>" + f(r.openingBalance) + "</td>" +
+           "<td style=\"color:#27ae60;\">" + f(r.totalCollection) + "</td>" +
+           "<td style=\"color:#e74c3c;\">" + f(r.totalExpense) + "</td>" +
+           "<td style=\"color:" + (closing >= 0 ? "#27ae60" : "#e74c3c") + ";\">" + f(closing) + "</td>" +
+         "</tr>";
+       }).join("");
+     }
+  
+     if (tfoot) {
+       tfoot.innerHTML = "<tr>" +
+         "<td>All Years</td>" +
+         "<td>—</td>" +
+         "<td style=\"color:#27ae60;\">" + f(sumC) + "</td>" +
+         "<td style=\"color:#e74c3c;\">" + f(sumE) + "</td>" +
+         "<td style=\"color:#334155;\">" + f(balance) + "</td>" +
+       "</tr>";
+     }
+  
+     var wrap = document.getElementById("tr_table_wrap");
+     if (wrap) wrap.style.display = "block";
+   }
+  
+   // ── Goals
+   var goals = res.goals || [];
+   var activeGoals = goals.filter(function(g) {
+     return String(g.Status||"").toLowerCase() !== "disabled" && Number(g.Target||0) > 0;
+   });
+   if (activeGoals.length > 0) {
+     var list = document.getElementById("tr_goals_list");
+     if (list) {
+       list.innerHTML = activeGoals.map(function(g) {
+         var pct = Math.min(100, Math.round(Number(g.Current||0) / Number(g.Target) * 100));
+         return '<div class="tr-goal-item">' +
+           '<div class="tr-goal-top">' +
+             '<span class="tr-goal-name">' + _trEsc(g.Name||"Goal") + '</span>' +
+             '<span class="tr-goal-pct">' + pct + '%</span>' +
+           '</div>' +
+           '<div class="tr-goal-bar-bg">' +
+             '<div class="tr-goal-bar-fill" style="width:' + pct + '%"></div>' +
+           '</div>' +
+           '<div class="tr-goal-amounts">' +
+             '<span>₹' + Number(g.Current||0).toLocaleString("en-IN") + ' raised</span>' +
+             '<span>Target: ₹' + Number(g.Target).toLocaleString("en-IN") + '</span>' +
+           '</div>' +
+         '</div>';
+       }).join("");
+     }
+     var goalsEl = document.getElementById("tr_goals");
+     if (goalsEl) goalsEl.style.display = "block";
+   }
+ }
+  
+ function _trEsc(s) {
+   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+ }
+  
+ // Lazy-load on scroll — fires once when section enters viewport
+ var _trObserved = false;
+ function _watchTransparency() {
+   if (_trObserved) return;
+   var el = document.getElementById("financesSection");
+   if (!el) return;
+   if ("IntersectionObserver" in window) {
+     var obs = new IntersectionObserver(function(entries) {
+       if (entries[0].isIntersecting) { loadTransparency(); obs.disconnect(); }
+     }, { threshold: 0.1 });
+     obs.observe(el);
+     _trObserved = true;
+   } else {
+     // Fallback for older browsers
+     loadTransparency();
+     _trObserved = true;
+   }
+ }
+ document.addEventListener("DOMContentLoaded", _watchTransparency);
+ ══ END TEMPLE FINANCES JS ══ */
+
       function _checkStatsVisible() {
         if (_statsAnimated) return;
         var el = document.getElementById("communityStats");
@@ -3122,5 +3725,41 @@
         }).catch(function() {});
       }
     </script>
+
+    <script>
+  /* ── Service Worker registration ── */
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("./sw.js").then(function(reg) {
+   
+        // Detect when a new SW version is waiting — prompt user to refresh
+        reg.addEventListener("updatefound", function() {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", function() {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              // New version available — show update toast if toast() is available
+              // Otherwise show a simple confirm dialog
+              if (typeof toast === "function") {
+                toast("🔄 App updated — tap here to refresh", "warn");
+                // Auto-reload after 4 seconds so admin always gets latest code
+                setTimeout(function() { location.reload(); }, 4000);
+              } else {
+                if (confirm("App updated. Reload now for the latest version?")) {
+                  location.reload();
+                }
+              }
+            }
+          });
+        });
+   
+      }).catch(function(err) {
+        // SW registration failed — app still works normally without it
+        console.warn("Service Worker registration failed:", err);
+      });
+    });
+  }
+  </script>
+
   </body>
 </html>

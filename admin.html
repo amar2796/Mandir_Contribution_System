@@ -3,6 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.svg"/>
+  <meta name="theme-color" content="#f7a01a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="SHM"/>
+
     <title>Admin Panel - Mandir System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -565,12 +573,34 @@
         border-bottom: 1px solid rgba(255,255,255,0.08);
         margin-bottom: 4px;
       }
-      .sidebar-brand-icon {
+
+      .hdr-icon {
+        width:34px; height:34px; border-radius:10px; flex-shrink:0;
+        /* background: linear-gradient(135deg,var(--ink) 0%,var(--ink-mid) 100%); */
+        display:flex; align-items:center; justify-content:center;
+        font-size:16px; 
+        /* box-shadow:0 3px 10px rgba(0,0,0,0.18); */
+      }
+
+      /* header Logo  */
+      .header-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(247,160,26,0.55);
+        box-shadow: 0 0 10px rgba(247,160,26,0.35);
+        flex-shrink: 0;
+        background: #78501e;
+      }
+
+
+      /* .sidebar-brand-icon {
         font-size: 2rem;
         line-height: 1;
         filter: drop-shadow(0 0 8px rgba(247,160,26,0.7));
         flex-shrink: 0;
-      }
+      } */
       .sidebar-brand-title {
         font-size: 1.05rem;
         font-weight: 700;
@@ -679,12 +709,12 @@
       }
 
       /* Audit — red tint */
-      .nav-audit-item { color: #fca5a5; }
-      #nav_audit { color: #fca5a5; }
+      .nav-audit-item { color: #6ee7b7 ; }
+      #nav_audit { color: #6ee7b7; }
       .nav-audit-item:hover:not(.active-nav),
       #nav_audit:hover, #nav_audit.active-nav {
-        background: rgba(239,68,68,0.18) !important;
-        color: #fecaca !important;
+        background: rgba(16,185,129,0.18) !important;
+        color: #bbf7d0 !important;
       }
       .card-box {
         position: relative;
@@ -770,15 +800,15 @@
       }
 
       /* ── ANNOUNCEMENT ADMIN ── */
-      #nav_announcement { color: #fbbf24; }
+      #nav_announcement { color: #c4b5fd; }
       #nav_announcement:hover, #nav_announcement.active-nav {
         background: rgba(251,191,36,0.18) !important;
-        color: #fde68a !important;
+        color: #ede9fe !important;
       }
-      #nav_tracker { color: #a78bfa; }
+      #nav_tracker { color: #fcd34d; }
       #nav_tracker:hover, #nav_tracker.active-nav {
         background: rgba(124,58,237,0.25) !important;
-        color: #c4b5fd !important;
+        color: #fcd34d !important;
       }
       #nav_emailauto { color: #34d399; }
       #nav_emailauto:hover, #nav_emailauto.active-nav {
@@ -1026,6 +1056,47 @@ tr.row-rejected td { background: #fff5f5 !important; }
   background: #f8fafc; border-top: 1px solid #e2e8f0;
   padding: 14px 0 4px; margin-top: 8px; display: flex; gap: 10px; align-items: center;
 }
+
+.nav-event { color: #fcd34d; }
+.nav-event:hover:not(.active-nav), .nav-event.active-nav {
+  background: rgba(251,146,60,0.15); color: #fcd34d;
+}
+.nav-event.active-nav { border-left: 3px solid #fcd34d; }
+ 
+.ev-status-upcoming  { background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe; }
+.ev-status-active    { background:#f0fdf4;color:#166534;border:1px solid #bbf7d0; }
+.ev-status-completed { background:#f1f5f9;color:#475569;border:1px solid #cbd5e1; }
+ 
+.ev-budget-bar-bg {
+  background:#f1f5f9;border-radius:6px;height:10px;
+  overflow:hidden;margin-top:6px;
+}
+.ev-budget-bar-fill {
+  height:100%;border-radius:6px;
+  transition:width .6s ease,background .4s;
+}
+ 
+.ev-card {
+  background:#fff;border-radius:14px;border:1px solid #e2e8f0;
+  padding:20px;margin-bottom:14px;
+  transition:box-shadow .2s;
+}
+.ev-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+.ev-card-header {
+  display:flex;justify-content:space-between;
+  align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px;
+}
+.ev-card-title { font-size:15px;font-weight:700;color:#334155;margin:0; }
+.ev-card-cat   { font-size:11px;color:#94a3b8;margin-top:2px; }
+.ev-card-body  { display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px; }
+.ev-stat       { text-align:center;padding:10px;background:#f8fafc;border-radius:10px; }
+.ev-stat-val   { font-size:1.2rem;font-weight:700;color:#334155; }
+.ev-stat-lbl   { font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px; }
+.ev-card-footer{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;
+  padding-top:12px;border-top:1px solid #f1f5f9;
+}
+
     </style>
   </head>
   <body>
@@ -1045,7 +1116,10 @@ tr.row-rejected td { background: #fff5f5 !important; }
     <div class="layout">
       <div class="sidebar">
         <div class="sidebar-brand">
-          <div class="sidebar-brand-icon">🕉️</div>
+          <div class="hdr-icon">
+            <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo" onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
+            <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
+          </div>
           <div class="sidebar-brand-text">
             <div class="sidebar-brand-title">Admin Panel</div>
             <div class="sidebar-brand-sub">Shree Hanuman Mandir</div>
@@ -1074,6 +1148,13 @@ tr.row-rejected td { background: #fff5f5 !important; }
           </li>
           <li onclick="showPage('goalsPage',this)" class="nav-finance">
             <i class="fa-solid fa-bullseye"></i> Goals
+          </li>
+          <li onclick="showPage('yearSummaryPage',this)" class="nav-finance">
+            <i class="fa-solid fa-calendar-check"></i> Year Summary
+          </li>
+
+          <li onclick="showPage('eventsPage',this)" class="nav-event">
+            <i class="fa-solid fa-calendar-days"></i> Events
           </li>
 
           <!-- ── Section label: Members ── -->
@@ -1619,11 +1700,17 @@ tr.row-rejected td { background: #fff5f5 !important; }
             </div>
           </div>
           <div class="card">
-            <h3>
-              <i class="fa-solid fa-list-ul"></i> Contribution Records
-              <span style="font-size: 11px; font-weight: 400; color: #999"
-                >(click row to view · edit/delete via buttons)</span
-              >
+            <h3 style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <span>
+                <i class="fa-solid fa-list-ul"></i> Contribution Records
+                <span style="font-size: 11px; font-weight: 400; color: #999">
+                  (click row to view · edit/delete via buttons)
+                </span>
+              </span>
+              <button onclick="exportContribCSV()"
+                style="background:#27ae60;box-shadow:none;padding:8px 14px;font-size:12px;display:flex;align-items:center;gap:6px;">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+              </button>
             </h3>
             <div class="filter-row">
               <input
@@ -1713,11 +1800,17 @@ tr.row-rejected td { background: #fff5f5 !important; }
             </button>
           </div>
           <div class="card">
-            <h3>
-              <i class="fa-solid fa-list-ul"></i> Expense Records
-              <span style="font-size: 11px; font-weight: 400; color: #999"
-                >(click row to view · edit via buttons)</span
-              >
+            <h3 style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <span>
+                <i class="fa-solid fa-list-ul"></i> Expense Records
+                <span style="font-size: 11px; font-weight: 400; color: #999">
+                  (click row to view · edit via buttons)
+                </span>
+              </span>
+              <button onclick="exportExpenseCSV()"
+                style="background:#e74c3c;box-shadow:none;padding:8px 14px;font-size:12px;display:flex;align-items:center;gap:6px;">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+              </button>
             </h3>
             <div class="filter-row" style="margin-bottom: 12px">
               <input
@@ -1916,7 +2009,182 @@ tr.row-rejected td { background: #fff5f5 !important; }
             </div>
           </div>
         </div>
+        <!-- YEAR SUMMARY -->
+<div id="yearSummaryPage" class="page">
+ 
+  <!-- Header card -->
+  <div class="card" style="margin-bottom:18px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <h3 style="margin:0;">
+        <i class="fa-solid fa-calendar-check" style="color:#f7a01a;"></i>
+        Year-by-Year Financial Summary
+      </h3>
+      <button
+        onclick="loadYearSummary()"
+        style="background:#334155;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"
+      >
+        <i class="fa-solid fa-rotate-right"></i> Refresh
+      </button>
+    </div>
+    <p style="color:#64748b;font-size:12px;margin:8px 0 0;">
+      Opening balance per year comes from <strong>YEAR_CONFIG</strong> sheet.
+      If not set, the previous year's closing balance carries forward automatically.
+    </p>
+  </div>
+ 
+  <!-- Loading state -->
+  <div id="ys_loading" style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;">
+    <i class="fa-solid fa-spinner fa-spin"></i> Loading year summary…
+  </div>
+ 
+  <!-- Error state -->
+  <div id="ys_error" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:16px 20px;color:#991b1b;font-size:13px;margin-bottom:16px;"></div>
+ 
+  <!-- Summary totals row (filled by JS) -->
+  <div id="ys_totals" style="display:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;">
+    <div class="card-box" style="text-align:center;">
+      <h4 style="font-size:11px;color:#64748b;margin:0 0 6px;">Total Years</h4>
+      <h2 id="ys_t_years" style="color:#334155;font-size:1.4rem;margin:0;">—</h2>
+    </div>
+    <div class="card-box" style="text-align:center;">
+      <h4 style="font-size:11px;color:#64748b;margin:0 0 6px;">All-time Collection</h4>
+      <h2 id="ys_t_collection" style="color:#27ae60;font-size:1.4rem;margin:0;">—</h2>
+    </div>
+    <div class="card-box" style="text-align:center;">
+      <h4 style="font-size:11px;color:#64748b;margin:0 0 6px;">All-time Expenses</h4>
+      <h2 id="ys_t_expense" style="color:#e74c3c;font-size:1.4rem;margin:0;">—</h2>
+    </div>
+    <div class="card-box" style="text-align:center;">
+      <h4 style="font-size:11px;color:#64748b;margin:0 0 6px;">Current Balance</h4>
+      <h2 id="ys_t_balance" style="color:#f7a01a;font-size:1.4rem;margin:0;">—</h2>
+    </div>
+  </div>
+ 
+  <!-- Main table card -->
+  <div class="card" id="ys_table_card" style="display:none;">
+    <div class="table-responsive">
+      <table id="ys_table">
+        <thead>
+          <tr>
+            <th style="text-align:center;">Year</th>
+            <th style="text-align:right;">Opening Balance</th>
+            <th style="text-align:right;">Total Collection</th>
+            <th style="text-align:right;">Total Expenses</th>
+            <th style="text-align:right;">Closing Balance</th>
+            <th style="text-align:right;">Carry-forward →</th>
+          </tr>
+        </thead>
+        <tbody id="ys_tbody"></tbody>
+        <!-- Totals footer -->
+        <tfoot id="ys_tfoot"></tfoot>
+      </table>
+    </div>
+    <p style="color:#94a3b8;font-size:11px;margin:12px 0 0;text-align:right;">
+      * Carry-forward = this year's closing balance passed to next year as opening balance.
+    </p>
+  </div>
+ 
+  <!-- Empty state -->
+  <div id="ys_empty" style="display:none;text-align:center;padding:40px;color:#94a3b8;font-size:14px;">
+    <i class="fa-solid fa-folder-open" style="font-size:32px;margin-bottom:12px;display:block;"></i>
+    No financial data found. Add contributions or expenses to see the summary.
+  </div>
+ 
+</div>
 
+<!-- EVENTS -->
+<div id="eventsPage" class="page">
+ 
+  <!-- Create / Edit Event -->
+  <div class="card" style="margin-bottom:18px;">
+    <h3><i class="fa-solid fa-calendar-plus" style="color:#fb923c;"></i> Create Event</h3>
+    <div class="form-row">
+      <div>
+        <label>Event Name</label>
+        <input id="ev_name" placeholder="e.g. Navratri 2025"/>
+      </div>
+      <div>
+        <label>Category</label>
+        <select id="ev_cat">
+          <option>Festival</option>
+          <option>Pooja</option>
+          <option>Maintenance</option>
+          <option>Community</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="ev_status">
+          <option value="Upcoming">Upcoming</option>
+          <option value="Active">Active</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>Start Date</label>
+        <input type="date" id="ev_start"/>
+      </div>
+      <div>
+        <label>End Date</label>
+        <input type="date" id="ev_end"/>
+      </div>
+      <div>
+        <label>Budget (₹)</label>
+        <input type="number" id="ev_budget" min="0" placeholder="0 = no budget"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div style="grid-column:1/-1;">
+        <label>Description <span style="color:#aaa;font-size:10px;font-weight:400;">(optional)</span></label>
+        <input id="ev_desc" placeholder="Brief description of the event"/>
+      </div>
+    </div>
+    <button onclick="addEvent()">
+      <i class="fa-solid fa-plus"></i> Save Event
+    </button>
+  </div>
+ 
+  <!-- Event Cards List -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+      <h3 style="margin:0;"><i class="fa-solid fa-calendar-days"></i> All Events</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span>
+          <select id="ev_filter_status" onchange="renderEvents()"
+            style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
+            <option value="">All Status</option>
+            <option value="Upcoming">Upcoming</option>
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </span>
+        <span>
+          <select id="ev_filter_cat" onchange="renderEvents()"
+            style="padding:7px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
+            <option value="">All Categories</option>
+            <option>Festival</option>
+            <option>Pooja</option>
+            <option>Maintenance</option>
+            <option>Community</option>
+            <option>Other</option>
+          </select>
+        </span> 
+      </div>
+    </div>
+    <div id="ev_list">
+      <div style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading events…
+      </div>
+    </div>
+  </div>
+ 
+</div>
+<!-- END EVENTS PAGE -->
+
+<!-- END YEAR SUMMARY PAGE -->
         <!-- MASTER -->
         <div id="masterPage" class="page">
           <div
@@ -3109,7 +3377,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             _adminSelfCroppedB64 = "";
             toast("✅ Profile updated!");
             closeModal();
-            init();
+            smartRefresh("users");
           } else {
             toast("❌ Update failed.", "error");
           }
@@ -3504,7 +3772,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         grid.innerHTML="<p style='color:#aaa;font-size:13px;'><i class='fa-solid fa-spinner fa-spin'></i> Loading...</p>";
         noPhotos.style.display="none";
         try {
-          var photos = await getData("getGallery");
+          var photos = await getCached("getGallery");
           grid.innerHTML="";
           if(!Array.isArray(photos)||photos.length===0){ noPhotos.style.display="block"; return; }
           photos.forEach(function(p){
@@ -3708,6 +3976,121 @@ tr.row-rejected td { background: #fff5f5 !important; }
         "November",
         "December",
       ];
+
+      function loadYearSummary() {
+  // Show loading, hide everything else
+  _ysShow("ys_loading");
+ 
+  getCached("getYearlySummary")
+    .then(function(res) {
+      if (!res || res.status === "error") {
+        _ysShow("ys_error");
+        document.getElementById("ys_error").textContent =
+          "Error loading summary: " + ((res && res.message) || "Unknown error");
+        return;
+      }
+ 
+      const rows = res.rows || [];
+ 
+      if (rows.length === 0) {
+        _ysShow("ys_empty");
+        return;
+      }
+ 
+      // ── Populate totals row
+      let sumCollection = 0, sumExpense = 0;
+      rows.forEach(function(r) {
+        sumCollection += Number(r.totalCollection || 0);
+        sumExpense    += Number(r.totalExpense    || 0);
+      });
+      const lastRow      = rows[rows.length - 1];
+      const finalBalance = Number(lastRow.closingBalance || 0);
+ 
+      document.getElementById("ys_t_years").textContent      = rows.length;
+      document.getElementById("ys_t_collection").textContent = "₹" + fmt(sumCollection);
+      document.getElementById("ys_t_expense").textContent    = "₹" + fmt(sumExpense);
+      document.getElementById("ys_t_balance").textContent    =
+        (finalBalance < 0 ? "−" : "") + "₹" + fmt(Math.abs(finalBalance));
+      document.getElementById("ys_t_balance").style.color    =
+        finalBalance >= 0 ? "#27ae60" : "#e74c3c";
+ 
+      // ── Populate table body
+      const tbody = document.getElementById("ys_tbody");
+      tbody.innerHTML = "";
+ 
+      const curYear = new Date().getFullYear();
+ 
+      rows.forEach(function(r, idx) {
+        const isCurrentYear = Number(r.year) === curYear;
+        const closing       = Number(r.closingBalance || 0);
+        const isLastRow     = idx === rows.length - 1;
+ 
+        // Carry-forward column: show for all rows except last (which is the "current" balance)
+        const cfText = isLastRow
+          ? '<span style="color:#94a3b8;font-size:11px;">Current year</span>'
+          : (closing < 0 ? "−" : "") + "₹" + fmt(Math.abs(closing));
+ 
+        const tr = document.createElement("tr");
+        if (isCurrentYear) {
+          tr.style.background = "rgba(247,160,26,0.07)";
+          tr.style.fontWeight = "600";
+        }
+ 
+        tr.innerHTML =
+          '<td style="text-align:center;">' +
+            '<span style="font-weight:700;color:#334155;">' + r.year + '</span>' +
+            (isCurrentYear ? ' <span style="font-size:10px;background:#f7a01a;color:#fff;border-radius:4px;padding:1px 6px;vertical-align:middle;">Current</span>' : '') +
+          '</td>' +
+          '<td style="text-align:right;color:#64748b;">₹' + fmt(Number(r.openingBalance  || 0)) + '</td>' +
+          '<td style="text-align:right;color:#27ae60;font-weight:600;">₹' + fmt(Number(r.totalCollection || 0)) + '</td>' +
+          '<td style="text-align:right;color:#e74c3c;font-weight:600;">₹' + fmt(Number(r.totalExpense    || 0)) + '</td>' +
+          '<td style="text-align:right;font-weight:700;color:' + (closing >= 0 ? "#27ae60" : "#e74c3c") + ';">' +
+            (closing < 0 ? "−" : "") + "₹" + fmt(Math.abs(closing)) +
+          '</td>' +
+          '<td style="text-align:right;color:#6366f1;">' + cfText + '</td>';
+ 
+        tbody.appendChild(tr);
+      });
+ 
+      // ── Totals footer row
+      const tfoot = document.getElementById("ys_tfoot");
+      tfoot.innerHTML =
+        '<tr style="background:#f1f5f9;font-weight:700;border-top:2px solid #e2e8f0;">' +
+          '<td style="text-align:center;color:#334155;">All Years</td>' +
+          '<td style="text-align:right;color:#64748b;">—</td>' +
+          '<td style="text-align:right;color:#27ae60;">₹' + fmt(sumCollection) + '</td>' +
+          '<td style="text-align:right;color:#e74c3c;">₹' + fmt(sumExpense)    + '</td>' +
+          '<td style="text-align:right;color:' + (finalBalance >= 0 ? "#27ae60" : "#e74c3c") + ';">' +
+            (finalBalance < 0 ? "−" : "") + "₹" + fmt(Math.abs(finalBalance)) +
+          '</td>' +
+          '<td style="text-align:right;color:#94a3b8;font-size:11px;">Final balance</td>' +
+        '</tr>';
+ 
+      // Show table + totals
+      _ysShow("ys_table_card");
+      document.getElementById("ys_totals").style.display = "grid";
+ 
+    })
+    .catch(function(err) {
+      _ysShow("ys_error");
+      document.getElementById("ys_error").textContent =
+        "Network error: " + (err.message || err);
+    });
+}
+ 
+/* Helper: hide all ys_ state panels, then show the one needed */
+function _ysShow(visibleId) {
+  ["ys_loading","ys_error","ys_empty","ys_table_card"].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+  // Also hide totals grid unless showing table
+  const totals = document.getElementById("ys_totals");
+  if (totals && visibleId !== "ys_table_card") totals.style.display = "none";
+ 
+  const show = document.getElementById(visibleId);
+  if (show) show.style.display = visibleId === "ys_table_card" ? "block" : (visibleId === "ys_loading" || visibleId === "ys_error" || visibleId === "ys_empty" ? "block" : "block");
+}
 
       function loadSummary() {
         // Total Members = ACTIVE users only (not Admins, not Pending, not Inactive)
@@ -4166,7 +4549,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         const _scrollY = window.scrollY;
         setLoading(true);
         try {
-          let allData = (await getData("getAllData")) || {};
+          let allData = (await getCached("getAllData")) || {};
           users = allData.users || [];
           types = allData.types || [];
           expenseTypes = allData.expenseTypes || [];
@@ -4427,6 +4810,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
           if (res.status === "updated") {
             toast("✅ Contribution updated.");
             closeModal();
+            smartRefresh("contributions");
             updateLocalData("contributions", id, {
               Amount: amt,
               ForMonth: mon,
@@ -4498,16 +4882,23 @@ tr.row-rejected td { background: #fff5f5 !important; }
         <td>${escapeHtml(String(e.Year || "—"))}</td>
         <td class="amt-red">₹ ${fmt(e.Amount)}</td>
         <td style="font-size:12px;color:#888;">${formatPaymentDate(e.PaymentDate)}</td>
-        <td onclick="event.stopPropagation()">
-          <div class="action-btns">
-            <button class="btn-sm" onclick="openEditExpense('${
-              e.Id
-            }')" title="Edit"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn-sm btn-danger" onclick="deleteExpense('${
-              e.Id
-            }')" title="Delete"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </td>
+            <td onclick="event.stopPropagation()">
+      <div class="action-btns">
+        <button class="btn-sm ${(_getReceiptUrls(e).length > 0) ? 'btn-green' : ''}"
+          onclick="openReceiptAttach('${e.Id}')"
+          title="${(_getReceiptUrls(e).length > 0) ? 'Manage Receipts (' + _getReceiptUrls(e).length + ')' : 'Attach Receipt Photo'}"
+          style="${(_getReceiptUrls(e).length > 0) ? 'background:#27ae60;' : 'background:#94a3b8;'}">
+          <i class="fa-solid fa-paperclip"></i>
+          ${_getReceiptUrls(e).length > 1 ? `<span style="font-size:10px;margin-left:2px;">${_getReceiptUrls(e).length}</span>` : ''}
+        </button>
+        <button class="btn-sm" onclick="openEditExpense('${e.Id}')" title="Edit">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        <button class="btn-sm btn-danger" onclick="deleteExpense('${e.Id}')" title="Delete">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    </td>
       </tr>`;
           })
           .join("");
@@ -4599,6 +4990,9 @@ tr.row-rejected td { background: #fff5f5 !important; }
             ["Month", escapeHtml(e.ForMonth || e.Note || "—")],
             ["Year", escapeHtml(String(e.Year || "—"))],
             ["Date", escapeHtml(formatPaymentDate(e.PaymentDate))],
+            ...(_getReceiptUrls(e).length > 0 ? [["Receipts", _getReceiptUrls(e).map((url, i) => `<a href="${escapeHtml(url)}" target="_blank"
+      style="display:inline-flex;align-items:center;gap:6px;color:#27ae60;font-weight:600;font-size:12px;margin-right:8px;">
+      <i class="fa-solid fa-image"></i> Photo ${i+1}</a>`).join("")]] : []),
           ],
           `openEditExpense('${id}')`
         );
@@ -4660,7 +5054,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
           );
           if (res.status === "updated") {
             closeModal();
-            init();
+            smartRefresh("expenses");
           }
         } catch (err) {
           toast("❌ " + err.message, "error");
@@ -4850,6 +5244,14 @@ tr.row-rejected td { background: #fff5f5 !important; }
             (prefStatus || u.Status) === "Inactive" ? "selected" : ""
           }>Inactive</option>
         </select>
+            <label class="_fl">Monthly Target (₹)
+          <span style="color:#bbb;font-weight:400;font-size:10px;">
+            — optional, used in tracker shortfall view
+          </span>
+        </label>
+        <input class="_fi" id="eu_monthly_target" type="number" min="0"
+          placeholder="e.g. 500 (leave 0 for no target)"
+          value="${Number(u.MonthlyTarget||0)||0}"/>
       </div>
       <div class="_mft">
         <button class="_mbtn" style="background:#999;" onclick="closeModal();_adminPendingCroppedB64='';">Cancel</button>
@@ -4878,6 +5280,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
                 Password: "",
                 Email: document.getElementById("eu_email").value,
                 Status: document.getElementById("eu_status").value,
+                MonthlyTarget: Number(document.getElementById("eu_monthly_target")?.value||0),
                 AdminName: s.name,
                 base64: _adminPendingCroppedB64,
                 fileName: "User_" + id + "_" + Date.now() + ".jpg",
@@ -4907,6 +5310,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             Email: document.getElementById("eu_email").value,
             Password: "",
             PhotoURL: photoURL,
+            MonthlyTarget: Number(document.getElementById("eu_monthly_target")?.value||0),
             AdminName: s.name,
           });
           toast(
@@ -4916,7 +5320,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
           if (res.status === "updated") {
             _adminPendingCroppedB64 = ""; // clear after success
             closeModal();
-            init();
+            smartRefresh("users");
           }
         } catch (err) {
           toast("❌ " + err.message, "error");
@@ -4999,7 +5403,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
           res.status === "updated" ? "" : "error"
         );
         closeModal();
-        init();
+        smartRefresh("types");
       }
 
       function openEditOccasion(id, val) {
@@ -5021,7 +5425,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
           res.status === "updated" ? "" : "error"
         );
         closeModal();
-        init();
+        smartRefresh("occasions");
       }
 
       function openEditExpenseType(id, val) {
@@ -5043,7 +5447,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
           res.status === "updated" ? "" : "error"
         );
         closeModal();
-        init();
+        smartRefresh("expenseTypes");
       }
 
       /* ── BULK INSERT v2: per-row (month + custom amount) ── */
@@ -5238,7 +5642,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         );
         setTimeout(() => {
           closeModal();
-          init();
+          smartRefresh("contributions");
         }, 1200);
       }
       async function addContribution() {
@@ -5283,7 +5687,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             toast(msg);
             document.getElementById("amount").value = "";
             document.getElementById("note").value = "";
-            init();
+            smartRefresh("contributions");
             // Refresh dashboard iframe so totals stay in sync
             const _dfi = document.getElementById("dashboardFrame");
             if (_dfi && _dfi.src && _dfi.src !== "") _dfi.src = "dashboard.html?" + Date.now();
@@ -5300,7 +5704,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
               res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               res.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("contributions");
           } catch (err) {
             toast("❌ " + err.message, "error");
           }
@@ -5329,11 +5733,265 @@ tr.row-rejected td { background: #fff5f5 !important; }
           );
           document.getElementById("title").value = "";
           document.getElementById("expAmount").value = "";
-          init();
+          smartRefresh("expenses");
         } catch (err) {
           toast("❌ " + err.message, "error");
         }
       }
+
+      /* ═══ EXPENSE RECEIPT ATTACHMENT ════════════════════════════════
+   Opens a modal to manage multiple receipt photos for an expense.
+   Supports upload, view and delete of individual photos.
+   ═══════════════════════════════════════════════════════════════ */
+
+var _rcptB64      = null;  // base64 of selected image
+var _rcptFileName = "";    // filename for upload
+var _rcptExpId    = null;  // which expense we are attaching to
+
+/* ── Convert a Google Drive URL to a reliable thumbnail src for <img> tags ──
+   lh3.googleusercontent.com/d/FILE_ID can fail for newly-uploaded files.
+   drive.google.com/thumbnail?id=FILE_ID&sz=w400 is always reliable.       ── */
+function _driveImgSrc(url) {
+  if (!url) return "";
+  // Already a thumbnail URL — return as-is
+  if (url.includes("drive.google.com/thumbnail")) return url;
+  // Extract file ID from lh3.googleusercontent.com/d/FILE_ID
+  if (url.includes("lh3.googleusercontent.com/d/")) {
+    const id = url.split("/d/")[1].split("?")[0].split("=")[0].trim();
+    if (id) return "https://drive.google.com/thumbnail?id=" + id + "&sz=w400";
+  }
+  // Extract file ID from drive.google.com/uc?id=FILE_ID
+  if (url.includes("drive.google.com/uc")) {
+    const m = url.match(/[?&]id=([^&]+)/);
+    if (m) return "https://drive.google.com/thumbnail?id=" + m[1] + "&sz=w400";
+  }
+  return url;
+}
+
+/* ── Parse ReceiptURLs from expense object (JSON array or legacy single URL) ── */
+function _getReceiptUrls(e) {
+  if (!e) return [];
+  // New format: ReceiptURLs is a JSON array string e.g. '["url1","url2"]'
+  if (e.ReceiptURLs) {
+    try {
+      const parsed = JSON.parse(e.ReceiptURLs);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch(ex) {
+      if (String(e.ReceiptURLs).startsWith("http")) return [e.ReceiptURLs];
+    }
+  }
+  // Legacy fallback: single ReceiptURL
+  if (e.ReceiptURL && String(e.ReceiptURL).startsWith("http")) return [e.ReceiptURL];
+  return [];
+}
+
+/* ── Open multi-receipt manager modal ── */
+function openReceiptAttach(expId) {
+  const e = expenses.find(function(x) { return String(x.Id) === String(expId); });
+  if (!e) return;
+  _rcptExpId    = expId;
+  _rcptB64      = null;
+  _rcptFileName = "";
+  _renderReceiptModal(e);
+}
+
+function _renderReceiptModal(e) {
+  const expId = String(e.Id);
+  const urls  = _getReceiptUrls(e);
+
+  const photosHTML = urls.length === 0
+    ? `<div style="text-align:center;padding:18px 0;color:#94a3b8;font-size:13px;">
+        <i class="fa-solid fa-image" style="font-size:2rem;display:block;margin-bottom:8px;opacity:0.4;"></i>
+        No receipts attached yet.
+      </div>`
+    : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
+        ${urls.map((url, i) => `
+          <div style="position:relative;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#f8fafc;">
+            <a href="${escapeHtml(url)}" target="_blank">
+              <img src="${_driveImgSrc(url)}"
+                style="width:100%;height:90px;object-fit:cover;display:block;"
+                onerror="this.src='${_driveImgSrc(url)}&t='+Date.now();this.onerror=function(){this.parentElement.parentElement.style.opacity='0.5';this.style.display='none';};"/>
+            </a>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;background:#fff;border-top:1px solid #f1f5f9;">
+              <span style="font-size:10px;color:#64748b;">Photo ${i + 1}</span>
+              <button onclick="_deleteOneReceipt('${expId}','${escapeHtml(url)}')"
+                style="background:#ef4444;border:none;border-radius:4px;color:#fff;
+                  cursor:pointer;padding:2px 6px;font-size:11px;line-height:1.6;">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>`).join("")}
+      </div>`;
+
+  const html = `
+    <div class="_mhdr">
+      <h3><i class="fa-solid fa-paperclip" style="color:#27ae60;"></i>
+        Receipt Photos ${urls.length > 0 ? '<span style="font-size:13px;font-weight:500;color:#94a3b8;margin-left:6px;">('+urls.length+' attached)</span>' : ""}
+      </h3>
+      <button class="_mcls" onclick="closeModal()">×</button>
+    </div>
+    <div class="_mbdy">
+      <p style="font-size:12px;color:#64748b;margin:0 0 14px;line-height:1.6;">
+        <b style="color:#334155;">${escapeHtml(e.Title || "Expense")}</b><br>
+        ₹${fmt(e.Amount)} · ${escapeHtml(e.ForMonth || "")} ${escapeHtml(String(e.Year || ""))}
+      </p>
+      ${photosHTML}
+      <div style="border-top:1px dashed #e2e8f0;padding-top:14px;margin-top:4px;">
+        <label class="_fl" style="margin-bottom:6px;">Add another photo</label>
+        <input type="file" id="rcpt_file" accept="image/*" multiple
+          style="display:block;width:100%;padding:10px;border:1.5px dashed #e2e8f0;
+            border-radius:8px;font-size:13px;cursor:pointer;background:#fafafa;margin-bottom:10px;box-sizing:border-box;"
+          onchange="rcptPreviewSelected(this)"/>
+        <div id="rcpt_preview_wrap" style="display:none;text-align:center;margin-bottom:10px;">
+          <img id="rcpt_preview_img"
+            style="max-width:100%;max-height:160px;border-radius:8px;
+              border:1px solid #e2e8f0;object-fit:contain;"/>
+          <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">Preview — tap Upload to save</p>
+        </div>
+        <div id="rcpt_msg" style="font-size:12px;min-height:16px;color:#ef4444;margin-bottom:4px;"></div>
+      </div>
+    </div>
+    <div class="_mft">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Close</button>
+      <button class="_mbtn" id="rcpt_upload_btn" style="background:#27ae60;" disabled
+        onclick="uploadExpenseReceipt('${expId}')">
+        <i class="fa-solid fa-upload"></i> Upload Photo
+      </button>
+    </div>`;
+
+  openModal(html, "500px");
+}
+
+/* Preview selected image before upload */
+function rcptPreviewSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) {
+    document.getElementById("rcpt_msg").textContent = "File too large. Please use an image under 8MB.";
+    return;
+  }
+  _rcptFileName = "Receipt_" + _rcptExpId + "_" + Date.now() + "." + (file.name.split(".").pop() || "jpg");
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    _rcptB64 = ev.target.result;
+    const prev = document.getElementById("rcpt_preview_img");
+    const wrap = document.getElementById("rcpt_preview_wrap");
+    if (prev) prev.src = _rcptB64;
+    if (wrap) wrap.style.display = "block";
+    const btn = document.getElementById("rcpt_upload_btn");
+    if (btn) btn.disabled = false;
+    document.getElementById("rcpt_msg").textContent = "";
+  };
+  reader.readAsDataURL(file);
+}
+
+/* Upload photo → appends to ReceiptURLs array */
+async function uploadExpenseReceipt(expId) {
+  if (!_rcptB64) {
+    document.getElementById("rcpt_msg").textContent = "Please select a photo first.";
+    return;
+  }
+  const btn = document.getElementById("rcpt_upload_btn");
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...'; }
+
+  try {
+    const s = JSON.parse(localStorage.getItem("session") || "{}");
+    const e = expenses.find(function(x) { return String(x.Id) === String(expId); });
+    const existingUrls = _getReceiptUrls(e);
+
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action:       "uploadExpenseReceipt",
+        expenseId:    expId,
+        base64:       _rcptB64,
+        fileName:     _rcptFileName,
+        existingURLs: JSON.stringify(existingUrls),
+        AdminName:    s.name || "Admin"
+      })
+    });
+    const res = await response.json();
+
+    if (res.status === "success") {
+      const idx = expenses.findIndex(function(x) { return String(x.Id) === String(expId); });
+      if (idx !== -1) {
+        expenses[idx].ReceiptURLs = res.receiptUrls;
+        expenses[idx].ReceiptURL  = res.receiptUrl; // keep legacy field too
+      }
+      toast("✅ Receipt photo uploaded.", "");
+      renderExpenses();
+      // Re-open modal to show updated photos
+      const updatedExp = expenses.find(function(x) { return String(x.Id) === String(expId); });
+      _rcptB64 = null; _rcptFileName = "";
+      _renderReceiptModal(updatedExp);
+    } else {
+      document.getElementById("rcpt_msg").textContent = "Upload failed: " + (res.message || "Unknown error");
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload Photo'; }
+    }
+  } catch(err) {
+    document.getElementById("rcpt_msg").textContent = "Error: " + err.message;
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload Photo'; }
+  }
+}
+
+/* Delete one specific photo from the receipt list */
+async function _deleteOneReceipt(expId, urlToDelete) {
+  confirmModal("Remove this receipt photo?", async function() {
+    try {
+      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const res = await postData({
+        action:        "removeOneExpenseReceipt",
+        Id:            expId,
+        ReceiptURL:    urlToDelete,
+        AdminName:     s.name || "Admin"
+      });
+      if (res.status === "success") {
+        const idx = expenses.findIndex(function(x) { return String(x.Id) === String(expId); });
+        if (idx !== -1) {
+          expenses[idx].ReceiptURLs = res.receiptUrls;
+          expenses[idx].ReceiptURL  = res.receiptUrl;
+        }
+        toast("Receipt photo removed.", "");
+        renderExpenses();
+        const updatedExp = expenses.find(function(x) { return String(x.Id) === String(expId); });
+        _renderReceiptModal(updatedExp);
+      } else {
+        toast("❌ " + (res.message || "Failed to remove photo."), "error");
+      }
+    } catch(err) {
+      toast("❌ " + err.message, "error");
+    }
+  });
+}
+
+/* Legacy: remove ALL receipts (kept for any existing references) */
+async function removeExpenseReceipt(expId) {
+  const e = expenses.find(function(x) { return String(x.Id) === String(expId); });
+  const urls = _getReceiptUrls(e);
+  confirmModal("Remove all receipt photos from this expense?", async function() {
+    try {
+      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const res = await postData({
+        action:        "removeAllExpenseReceipts",
+        Id:            expId,
+        AdminName:     s.name || "Admin",
+        OldReceiptURLs: JSON.stringify(urls)
+      });
+      if (res.status === "success") {
+        const idx = expenses.findIndex(function(x) { return String(x.Id) === String(expId); });
+        if (idx !== -1) { expenses[idx].ReceiptURLs = "[]"; expenses[idx].ReceiptURL = ""; }
+        closeModal();
+        toast("All receipts removed.", "");
+        renderExpenses();
+      } else {
+        toast("❌ " + (res.message || "Failed to remove receipts."), "error");
+      }
+    } catch(err) {
+      toast("❌ " + err.message, "error");
+    }
+  });
+}
+
       async function deleteExpense(id) {
         confirmModal("Delete this expense?", async () => {
           try {
@@ -5342,7 +6000,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
               res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               res.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("expenses");
           } catch (err) {
             toast("❌ " + err.message, "error");
           }
@@ -5378,7 +6036,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             document.getElementById("u_mobile").value = "";
             document.getElementById("u_password").value = "";
             document.getElementById("u_email").value = "";
-            init();
+            smartRefresh("users");
           }
         } catch (err) {
           toast("❌ " + err.message, "error");
@@ -5392,7 +6050,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
               res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               res.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("users");
           } catch (err) {
             toast("❌ " + err.message, "error");
           }
@@ -5408,7 +6066,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             r.status === "success" ? "" : "error"
           );
           document.getElementById("t_name").value = "";
-          init();
+          smartRefresh("types");
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
@@ -5421,7 +6079,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
               r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               r.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("types");
           } catch (e) {
             toast("❌ " + e.message, "error");
           }
@@ -5437,7 +6095,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             r.status === "success" ? "" : "error"
           );
           document.getElementById("o_name").value = "";
-          init();
+          smartRefresh("occasions");
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
@@ -5453,7 +6111,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
               r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               r.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("occasions");
           } catch (e) {
             toast("❌ " + e.message, "error");
           }
@@ -5469,7 +6127,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             r.status === "success" ? "" : "error"
           );
           document.getElementById("e_name").value = "";
-          init();
+          smartRefresh("expenseTypes");
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
@@ -5485,7 +6143,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
               r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               r.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("expenseTypes");
           } catch (e) {
             toast("❌ " + e.message, "error");
           }
@@ -5566,6 +6224,424 @@ tr.row-rejected td { background: #fff5f5 !important; }
                 })
                 .join("");
       }
+
+      /* ═══════════════════════════════════════════════════════════════
+   EVENT MANAGEMENT — all functions self-contained
+   Uses global: data, expenses, expenseTypes, MONTHS
+   New globals: _events (array), _eventExpenses (array)
+   ═══════════════════════════════════════════════════════════════ */
+ 
+var _events        = [];
+var _eventExpenses = [];
+var _evLoaded      = false;
+ 
+/* ── Load events + event expenses from API ── */
+async function loadEvents() {
+  if (_evLoaded) return;
+  try {
+    const res = await getCached("getEventData");
+    _events        = (res && res.events)        || [];
+    _eventExpenses = (res && res.eventExpenses) || [];
+    _evLoaded = true;
+    renderEvents();
+  } catch(err) {
+    document.getElementById("ev_list").innerHTML =
+      `<div style="text-align:center;padding:32px;color:#ef4444;font-size:13px;">
+        Error loading events: ${escapeHtml(err.message)}
+      </div>`;
+  }
+}
+ 
+/* ── Bust event cache after any write ── */
+function _evBust() {
+  _evLoaded = false;
+  mandirCacheBust("getEventData");
+}
+ 
+/* ── Render event cards ── */
+function renderEvents() {
+  const filterStatus = document.getElementById("ev_filter_status")?.value || "";
+  const filterCat    = document.getElementById("ev_filter_cat")?.value    || "";
+ 
+  const list = _events.filter(function(e) {
+    const matchStatus = !filterStatus || e.Status === filterStatus;
+    const matchCat    = !filterCat    || e.Category === filterCat;
+    return matchStatus && matchCat;
+  });
+ 
+  const container = document.getElementById("ev_list");
+  if (!container) return;
+ 
+  if (list.length === 0) {
+    container.innerHTML =
+      `<div style="text-align:center;padding:40px;color:#94a3b8;">
+        <i class="fa-solid fa-calendar-xmark" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+        No events found. Create one above.
+      </div>`;
+    return;
+  }
+ 
+  // Sort: Active first, then Upcoming, then Completed
+  const order = { Active:0, Upcoming:1, Completed:2 };
+  list.sort(function(a,b) { return (order[a.Status]||3) - (order[b.Status]||3); });
+ 
+  container.innerHTML = list.map(function(ev) {
+    // Sum expenses for this event
+    const evExps   = _eventExpenses.filter(function(x) { return String(x.EventId) === String(ev.EventId); });
+    const spent    = evExps.reduce(function(s,x) { return s + Number(x.Amount||0); }, 0);
+    const budget   = Number(ev.Budget || 0);
+    const remaining= budget > 0 ? budget - spent : 0;
+    const pct      = budget > 0 ? Math.min(100, Math.round(spent / budget * 100)) : 0;
+    const barColor = pct >= 90 ? "#ef4444" : pct >= 70 ? "#f59e0b" : "#27ae60";
+ 
+    const statusClass = {
+      Upcoming:  "ev-status-upcoming",
+      Active:    "ev-status-active",
+      Completed: "ev-status-completed"
+    }[ev.Status] || "ev-status-upcoming";
+ 
+    const budgetSection = budget > 0 ? `
+      <div style="margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px;">
+          <span>Budget used: ${pct}%</span>
+          <span>₹${fmt(spent)} / ₹${fmt(budget)}</span>
+        </div>
+        <div class="ev-budget-bar-bg">
+          <div class="ev-budget-bar-fill" style="width:${pct}%;background:${barColor};"></div>
+        </div>
+      </div>` : "";
+ 
+    const dateStr = [ev.StartDate, ev.EndDate].filter(Boolean).join(" → ") || "—";
+ 
+    return `<div class="ev-card">
+      <div class="ev-card-header">
+        <div>
+          <div class="ev-card-title">${escapeHtml(ev.EventName || "Untitled")}</div>
+          <div class="ev-card-cat">
+            <i class="fa-solid fa-tag" style="font-size:10px;"></i>
+            ${escapeHtml(ev.Category || "—")} &nbsp;·&nbsp;
+            <i class="fa-regular fa-calendar" style="font-size:10px;"></i>
+            ${escapeHtml(dateStr)}
+          </div>
+        </div>
+        <span class="badge ${statusClass}" style="border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;">
+          ${escapeHtml(ev.Status || "—")}
+        </span>
+      </div>
+ 
+      ${ev.Description ? `<p style="font-size:12.5px;color:#64748b;margin:0 0 12px;line-height:1.6;">${escapeHtml(ev.Description)}</p>` : ""}
+ 
+      <div class="ev-card-body">
+        <div class="ev-stat">
+          <div class="ev-stat-val" style="color:#f59e0b;">₹${fmt(budget || 0)}</div>
+          <div class="ev-stat-lbl">Budget</div>
+        </div>
+        <div class="ev-stat">
+          <div class="ev-stat-val" style="color:#e74c3c;">₹${fmt(spent)}</div>
+          <div class="ev-stat-lbl">Spent (${evExps.length} items)</div>
+        </div>
+        <div class="ev-stat">
+          <div class="ev-stat-val" style="color:${remaining >= 0 ? '#27ae60' : '#ef4444'};">
+            ${remaining < 0 ? "−" : ""}₹${fmt(Math.abs(remaining))}
+          </div>
+          <div class="ev-stat-lbl">${remaining < 0 ? "Over Budget" : "Remaining"}</div>
+        </div>
+      </div>
+ 
+      ${budgetSection}
+ 
+      <div class="ev-card-footer">
+        <button onclick="openAddEventExpense('${ev.EventId}','${escapeHtml(ev.EventName||'')}')"
+          style="padding:7px 14px;font-size:12px;background:#fb923c;box-shadow:none;">
+          <i class="fa-solid fa-plus"></i> Add Expense
+        </button>
+        <button onclick="viewEventExpenses('${ev.EventId}','${escapeHtml(ev.EventName||'')}')"
+          style="padding:7px 14px;font-size:12px;background:#334155;box-shadow:none;">
+          <i class="fa-solid fa-list"></i> View Expenses (${evExps.length})
+        </button>
+        <button onclick="shareEventWhatsApp('${ev.EventId}')"
+          style="padding:7px 14px;font-size:12px;background:#25d366;box-shadow:none;">
+          <i class="fa-brands fa-whatsapp"></i> Share
+        </button>
+        <button onclick="openEditEvent('${ev.EventId}')"
+          style="padding:7px 14px;font-size:12px;background:#64748b;box-shadow:none;">
+          <i class="fa-solid fa-pen"></i> Edit
+        </button>
+        <button onclick="deleteEvent('${ev.EventId}')"
+          style="padding:7px 14px;font-size:12px;background:#ef4444;box-shadow:none;">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    </div>`;
+  }).join("");
+}
+ 
+/* ── Add new event ── */
+async function addEvent() {
+  const name   = document.getElementById("ev_name")?.value.trim();
+  const cat    = document.getElementById("ev_cat")?.value;
+  const status = document.getElementById("ev_status")?.value;
+  const start  = document.getElementById("ev_start")?.value;
+  const end    = document.getElementById("ev_end")?.value;
+  const budget = document.getElementById("ev_budget")?.value || "0";
+  const desc   = document.getElementById("ev_desc")?.value.trim() || "";
+  const s      = JSON.parse(localStorage.getItem("session") || "{}");
+ 
+  if (!name) { toast("Event name is required.", "warn"); return; }
+ 
+  try {
+    const res = await postData({
+      action:    "addEvent",
+      EventId:   "EVT_" + Date.now(),
+      EventName: name,
+      Category:  cat,
+      Status:    status,
+      StartDate: start,
+      EndDate:   end,
+      Budget:    Number(budget),
+      Description: desc,
+      AdminName: s.name || "Admin"
+    });
+    if (res.status === "success") {
+      toast("✅ Event created.", "");
+      document.getElementById("ev_name").value   = "";
+      document.getElementById("ev_budget").value = "";
+      document.getElementById("ev_desc").value   = "";
+      _evBust();
+      await loadEvents();
+    } else {
+      toast("❌ " + (res.message || "Failed to create event."), "error");
+    }
+  } catch(err) {
+    toast("❌ " + err.message, "error");
+  }
+}
+ 
+/* ── Edit event modal ── */
+function openEditEvent(eventId) {
+  const ev = _events.find(function(x) { return String(x.EventId) === String(eventId); });
+  if (!ev) return;
+ 
+  const catOpts = ["Festival","Pooja","Maintenance","Community","Other"]
+    .map(function(c) { return `<option ${c === ev.Category ? "selected" : ""}>${c}</option>`; }).join("");
+  const stOpts = ["Upcoming","Active","Completed"]
+    .map(function(s) { return `<option ${s === ev.Status ? "selected" : ""}>${s}</option>`; }).join("");
+ 
+  const html = `
+    <div class="_mhdr">
+      <h3><i class="fa-solid fa-calendar-pen"></i> Edit Event</h3>
+      <button class="_mcls" onclick="closeModal()">×</button>
+    </div>
+    <div class="_mbdy">
+      <label class="_fl">Event Name</label>
+      <input class="_fi" id="ee_name" value="${escapeHtml(ev.EventName||'')}"/>
+      <label class="_fl">Category</label>
+      <select class="_fi" id="ee_cat">${catOpts}</select>
+      <label class="_fl">Status</label>
+      <select class="_fi" id="ee_status">${stOpts}</select>
+      <label class="_fl">Start Date</label>
+      <input class="_fi" type="date" id="ee_start" value="${escapeHtml(ev.StartDate||'')}"/>
+      <label class="_fl">End Date</label>
+      <input class="_fi" type="date" id="ee_end" value="${escapeHtml(ev.EndDate||'')}"/>
+      <label class="_fl">Budget (₹)</label>
+      <input class="_fi" type="number" id="ee_budget" value="${Number(ev.Budget||0)}" min="0"/>
+      <label class="_fl">Description</label>
+      <input class="_fi" id="ee_desc" value="${escapeHtml(ev.Description||'')}"/>
+    </div>
+    <div class="_mft">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Cancel</button>
+      <button class="_mbtn" style="background:#fb923c;" onclick="saveEditEvent('${eventId}')">
+        <i class="fa-solid fa-check"></i> Save
+      </button>
+    </div>`;
+  openModal(html, "480px");
+}
+ 
+async function saveEditEvent(eventId) {
+  const s = JSON.parse(localStorage.getItem("session") || "{}");
+  try {
+    const res = await postData({
+      action:      "updateEvent",
+      EventId:     eventId,
+      EventName:   document.getElementById("ee_name").value.trim(),
+      Category:    document.getElementById("ee_cat").value,
+      Status:      document.getElementById("ee_status").value,
+      StartDate:   document.getElementById("ee_start").value,
+      EndDate:     document.getElementById("ee_end").value,
+      Budget:      Number(document.getElementById("ee_budget").value || 0),
+      Description: document.getElementById("ee_desc").value.trim(),
+      AdminName:   s.name || "Admin"
+    });
+    toast(res.status === "updated" ? "✅ Event updated." : "❌ Update failed.",
+          res.status === "updated" ? "" : "error");
+    if (res.status === "updated") {
+      closeModal(); _evBust(); loadEvents();
+    }
+  } catch(err) { toast("❌ " + err.message, "error"); }
+}
+ 
+/* ── Delete event ── */
+function deleteEvent(eventId) {
+  const ev = _events.find(function(x) { return String(x.EventId) === String(eventId); });
+  const evExps = _eventExpenses.filter(function(x) { return String(x.EventId) === String(eventId); });
+  const warn   = evExps.length > 0
+    ? ` This will also delete ${evExps.length} expense record(s) linked to this event.`
+    : "";
+  confirmModal("Delete this event?" + warn, async function() {
+    try {
+      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const res = await postData({ action:"deleteEvent", EventId:eventId, AdminName:s.name||"Admin" });
+      toast(res.status === "deleted" ? "✅ Event deleted." : "❌ " + (res.message || "Failed."),
+            res.status === "deleted" ? "" : "error");
+      if (res.status === "deleted") { _evBust(); loadEvents(); }
+    } catch(err) { toast("❌ " + err.message, "error"); }
+  });
+}
+ 
+/* ── Add expense to event ── */
+function openAddEventExpense(eventId, eventName) {
+  const typeOpts = (typeof expenseTypes !== "undefined" ? expenseTypes : [])
+    .map(function(t) { return `<option value="${t.ExpenseTypeId}">${escapeHtml(t.Name)}</option>`; }).join("");
+  const monOpts  = [""].concat(MONTHS)
+    .map(function(m) { return `<option value="${m}">${m || "None"}</option>`; }).join("");
+ 
+  const html = `
+    <div class="_mhdr">
+      <h3><i class="fa-solid fa-receipt" style="color:#fb923c;"></i> Add Event Expense</h3>
+      <button class="_mcls" onclick="closeModal()">×</button>
+    </div>
+    <div class="_mbdy">
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;
+        font-size:12px;color:#92400e;margin-bottom:14px;">
+        <i class="fa-solid fa-calendar-star"></i> ${escapeHtml(eventName)}
+      </div>
+      <label class="_fl">Title</label>
+      <input class="_fi" id="eev_title" placeholder="e.g. Decorations, Prasad, Sound System"/>
+      <label class="_fl">Amount (₹)</label>
+      <input class="_fi" type="number" id="eev_amt" min="1" placeholder="Amount"/>
+      <label class="_fl">Expense Type</label>
+      <select class="_fi" id="eev_type">${typeOpts}</select>
+      <label class="_fl">Month</label>
+      <select class="_fi" id="eev_month">${monOpts}</select>
+      <label class="_fl">Note <span style="color:#bbb;font-weight:400;font-size:10px;">(optional)</span></label>
+      <input class="_fi" id="eev_note" placeholder="Vendor name or details"/>
+    </div>
+    <div class="_mft">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Cancel</button>
+      <button class="_mbtn" style="background:#fb923c;" onclick="saveEventExpense('${eventId}')">
+        <i class="fa-solid fa-check"></i> Save Expense
+      </button>
+    </div>`;
+  openModal(html, "460px");
+}
+ 
+async function saveEventExpense(eventId) {
+  const title = document.getElementById("eev_title")?.value.trim();
+  const amt   = document.getElementById("eev_amt")?.value;
+  if (!title || !amt || Number(amt) <= 0) {
+    toast("Title and amount are required.", "warn"); return;
+  }
+  const s = JSON.parse(localStorage.getItem("session") || "{}");
+  try {
+    const res = await postData({
+      action:        "addEventExpense",
+      Id:            "EEX_" + Date.now(),
+      EventId:       eventId,
+      Title:         title,
+      Amount:        Number(amt),
+      ExpenseTypeId: document.getElementById("eev_type")?.value || "",
+      ForMonth:      document.getElementById("eev_month")?.value || "",
+      Note:          document.getElementById("eev_note")?.value.trim() || "",
+      AdminName:     s.name || "Admin"
+    });
+    if (res.status === "success") {
+      closeModal();
+      toast("✅ Expense added to event.", "");
+      _evBust();
+      loadEvents();
+    } else {
+      toast("❌ " + (res.message || "Failed."), "error");
+    }
+  } catch(err) { toast("❌ " + err.message, "error"); }
+}
+ 
+/* ── View all expenses for one event ── */
+function viewEventExpenses(eventId, eventName) {
+  const evExps = _eventExpenses.filter(function(x) { return String(x.EventId) === String(eventId); });
+  const total  = evExps.reduce(function(s,x) { return s + Number(x.Amount||0); }, 0);
+ 
+  const rows = evExps.length === 0
+    ? `<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">No expenses yet</td></tr>`
+    : evExps.map(function(x, i) {
+        const tName = (typeof expenseTypes !== "undefined" ? expenseTypes : [])
+          .find(function(t) { return String(t.ExpenseTypeId) === String(x.ExpenseTypeId); })?.Name || "—";
+        return `<tr>
+          <td>${i+1}</td>
+          <td><b>${escapeHtml(x.Title||"—")}</b>${x.Note ? `<br><span style="font-size:10px;color:#94a3b8;">${escapeHtml(x.Note)}</span>` : ""}</td>
+          <td>${escapeHtml(tName)}</td>
+          <td>${escapeHtml(x.ForMonth||"—")}</td>
+          <td class="amt-red">₹${fmt(x.Amount)}</td>
+        </tr>`;
+      }).join("");
+ 
+  const html = `
+    <div class="_mhdr">
+      <h3><i class="fa-solid fa-list-ul"></i> Event Expenses</h3>
+      <button class="_mcls" onclick="closeModal()">×</button>
+    </div>
+    <div class="_mbdy" style="padding:0;">
+      <div style="background:#fff7ed;padding:12px 20px;font-size:13px;font-weight:600;color:#92400e;
+        border-bottom:1px solid #fed7aa;">
+        <i class="fa-solid fa-calendar-star"></i> ${escapeHtml(eventName)}
+        &nbsp;·&nbsp; Total: <span style="color:#e74c3c;">₹${fmt(total)}</span>
+      </div>
+      <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#f8fafc;position:sticky;top:0;">
+              <th style="padding:10px 12px;text-align:left;font-weight:600;color:#334155;">#</th>
+              <th style="padding:10px 12px;text-align:left;font-weight:600;color:#334155;">Title</th>
+              <th style="padding:10px 12px;text-align:left;font-weight:600;color:#334155;">Type</th>
+              <th style="padding:10px 12px;text-align:left;font-weight:600;color:#334155;">Month</th>
+              <th style="padding:10px 12px;text-align:right;font-weight:600;color:#334155;">Amount</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="_mft">
+      <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Close</button>
+      <button class="_mbtn" style="background:#fb923c;" onclick="closeModal();openAddEventExpense('${eventId}','${escapeHtml(eventName)}')">
+        <i class="fa-solid fa-plus"></i> Add Expense
+      </button>
+    </div>`;
+  openModal(html, "580px");
+}
+ 
+/* ── WhatsApp share ── */
+function shareEventWhatsApp(eventId) {
+  const ev     = _events.find(function(x) { return String(x.EventId) === String(eventId); });
+  if (!ev) return;
+  const evExps = _eventExpenses.filter(function(x) { return String(x.EventId) === String(eventId); });
+  const spent  = evExps.reduce(function(s,x) { return s + Number(x.Amount||0); }, 0);
+  const budget = Number(ev.Budget || 0);
+  const lines  = evExps.map(function(x) { return `  • ${x.Title}: ₹${fmt(x.Amount)}`; }).join("\n") || "  No expenses yet";
+ 
+  const msg = `🕉️ *${ev.EventName}*\n` +
+    `📅 ${[ev.StartDate, ev.EndDate].filter(Boolean).join(" → ") || "Date TBD"}\n` +
+    `🏷️ ${ev.Category} · ${ev.Status}\n` +
+    `━━━━━━━━━━━━━━\n` +
+    (budget > 0 ? `💰 Budget: ₹${fmt(budget)}\n` : "") +
+    `💸 Spent: ₹${fmt(spent)}\n` +
+    (budget > 0 ? `📊 Remaining: ₹${fmt(budget - spent)}\n` : "") +
+    `━━━━━━━━━━━━━━\n` +
+    `*Expense Breakdown:*\n${lines}\n` +
+    `━━━━━━━━━━━━━━\n` +
+    `_${new Date().toLocaleDateString("en-IN")} · Shree Hanuman Mandir_`;
+ 
+  window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+}
 
       async function addGoal() {
         let name = document.getElementById("g_name").value.trim();
@@ -5685,7 +6761,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
               res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
               res.status === "deleted" ? "" : "error"
             );
-            init();
+            smartRefresh("goals");
           } catch (e) {
             toast("❌ " + e.message, "error");
           }
@@ -6041,6 +7117,180 @@ tr.row-rejected td { background: #fff5f5 !important; }
         a.click(); URL.revokeObjectURL(url);
         toast("✅ Audit log exported as CSV","");
       }
+
+      /* ═══ CSV EXPORT — CONTRIBUTIONS ════════════════════════════════
+   Exports whatever is currently visible after filters are applied.
+   Falls back to full data if filter function has not run yet.
+   ═══════════════════════════════════════════════════════════════ */
+function exportContribCSV() {
+  // Get currently filtered list — re-run filter logic to be safe
+  const txt   = (document.getElementById("searchContrib")?.value || "").toLowerCase();
+  const start = document.getElementById("contribStart")?.value || "";
+  const end   = document.getElementById("contribEnd")?.value   || "";
+ 
+  const list = data.filter(function(c) {
+    const user = users.find(u => String(u.UserId) === String(c.UserId));
+    const displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+    const walkInName = String(c.UserId).startsWith("WALKIN_")
+      ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "").toLowerCase()
+      : "";
+    const nameMatch = !txt ||
+      (user?.Name.toLowerCase() || "").includes(txt) ||
+      walkInName.includes(txt) ||
+      String(user?.Mobile || "").includes(txt) ||
+      String(c.Amount).includes(txt) ||
+      displayRID.toLowerCase().includes(txt) ||
+      (c.ReceiptID || "").toLowerCase().includes(txt);
+    let dateMatch = true;
+    if ((start || end) && c.PaymentDate) {
+      const _fmtD = formatPaymentDate(c.PaymentDate).split(" ")[0].split("-");
+      if (_fmtD.length === 3) {
+        const cDate = _fmtD[2] + "-" + _fmtD[1] + "-" + _fmtD[0];
+        dateMatch = (!start || cDate >= start) && (!end || cDate <= end);
+      }
+    }
+    return nameMatch && dateMatch;
+  });
+ 
+  if (!list || list.length === 0) {
+    toast("No contribution records to export", "warn");
+    return;
+  }
+ 
+  // Column headers — matches table + extra useful fields
+  const headers = [
+    "#", "Name", "Mobile", "Amount (₹)", "Month", "Year",
+    "Type", "Occasion", "Receipt ID", "Payment Mode",
+    "Payment Date", "Note", "Walk-in"
+  ];
+ 
+  const rows = list.map(function(c, i) {
+    const user = users.find(u => String(u.UserId) === String(c.UserId));
+    const isWalkIn = String(c.UserId).startsWith("WALKIN_");
+    const name = user?.Name ||
+      (isWalkIn
+        ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "Walk-in Donor")
+        : "Unknown");
+    const mobile   = user?.Mobile || (isWalkIn ? (String(c.Note || "").match(/\|\s*(\d+)/)?.[1] || "") : "");
+    const typeName = types.find(t => String(t.TypeId) === String(c.TypeId))?.TypeName || "";
+    const occName  = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "";
+    const rid      = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+    const pDate    = formatPaymentDate(c.PaymentDate);
+ 
+    return [
+      i + 1,
+      name,
+      mobile,
+      Number(c.Amount || 0),
+      c.ForMonth || "",
+      c.Year || "",
+      typeName,
+      occName,
+      rid,
+      c.PaymentMode || "",
+      pDate,
+      c.Note || "",
+      isWalkIn ? "Yes" : "No"
+    ].map(function(v) {
+      return '"' + String(v).replace(/"/g, '""') + '"';
+    }).join(",");
+  });
+ 
+  // Build summary rows at bottom
+  const total = list.reduce(function(s, c) { return s + Number(c.Amount || 0); }, 0);
+  rows.push(""); // blank line before summary
+  rows.push('"Total Records","' + list.length + '"');
+  rows.push('"Total Amount (₹)","' + total.toLocaleString("en-IN") + '"');
+ 
+  // Filter context in filename
+  const dateTag = new Date().toISOString().slice(0, 10);
+  const filterTag = (start && end) ? ("_" + start + "_to_" + end)
+    : start ? ("_from_" + start)
+    : end   ? ("_upto_" + end)
+    : "";
+  const filename = "contributions" + filterTag + "_exported_" + dateTag + ".csv";
+ 
+  _downloadCSV([headers.join(","), ...rows].join("\n"), filename);
+  toast("✅ " + list.length + " contribution records exported", "");
+}
+ 
+ 
+/* ═══ CSV EXPORT — EXPENSES ══════════════════════════════════════
+   Exports whatever is currently visible after filters are applied.
+   ═══════════════════════════════════════════════════════════════ */
+function exportExpenseCSV() {
+  const txt = (document.getElementById("searchExpense")?.value || "").toLowerCase();
+  const yr  = document.getElementById("expFilterYear")?.value  || "";
+  const mo  = document.getElementById("expFilterMonth")?.value || "";
+ 
+  const list = expenses.filter(function(e) {
+    const tName = expenseTypes.find(t => String(t.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "";
+    const mn    = e.ForMonth || e.Note || "";
+    const textMatch = !txt ||
+      (e.Title || "").toLowerCase().includes(txt) ||
+      tName.toLowerCase().includes(txt) ||
+      mn.toLowerCase().includes(txt) ||
+      String(e.Amount).includes(txt);
+    const yearMatch  = !yr || String(e.Year) === yr;
+    const monthMatch = !mo || mn === mo;
+    return textMatch && yearMatch && monthMatch;
+  });
+ 
+  if (!list || list.length === 0) {
+    toast("No expense records to export", "warn");
+    return;
+  }
+ 
+  const headers = ["#", "Title", "Expense Type", "Month", "Year", "Amount (₹)", "Payment Date"];
+ 
+  const rows = list.map(function(e, i) {
+    const tName = expenseTypes.find(t => String(t.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "";
+    const mn    = e.ForMonth || e.Note || "";
+    return [
+      i + 1,
+      e.Title || "",
+      tName,
+      mn,
+      e.Year || "",
+      Number(e.Amount || 0),
+      formatPaymentDate(e.PaymentDate)
+    ].map(function(v) {
+      return '"' + String(v).replace(/"/g, '""') + '"';
+    }).join(",");
+  });
+ 
+  // Summary rows
+  const total = list.reduce(function(s, e) { return s + Number(e.Amount || 0); }, 0);
+  rows.push("");
+  rows.push('"Total Records","' + list.length + '"');
+  rows.push('"Total Amount (₹)","' + total.toLocaleString("en-IN") + '"');
+ 
+  // Filename with filter context
+  const dateTag   = new Date().toISOString().slice(0, 10);
+  const filterTag = yr ? ("_" + yr + (mo ? "_" + mo : "")) : (mo ? "_" + mo : "");
+  const filename  = "expenses" + filterTag + "_exported_" + dateTag + ".csv";
+ 
+  _downloadCSV([headers.join(","), ...rows].join("\n"), filename);
+  toast("✅ " + list.length + " expense records exported", "");
+}
+ 
+ 
+/* ═══ SHARED CSV DOWNLOAD HELPER ════════════════════════════════
+   Creates a blob, triggers browser download, cleans up URL.
+   ═══════════════════════════════════════════════════════════════ */
+function _downloadCSV(csvString, filename) {
+  // Add BOM for Excel to correctly read UTF-8 (handles ₹ and Hindi text)
+  const bom  = "\uFEFF";
+  const blob = new Blob([bom + csvString], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
       /* ═══ FEEDBACK ADMIN FUNCTIONS ═══ */
       /* ══════════ FEEDBACK CONFIRM MODAL ══════════ */
@@ -6448,7 +7698,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
               (o) => String(o.OccasionId) === String(occasionId)
             );
             closeModal();
-            init();
+            smartRefresh("contributions");
             // Refresh dashboard iframe so live summary reflects the new walk-in entry
             const _df = document.getElementById("dashboardFrame");
             if (_df && _df.src && _df.src !== "") _df.src = "dashboard.html?" + Date.now();
@@ -6520,93 +7770,177 @@ tr.row-rejected td { background: #fff5f5 !important; }
         }
       }
 
-      function runTracker() {
-        const trType  = document.getElementById("tr_type");
-        const trMonth = document.getElementById("tr_month");
-        const trYear  = document.getElementById("tr_year");
-        if (!trType || !trMonth || !trYear) return;
-
-        const selTypeId = trType.value;
-        const selMonth  = trMonth.value;
-        const selYear   = String(trYear.value);
-
-        // All active non-admin members (exclude walk-ins — they have no user record)
-        const members = users.filter(u => u.Role !== "Admin" && String(u.Status||"").toLowerCase() === "active");
-
-        // Filter contributions matching criteria
-        let contribs = data.filter(c =>
-          String(c.Year) === selYear &&
-          c.ForMonth === selMonth &&
-          !String(c.UserId).startsWith("WALKIN_")
-        );
-        if (selTypeId) contribs = contribs.filter(c => String(c.TypeId) === selTypeId);
-
-        // Paid member IDs (could have multiple contributions — count as paid)
-        const paidUserIds = new Set(contribs.map(c => String(c.UserId)));
-
-        const paidMembers    = members.filter(u => paidUserIds.has(String(u.UserId)));
-        const pendingMembers = members.filter(u => !paidUserIds.has(String(u.UserId)));
-        const paidAmt        = contribs.reduce((s,c) => s + Number(c.Amount||0), 0);
-        const pctComplete    = members.length > 0 ? Math.round((paidMembers.length / members.length) * 100) : 0;
-
-        // Update badges
-        document.getElementById("tr_summary").style.display = "flex";
-        document.getElementById("tr_paid_count").innerText   = paidMembers.length;
-        document.getElementById("tr_paid_amt").innerText     = "₹" + fmt(paidAmt);
-        document.getElementById("tr_pending_count").innerText= pendingMembers.length;
-        document.getElementById("tr_pending_pct").innerText  = pctComplete + "% complete";
-        document.getElementById("tr_total_members").innerText= members.length;
-        const pw = document.getElementById("tr_progress_wrap");
-        if (pw) pw.style.display = "block";
-
-        // Render paid list
-        const paidList = document.getElementById("tr_paid_list");
-        paidList.innerHTML = paidMembers.length === 0
-          ? '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;"><i class="fa-solid fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px;"></i>No paid members</div>'
-          : paidMembers.map((u, i) => {
-              const userContribs = contribs.filter(c => String(c.UserId) === String(u.UserId));
-              const total = userContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
-              return `<div class="tr-member-row" style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #f0fdf4;font-size:12.5px;gap:8px;min-height:48px;">
-                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                  <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#dcfce7,#bbf7d0);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#16a34a;flex-shrink:0;">${i+1}</div>
-                  <div style="min-width:0;">
-                    <div style="font-weight:600;color:#166534;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.Name||"—")}</div>
-                    <div style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.Mobile||"")}</div>
-                  </div>
-                </div>
-                <span style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#15803d;padding:4px 12px;border-radius:20px;font-weight:700;font-size:11.5px;white-space:nowrap;flex-shrink:0;">₹${fmt(total)}</span>
-              </div>`;
-            }).join("");
-
-        // Render pending list
-        const pendingList = document.getElementById("tr_pending_list");
-        pendingList.innerHTML = pendingMembers.length === 0
-          ? '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;"><i class="fa-solid fa-party-horn" style="font-size:1.5rem;display:block;margin-bottom:6px;color:#22c55e;"></i>🎉 All members have paid!</div>'
-          : pendingMembers.map((u, i) =>
-              `<div class="tr-member-row" style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #fef2f2;font-size:12.5px;gap:8px;min-height:48px;">
-                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                  <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#fee2e2,#fecaca);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#dc2626;flex-shrink:0;">${i+1}</div>
-                  <div style="min-width:0;">
-                    <div style="font-weight:600;color:#991b1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.Name||"—")}</div>
-                    <div style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.Mobile||"")}</div>
-                  </div>
-                </div>
-                <span style="background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626;padding:4px 12px;border-radius:20px;font-weight:700;font-size:11px;white-space:nowrap;flex-shrink:0;">Pending</span>
-              </div>`
-            ).join("");
-
-        document.getElementById("tr_empty").style.display = "none";
-
-        // Progress bar
-        let pbEl = document.getElementById("tr_progress_bar");
-        if (pbEl) {
-          pbEl.style.width = pctComplete + "%";
-          pbEl.style.background = pctComplete >= 100 ? "#16a34a" : pctComplete >= 60 ? "#f7a01a" : "#dc2626";
-        }
-
-        // Store for send functions
-        window._trackerState = { selTypeId, selMonth, selYear, paidMembers, pendingMembers, paidAmt, pctComplete };
+      /* ═══ ENHANCED runTracker() WITH TARGET + SHORTFALL ═════════════
+   Drop-in replacement for the existing runTracker() function.
+   Find runTracker() in admin.html and replace the entire function
+   body with this one.
+   ═══════════════════════════════════════════════════════════════ */
+function runTracker() {
+  const trType  = document.getElementById("tr_type");
+  const trMonth = document.getElementById("tr_month");
+  const trYear  = document.getElementById("tr_year");
+  if (!trType || !trMonth || !trYear) return;
+ 
+  const selTypeId = trType.value;
+  const selMonth  = trMonth.value;
+  const selYear   = String(trYear.value);
+ 
+  // All active non-admin members
+  const members = users.filter(u =>
+    u.Role !== "Admin" &&
+    String(u.Status || "").toLowerCase() === "active"
+  );
+ 
+  // Contributions matching current filter
+  let contribs = data.filter(c =>
+    String(c.Year) === selYear &&
+    c.ForMonth === selMonth &&
+    !String(c.UserId).startsWith("WALKIN_")
+  );
+  if (selTypeId) contribs = contribs.filter(c => String(c.TypeId) === selTypeId);
+ 
+  // Paid member IDs
+  const paidUserIds = new Set(contribs.map(c => String(c.UserId)));
+ 
+  const paidMembers    = members.filter(u =>  paidUserIds.has(String(u.UserId)));
+  const pendingMembers = members.filter(u => !paidUserIds.has(String(u.UserId)));
+  const paidAmt        = contribs.reduce((s, c) => s + Number(c.Amount || 0), 0);
+  const pctComplete    = members.length > 0
+    ? Math.round((paidMembers.length / members.length) * 100) : 0;
+ 
+  // ── Target calculations
+  // Total expected = sum of MonthlyTarget for all members who have one set
+  const totalExpected = members.reduce((s, u) => s + Number(u.MonthlyTarget || 0), 0);
+  const totalShortfall = Math.max(0, totalExpected - paidAmt);
+  const hasAnyTarget = members.some(u => Number(u.MonthlyTarget || 0) > 0);
+ 
+  // ── Update existing badges
+  document.getElementById("tr_summary").style.display = "flex";
+  document.getElementById("tr_paid_count").innerText    = paidMembers.length;
+  document.getElementById("tr_paid_amt").innerText      = "₹" + fmt(paidAmt);
+  document.getElementById("tr_pending_count").innerText = pendingMembers.length;
+  document.getElementById("tr_pending_pct").innerText   = pctComplete + "% complete";
+  document.getElementById("tr_total_members").innerText = members.length;
+ 
+  // ── Add / update target summary badges (only if any target is set)
+  let tgtBadgeWrap = document.getElementById("tr_target_badges");
+  if (hasAnyTarget) {
+    if (!tgtBadgeWrap) {
+      tgtBadgeWrap = document.createElement("div");
+      tgtBadgeWrap.id = "tr_target_badges";
+      tgtBadgeWrap.style.cssText = "display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;";
+      // Insert after tr_summary
+      const summary = document.getElementById("tr_summary");
+      if (summary && summary.parentNode) {
+        summary.parentNode.insertBefore(tgtBadgeWrap, summary.nextSibling);
       }
+    }
+    tgtBadgeWrap.style.display = "flex";
+    tgtBadgeWrap.innerHTML =
+      `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+        <div style="font-size:1.4rem;font-weight:700;color:#2563eb;">₹${fmt(totalExpected)}</div>
+        <div style="font-size:11px;color:#1d4ed8;font-weight:600;">🎯 Expected Total</div>
+        <div style="font-size:11px;color:#3b82f6;">${members.filter(u=>Number(u.MonthlyTarget||0)>0).length} members with target</div>
+      </div>` +
+      (totalShortfall > 0
+        ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+            <div style="font-size:1.4rem;font-weight:700;color:#ea580c;">₹${fmt(totalShortfall)}</div>
+            <div style="font-size:11px;color:#c2410c;font-weight:600;">⚠ Total Shortfall</div>
+            <div style="font-size:11px;color:#ea580c;">vs expected this month</div>
+          </div>`
+        : `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
+            <div style="font-size:1.4rem;font-weight:700;color:#16a34a;">₹0</div>
+            <div style="font-size:11px;color:#166534;font-weight:600;">✅ No Shortfall</div>
+            <div style="font-size:11px;color:#22c55e;">Target met or exceeded</div>
+          </div>`
+      );
+  } else if (tgtBadgeWrap) {
+    tgtBadgeWrap.style.display = "none";
+  }
+ 
+  const pw = document.getElementById("tr_progress_wrap");
+  if (pw) pw.style.display = "block";
+ 
+  // ── Render PAID list (with target comparison)
+  const paidList = document.getElementById("tr_paid_list");
+  paidList.innerHTML = paidMembers.length === 0
+    ? '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;"><i class="fa-solid fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:6px;"></i>No paid members</div>'
+    : paidMembers.map(function(u, i) {
+        const userContribs  = contribs.filter(c => String(c.UserId) === String(u.UserId));
+        const paid          = userContribs.reduce((s, c) => s + Number(c.Amount || 0), 0);
+        const target        = Number(u.MonthlyTarget || 0);
+        const metTarget     = target > 0 && paid >= target;
+        const underTarget   = target > 0 && paid < target;
+ 
+        // Badge: show "₹paid / ₹target" if under target, else just "₹paid"
+        const badgeText = underTarget
+          ? `₹${fmt(paid)} / ₹${fmt(target)}`
+          : `₹${fmt(paid)}`;
+        const badgeBg   = underTarget
+          ? "linear-gradient(135deg,#fff7ed,#fed7aa)"
+          : "linear-gradient(135deg,#dcfce7,#bbf7d0)";
+        const badgeColor = underTarget ? "#c2410c" : "#15803d";
+ 
+        // Small target-met tick
+        const targetTick = metTarget
+          ? `<span style="font-size:10px;color:#16a34a;margin-left:4px;" title="Target met">🎯</span>`
+          : "";
+ 
+        return `<div class="tr-member-row" style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #f0fdf4;font-size:12.5px;gap:8px;min-height:48px;">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#dcfce7,#bbf7d0);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#16a34a;flex-shrink:0;">${i+1}</div>
+            <div style="min-width:0;">
+              <div style="font-weight:600;color:#166534;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                ${escapeHtml(u.Name || "—")}${targetTick}
+              </div>
+              <div style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.Mobile || "")}</div>
+            </div>
+          </div>
+          <span style="background:${badgeBg};color:${badgeColor};padding:4px 10px;border-radius:20px;font-weight:700;font-size:11px;white-space:nowrap;flex-shrink:0;">${badgeText}</span>
+        </div>`;
+      }).join("");
+ 
+  // ── Render PENDING list (with shortfall)
+  const pendingList = document.getElementById("tr_pending_list");
+  pendingList.innerHTML = pendingMembers.length === 0
+    ? '<div style="padding:20px;text-align:center;color:#aaa;font-size:12px;"><i class="fa-solid fa-party-horn" style="font-size:1.5rem;display:block;margin-bottom:6px;color:#22c55e;"></i>🎉 All members have paid!</div>'
+    : pendingMembers.map(function(u, i) {
+        const target    = Number(u.MonthlyTarget || 0);
+        const shortfall = target > 0 ? target : 0;
+ 
+        const badgeText  = shortfall > 0 ? `₹${fmt(shortfall)} due` : "Pending";
+        const badgeBg    = shortfall > 0
+          ? "linear-gradient(135deg,#fff7ed,#fed7aa)"
+          : "linear-gradient(135deg,#fee2e2,#fecaca)";
+        const badgeColor = shortfall > 0 ? "#c2410c" : "#dc2626";
+ 
+        return `<div class="tr-member-row" style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid #fef2f2;font-size:12.5px;gap:8px;min-height:48px;">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#fee2e2,#fecaca);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#dc2626;flex-shrink:0;">${i+1}</div>
+            <div style="min-width:0;">
+              <div style="font-weight:600;color:#991b1b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.Name || "—")}</div>
+              <div style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.Mobile || "")}</div>
+            </div>
+          </div>
+          <span style="background:${badgeBg};color:${badgeColor};padding:4px 10px;border-radius:20px;font-weight:700;font-size:11px;white-space:nowrap;flex-shrink:0;">${badgeText}</span>
+        </div>`;
+      }).join("");
+ 
+  document.getElementById("tr_empty").style.display = "none";
+ 
+  // Progress bar — unchanged
+  let pbEl = document.getElementById("tr_progress_bar");
+  if (pbEl) {
+    pbEl.style.width      = pctComplete + "%";
+    pbEl.style.background = pctComplete >= 100 ? "#16a34a" : pctComplete >= 60 ? "#f7a01a" : "#dc2626";
+  }
+ 
+  // Store state for WhatsApp send functions — unchanged
+  window._trackerState = {
+    selTypeId, selMonth, selYear,
+    paidMembers, pendingMembers, paidAmt, pctComplete
+  };
+}
 
       function sendTrackerMsg(which) {
         const state = window._trackerState;
@@ -6650,7 +7984,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
           if(el) el.innerHTML="<span style='color:#94a3b8;'>Loading status...</span>";
         });
 
-        getData("getEmailSettings").then(function(s) {
+        getCached("getEmailSettings").then(function(s) {
           // FIX: use strict === true (Apps Script now returns proper booleans)
           var receiptOn  = s === true || (s && s.auto_receipt  === true);
           var monthlyOn  = s === true || (s && s.monthly_report === true);
@@ -6932,7 +8266,7 @@ var _userFilterStatus = "all";
          .then(res => {
            if (res && res.status === "success") {
              toast("✅ " + userName + " approved! Approval email sent.");
-             setTimeout(() => { try { init(); } catch(e) {} }, 300);
+             setTimeout(() => { try { smartRefresh("users"); } catch(e) {} }, 300);
            } else {
              toast("❌ " + (res && res.message ? res.message : "Approval failed."), "error");
            }
@@ -6976,7 +8310,7 @@ var _userFilterStatus = "all";
      .then(res => {
        if (res && res.status === "success") {
          toast("Registration for " + userName + " rejected. Email sent.", "warn");
-         setTimeout(() => { try { init(); } catch(e) {} }, 300);
+         setTimeout(() => { try { smartRefresh("users"); } catch(e) {} }, 300);
        } else {
          toast("❌ " + (res && res.message ? res.message : "Rejection failed."), "error");
        }
@@ -6988,7 +8322,7 @@ var _userFilterStatus = "all";
  function loadChatbotSettings() {
    const cbMsg = document.getElementById("cbotMsg");
    if (cbMsg) { cbMsg.textContent = "Loading..."; cbMsg.className = "msg-box"; }
-   getData("getChatbotConfig")
+   getCached("getChatbotConfig")
      .then(cfg => {
        if (!cfg) { if (cbMsg) { cbMsg.textContent = "Could not load settings."; cbMsg.className = "msg-box error"; } return; }
        const fields = [
@@ -7059,11 +8393,51 @@ var _userFilterStatus = "all";
          loadChatbotSettings();
        if (id === "trackerPage" && typeof initTrackerDropdowns === "function")
          setTimeout(initTrackerDropdowns, 100);
+         if (id === "yearSummaryPage" && typeof loadYearSummary === "function")
+         loadYearSummary();
        if (id === "emailAutoPage" && typeof initEmailAutoPage === "function")
          setTimeout(initEmailAutoPage, 100);
+      if (id === "eventsPage" && typeof loadEvents === "function")
+         loadEvents();
      };
    }
  });
     </script>
+
+<script>
+  /* ── Service Worker registration ── */
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("./sw.js").then(function(reg) {
+   
+        // Detect when a new SW version is waiting — prompt user to refresh
+        reg.addEventListener("updatefound", function() {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", function() {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              // New version available — show update toast if toast() is available
+              // Otherwise show a simple confirm dialog
+              if (typeof toast === "function") {
+                toast("🔄 App updated — tap here to refresh", "warn");
+                // Auto-reload after 4 seconds so admin always gets latest code
+                setTimeout(function() { location.reload(); }, 4000);
+              } else {
+                if (confirm("App updated. Reload now for the latest version?")) {
+                  location.reload();
+                }
+              }
+            }
+          });
+        });
+   
+      }).catch(function(err) {
+        // SW registration failed — app still works normally without it
+        console.warn("Service Worker registration failed:", err);
+      });
+    });
+  }
+  </script>
+
   </body>
 </html>
