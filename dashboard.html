@@ -601,6 +601,18 @@
       </div>
     </div>
 
+    <!-- M13: Monthly Income vs Expense bar chart -->
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="margin-bottom:14px;"><i class="fa-solid fa-chart-bar" style="color:#f7a01a;"></i> Monthly Income vs Expense</h3>
+      <div id="monthlyBarChart" style="display:flex;align-items:flex-end;gap:6px;height:140px;padding:0 4px;overflow-x:auto;">
+        <div style="color:#aaa;font-size:12px;padding:10px;">Loading chart…</div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;font-weight:600;">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:#22c55e;border-radius:3px;display:inline-block;"></span>Income</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:#f97316;border-radius:3px;display:inline-block;"></span>Expense</span>
+      </div>
+    </div>
+
     <div class="grid-layout">
       <div class="card">
         <h3><i class="fa-solid fa-calendar-days"></i> Month-wise Tracking</h3>
@@ -1353,5 +1365,57 @@
 
       init();
     </script>
+  <script>
+  // M13: Render monthly bar chart
+  function renderMonthlyBarChart(mapC, mapE, monthsList) {
+    const el = document.getElementById("monthlyBarChart");
+    if (!el) return;
+    // Only months that have data
+    const active = (monthsList || []).filter(m => (mapC[m]||0) > 0 || (mapE[m]||0) > 0);
+    if (active.length === 0) { el.innerHTML = '<div style="color:#aaa;font-size:12px;padding:10px;">No data for selected period.</div>'; return; }
+    const maxVal = Math.max(...active.map(m => Math.max(mapC[m]||0, mapE[m]||0)), 1);
+    el.innerHTML = active.map(function(m) {
+      const cH = Math.round(((mapC[m]||0) / maxVal) * 120);
+      const eH = Math.round(((mapE[m]||0) / maxVal) * 120);
+      const short = m.slice(0,3);
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:28px;flex:1;">'
+        + '<div style="display:flex;align-items:flex-end;gap:2px;height:120px;">'
+        + '<div title="Income: ₹' + (mapC[m]||0).toLocaleString("en-IN") + '" style="width:10px;height:' + cH + 'px;background:#22c55e;border-radius:3px 3px 0 0;min-height:2px;cursor:pointer;"></div>'
+        + '<div title="Expense: ₹' + (mapE[m]||0).toLocaleString("en-IN") + '" style="width:10px;height:' + eH + 'px;background:#f97316;border-radius:3px 3px 0 0;min-height:2px;cursor:pointer;"></div>'
+        + '</div>'
+        + '<div style="font-size:9px;color:#64748b;font-weight:600;">' + short + '</div>'
+        + '</div>';
+    }).join("");
+  }
+
+  // Hook into renderMonthWise to also draw bar chart
+  const _origRenderMW = window.renderMonthWise;
+  if (typeof _origRenderMW === "function") {
+    window.renderMonthWise = function() {
+      _origRenderMW();
+      // Rebuild mapC, mapE from filteredC/filteredE (in outer scope)
+      try {
+        const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+        const mC = {}, mE = {};
+        if (typeof filteredC !== "undefined") filteredC.forEach(function(c){ const m=c.ForMonth||""; if(m) mC[m]=(mC[m]||0)+Number(c.Amount||0); });
+        if (typeof filteredE !== "undefined") filteredE.forEach(function(e){ const m=e.ForMonth||""; if(m) mE[m]=(mE[m]||0)+Number(e.Amount||0); });
+        renderMonthlyBarChart(mC, mE, months);
+      } catch(err) {}
+    };
+  }
+
+  // M18: Version in footer
+  (function(){
+    if (typeof APP !== "undefined" && APP.version) {
+      const footer = document.querySelector("footer") || document.querySelector(".footer");
+      if (footer) {
+        const vSpan = document.createElement("span");
+        vSpan.style.cssText = "font-size:10px;color:#aaa;display:block;margin-top:4px;";
+        vSpan.textContent = "v" + APP.version;
+        footer.appendChild(vSpan);
+      }
+    }
+  })();
+  </script>
   </body>
 </html>

@@ -4,13 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" href="icon-192.svg"/>
-  <meta name="theme-color" content="#f7a01a"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="SHM"/>
-
     <title>Admin Panel - Mandir System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1097,6 +1090,37 @@ tr.row-rejected td { background: #fff5f5 !important; }
   padding-top:12px;border-top:1px solid #f1f5f9;
 }
 
+
+      /* ── L2: Dark mode ── */
+      body.dark-mode { background:#0f172a !important; color:#e2e8f0 !important; }
+      body.dark-mode .card, body.dark-mode .card-box { background:#1e293b !important; border-color:#334155 !important; color:#e2e8f0 !important; }
+      body.dark-mode .main { background:#0f172a !important; }
+      body.dark-mode table { color:#e2e8f0 !important; }
+      body.dark-mode table thead th { background:#1e293b !important; color:#f7a01a !important; }
+      body.dark-mode table tbody td { border-color:#334155 !important; color:#e2e8f0 !important; }
+      body.dark-mode table tbody tr:hover td { background:#253247 !important; }
+      body.dark-mode input, body.dark-mode select, body.dark-mode textarea { background:#1e293b !important; color:#e2e8f0 !important; border-color:#475569 !important; }
+      body.dark-mode .header { background:#1e293b !important; border-color:#334155 !important; }
+      body.dark-mode .page { color:#e2e8f0 !important; }
+      body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode label { color:#e2e8f0 !important; }
+      body.dark-mode p, body.dark-mode span:not(.nav-badge):not(.status-badge) { color:#cbd5e1; }
+      body.dark-mode .filter-row { background:#1e293b !important; border-color:#334155 !important; }
+      body.dark-mode .search-bar { background:#1e293b !important; color:#e2e8f0 !important; border-color:#475569 !important; }
+      body.dark-mode .summary-grid .card-box { background:#1e293b !important; border-color:#334155 !important; }
+      body.dark-mode .summary-grid .card-box div { color:#e2e8f0 !important; }
+      body.dark-mode .nav-section-label { color:#64748b !important; }
+      body.dark-mode .form-row > div { background:transparent !important; }
+      body.dark-mode .table-responsive { background:#1e293b !important; border-color:#334155 !important; }
+      body.dark-mode button:not(.sidebar li button):not(._mbtn):not(#darkModeBtn):not(#langToggleBtn) { filter: brightness(0.9); }
+      body.dark-mode #darkModeBtn { background:rgba(255,255,255,0.08) !important; color:#e2e8f0 !important; }
+      body.dark-mode #langToggleBtn { background:rgba(255,255,255,0.08) !important; color:#e2e8f0 !important; }
+      body.dark-mode #welcomeUser, body.dark-mode .header div { color:#e2e8f0 !important; }
+      body.dark-mode .status-badge.pending  { background:#854d0e !important; color:#fef9c3 !important; }
+      body.dark-mode .status-badge.approved, body.dark-mode .status-badge.active { background:#14532d !important; color:#bbf7d0 !important; }
+      body.dark-mode .status-badge.rejected, body.dark-mode .status-badge.inactive { background:#7f1d1d !important; color:#fecaca !important; }
+      body.dark-mode .req-card { background:#1e293b !important; border-color:#334155 !important; }
+      body.dark-mode .req-card-label { color:#94a3b8 !important; }
+      body.dark-mode .req-card-val { color:#e2e8f0 !important; }
     </style>
   </head>
   <body>
@@ -1152,6 +1176,10 @@ tr.row-rejected td { background: #fff5f5 !important; }
           <li onclick="showPage('yearSummaryPage',this)" class="nav-finance">
             <i class="fa-solid fa-calendar-check"></i> Year Summary
           </li>
+          <li onclick="showPage('contributionRequestsPage',this)" class="nav-finance" id="nav_requests">
+            <i class="fa-solid fa-inbox"></i> Requests
+            <span class="nav-badge" id="reqBadge">0</span>
+          </li>
 
           <li onclick="showPage('eventsPage',this)" class="nav-event">
             <i class="fa-solid fa-calendar-days"></i> Events
@@ -1193,7 +1221,11 @@ tr.row-rejected td { background: #fff5f5 !important; }
           <li id="nav_audit" onclick="showPage('auditPage',this)" class="nav-audit-item">
             <i class="fa-solid fa-scroll"></i> Audit Log
           </li>
+          <li onclick="showPage('healthCheckPage',this)" class="nav-system" id="nav_health">
+            <i class="fa-solid fa-heart-pulse"></i> System Health
+          </li>
         </ul>
+        <div id="sidebarVersion" style="text-align:center;font-size:10px;color:#475569;padding:6px 0 2px;"></div>
 
         <!-- Live Summary Panel in sidebar -->
         <div
@@ -1307,6 +1339,9 @@ tr.row-rejected td { background: #fff5f5 !important; }
           >
             <span style="color: #aaa; font-size: 11px">📧 Email Today</span>
             <span id="sb_email_quota" style="color: #60a5fa; font-weight: 600; font-size: 10px;">—</span>
+          </div>
+          <div id="sb_quota_warn" style="display:none;background:#fef2f2;border-radius:6px;padding:5px 8px;margin-top:4px;font-size:10px;color:#991b1b;font-weight:600;">
+            ⚠️ Low email quota — disable auto-receipt to save
           </div>
           <!-- WhatsApp Report — Month/Year selectors -->
           <div
@@ -1446,6 +1481,11 @@ tr.row-rejected td { background: #fff5f5 !important; }
               style="flex-shrink: 0"
             >
               ☰
+            </button>
+            <button id="langToggleBtn" onclick="toggleLanguage()" title="Toggle Hindi/English" style="flex-shrink:0;background:rgba(0,0,0,0.06);border:none;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;font-weight:700;color:#334155;">EN</button>
+            <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark/light mode"
+              style="flex-shrink:0;background:rgba(0,0,0,0.06);border:none;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:14px;">
+              🌙
             </button>
             <div style="min-width: 0">
               <div
@@ -1611,6 +1651,18 @@ tr.row-rejected td { background: #fff5f5 !important; }
 
         <!-- DASHBOARD -->
         <div id="dashboardPage" class="page">
+          <!-- H10: Local download reminder banner -->
+          <div id="localDownloadBanner" style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#d97706;font-size:18px;"></i>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:#78350f;">📥 Monthly Local Backup Reminder</div>
+              <div id="lastDownloadMsg" style="font-size:12px;color:#92400e;margin-top:2px;"></div>
+            </div>
+            <button onclick="downloadLocalBackup()"
+              style="background:#f7a01a;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-family:inherit;cursor:pointer;white-space:nowrap;">
+              <i class="fa-solid fa-download"></i> Download Now
+            </button>
+          </div>
           <iframe
             id="dashboardFrame"
             src=""
@@ -1712,32 +1764,51 @@ tr.row-rejected td { background: #fff5f5 !important; }
                 <i class="fa-solid fa-file-csv"></i> Export CSV
               </button>
             </h3>
-            <div class="filter-row">
+            <div class="filter-row" style="flex-wrap:wrap;gap:8px;">
               <input
                 class="search-bar"
                 id="searchContrib"
                 placeholder="🔍 Search name, mobile, amount, MNR-..."
                 onkeyup="filterContributions()"
-                style="margin: 0"
+                style="margin: 0;min-width:180px;"
               />
               <div>
                 <label style="font-size: 11px">From Date</label
-                ><input
-                  type="date"
-                  id="contribStart"
-                  onchange="filterContributions()"
-                  style="margin: 0; padding: 8px 10px"
-                />
+                ><input type="date" id="contribStart" onchange="filterContributions()"
+                  style="margin: 0; padding: 8px 10px"/>
               </div>
               <div>
                 <label style="font-size: 11px">To Date</label
-                ><input
-                  type="date"
-                  id="contribEnd"
-                  onchange="filterContributions()"
-                  style="margin: 0; padding: 8px 10px"
-                />
+                ><input type="date" id="contribEnd" onchange="filterContributions()"
+                  style="margin: 0; padding: 8px 10px"/>
               </div>
+              <div>
+                <label style="font-size:11px;">Type</label>
+                <select id="filterContribType" onchange="filterContributions()"
+                  style="margin:0;padding:8px 10px;border:1.5px solid #e8e8e8;border-radius:8px;font-size:13px;">
+                  <option value="">All Types</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;">Payment</label>
+                <select id="filterContribMode" onchange="filterContributions()"
+                  style="margin:0;padding:8px 10px;border:1.5px solid #e8e8e8;border-radius:8px;font-size:13px;">
+                  <option value="">All Modes</option>
+                  <option>UPI</option><option>Cash</option><option>Bank Transfer</option><option>Cheque</option>
+                </select>
+              </div>
+              <div style="display:flex;gap:6px;align-items:flex-end;">
+                <div><label style="font-size:11px;">Min ₹</label>
+                  <input type="number" id="filterContribMin" placeholder="0" onchange="filterContributions()"
+                    style="width:80px;margin:0;padding:8px 10px;"/></div>
+                <div><label style="font-size:11px;">Max ₹</label>
+                  <input type="number" id="filterContribMax" placeholder="∞" onchange="filterContributions()"
+                    style="width:80px;margin:0;padding:8px 10px;"/></div>
+              </div>
+              <button onclick="clearContribFilters()"
+                style="background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;align-self:flex-end;">
+                ✕ Clear
+              </button>
             </div>
             <div class="table-responsive">
               <table>
@@ -2019,12 +2090,22 @@ tr.row-rejected td { background: #fff5f5 !important; }
         <i class="fa-solid fa-calendar-check" style="color:#f7a01a;"></i>
         Year-by-Year Financial Summary
       </h3>
-      <button
-        onclick="loadYearSummary()"
-        style="background:#334155;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"
-      >
-        <i class="fa-solid fa-rotate-right"></i> Refresh
-      </button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="loadYearSummary()"
+          style="background:#334155;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <i class="fa-solid fa-rotate-right"></i> Refresh
+        </button>
+        <button onclick="exportAnnualReportPDF()"
+          style="background:#e74c3c;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"
+          title="Export full year report as PDF">
+          <i class="fa-solid fa-file-pdf"></i> Export Year Report PDF
+        </button>
+        <button onclick="downloadLocalBackup()"
+          style="background:#27ae60;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;"
+          title="Download all data as CSV for local backup (H10)">
+          <i class="fa-solid fa-download"></i> Local Backup
+        </button>
+      </div>
     </div>
     <p style="color:#64748b;font-size:12px;margin:8px 0 0;">
       Opening balance per year comes from <strong>YEAR_CONFIG</strong> sheet.
@@ -2090,6 +2171,51 @@ tr.row-rejected td { background: #fff5f5 !important; }
     No financial data found. Add contributions or expenses to see the summary.
   </div>
  
+</div>
+
+<!-- CONTRIBUTION REQUESTS -->
+<div id="contributionRequestsPage" class="page">
+  <div class="card">
+    <h3 style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <span><i class="fa-solid fa-inbox" style="color:#f7a01a;"></i> Member Contribution Requests
+        <span id="reqPageBadge" style="background:#e74c3c;color:#fff;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:6px;display:none;"></span>
+      </span>
+      <button onclick="loadContributionRequests()" style="background:#334155;box-shadow:none;padding:8px 14px;font-size:12px;display:flex;align-items:center;gap:6px;">
+        <i class="fa-solid fa-rotate-right"></i> Refresh
+      </button>
+    </h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <select id="reqFilterStatus" onchange="renderContributionRequests()" style="padding:8px 12px;border:1.5px solid #e8e8e8;border-radius:8px;font-size:13px;">
+        <option value="">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Approved">Approved</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+      <input id="reqFilterSearch" placeholder="🔍 Search name, amount, month..." onkeyup="renderContributionRequests()"
+        style="flex:1;min-width:180px;padding:8px 12px;border:1.5px solid #e8e8e8;border-radius:8px;font-size:13px;" />
+    </div>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Member</th>
+            <th>Amount</th>
+            <th>Month / Year</th>
+            <th>Mode</th>
+            <th>UTR / Ref</th>
+            <th>Slip</th>
+            <th>Status</th>
+            <th>Requested On</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="reqTbody">
+          <tr><td colspan="10" style="text-align:center;color:#aaa;padding:24px;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <!-- EVENTS -->
@@ -2203,7 +2329,8 @@ tr.row-rejected td { background: #fff5f5 !important; }
                   style="margin: 0; flex: 1"
                 />
                 <button
-                  onclick="addType()"
+                  onclick="addType()" style="margin-right:6px;"></button>
+              <button onclick="mergeContribTypes()" style="background:#f7a01a;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;"><i class="fa-solid fa-code-merge"></i> Merge Types
                   style="width: 60px; padding: 10px; flex-shrink: 0"
                 >
                   Add
@@ -2273,6 +2400,8 @@ tr.row-rejected td { background: #fff5f5 !important; }
         <div id="galleryAdminPage" class="page">
           <div class="card">
             <h3><i class="fa-solid fa-images" style="color:#f7a01a;"></i> Manage Gallery</h3>
+              <input type="text" placeholder="🔍 Filter by caption/tag..." oninput="filterGalleryByTag(this.value)"
+                style="padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;min-width:180px;" />
             <p style="color:#666;margin-bottom:24px;font-size:14px;">Upload photos to appear in the home page slideshow carousel. Each photo is <b>cropped to a fixed size</b> before uploading — so all images look perfectly uniform.</p>
 
             <!-- Upload Form -->
@@ -2309,7 +2438,11 @@ tr.row-rejected td { background: #fff5f5 !important; }
 
               <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">Caption (optional)</label>
               <input id="glryCaptionInput" placeholder="e.g. Ram Navami 2025" maxlength="200"
-                style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
+                style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
+
+              <label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">Tags (optional, comma-separated)</label>
+              <input id="glryTagsInput" placeholder="e.g. Festival, Hanuman Jayanti, 2025" maxlength="300"
+                style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:14px;box-sizing:border-box;">
 
               <button id="glryUploadBtn" onclick="uploadGalleryPhoto()" disabled
                 style="background:#ccc;color:#fff;border:none;padding:11px 28px;border-radius:8px;font-weight:600;font-size:14px;cursor:not-allowed;width:100%;transition:background 0.2s;">
@@ -2649,17 +2782,16 @@ tr.row-rejected td { background: #fff5f5 !important; }
                 Members will respond via WhatsApp
               </p>
             </div>
-            <div
-              style="
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-                margin-top: 14px;
-              "
-            >
+            <div id="bcQuotaInfo" style="display:none;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:10px 14px;margin-top:12px;font-size:12px;color:#1e40af;">
+              📧 This will send to <strong id="bcMemberCount">?</strong> active members.
+              You have <strong id="bcQuotaRemaining">?</strong> emails remaining today.
+              <span id="bcQuotaWarn" style="color:#dc2626;font-weight:600;display:none;"> ⚠️ Quota may not be enough — some members may not receive this.</span>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
               <button onclick="sendBroadcast()" style="background: #25d366">
                 <i class="fa-brands fa-whatsapp"></i> Send via WhatsApp
               </button>
+              <button onclick="scheduleBroadcast()" style="background:#6d28d9;"><i class="fa-solid fa-clock"></i> Schedule</button>
               <button onclick="previewBroadcast()" style="background: #334155">
                 <i class="fa-solid fa-eye"></i> Preview
               </button>
@@ -3133,6 +3265,47 @@ tr.row-rejected td { background: #fff5f5 !important; }
             </div>
           </div>
         </div>
+      <!-- HEALTH CHECK PAGE (H14) -->
+      <div id="healthCheckPage" class="page">
+        <div class="card" style="margin-bottom:18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <h3 style="margin:0;"><i class="fa-solid fa-heart-pulse" style="color:#e74c3c;"></i> System Health Check</h3>
+            <button onclick="runHealthCheck()"
+              style="background:#334155;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+              <i class="fa-solid fa-rotate-right"></i> Run Check
+            </button>
+          </div>
+          <p style="color:#64748b;font-size:12px;margin:8px 0 0;">Verifies all sheets exist, shows backup date, email quota, receipt counter, and system version.</p>
+        </div>
+        <div id="hc_loading" style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;display:none;">
+          <i class="fa-solid fa-spinner fa-spin"></i> Running health check…
+        </div>
+        <div id="hc_results" style="display:none;">
+          <div class="card" style="margin-bottom:12px;">
+            <h4 style="margin:0 0 14px;color:#334155;"><i class="fa-solid fa-database" style="color:#f7a01a;"></i> Sheet Status</h4>
+            <div id="hc_sheets" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px;">
+            <div class="card-box" style="text-align:center;">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Receipt Counter</div>
+              <div id="hc_receipt" style="font-size:1.3rem;font-weight:700;color:#334155;">—</div>
+            </div>
+            <div class="card-box" style="text-align:center;">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Email Used Today</div>
+              <div id="hc_email" style="font-size:1.3rem;font-weight:700;color:#334155;">—</div>
+            </div>
+            <div class="card-box" style="text-align:center;">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Last Backup</div>
+              <div id="hc_backup" style="font-size:1rem;font-weight:700;color:#334155;">—</div>
+            </div>
+            <div class="card-box" style="text-align:center;">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px;">System Version</div>
+              <div id="hc_version" style="font-size:1.3rem;font-weight:700;color:#334155;">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       </div><!-- end .main -->
       <!-- ═══ CHATBOT SETTINGS PAGE ═══ -->
     
@@ -3145,8 +3318,18 @@ tr.row-rejected td { background: #fff5f5 !important; }
     <script>
       /* ── SESSION — security: prevents back-button bypass + URL copy ── */
       function _checkAdminSession() {
-        let s = JSON.parse(localStorage.getItem("session"));
+        let s = JSON.parse(localStorage.getItem("session") || "null");
         if (!s || Date.now() > s.expiry || s.role !== "Admin") {
+          // H12: try remember-me token before redirecting to login
+          try {
+            const rt = JSON.parse(localStorage.getItem("mandir_remember_token") || "null");
+            if (rt && rt.role === "Admin" && Date.now() < rt.expiry) {
+              s = { userId: rt.userId, name: rt.name, role: rt.role, email: rt.email || "",
+                    sessionToken: rt.sessionToken || "", expiry: Date.now() + 30*60*1000 };
+              localStorage.setItem("session", JSON.stringify(s));
+              return true; // restored from remember-me token
+            }
+          } catch(e) {}
           localStorage.clear();
           history.replaceState(null, "", "login.html");
           location.replace("login.html");
@@ -3205,6 +3388,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
         } catch(e) {}
         // Set _navFlag so beforeunload skips the beacon (logout already handled token clear above)
         window._navFlag = true;
+        try { localStorage.removeItem("mandir_remember_token"); } catch(e) {} // H12: clear remember-me on explicit logout
         localStorage.clear();
         sessionStorage.clear();
         setTimeout(() => {
@@ -3722,6 +3906,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
       async function uploadGalleryPhoto(){
         if(!_glryB64){ toast("Please select and crop a photo first.","warn"); return; }
         var caption = document.getElementById("glryCaptionInput").value.trim();
+        var tags    = document.getElementById("glryTagsInput") ? document.getElementById("glryTagsInput").value.trim() : "";
         var session = JSON.parse(localStorage.getItem("session")||"{}");
         var btn = document.getElementById("glryUploadBtn");
         btn.disabled=true;
@@ -3735,6 +3920,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
               base64:_glryB64,
               fileName:_glryFileName,
               caption:caption,
+              tags:tags,
               priority:999,
               AdminName:session.name||"Admin"
             })
@@ -3745,6 +3931,7 @@ tr.row-rejected td { background: #fff5f5 !important; }
             _glryB64=null; _glryFileName=""; _glrySrcFile=null; _glrySrcImg=null;
             document.getElementById("glryFileInput").value="";
             document.getElementById("glryCaptionInput").value="";
+            var tagsEl = document.getElementById("glryTagsInput"); if(tagsEl) tagsEl.value="";
             document.getElementById("glryCroppedPreviewWrap").style.display="none";
             document.getElementById("glryCroppedPreviewImg").src="";
             btn.disabled=true;
@@ -3778,12 +3965,20 @@ tr.row-rejected td { background: #fff5f5 !important; }
           photos.forEach(function(p){
             var card = document.createElement("div");
             card.className="glry-card";
+            card.dataset.caption = (p.Caption||"").toLowerCase();
+            card.dataset.tags    = (p.Tags||"").toLowerCase();
+            const tagsHtml = p.Tags
+              ? p.Tags.split(",").map(t=>t.trim()).filter(Boolean)
+                  .map(t=>'<span style="background:#fef3c7;color:#92400e;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;white-space:nowrap;">'+escapeHtml(t)+'</span>')
+                  .join(" ")
+              : "";
             card.innerHTML=
               '<img src="'+escapeHtml(p.PhotoURL)+'" alt="'+escapeHtml(p.Caption||"")+'" loading="lazy">'+
               '<div style="padding:8px 10px 10px;">'+
                 '<div style="font-size:12px;font-weight:600;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+
                   escapeHtml(p.Caption||"—")+
                 '</div>'+
+                (tagsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;">'+tagsHtml+'</div>' : '')+
                 '<div style="font-size:11px;color:#bbb;margin-top:3px;">'+escapeHtml(p.AddedAt)+'</div>'+
               '</div>'+
               '<button onclick="deleteGalleryPhoto(\''+escapeHtml(p.PhotoId)+'\')" '+
@@ -4183,6 +4378,9 @@ function _ysShow(visibleId) {
               const color = q.remaining < 10 ? "#f87171" : q.remaining < 30 ? "#fbbf24" : "#60a5fa";
               sbEq.style.color = color;
               sbEq.innerText = q.used + " / " + q.limit + " used";
+              // H9: show/hide low-quota warning
+              const warnEl = document.getElementById("sb_quota_warn");
+              if (warnEl) warnEl.style.display = q.remaining < 10 ? "block" : "none";
             }
           }).catch(() => { if (sbEq) sbEq.innerText = "—"; });
         }
@@ -4575,6 +4773,11 @@ function _ysShow(visibleId) {
           loadExpenseFilters();
           renderGoals();
           loadSummary();
+          // Load contribution request badge count
+          getData("getContributionRequests").then(function(res) {
+            window._allRequests = Array.isArray(res) ? res : [];
+            _updateReqBadge();
+          }).catch(function(){});
         } catch (err) {
           toast("Failed to load data: " + err.message, "error");
         } finally {
@@ -5590,22 +5793,89 @@ function _ysShow(visibleId) {
       async function runBulkInsert() {
         if (!checkSession()) return;
         let userId = document.getElementById("bk_user").value;
-        let year = document.getElementById("bk_year").value;
+        let year   = document.getElementById("bk_year").value;
         let typeId = document.getElementById("bk_type").value;
-        let note = document.getElementById("bk_note").value;
+        let note   = document.getElementById("bk_note").value;
         // Collect all rows
         let rows = [...document.querySelectorAll(".bk-row")]
-          .map((r) => ({
-            month: r.querySelector(".bk-mon").value,
-            amount: r.querySelector(".bk-amt").value,
-          }))
-          .filter((r) => r.month && r.amount && Number(r.amount) > 0);
+          .map(r => ({ month: r.querySelector(".bk-mon").value, amount: r.querySelector(".bk-amt").value }))
+          .filter(r => r.month && r.amount && Number(r.amount) > 0);
         if (!userId) return toast("Please select a user.", "error");
-        if (rows.length === 0)
-          return toast(
-            "Please add at least one month entry with amount.",
-            "error"
-          );
+        if (!typeId) return toast("Please select a contribution type.", "error");
+        if (rows.length === 0) return toast("Please add at least one month entry with amount.", "error");
+
+        const usr      = users.find(u => String(u.UserId) === userId);
+        const memberName = usr ? escapeHtml(usr.Name) : userId;
+        const typeObj  = types.find(t => String(t.TypeId) === typeId) || {};
+        const typeName = escapeHtml(typeObj.TypeName || "—");
+        const totalAmt = rows.reduce((s,r) => s + Number(r.amount), 0);
+
+        const previewRows = rows.map((r,i) =>
+          `<tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:6px 10px;font-size:12px;color:#64748b;">${i+1}</td>
+            <td style="padding:6px 10px;font-size:12px;font-weight:600;">${escapeHtml(r.month)}</td>
+            <td style="padding:6px 10px;font-size:12px;color:#15803d;font-weight:700;">&#8377;${Number(r.amount).toLocaleString("en-IN")}</td>
+          </tr>`
+        ).join("");
+
+        const previewHtml = `
+          <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Confirm Bulk Insert</h3><button class="_mcls" onclick="closeModal()">&#xd7;</button></div>
+          <div class="_mbdy">
+            <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12.5px;">
+              <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 16px;">
+                <span style="color:#64748b;">Member</span><strong style="color:#15803d;">${memberName}</strong>
+                <span style="color:#64748b;">Type</span><strong>${typeName}</strong>
+                <span style="color:#64748b;">Year</span><strong>${escapeHtml(year)}</strong>
+                ${note ? `<span style="color:#64748b;">Note</span><strong>${escapeHtml(note)}</strong>` : ""}
+              </div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead><tr style="background:#f1f5f9;">
+                <th style="padding:7px 10px;font-size:11px;text-align:left;color:#64748b;">#</th>
+                <th style="padding:7px 10px;font-size:11px;text-align:left;color:#64748b;">Month</th>
+                <th style="padding:7px 10px;font-size:11px;text-align:left;color:#64748b;">Amount</th>
+              </tr></thead>
+              <tbody>${previewRows}</tbody>
+              <tfoot><tr style="background:#fef9ee;">
+                <td colspan="2" style="padding:8px 10px;font-size:13px;font-weight:700;color:#78350f;">Total (${rows.length} entr${rows.length===1?"y":"ies"})</td>
+                <td style="padding:8px 10px;font-size:13px;font-weight:700;color:#15803d;">&#8377;${totalAmt.toLocaleString("en-IN")}</td>
+              </tr></tfoot>
+            </table>
+            <p style="font-size:11.5px;color:#94a3b8;margin:10px 0 0;">Each entry generates a separate receipt. This cannot be undone.</p>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal();openBulkInsert()"><i class="fa-solid fa-arrow-left"></i> Back &amp; Edit</button>
+            <button class="_mbtn" style="background:#22c55e;" onclick="_executeBulkInsert()"><i class="fa-solid fa-check"></i> Confirm &amp; Insert All</button>
+          </div>`;
+        window._pendingBulkRows = {rows, userId, year, typeId, note};
+        openModal(previewHtml, "500px");
+      }
+      async function _executeBulkInsert() {
+        const {rows, userId, year, typeId, note} = window._pendingBulkRows || {};
+        if (!rows || !userId) { toast("No pending bulk data.", "error"); return; }
+        closeModal();
+        const s = JSON.parse(localStorage.getItem("session")||"{}");
+        let done = 0, failed = 0;
+        toast("Inserting " + rows.length + " entries...", "warn");
+        for (let r of rows) {
+          try {
+            let res = await postData({
+              action: "addContribution",
+              Id: Date.now() + "_" + r.month,
+              UserId: userId, Amount: r.amount, ForMonth: r.month,
+              Year: year, TypeId: typeId, OccasionId: "", Note: note,
+              sessionToken: s.sessionToken||"", userId: s.userId||""
+            });
+            if (res.status === "success") done++; else failed++;
+          } catch(e) { failed++; }
+          await new Promise(r => setTimeout(r, 300));
+        }
+        toast(done > 0 ? "✅ Bulk insert: " + done + " added" + (failed > 0 ? ", " + failed + " failed" : ".") : "❌ All inserts failed.", done > 0 ? "" : "error");
+        smartRefresh("contributions");
+      }
+
+      async function _runBulkInsert_UNUSED() {
+        // Kept for reference — logic moved to _executeBulkInsert
         let status = document.getElementById("bk_status");
         status.textContent = `Inserting 0 / ${rows.length}...`;
         let done = 0,
@@ -5993,18 +6263,53 @@ async function removeExpenseReceipt(expId) {
 }
 
       async function deleteExpense(id) {
-        confirmModal("Delete this expense?", async () => {
-          try {
-            let res = await postData({ action: "deleteExpense", Id: id });
-            toast(
-              res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-              res.status === "deleted" ? "" : "error"
-            );
+        // H11: Expense correction entry instead of hard delete
+        const s = JSON.parse(localStorage.getItem("session")||"{}");
+        const html = `
+          <div class="_mhdr"><h3><i class="fa-solid fa-triangle-exclamation" style="color:#e67e22;"></i> Correct / Void Expense</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy">
+            <p style="font-size:13px;color:#64748b;margin-bottom:16px;">For financial accountability, expenses are not deleted — a correction (reversal) entry is recorded instead. This preserves the full audit trail.</p>
+            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:6px;">Reason for correction *</label>
+            <textarea id="corrReason" placeholder="e.g. Entered wrong amount, duplicate entry, vendor refunded..." style="width:100%;min-height:80px;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Cancel</button>
+            <button class="_mbtn" style="background:#e67e22;" onclick="_confirmCorrectionEntry('${id}')"><i class="fa-solid fa-rotate-left"></i> Record Correction Entry</button>
+          </div>`;
+        openModal(html, "480px");
+      }
+
+      async function _confirmCorrectionEntry(expId) {
+        const reason = (document.getElementById("corrReason")||{}).value||"";
+        if (!reason.trim()) { toast("Please enter a reason for the correction.", "warn"); return; }
+        const s = JSON.parse(localStorage.getItem("session")||"{}");
+        try {
+          closeModal();
+          // Fetch the expense to get its amount
+          const allExp = expenses || [];
+          const exp = allExp.find(e => String(e.Id) === String(expId));
+          if (!exp) { toast("Expense not found in local data.", "error"); return; }
+          // Create a negative correction entry
+          const corrId = "CORR_" + Date.now();
+          const res = await postData({
+            action: "addExpense",
+            Id: corrId,
+            Title: "CORRECTION: " + (exp.Title||"Expense") + " | Reason: " + reason,
+            Amount: -(Math.abs(Number(exp.Amount||0))),
+            Year: exp.Year || new Date().getFullYear(),
+            ExpenseTypeId: exp.ExpenseTypeId || "",
+            ForMonth: exp.ForMonth || "",
+            AdminName: s.name || "Admin",
+            sessionToken: s.sessionToken || "",
+            userId: s.userId || ""
+          });
+          if (res.status === "success") {
+            toast("✅ Correction entry recorded. Original expense preserved in audit trail.");
             smartRefresh("expenses");
-          } catch (err) {
-            toast("❌ " + err.message, "error");
+          } else {
+            toast("❌ Failed to record correction: " + (res.message||""), "error");
           }
-        });
+        } catch(err) { toast("❌ " + err.message, "error"); }
       }
       async function addUser() {
         if (!checkSession()) return;
@@ -7508,7 +7813,8 @@ function _downloadCSV(csvString, filename) {
             <td>${badge}</td>
             <td>
               <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
-                ${!isDone ? `<button onclick="fbMarkResolved(${rowIdx}, this)"
+                ${!isDone ? `<button onclick="replyToFeedback(f.RowIndex, f.Name||'Member', f.Mobile||''); return false;" style="background:#25d366;margin-right:4px;"><i class="fa-brands fa-whatsapp"></i> Reply</button>
+              <button class="btn-sm" onclick="fbMarkResolved(${rowIdx}, this)"
                   style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:8px;padding:4px 9px;font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fa-solid fa-check"></i> Done</button>` : ''}
                 <button onclick="fbDeleteRow(${rowIdx}, this)"
                   style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:8px;padding:4px 9px;font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fa-solid fa-trash-can"></i> Del</button>
@@ -8405,39 +8711,690 @@ var _userFilterStatus = "all";
     </script>
 
 <script>
-  /* ── Service Worker registration ── */
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function() {
-      navigator.serviceWorker.register("./sw.js").then(function(reg) {
-   
-        // Detect when a new SW version is waiting — prompt user to refresh
-        reg.addEventListener("updatefound", function() {
-          const newWorker = reg.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener("statechange", function() {
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              // New version available — show update toast if toast() is available
-              // Otherwise show a simple confirm dialog
-              if (typeof toast === "function") {
-                toast("🔄 App updated — tap here to refresh", "warn");
-                // Auto-reload after 4 seconds so admin always gets latest code
-                setTimeout(function() { location.reload(); }, 4000);
-              } else {
-                if (confirm("App updated. Reload now for the latest version?")) {
-                  location.reload();
-                }
-              }
-            }
-          });
-        });
-   
-      }).catch(function(err) {
-        // SW registration failed — app still works normally without it
-        console.warn("Service Worker registration failed:", err);
+// ════════════════════════════════════════════════════════════════
+//  ALL PRIORITY CHANGES — admin.html additions
+// ════════════════════════════════════════════════════════════════
+
+// ── M18: Show version in sidebar
+document.addEventListener("DOMContentLoaded", function() {
+  const vEl = document.getElementById("sidebarVersion");
+  if (vEl && typeof APP !== "undefined" && APP.version) {
+    vEl.textContent = "v" + APP.version;
+    vEl.title = "System version " + APP.version;
+  }
+
+  // ── H10: Local download reminder
+  _checkLocalDownloadReminder();
+
+  // ── L3: Keyboard shortcuts
+  document.addEventListener("keydown", function(e) {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+    if (e.altKey) {
+      if (e.key === "c" || e.key === "C") { e.preventDefault(); document.querySelector("[onclick*=\"showPage('contributionPage'\"]") && showPage("contributionPage", null); }
+      if (e.key === "e" || e.key === "E") { e.preventDefault(); showPage("expensePage", null); }
+      if (e.key === "u" || e.key === "U") { e.preventDefault(); showPage("usersPage", null); }
+      if (e.key === "d" || e.key === "D") { e.preventDefault(); showPage("dashboardPage", null); }
+      if (e.key === "?" || e.key === "/")  { e.preventDefault(); _showShortcutHelp(); }
+    }
+  });
+
+  // ── M15: Broadcast quota info — populate on page show
+  // Hook into showPage for broadcastPage
+  const _origShowPage = window.showPage;
+  if (typeof _origShowPage === "function") {
+    window.showPage = function(id, el) {
+      _origShowPage(id, el);
+      if (id === "broadcastPage") _loadBroadcastQuotaInfo();
+      if (id === "healthCheckPage") runHealthCheck();
+      if (id === "contributionRequestsPage") loadContributionRequests();
+    };
+  }
+});
+
+// ── L3: Shortcut help popup
+function _showShortcutHelp() {
+  const html = `<div class="_mhdr"><h3><i class="fa-solid fa-keyboard"></i> Keyboard Shortcuts</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+  <div class="_mbdy" style="font-size:13px;">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;color:#64748b;">Alt + C</td><td style="padding:8px;font-weight:600;">Contributions</td></tr>
+      <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;color:#64748b;">Alt + E</td><td style="padding:8px;font-weight:600;">Expenses</td></tr>
+      <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;color:#64748b;">Alt + U</td><td style="padding:8px;font-weight:600;">Users</td></tr>
+      <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:8px;color:#64748b;">Alt + D</td><td style="padding:8px;font-weight:600;">Dashboard</td></tr>
+      <tr><td style="padding:8px;color:#64748b;">Alt + ?</td><td style="padding:8px;font-weight:600;">This help</td></tr>
+    </table>
+  </div>
+  <div class="_mft"><button class="_mbtn" style="background:#999;" onclick="closeModal()">Close</button></div>`;
+  openModal(html, "380px");
+}
+
+// ════════════════════════════════════════════════════════════════
+// CONTRIBUTION REQUESTS — Admin view, approve, reject
+// ════════════════════════════════════════════════════════════════
+window._allRequests = [];
+
+async function loadContributionRequests() {
+  const tbody = document.getElementById("reqTbody");
+  if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#aaa;padding:24px;"><div class="spinner" style="margin:0 auto;width:24px;height:24px;"></div></td></tr>';
+  try {
+    const res = await getData("getContributionRequests");
+    window._allRequests = Array.isArray(res) ? res : [];
+    renderContributionRequests();
+    _updateReqBadge();
+  } catch(err) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#e74c3c;padding:24px;">Failed to load: ' + escapeHtml(err.message) + '</td></tr>';
+  }
+}
+
+function _updateReqBadge() {
+  const pending = (window._allRequests || []).filter(function(r){ return String(r.Status||"Pending") === "Pending"; }).length;
+  ["reqBadge","reqPageBadge"].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = pending;
+    if (id === "reqBadge") { el.classList.toggle("show", pending > 0); }
+    else { el.style.display = pending > 0 ? "inline-block" : "none"; }
+  });
+}
+
+function renderContributionRequests() {
+  const tbody = document.getElementById("reqTbody");
+  if (!tbody) return;
+  const filterStatus = (document.getElementById("reqFilterStatus")||{}).value || "";
+  const q = ((document.getElementById("reqFilterSearch")||{}).value || "").toLowerCase();
+
+  let list = (window._allRequests || []).slice();
+  if (filterStatus) list = list.filter(function(r){ return String(r.Status||"Pending") === filterStatus; });
+  if (q) list = list.filter(function(r) {
+    const u = (users||[]).find(function(u){ return String(u.UserId) === String(r.UserId); });
+    const name = u ? (u.Name||"").toLowerCase() : "";
+    return name.includes(q) || String(r.Amount||"").includes(q) ||
+           String(r.ForMonth||"").toLowerCase().includes(q) ||
+           String(r.UtrRef||"").toLowerCase().includes(q);
+  });
+
+  window._reqListRendered = list;
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#aaa;padding:28px;">No requests found.</td></tr>';
+    return;
+  }
+
+  const statusColor = { Pending:"#92400e", Approved:"#14532d", Rejected:"#7f1d1d" };
+  const statusBg    = { Pending:"#fef3c7", Approved:"#dcfce7", Rejected:"#fee2e2" };
+
+  tbody.innerHTML = list.map(function(r, i) {
+    const u = (users||[]).find(function(u){ return String(u.UserId) === String(r.UserId); });
+    const name = u ? escapeHtml(u.Name||"Unknown") : "Unknown";
+    const mobile = u ? escapeHtml(u.Mobile||"") : "";
+    const st = String(r.Status||"Pending");
+    const slipHtml = r.SlipURL
+      ? '<a href="' + escapeHtml(r.SlipURL) + '" target="_blank" style="color:#3b82f6;font-size:11px;text-decoration:none;"><i class="fa-solid fa-image"></i> View</a>'
+      : '<span style="color:#aaa;font-size:11px;">—</span>';
+    const rejNote = r.RejectionNote ? '<br><span style="font-size:10px;color:#ef4444;">Reason: ' + escapeHtml(r.RejectionNote) + '</span>' : "";
+    const actBtns = st === "Pending"
+      ? '<button onclick="_approveContribRequest(' + i + ')" style="background:#22c55e;padding:5px 10px;font-size:11px;border-radius:6px;margin-right:4px;"><i class="fa-solid fa-check"></i> Approve</button>'
+        + '<button onclick="_rejectContribRequest(' + i + ')" style="background:#ef4444;padding:5px 10px;font-size:11px;border-radius:6px;"><i class="fa-solid fa-xmark"></i> Reject</button>'
+      : '<span style="font-size:11px;color:#94a3b8;">' + st + '</span>';
+    return '<tr>'
+      + '<td>' + (i+1) + '</td>'
+      + '<td><strong>' + name + '</strong><br><span style="font-size:11px;color:#94a3b8;">' + mobile + '</span></td>'
+      + '<td><strong style="color:#15803d;">&#8377;' + fmt(r.Amount) + '</strong></td>'
+      + '<td>' + escapeHtml(r.ForMonth||"") + ' ' + escapeHtml(String(r.Year||"")) + '</td>'
+      + '<td>' + escapeHtml(r.PaymentMode||"UPI") + '</td>'
+      + '<td style="font-size:12px;font-family:monospace;">' + escapeHtml(r.UtrRef||"—") + '</td>'
+      + '<td>' + slipHtml + '</td>'
+      + '<td><span style="background:' + (statusBg[st]||"#f1f5f9") + ';color:' + (statusColor[st]||"#334155") + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">' + st + '</span>' + rejNote + '</td>'
+      + '<td style="font-size:11px;color:#64748b;">' + escapeHtml(String(r.RequestedAt||"")) + '</td>'
+      + '<td style="white-space:nowrap;">' + actBtns + '</td>'
+      + '</tr>';
+  }).join("");
+}
+
+function _approveContribRequest(idx) {
+  const r = (window._reqListRendered || [])[idx];
+  if (!r) return;
+  const u = (users||[]).find(function(u){ return String(u.UserId) === String(r.UserId); });
+  const name = u ? u.Name : "this member";
+  const html = '<div class="_mhdr"><h3><i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Approve Request</h3><button class="_mcls" onclick="closeModal()">×</button></div>'
+    + '<div class="_mbdy" style="padding:18px 20px;">'
+    + '<p style="margin:0 0 14px;font-size:14px;color:#334155;">Approve contribution request from <strong>' + escapeHtml(name) + '</strong>?</p>'
+    + '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:13px;">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;">'
+    + '<span style="color:#64748b;">Amount</span><strong>&#8377;' + fmt(r.Amount) + '</strong>'
+    + '<span style="color:#64748b;">Month</span><strong>' + escapeHtml(r.ForMonth||"") + ' ' + (r.Year||"") + '</strong>'
+    + '<span style="color:#64748b;">Mode</span><strong>' + escapeHtml(r.PaymentMode||"UPI") + '</strong>'
+    + '<span style="color:#64748b;">UTR / Ref</span><strong>' + escapeHtml(r.UtrRef||"—") + '</strong>'
+    + '</div></div>'
+    + '<p style="font-size:12px;color:#64748b;margin:0;">This will record a contribution entry and send a receipt email if auto-receipt is enabled.</p>'
+    + '</div>'
+    + '<div class="_mft"><button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Cancel</button>'
+    + '<button class="_mbtn" style="background:#22c55e;" id="_approveReqBtn"><i class="fa-solid fa-check"></i> Approve &amp; Record</button></div>';
+  openModal(html, "460px");
+  setTimeout(function() {
+    const btn = document.getElementById("_approveReqBtn");
+    if (btn) btn.addEventListener("click", function() {
+      closeModal();
+      _doApproveContribRequest(r);
+    });
+  }, 50);
+}
+
+async function _doApproveContribRequest(r) {
+  if (!checkSession()) return;
+  const s = JSON.parse(localStorage.getItem("session") || "{}");
+  try {
+    const contribRes = await postData({
+      action:      "addContribution",
+      Id:          "REQ_" + (r.ReqId || Date.now()),
+      UserId:      r.UserId,
+      Amount:      r.Amount,
+      ForMonth:    r.ForMonth,
+      Year:        r.Year || new Date().getFullYear(),
+      TypeId:      r.TypeId || "",
+      OccasionId:  r.OccasionId || "",
+      Note:        (r.Note ? r.Note + " " : "") + "[Approved Request: " + (r.ReqId||"") + "]",
+      PaymentMode: r.PaymentMode || "UPI",
+    });
+    if (!contribRes || contribRes.status !== "success") {
+      toast("Failed to record contribution.", "error"); return;
+    }
+    await postData({
+      action:        "resolveContributionRequest",
+      ReqId:         r.ReqId,
+      Status:        "Approved",
+      AdminName:     s.Name || "Admin",
+      RejectionNote: ""
+    });
+    let msg = "Request approved! Receipt: " + (contribRes.receiptId || "");
+    if (contribRes.emailSent)    msg += " · Receipt email sent";
+    if (contribRes.emailSkipped) msg += " · Email quota reached";
+    toast(msg);
+    mandirCacheBust("getAllData");
+    smartRefresh("contributions");
+    loadContributionRequests();
+  } catch(err) {
+    toast("Error: " + err.message, "error");
+  }
+}
+
+function _rejectContribRequest(idx) {
+  const r = (window._reqListRendered || [])[idx];
+  if (!r) return;
+  const u = (users||[]).find(function(u){ return String(u.UserId) === String(r.UserId); });
+  const name = u ? u.Name : "this member";
+  const html = '<div class="_mhdr"><h3><i class="fa-solid fa-circle-xmark" style="color:#ef4444;"></i> Reject Request</h3><button class="_mcls" onclick="closeModal()">×</button></div>'
+    + '<div class="_mbdy" style="padding:18px 20px;">'
+    + '<p style="margin:0 0 12px;font-size:14px;color:#334155;">Reject contribution request from <strong>' + escapeHtml(name) + '</strong> (&#8377;' + fmt(r.Amount) + ', ' + escapeHtml(r.ForMonth||"") + ' ' + (r.Year||"") + ')?</p>'
+    + '<label style="font-size:13px;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Rejection Reason <span style="font-weight:400;color:#aaa;">(optional — visible to member)</span></label>'
+    + '<textarea id="_rejectReasonInput" rows="3" placeholder="e.g. Payment proof unclear, please resubmit..." style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;resize:vertical;box-sizing:border-box;"></textarea>'
+    + '</div>'
+    + '<div class="_mft"><button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()">Cancel</button>'
+    + '<button class="_mbtn" style="background:#ef4444;" id="_rejectReqBtn"><i class="fa-solid fa-xmark"></i> Reject Request</button></div>';
+  openModal(html, "460px");
+  setTimeout(function() {
+    const btn = document.getElementById("_rejectReqBtn");
+    if (btn) btn.addEventListener("click", function() {
+      const reason = (document.getElementById("_rejectReasonInput")||{}).value || "";
+      closeModal();
+      _doRejectContribRequest(r, reason);
+    });
+  }, 50);
+}
+
+async function _doRejectContribRequest(r, reason) {
+  if (!checkSession()) return;
+  const s = JSON.parse(localStorage.getItem("session") || "{}");
+  try {
+    await postData({
+      action:        "resolveContributionRequest",
+      ReqId:         r.ReqId,
+      Status:        "Rejected",
+      AdminName:     s.Name || "Admin",
+      RejectionNote: reason
+    });
+    toast("Request rejected" + (reason ? " with reason." : "."), "warn");
+    loadContributionRequests();
+  } catch(err) {
+    toast("Error: " + err.message, "error");
+  }
+}
+
+// ── L2: Dark mode toggle
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem("mandir_dark_mode", isDark ? "1" : "0");
+  const btn = document.getElementById("darkModeBtn");
+  if (btn) btn.textContent = isDark ? "☀️" : "🌙";
+}
+// Apply saved preference on load
+(function() {
+  if (localStorage.getItem("mandir_dark_mode") === "1") {
+    document.body.classList.add("dark-mode");
+    const btn = document.getElementById("darkModeBtn");
+    if (btn) btn.textContent = "☀️";
+  }
+})();
+
+// ── L1: Hindi/English toggle (stub — key labels only)
+const _LANG = { current: "EN" };
+function toggleLanguage() {
+  _LANG.current = _LANG.current === "EN" ? "HI" : "EN";
+  localStorage.setItem("mandir_lang", _LANG.current);
+  const btn = document.getElementById("langToggleBtn");
+  if (btn) btn.textContent = _LANG.current === "EN" ? "EN" : "हिं";
+  _applyLanguage(_LANG.current);
+}
+function _applyLanguage(lang) {
+  const map = {
+    "Contributions": "योगदान", "Expenses": "खर्च", "Members": "सदस्य",
+    "Dashboard": "डैशबोर्ड", "Amount": "राशि", "Month": "माह",
+    "Receipt": "रसीद", "Gallery": "गैलरी", "Goals": "लक्ष्य", "Events": "आयोजन",
+    "Requests": "अनुरोध", "Tracker": "ट्रैकर", "Year Summary": "वार्षिक सारांश",
+    "Users": "सदस्य", "Master Data": "मास्टर डेटा", "Announcement": "सूचना",
+    "Broadcast": "प्रसारण", "Chatbot": "चैटबॉट", "Feedback": "प्रतिक्रिया",
+    "Email Automation": "ईमेल", "Audit Log": "ऑडिट", "Health Check": "स्वास्थ्य"
+  };
+  document.querySelectorAll(".sidebar li:not(.nav-section-label)").forEach(li => {
+    const icon = li.querySelector("i");
+    if (!icon) return;
+    // Find the last text node (nav label)
+    let txt = null;
+    li.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) txt = n; });
+    if (!txt) return;
+    const orig = txt.textContent.trim();
+    if (lang === "HI") {
+      // Store original EN text before overwriting
+      if (!li.dataset.enLabel) li.dataset.enLabel = orig;
+      const hi = map[li.dataset.enLabel];
+      if (hi) txt.textContent = " " + hi;
+    } else {
+      // Restore stored EN label
+      if (li.dataset.enLabel) txt.textContent = " " + li.dataset.enLabel;
+    }
+  });
+}
+(function() {
+  const saved = localStorage.getItem("mandir_lang");
+  if (saved === "HI") { _LANG.current = "HI"; const b = document.getElementById("langToggleBtn"); if(b) b.textContent="हिं"; _applyLanguage("HI"); }
+})();
+
+// ── H10: Local download reminder
+const _DL_KEY = "mandir_last_local_download";
+function _checkLocalDownloadReminder() {
+  const banner = document.getElementById("localDownloadBanner");
+  const msg    = document.getElementById("lastDownloadMsg");
+  if (!banner || !msg) return;
+  const last = localStorage.getItem(_DL_KEY);
+  if (!last) {
+    msg.textContent = "No local backup recorded yet. Recommended: download monthly.";
+    banner.style.display = "flex";
+  } else {
+    const daysSince = Math.floor((Date.now() - parseInt(last)) / 86400000);
+    if (daysSince >= 30) {
+      msg.textContent = "Last local download: " + daysSince + " days ago. Time for a fresh backup!";
+      banner.style.display = "flex";
+    } else {
+      msg.textContent = "Last local download: " + daysSince + " day(s) ago. ✅";
+      banner.style.display = "flex";
+    }
+  }
+}
+
+function downloadLocalBackup() {
+  // Download all contributions as CSV
+  if (typeof window._allContributions !== "undefined" && window._allContributions) {
+    const data = window._allContributions;
+    if (data.length === 0) { toast("No data to download.", "warn"); return; }
+    const headers = Object.keys(data[0]).join(",");
+    const rows = data.map(r => Object.values(r).map(v => '"'+String(v||"").replace(/"/g,'""')+'"').join(",")).join("\n");
+    const csv = headers + "\n" + rows;
+    const blob = new Blob([csv], {type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "Mandir_Backup_" + new Date().toISOString().slice(0,10) + ".csv";
+    a.click(); URL.revokeObjectURL(url);
+    localStorage.setItem(_DL_KEY, String(Date.now()));
+    toast("✅ Local backup downloaded!", "success");
+    _checkLocalDownloadReminder();
+  } else {
+    toast("Load dashboard data first, then download.", "warn");
+  }
+}
+
+// ── H5: Annual Year Report PDF export
+function exportAnnualReportPDF() {
+  if (typeof jspdf === "undefined" && typeof window.jspdf === "undefined" && typeof jsPDF === "undefined") {
+    toast("PDF library not loaded.", "error"); return;
+  }
+  const tbody = document.getElementById("ys_tbody");
+  if (!tbody || tbody.children.length === 0) { toast("Load year summary first.", "warn"); return; }
+  const { jsPDF } = window.jspdf || window;
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = 210, margin = 14;
+  let Y = 18;
+  // Header
+  doc.setFillColor(30,41,64); doc.rect(0,0,W,28,"F");
+  doc.setTextColor(247,160,26); doc.setFontSize(14); doc.setFont(undefined,"bold");
+  doc.text((typeof APP !== "undefined" ? APP.name : "Mandir").toUpperCase(), W/2, 12, {align:"center"});
+  doc.setTextColor(148,163,184); doc.setFontSize(9); doc.setFont(undefined,"normal");
+  doc.text("Annual Financial Report", W/2, 20, {align:"center"});
+  Y = 36;
+  doc.setTextColor(30,41,64); doc.setFontSize(11); doc.setFont(undefined,"bold");
+  doc.text("Year-by-Year Summary", margin, Y); Y += 8;
+  // Table
+  const rows = Array.from(tbody.querySelectorAll("tr")).map(tr =>
+    Array.from(tr.querySelectorAll("td")).map(td => td.textContent.trim())
+  );
+  const heads = ["Year","Opening","Collection","Expenses","Closing","Carry →"];
+  if (typeof doc.autoTable === "function") {
+    doc.autoTable({ head:[heads], body:rows, startY:Y, margin:{left:margin,right:margin},
+      headStyles:{fillColor:[30,41,64],textColor:[247,160,26],fontSize:9},
+      bodyStyles:{fontSize:9}, alternateRowStyles:{fillColor:[250,248,243]} });
+  } else {
+    doc.setFontSize(9); doc.text("(Install jspdf-autotable for formatted table)", margin, Y);
+  }
+  const genDate = new Date().toLocaleDateString("en-IN");
+  doc.setFontSize(8); doc.setTextColor(148,163,184);
+  doc.text("Generated: " + genDate + " | " + (typeof APP !== "undefined" ? APP.name : ""), margin, 285);
+  doc.save("AnnualReport_" + genDate.replace(/\//g,"-") + ".pdf");
+  toast("✅ Annual report PDF downloaded.");
+}
+
+// ── H14: Run health check
+function runHealthCheck() {
+  const loading = document.getElementById("hc_loading");
+  const results = document.getElementById("hc_results");
+  if (loading) loading.style.display = "block";
+  if (results) results.style.display = "none";
+  getData("getHealthCheck").then(function(res) {
+    if (loading) loading.style.display = "none";
+    if (!res || res.status !== "ok") { toast("Health check failed: " + (res && res.message || "Unknown error"), "error"); return; }
+    if (results) results.style.display = "block";
+    const checks = res.checks || {};
+    // Sheets
+    const sheetsEl = document.getElementById("hc_sheets");
+    if (sheetsEl) {
+      sheetsEl.innerHTML = "";
+      Object.keys(checks).filter(k => k.startsWith("sheet_")).forEach(function(k) {
+        const name = k.replace("sheet_","");
+        const ok = checks[k];
+        const div = document.createElement("div");
+        div.style.cssText = "background:" + (ok ? "#f0fdf4" : "#fef2f2") + ";border:1px solid " + (ok ? "#86efac" : "#fca5a5") + ";border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;color:" + (ok ? "#15803d" : "#991b1b") + ";";
+        div.textContent = (ok ? "✅ " : "❌ ") + name;
+        sheetsEl.appendChild(div);
       });
+    }
+    const set = function(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set("hc_receipt", checks.receipt_counter + " (" + checks.receipt_year + ")");
+    set("hc_email", checks.email_used + " / " + checks.email_limit + " used, " + checks.email_remaining + " remaining");
+    set("hc_backup", checks.last_backup || "Never");
+    set("hc_version", checks.version || "—");
+  }).catch(function(err) {
+    if (loading) loading.style.display = "none";
+    toast("Health check error: " + err.message, "error");
+  });
+}
+
+// ── M15: Broadcast quota info
+function _loadBroadcastQuotaInfo() {
+  const infoEl = document.getElementById("bcQuotaInfo");
+  if (!infoEl) return;
+  const memberCount = (window._allUsers || []).filter(function(u) {
+    return String(u.Role||"").toLowerCase() !== "admin" &&
+           String(u.Status||"Active").toLowerCase() === "active" &&
+           String(u.Email||"").trim() !== "";
+  }).length;
+  getEmailQuotaCached().then(function(q) {
+    if (!q) return;
+    const cntEl = document.getElementById("bcMemberCount");
+    const remEl = document.getElementById("bcQuotaRemaining");
+    const warnEl = document.getElementById("bcQuotaWarn");
+    if (cntEl) cntEl.textContent = memberCount;
+    if (remEl) remEl.textContent = q.remaining;
+    if (warnEl) warnEl.style.display = memberCount > q.remaining ? "inline" : "none";
+    infoEl.style.display = "block";
+  }).catch(function(){});
+}
+
+// ── H7: Extend filterContributions with new fields (type, mode, min, max)
+// Wrap the existing filterContributions
+document.addEventListener("DOMContentLoaded", function() {
+  const _origFilter = window.filterContributions;
+  if (typeof _origFilter === "function") {
+    window.filterContributions = function() {
+      _origFilter();
+      // Additional filters applied on top of existing logic
+      _applyExtraContribFilters();
+    };
+  }
+
+  // Populate type filter dropdown when types load
+  const _origLoadTypes = window.loadTypes || window.loadMasterData;
+
+  // Populate type dropdown from loaded data
+  function _populateContribTypeFilter() {
+    const sel = document.getElementById("filterContribType");
+    if (!sel || sel.options.length > 1) return;
+    const types = window._allTypes || [];
+    types.forEach(function(t) {
+      const opt = document.createElement("option");
+      opt.value = t.TypeId || t.TypeName;
+      opt.textContent = t.TypeName;
+      sel.appendChild(opt);
     });
   }
-  </script>
+  // Try after a small delay (data may not be loaded yet)
+  setTimeout(_populateContribTypeFilter, 2000);
+});
+
+function _applyExtraContribFilters() {
+  const typeVal = (document.getElementById("filterContribType") || {}).value || "";
+  const modeVal = (document.getElementById("filterContribMode") || {}).value || "";
+  const minVal  = parseFloat((document.getElementById("filterContribMin") || {}).value || "") || 0;
+  const maxVal  = parseFloat((document.getElementById("filterContribMax") || {}).value || "") || Infinity;
+  if (!typeVal && !modeVal && !minVal && maxVal === Infinity) return; // nothing extra to filter
+  const rows = document.querySelectorAll("#tb tr");
+  rows.forEach(function(row) {
+    if (row.style.display === "none") return; // already hidden
+    const cells = row.querySelectorAll("td");
+    if (cells.length < 6) return;
+    const typeCell = cells[5] ? cells[5].textContent.trim() : "";
+    const amtCell  = parseFloat((cells[2] ? cells[2].textContent.replace(/[₹,]/g,"") : "")) || 0;
+    if (typeVal && !typeCell.toLowerCase().includes(typeVal.toLowerCase())) { row.style.display = "none"; return; }
+    if (amtCell < minVal || amtCell > maxVal) { row.style.display = "none"; return; }
+    // Payment mode: search across all cells
+    if (modeVal) {
+      const rowText = row.textContent.toLowerCase();
+      if (!rowText.includes(modeVal.toLowerCase())) { row.style.display = "none"; return; }
+    }
+  });
+}
+
+function clearContribFilters() {
+  ["searchContrib","contribStart","contribEnd","filterContribType","filterContribMode","filterContribMin","filterContribMax"]
+    .forEach(function(id) { const el = document.getElementById(id); if (el) el.value = ""; });
+  if (typeof filterContributions === "function") filterContributions();
+}
+
+// ── M17: Type usage count badges — populate after data loads
+function _populateTypeUsageBadges() {
+  const contribs = window._allContributions || [];
+  if (contribs.length === 0) return;
+  // Count usage per type
+  const counts = {};
+  contribs.forEach(function(c) { const tid = String(c.TypeId||""); counts[tid] = (counts[tid]||0) + 1; });
+  // Find type rows in master data table
+  document.querySelectorAll("[data-typeid]").forEach(function(el) {
+    const tid = el.getAttribute("data-typeid");
+    const badge = el.querySelector(".type-usage-badge");
+    if (badge) badge.textContent = (counts[tid] || 0) + " uses";
+  });
+}
+
+// Auto-apply when data refreshes
+document.addEventListener("DOMContentLoaded", function() {
+  setTimeout(_populateTypeUsageBadges, 3000);
+});
+  
+      // ── M5: Chatbot Q&A — limit 20 pairs + character counters
+      function _initChatbotQALimits() {
+        // Max 20 custom Q&A pairs (only 2 pairs exist in current UI — backend already enforces via allowedKeys)
+        // Add live char counters to question/answer fields
+        const limits = {
+          'cbot_custom_q1_en': 200, 'cbot_custom_q1_hi': 200,
+          'cbot_custom_a1_en': 500, 'cbot_custom_a1_hi': 500,
+          'cbot_custom_q2_en': 200, 'cbot_custom_q2_hi': 200,
+          'cbot_custom_a2_en': 500, 'cbot_custom_a2_hi': 500,
+        };
+        Object.keys(limits).forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.maxLength = limits[id];
+          const counter = document.createElement("div");
+          counter.style.cssText = "font-size:10px;color:#94a3b8;text-align:right;margin-top:2px;";
+          counter.textContent = "0 / " + limits[id];
+          el.parentNode.insertBefore(counter, el.nextSibling);
+          el.addEventListener("input", () => {
+            const len = el.value.length;
+            counter.textContent = len + " / " + limits[id];
+            counter.style.color = len > limits[id] * 0.9 ? "#e74c3c" : "#94a3b8";
+          });
+        });
+      }
+      document.addEventListener("DOMContentLoaded", _initChatbotQALimits);
+
+      // ── M11: Reply to feedback member
+      function replyToFeedback(rowIndex, memberName, memberMobile) {
+        const s = JSON.parse(localStorage.getItem("session")||"{}");
+        const html = `
+          <div class="_mhdr"><h3><i class="fa-solid fa-reply"></i> Reply to ${escapeHtml(memberName||"Member")}</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy">
+            <p style="font-size:12px;color:#64748b;margin-bottom:12px;">This will send a WhatsApp message to <strong>${escapeHtml(memberName)}</strong> (${escapeHtml(memberMobile||"")}).</p>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:6px;">Your Reply</label>
+            <textarea id="fbReplyMsg" placeholder="Type your response..." style="width:100%;min-height:100px;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+            <button class="_mbtn" style="background:#25d366;" onclick="_sendFeedbackReply('${rowIndex}','${encodeURIComponent(memberMobile||"")}')">
+              <i class="fa-brands fa-whatsapp"></i> Send via WhatsApp
+            </button>
+          </div>`;
+        openModal(html, "460px");
+      }
+
+      function _sendFeedbackReply(rowIndex, encodedMobile) {
+        const msg = (document.getElementById("fbReplyMsg")||{}).value||"";
+        if (!msg.trim()) { toast("Please type a reply message.", "warn"); return; }
+        const mobile = decodeURIComponent(encodedMobile).replace(/\D/g,"");
+        if (!mobile || mobile.length < 10) { toast("No valid mobile number for this member.", "warn"); return; }
+        const s = JSON.parse(localStorage.getItem("session")||"{}");
+        const waText = encodeURIComponent(APP.name + " — Admin Reply:\n\n" + msg + "\n\n— " + (s.name||"Temple Admin"));
+        window.open("https://wa.me/91" + mobile + "?text=" + waText, "_blank");
+        // Mark as replied
+        postData({ action:"updateFeedbackStatus", RowIndex: rowIndex, Status:"Replied",
+          sessionToken: s.sessionToken||"", userId: s.userId||"" })
+          .then(() => { closeModal(); toast("Marked as Replied."); if(typeof loadFeedback==="function")loadFeedback(); })
+          .catch(() => closeModal());
+      }
+
+      // ── L5: Gallery tag filter
+      function filterGalleryByTag(tag) {
+        const q = (tag||"").toLowerCase().trim();
+        const items = document.querySelectorAll(".glry-card, .gallery-item, [data-caption]");
+        items.forEach(item => {
+          if (!q) { item.style.display = ""; return; }
+          const caption = (item.dataset.caption || "").toLowerCase();
+          const tags    = (item.dataset.tags    || "").toLowerCase();
+          item.style.display = (caption.includes(q) || tags.includes(q)) ? "" : "none";
+        });
+      }
+
+      // ── L7: Type merge tool
+      async function mergeContribTypes() {
+        const s = JSON.parse(localStorage.getItem("session")||"{}");
+        const typeOpts = (types||[]).map(t => `<option value="${t.TypeId}">${escapeHtml(t.TypeName)}</option>`).join("");
+        const html = `
+          <div class="_mhdr"><h3><i class="fa-solid fa-code-merge"></i> Merge Contribution Types</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+          <div class="_mbdy">
+            <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Select the type to <strong>remove</strong> and the type to <strong>keep</strong>. All records from the removed type will be reassigned to the kept type.</p>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Type to REMOVE (will be deleted)</label>
+            <select id="mergeFrom" style="width:100%;padding:9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:12px;">${typeOpts}</select>
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Type to KEEP</label>
+            <select id="mergeTo" style="width:100%;padding:9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">${typeOpts}</select>
+            <div id="mergeMsg" style="font-size:12px;color:#e74c3c;margin-top:4px;"></div>
+          </div>
+          <div class="_mft">
+            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
+            <button class="_mbtn" style="background:#e74c3c;" onclick="_executeMergeTypes()"><i class="fa-solid fa-code-merge"></i> Merge Types</button>
+          </div>`;
+        openModal(html, "500px");
+      }
+
+      async function _executeMergeTypes() {
+        const fromId = document.getElementById("mergeFrom")?.value;
+        const toId   = document.getElementById("mergeTo")?.value;
+        const msgEl  = document.getElementById("mergeMsg");
+        if (fromId === toId) { if(msgEl) msgEl.textContent = "Source and target must be different types."; return; }
+        const s = JSON.parse(localStorage.getItem("session")||"{}");
+        // Get all contributions and update those with fromId → toId
+        const allC = contributions || [];
+        const toUpdate = allC.filter(c => String(c.TypeId) === fromId);
+        if (toUpdate.length === 0) { if(msgEl) msgEl.textContent = "No contributions use the source type. Safe to delete directly."; return; }
+        closeModal();
+        toast("Merging " + toUpdate.length + " records...", "warn");
+        let done = 0;
+        for (const contrib of toUpdate) {
+          try {
+            await postData({ action:"updateContribution", Id: contrib.Id, UserId: contrib.UserId,
+              Amount: contrib.Amount, ForMonth: contrib.ForMonth, Year: contrib.Year,
+              TypeId: toId, OccasionId: contrib.OccasionId||"", Note: contrib.Note||"",
+              PaymentMode: contrib.PaymentMode||"", sessionToken: s.sessionToken||"", userId: s.userId||"" });
+            done++;
+          } catch(e) {}
+          await new Promise(r => setTimeout(r, 200));
+        }
+        toast("✅ Merged " + done + " records. You can now delete the old type.");
+        smartRefresh("contributions");
+      }
+
+      // ── M10: Drag reorder for Types, Occasions, Expense Types
+      let _dragReorderSrc = null;
+      function _initTypeReorder(listId) {
+        const list = document.getElementById(listId);
+        if (!list) return;
+        list.querySelectorAll("[data-sortable]").forEach(item => {
+          item.setAttribute("draggable", "true");
+          item.addEventListener("dragstart", e => { _dragReorderSrc = item; item.style.opacity = "0.5"; });
+          item.addEventListener("dragend",   e => { item.style.opacity = ""; });
+          item.addEventListener("dragover",  e => { e.preventDefault(); const after = _getDragAfterElement(list, e.clientY); if(after) list.insertBefore(_dragReorderSrc, after); else list.appendChild(_dragReorderSrc); });
+        });
+      }
+      function _getDragAfterElement(container, y) {
+        const els = [...container.querySelectorAll("[data-sortable]:not(.dragging)")];
+        return els.reduce((closest, el) => {
+          const box = el.getBoundingClientRect();
+          const offset = y - box.top - box.height/2;
+          return (offset < 0 && offset > closest.offset) ? {offset, el} : closest;
+        }, {offset: Number.NEGATIVE_INFINITY}).el;
+      }
+
+      // ── L8: Scheduled broadcast (queue for next available quota slot)
+      function scheduleBroadcast() {
+        const s = JSON.parse(localStorage.getItem("session")||"{}");
+        const title   = (document.getElementById("bc_title")||{}).value||"";
+        const message = (document.getElementById("bc_message")||{}).value||"";
+        const type    = (document.getElementById("bc_type")||{}).value||"announcement";
+        const priority= (document.getElementById("bc_priority")||{}).value||"normal";
+        if (!message.trim()) { toast("Please enter a message.", "warn"); return; }
+        // Queue it: save to localStorage with a scheduled timestamp (next day reset)
+        const scheduled = new Date(); scheduled.setHours(23,59,0,0); // tonight at 23:59
+        const queue = JSON.parse(localStorage.getItem("mandir_bc_queue")||"[]");
+        queue.push({title, message, type, priority, scheduled: scheduled.toISOString(), adminName: s.name||"Admin"});
+        localStorage.setItem("mandir_bc_queue", JSON.stringify(queue));
+        toast("📅 Broadcast scheduled for " + scheduled.toLocaleTimeString("en-IN", {hour:"2-digit",minute:"2-digit"}) + ". It will send when quota resets.");
+      }
+
+</script>
 
   </body>
 </html>

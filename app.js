@@ -1156,7 +1156,7 @@ function printReceipt(rid){
   win.document.close();
 }
 
-function exportReceiptPDF(rid){
+async function exportReceiptPDF(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
@@ -1325,7 +1325,62 @@ function exportReceiptPDF(rid){
   /* Gold bottom stripe */
   doc.setFillColor(247,160,26); doc.rect(0,Y,W,2,"F");
 
+  /* ── QR code in signature area (right side) ── */
+  try {
+    const qrDataUrl = await _generateQRDataUrl(displayRID, 72);
+    if (qrDataUrl) {
+      const QR_SIZE = 14; // mm
+      const sigY = Y - 20 - 16; // back up to signature section Y
+      doc.addImage(qrDataUrl, "PNG", W - 10 - QR_SIZE, sigY + 1, QR_SIZE, QR_SIZE);
+      // Replace the two text lines on the right of signature with just a label
+      doc.setFillColor(248,250,252);
+      doc.rect(W - 10 - QR_SIZE - 1, sigY, QR_SIZE + 2, QR_SIZE + 3, "F");
+      doc.addImage(qrDataUrl, "PNG", W - 10 - QR_SIZE, sigY + 1, QR_SIZE, QR_SIZE);
+      doc.setFontSize(5.5); doc.setTextColor(148,163,184); doc.setFont(undefined,"normal");
+      doc.text("Scan to verify", W - 10 - QR_SIZE/2, sigY + QR_SIZE + 2.5, {align:"center"});
+    }
+  } catch(e) { /* QR generation failed — PDF still saves cleanly */ }
+
   doc.save("Receipt_"+displayRID+".pdf");
+}
+
+/* ── Generate QR code as PNG dataURL using qrcodejs ──
+   Loads qrcodejs from cdnjs if not already loaded.
+   Returns a dataURL string, or null on failure. */
+async function _generateQRDataUrl(text, sizePx) {
+  return new Promise(function(resolve) {
+    function _render() {
+      try {
+        const container = document.createElement("div");
+        container.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:"+sizePx+"px;height:"+sizePx+"px;";
+        document.body.appendChild(container);
+        new QRCode(container, {
+          text:         text,
+          width:        sizePx,
+          height:       sizePx,
+          colorDark:    "#1e293b",
+          colorLight:   "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+        // QRCode renders asynchronously into a canvas
+        setTimeout(function() {
+          try {
+            const canvas = container.querySelector("canvas");
+            const dataUrl = canvas ? canvas.toDataURL("image/png") : null;
+            document.body.removeChild(container);
+            resolve(dataUrl);
+          } catch(e) { try{document.body.removeChild(container);}catch(e2){} resolve(null); }
+        }, 120);
+      } catch(e) { resolve(null); }
+    }
+    if (typeof QRCode !== "undefined") { _render(); return; }
+    // Lazy-load qrcodejs
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+    s.onload  = _render;
+    s.onerror = function() { resolve(null); };
+    document.head.appendChild(s);
+  });
 }
 
 
@@ -1341,4 +1396,60 @@ function showDetailPopup(title, rows, editFn){
       ${editBtn}
     </div>`;
   openModal(html,"500px");
+}
+
+// ════════════════════════════════════════════════════════════════
+//  VERSION DISPLAY HELPER (M18)
+//  Call showVersionInSidebar() after page load in admin.html / user.html
+// ════════════════════════════════════════════════════════════════
+function showVersionInSidebar(containerId) {
+  try {
+    const el = document.getElementById(containerId);
+    if (el && typeof APP !== "undefined" && APP.version) {
+      el.textContent = "v" + APP.version;
+      el.title = APP.name + " — System Version " + APP.version;
+    }
+  } catch(e) {}
+}
+
+// ════════════════════════════════════════════════════════════════
+//  REMEMBER ME HELPERS (H12) — shared by admin.html & user.html
+//  login.html has its own copy; these are for the protected pages
+//  to validate and clear the remember-me token on logout.
+// ════════════════════════════════════════════════════════════════
+const REMEMBER_TOKEN_KEY = "mandir_remember_token";
+
+function getRememberToken() {
+  try {
+    const raw = localStorage.getItem(REMEMBER_TOKEN_KEY);
+    if (!raw) return null;
+    const t = JSON.parse(raw);
+    if (!t || Date.now() > t.expiry) { localStorage.removeItem(REMEMBER_TOKEN_KEY); return null; }
+    return t;
+  } catch(e) { return null; }
+}
+
+function clearRememberToken() {
+  try { localStorage.removeItem(REMEMBER_TOKEN_KEY); } catch(e) {}
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RETRY WRAPPER — getData with auto-retry on timeout (H2)
+//  Usage: getDataWithRetry("getAllData").then(...)
+//  Retries once automatically after 3 seconds on timeout.
+//  Shows a toast on first timeout, resets it on retry success.
+// ════════════════════════════════════════════════════════════════
+function getDataWithRetry(action, retryCount) {
+  const attempt = retryCount || 0;
+  return getData(action).catch(function(err) {
+    if ((err.message || "").toLowerCase().includes("timed out") && attempt < 1) {
+      if (typeof toast === "function") toast("⟳ Network slow — retrying...", "warn");
+      return new Promise(function(resolve, reject) {
+        setTimeout(function() {
+          getDataWithRetry(action, attempt + 1).then(resolve).catch(reject);
+        }, 3000);
+      });
+    }
+    throw err;
+  });
 }
