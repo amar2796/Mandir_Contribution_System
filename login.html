@@ -10,22 +10,27 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <style>
     *{box-sizing:border-box;}
-    body{margin:0;font-family:"Poppins",sans-serif;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#fdfbf7 0%,#f4f6f9 100%);padding:20px 16px;}
+    body{margin:0;font-family:"Poppins",sans-serif;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#f5f0e8;padding:20px 16px;}
     .container{width:100%;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:16px;}
-    .card{background:#fff;padding:40px 35px;border-radius:18px;width:100%;max-width:420px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.09);border-top:5px solid #f7a01a;animation:slideUp .5s ease-out;position:relative;}
     @keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-    .login-logo{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid rgba(247,160,26,0.55);box-shadow:0 0 10px rgba(247,160,26,0.35);flex-shrink:0;background:#78501e;}
-    .card h2{margin-top:0;margin-bottom:6px;color:#946c44;font-size:1.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;}
-    .card-subtitle{font-size:.82rem;color:#aaa;margin-bottom:22px;display:block;}
-    .input-group{position:relative;margin-bottom:16px;}
-    .input-group i.icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#bbb;font-size:1rem;pointer-events:none;}
-    .input-group input{width:100%;padding:13px 15px 13px 44px;border:1.5px solid #e8e8e8;border-radius:10px;outline:none;font-size:14.5px;font-family:"Poppins",sans-serif;transition:all .25s ease;background:#fafafa;color:#333;}
-    .input-group input:focus{border-color:#f7a01a;background:#fff;box-shadow:0 0 0 3px rgba(247,160,26,0.1);}
+    /* Card — no padding, overflow hidden for cream header */
+    .card{background:#fff;border-radius:20px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(120,53,14,0.10);animation:slideUp .5s ease-out;position:relative;overflow:hidden;}
+    /* Cream header */
+    .card-header{background:#fffbf5;border-bottom:1px solid #fef3c7;padding:28px 32px 22px;text-align:center;}
+    .login-logo{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fde68a;flex-shrink:0;background:#78501e;}
+    .header-icon-wrap{width:52px;height:52px;border-radius:50%;background:#fff;border:2px solid #fde68a;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;}
+    .card h2{margin:0 0 4px;color:#78350f;font-size:1.5rem;font-weight:700;}
+    .card-subtitle{font-size:.8rem;color:#a16207;display:block;}
+    /* Form body */
+    .card-body{padding:24px 32px 0;}
+    .input-group{position:relative;margin-bottom:14px;}
+    .input-group i.icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#bbb;font-size:.95rem;pointer-events:none;}
+    .input-group input{width:100%;padding:12px 14px 12px 42px;border:1.5px solid #eee;border-radius:10px;outline:none;font-size:14px;font-family:"Poppins",sans-serif;transition:all .25s ease;background:#fafafa;color:#333;}
+    .input-group input:focus{border-color:#f7a01a;background:#fff;box-shadow:0 0 0 3px rgba(247,160,26,0.08);}
     .input-group input.field-err{border-color:#e74c3c!important;background:#fff8f8!important;}
-    .field-err-msg{font-size:11px;color:#e74c3c;margin:-10px 0 10px;text-align:left;display:block;}
-    .forgot{font-size:.83rem;text-align:right;color:#999;cursor:pointer;display:block;margin-top:-8px;margin-bottom:12px;transition:color .25s;font-weight:500;}
+    .field-err-msg{font-size:11px;color:#e74c3c;margin:-8px 0 10px;text-align:left;display:block;}
+    .forgot{font-size:.8rem;text-align:right;color:#aaa;cursor:pointer;display:block;margin-top:-6px;margin-bottom:14px;transition:color .25s;font-weight:500;}
     .forgot:hover{color:#f7a01a;}
-    /* Remember me */
     .remember-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:13px;color:#666;text-align:left;}
     .remember-row input[type=checkbox]{width:15px;height:15px;accent-color:#f7a01a;cursor:pointer;}
     .msg-box{padding:10px 14px;border-radius:9px;font-size:13px;font-weight:600;margin-bottom:14px;display:none;text-align:left;}
@@ -34,28 +39,35 @@
     .msg-box.pending{background:#fff8ee;color:#92400e;display:block;border:1.5px solid #f7a01a;border-radius:12px;padding:14px 16px;text-align:center;}
     .msg-box.pending .pend-title{font-size:14px;font-weight:700;color:#78350f;margin-bottom:6px;}
     .msg-box.pending .pend-sub{font-size:12px;font-weight:400;color:#a16207;line-height:1.5;}
-    button.main-btn{width:100%;padding:14px;border:none;border-radius:10px;color:#fff;font-family:"Poppins",sans-serif;font-size:1rem;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#f7a01a,#e08e12);box-shadow:0 5px 18px rgba(247,160,26,0.35);transition:all .25s ease;margin-bottom:12px;letter-spacing:.3px;}
-    button.main-btn:hover{background:linear-gradient(135deg,#d35400,#b84600);transform:translateY(-2px);box-shadow:0 8px 22px rgba(211,84,0,0.38);}
-    button.main-btn:disabled{background:#ccc;cursor:not-allowed;transform:none;box-shadow:none;}
-    /* Retry button */
-    .retry-btn{width:100%;padding:10px;border:1.5px solid #f7a01a;border-radius:10px;color:#946c44;font-family:"Poppins",sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;background:#fff8ee;margin-bottom:12px;display:none;}
+    button.main-btn{width:100%;padding:13px;border:none;border-radius:10px;color:#fff;font-family:"Poppins",sans-serif;font-size:1rem;font-weight:700;cursor:pointer;background:#f7a01a;transition:all .25s ease;margin-bottom:10px;letter-spacing:.3px;}
+    button.main-btn:hover{background:#e08e12;transform:translateY(-1px);}
+    button.main-btn:disabled{background:#ccc;cursor:not-allowed;transform:none;}
+    .retry-btn{width:100%;padding:10px;border:1.5px solid #f7a01a;border-radius:10px;color:#946c44;font-family:"Poppins",sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;background:#fff8ee;margin-bottom:10px;display:none;}
     .retry-btn:hover{background:#fef3c7;}
-    .back-home{display:inline-flex;align-items:center;gap:6px;font-size:.88rem;color:#888;text-decoration:none;font-weight:600;transition:color .25s;padding:6px 12px;border-radius:8px;border:1.5px solid #e8e8e8;}
-    .back-home:hover{color:#f7a01a;border-color:#f7a01a;background:#fff8ee;}
-    .reg-divider{display:flex;align-items:center;gap:10px;margin:4px 0 16px;color:#ccc;font-size:12px;}
-    .reg-divider::before,.reg-divider::after{content:"";flex:1;height:1px;background:#eee;}
-    button.reg-btn{width:100%;padding:12px;border:2px solid #f7a01a;border-radius:10px;color:#f7a01a;font-family:"Poppins",sans-serif;font-size:.92rem;font-weight:700;cursor:pointer;background:transparent;transition:all .22s ease;margin-bottom:18px;letter-spacing:.2px;}
-    button.reg-btn:hover{background:#fff8ee;transform:translateY(-1px);}
+    /* Register row — inline card style */
+    .reg-row-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fffbf5;border:1px solid #fef3c7;border-radius:10px;padding:12px 14px;margin-bottom:0;}
+    .reg-row-card .reg-text{font-size:12.5px;font-weight:700;color:#78350f;}
+    .reg-row-card .reg-sub{font-size:10.5px;color:#a16207;font-weight:400;margin-top:1px;}
+    button.reg-btn{padding:8px 16px;border:1.5px solid #f7a01a;border-radius:8px;color:#f7a01a;font-family:"Poppins",sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;background:#fff;transition:all .2s ease;white-space:nowrap;flex-shrink:0;}
+    button.reg-btn:hover{background:#fff8ee;}
+    /* Card footer */
+    .card-footer{border-top:1px solid #fef3c7;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;margin-top:16px;}
+    .back-home{display:inline-flex;align-items:center;gap:8px;font-size:.85rem;color:#946c44;text-decoration:none;font-weight:600;transition:color .2s;}
+    .back-home:hover{color:#f7a01a;}
+    .back-home-icon{width:26px;height:26px;border-radius:8px;background:#fff8ee;border:1.5px solid #fde68a;display:flex;align-items:center;justify-content:center;font-size:12px;color:#946c44;flex-shrink:0;}
     /* Version */
-    .version-footer{font-size:10px;color:#bbb;margin-top:4px;}
+    .version-footer{font-size:10px;color:#bbb;}
     /* Modal */
-    .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:1000;justify-content:center;align-items:center;padding:16px;}
-    .modal-card{background:#fff;border-radius:18px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;padding:36px 30px 28px;border-top:5px solid #f7a01a;box-shadow:0 16px 48px rgba(0,0,0,0.15);position:relative;animation:slideUp .3s ease-out;}
-    .modal-card h2{margin-top:0;margin-bottom:6px;color:#946c44;font-size:1.4rem;font-weight:700;}
-    .modal-card h2 i{color:#f7a01a;margin-right:8px;}
-    .modal-card .card-subtitle{font-size:.8rem;color:#aaa;margin-bottom:20px;display:block;}
-    .close-btn{position:absolute;right:16px;top:12px;font-size:22px;color:#aaa;cursor:pointer;background:none;border:none;box-shadow:none;padding:4px 8px;width:auto;border-radius:6px;transition:background .2s,color .2s;}
-    .close-btn:hover{background:#f5f5f5;color:#333;}
+    .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(120,53,14,0.35);backdrop-filter:blur(4px);z-index:1000;justify-content:center;align-items:center;padding:16px;}
+    .modal-card{background:#fff;border-radius:20px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;overflow-x:hidden;box-shadow:0 16px 48px rgba(120,53,14,0.15);position:relative;animation:slideUp .3s ease-out;}
+    .modal-header{background:#fffbf5;border-bottom:1px solid #fef3c7;padding:22px 28px 18px;text-align:center;position:relative;}
+    .modal-icon{width:46px;height:46px;border-radius:50%;background:#fff;border:2px solid #fde68a;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:#f7a01a;font-size:1.2rem;}
+    .modal-card h2{margin:0 0 4px;color:#78350f;font-size:1.25rem;font-weight:700;}
+    .modal-card h2 i{display:none;}
+    .modal-card .card-subtitle{font-size:.78rem;color:#a16207;margin-bottom:0;display:block;}
+    .modal-body{padding:22px 28px 24px;}
+    .close-btn{position:absolute;right:12px;top:10px;font-size:20px;color:#bbb;cursor:pointer;background:none;border:none;box-shadow:none;padding:4px 8px;width:auto;border-radius:6px;transition:background .2s,color .2s;z-index:2;}
+    .close-btn:hover{background:#fef3c7;color:#78350f;}
     /* Registration form */
     .reg-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
     @media(max-width:400px){.reg-row{grid-template-columns:1fr;}}
@@ -78,7 +90,9 @@
     @keyframes tBar{from{width:100%}to{width:0%}}
     .to_{animation:tDn .3s ease forwards!important;}
     @keyframes tDn{to{opacity:0;transform:translateY(12px)}}
-    @media(max-width:480px){.card{padding:30px 20px;border-radius:14px;}.card h2{font-size:1.5rem;}button.main-btn{font-size:.95rem;padding:13px;}.modal-card{padding:28px 18px 22px;}}
+    .input-group input[readonly]{background:#f5f0e8!important;color:#78350f;border-color:#fde68a!important;cursor:not-allowed;}
+    #resendRegOtpBtn:hover{color:#f7a01a;}
+    @media(max-width:480px){.card{border-radius:16px;}.card-header{padding:22px 20px 18px;}.card-body{padding:18px 20px 0;}.card-footer{padding:12px 20px;}.card h2{font-size:1.3rem;}button.main-btn{font-size:.95rem;padding:12px;}.modal-header{padding:18px 18px 14px;}.modal-body{padding:16px 18px 18px;}.modal-card h2{font-size:1.1rem;}}
   </style>
 </head>
 <body>
@@ -86,85 +100,114 @@
 <div class="container">
   <!-- LOGIN CARD -->
   <div class="card">
-    <h2>
-      <img src="Image/logo.PNG" alt="Mandir" class="login-logo" onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
-      <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;"></i>
-      Mandir Login
-    </h2>
-    <span class="card-subtitle">Shree Hanuman Mandir, Paliya</span>
 
-    <div class="msg-box" id="loginMsg"></div>
-
-    <div class="input-group">
-      <i class="icon fa-solid fa-phone"></i>
-      <input type="text" id="mobile" placeholder="Mobile Number" maxlength="10" inputmode="numeric"/>
+    <!-- Cream header -->
+    <div class="card-header">
+      <div class="header-icon-wrap" id="hdrIconWrap">
+        <img src="Image/logo.PNG" alt="Mandir" class="login-logo" style="width:48px;height:48px;border-radius:50%;display:block;" onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline-flex';">
+        <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;"></i>
+      </div>
+      <h2>Mandir Login</h2>
+      <span class="card-subtitle">Shree Hanuman Mandir, Paliya</span>
     </div>
 
-    <div class="input-group">
-      <i class="icon fa-solid fa-lock"></i>
-      <input type="password" id="password" placeholder="Password"/>
-      <i class="fa-solid fa-eye pwd-eye" id="togglePassword"></i>
+    <!-- Form body -->
+    <div class="card-body">
+      <div class="msg-box" id="loginMsg"></div>
+
+      <div class="input-group">
+        <i class="icon fa-solid fa-phone"></i>
+        <input type="text" id="mobile" placeholder="Mobile Number" maxlength="10" inputmode="numeric"/>
+      </div>
+
+      <div class="input-group">
+        <i class="icon fa-solid fa-lock"></i>
+        <input type="password" id="password" placeholder="Password"/>
+        <i class="fa-solid fa-eye pwd-eye" id="togglePassword"></i>
+      </div>
+
+      <span class="forgot" onclick="openForgotModal()">Forgot password?</span>
+
+      <label class="remember-row">
+        <input type="checkbox" id="rememberMe"> Remember me for 24 hours
+      </label>
+
+      <button class="main-btn" id="loginBtn" onclick="doLogin()">
+        <i class="fa-solid fa-right-to-bracket"></i> Secure Login
+      </button>
+      <button class="retry-btn" id="retryBtn" onclick="doLogin()">
+        <i class="fa-solid fa-rotate-right"></i> Retry Login
+      </button>
+
+      <!-- Register inline card -->
+      <div class="reg-row-card">
+        <div>
+          <div class="reg-text">New here? Register here</div>
+          <div class="reg-sub">Takes less than 2 minutes</div>
+        </div>
+        <button class="reg-btn" onclick="openRegisterModal()">
+          <i class="fa-solid fa-user-plus"></i> Register →
+        </button>
+      </div>
     </div>
 
-    <span class="forgot" onclick="openForgotModal()">Forgot password?</span>
+    <!-- Card footer -->
+    <div class="card-footer">
+      <a href="index.html" class="back-home">
+        <div class="back-home-icon"><i class="fa-solid fa-arrow-left"></i></div>
+        Back to Home
+      </a>
+      <div class="version-footer" id="versionFooter"></div>
+    </div>
 
-    <label class="remember-row">
-      <input type="checkbox" id="rememberMe"> Remember me for 24 hours
-    </label>
-
-    <button class="main-btn" id="loginBtn" onclick="doLogin()">
-      <i class="fa-solid fa-right-to-bracket"></i> Secure Login
-    </button>
-    <button class="retry-btn" id="retryBtn" onclick="doLogin()">
-      <i class="fa-solid fa-rotate-right"></i> Retry Login
-    </button>
-
-    <div class="reg-divider">New to Mandir System?</div>
-    <button class="reg-btn" onclick="openRegisterModal()">
-      <i class="fa-solid fa-user-plus"></i> New Registration
-    </button>
-    <a href="index.html" class="back-home">
-      <i class="fa-solid fa-arrow-left"></i> Back to Home
-    </a>
   </div>
-
-  <div class="version-footer" id="versionFooter"></div>
 </div>
 
 <!-- ══ FORGOT PASSWORD MODAL ══ -->
 <div id="forgotModal" class="modal-overlay">
   <div class="modal-card" style="max-width:400px;">
-    <button class="close-btn" onclick="closeForgotModal()">×</button>
-    <div id="resetStep1">
-      <h2><i class="fa-solid fa-envelope-circle-check"></i> Verify Account</h2>
-      <span class="card-subtitle">Enter the mobile number and your registered email</span>
-      <div class="msg-box" id="resetMsg1"></div>
-      <div class="input-group">
-        <i class="icon fa-solid fa-at"></i>
-        <input type="email" id="resetEmail" placeholder="Registered Email ID"/>
-      </div>
-      <button class="main-btn" onclick="sendOTP()">
-        <i class="fa-solid fa-paper-plane"></i> Verify &amp; Send OTP
-      </button>
+    <!-- Step 1 header -->
+    <div class="modal-header" id="forgotHeader1">
+      <button class="close-btn" onclick="closeForgotModal()">×</button>
+      <div class="modal-icon"><i class="fa-solid fa-envelope-circle-check"></i></div>
+      <h2>Forgot Password</h2>
+      <span class="card-subtitle">Enter your registered email to receive an OTP</span>
     </div>
-    <div id="resetStep2" style="display:none;">
-      <h2><i class="fa-solid fa-key"></i> Reset Password</h2>
-      <p style="font-size:.85rem;color:#666;margin-bottom:16px;">Enter the 6-digit OTP sent to your email, then set a new password.</p>
-      <div class="msg-box" id="resetMsg2"></div>
-      <div class="input-group">
-        <i class="icon fa-solid fa-shield-halved"></i>
-        <input type="number" id="inputOTP" placeholder="Enter 6-digit OTP" maxlength="6"/>
+    <!-- Step 2 header (hidden initially) -->
+    <div class="modal-header" id="forgotHeader2" style="display:none;">
+      <button class="close-btn" onclick="closeForgotModal()">×</button>
+      <div class="modal-icon"><i class="fa-solid fa-key"></i></div>
+      <h2>Reset Password</h2>
+      <span class="card-subtitle">Enter the OTP sent to your email and set a new password</span>
+    </div>
+    <div class="modal-body">
+      <div id="resetStep1">
+        <div class="msg-box" id="resetMsg1"></div>
+        <div class="input-group">
+          <i class="icon fa-solid fa-at"></i>
+          <input type="email" id="resetEmail" placeholder="Registered Email ID"/>
+        </div>
+        <button class="main-btn" onclick="sendOTP()">
+          <i class="fa-solid fa-paper-plane"></i> Verify &amp; Send OTP
+        </button>
       </div>
-      <div class="input-group">
-        <i class="icon fa-solid fa-lock"></i>
-        <input type="password" id="newPassword" placeholder="New Password (min 8 chars)"/>
-        <i class="fa-solid fa-eye pwd-eye" id="toggleNewPwd"></i>
+      <div id="resetStep2" style="display:none;">
+        <div class="msg-box" id="resetMsg2"></div>
+        <div class="input-group">
+          <i class="icon fa-solid fa-shield-halved"></i>
+          <input type="number" id="inputOTP" placeholder="Enter 6-digit OTP" maxlength="6"/>
+        </div>
+        <div class="input-group">
+          <i class="icon fa-solid fa-lock"></i>
+          <input type="password" id="newPassword" placeholder="New Password (min 8 chars)"/>
+          <i class="fa-solid fa-eye pwd-eye" id="toggleNewPwd"></i>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="resetStrengthFill"></div></div>
+        <div class="strength-label" id="resetStrengthLabel"></div>
+        <button class="main-btn" onclick="verifyAndReset()">
+          <i class="fa-solid fa-check-circle"></i> Update Password
+        </button>
       </div>
-      <div class="strength-bar"><div class="strength-fill" id="resetStrengthFill"></div></div>
-      <div class="strength-label" id="resetStrengthLabel"></div>
-      <button class="main-btn" onclick="verifyAndReset()">
-        <i class="fa-solid fa-check-circle"></i> Update Password
-      </button>
     </div>
   </div>
 </div>
@@ -172,110 +215,123 @@
 <!-- ══ REGISTER MODAL ══ -->
 <div id="registerModal" class="modal-overlay">
   <div class="modal-card">
-    <button class="close-btn" onclick="closeRegisterModal()">×</button>
-    <!-- Y1: Step 0 — Email OTP verification before registration -->
-    <div id="regOtpStep" style="display:none;">
-      <h2><i class="fa-solid fa-envelope-circle-check"></i> Verify Email First</h2>
-      <span class="card-subtitle">We'll send a 6-digit code to confirm your email address</span>
-      <div class="msg-box" id="regOtpMsg"></div>
-      <div class="input-group">
-        <i class="icon fa-solid fa-at"></i>
-        <input type="email" id="regOtpEmail" placeholder="Enter your email address" maxlength="200"/>
+
+    <!-- Dynamic cream header (swapped by JS) -->
+    <div class="modal-header" id="regModalHeader">
+      <button class="close-btn" onclick="closeRegisterModal()">×</button>
+      <div class="modal-icon" id="regModalIcon">
+        <img src="Image/logo.PNG" alt="Mandir" style="width:38px;height:38px;border-radius:50%;display:block;" onerror="this.style.display='none';document.getElementById('regModalIconFallback').style.display='inline-flex';">
+        <i id="regModalIconFallback" class="fa-solid fa-envelope-circle-check" style="display:none;"></i>
       </div>
-      <button class="main-btn" id="sendRegOtpBtn" onclick="sendRegistrationOTP()">
-        <i class="fa-solid fa-paper-plane"></i> Send Verification Code
-      </button>
-      <div id="regOtpInputRow" style="display:none;margin-top:4px;">
+      <h2 id="regModalTitle">Verify Email First</h2>
+      <span class="card-subtitle" id="regModalSub">We'll send a 6-digit code to confirm your email</span>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Step 0: Email OTP -->
+      <div id="regOtpStep" style="display:none;">
+        <div class="msg-box" id="regOtpMsg"></div>
         <div class="input-group">
-          <i class="icon fa-solid fa-shield-halved"></i>
-          <input type="number" id="regOtpCode" placeholder="Enter 6-digit code" maxlength="6"/>
+          <i class="icon fa-solid fa-at"></i>
+          <input type="email" id="regOtpEmail" placeholder="Enter your email address" maxlength="200"/>
         </div>
-        <button class="main-btn" id="verifyRegOtpBtn" onclick="verifyRegistrationOTP()">
-          <i class="fa-solid fa-check-circle"></i> Verify &amp; Continue
+        <button class="main-btn" id="sendRegOtpBtn" onclick="sendRegistrationOTP()">
+          <i class="fa-solid fa-paper-plane"></i> Send Verification Code
         </button>
-      </div>
-    </div>
-
-    <div id="regForm">
-      <h2><i class="fa-solid fa-user-plus"></i> Create Account</h2>
-      <span class="card-subtitle">Register to track your donations &amp; receipts</span>
-      <div class="msg-box" id="regMsg"></div>
-
-      <div class="reg-row">
-        <div>
-          <span class="field-label">Full Name *</span>
-          <div class="input-group" style="margin-bottom:4px;">
-            <i class="icon fa-solid fa-user"></i>
-            <input type="text" id="reg_name" placeholder="Your full name" maxlength="100"/>
-          </div>
+        <!-- Resend link shown after OTP sent (smaller, subtle) -->
+        <div id="resendOtpRow" style="display:none;text-align:center;margin-bottom:10px;">
+          <button id="resendRegOtpBtn" onclick="resendRegistrationOTP()" style="background:none;border:none;font-family:'Poppins',sans-serif;font-size:12.5px;color:#a16207;cursor:pointer;padding:4px 10px;border-radius:6px;font-weight:600;transition:color .2s;">
+            <i class="fa-solid fa-rotate-right" style="font-size:11px;"></i> Resend OTP
+          </button>
         </div>
-        <div>
-          <span class="field-label">Mobile Number *</span>
-          <div class="input-group" style="margin-bottom:4px;">
-            <i class="icon fa-solid fa-phone"></i>
-            <input type="text" id="reg_mobile" placeholder="10-digit mobile" maxlength="10" inputmode="numeric"/>
+        <div id="regOtpInputRow" style="display:none;margin-top:4px;">
+          <div class="input-group">
+            <i class="icon fa-solid fa-shield-halved"></i>
+            <input type="number" id="regOtpCode" placeholder="Enter 6-digit code" maxlength="6"/>
           </div>
+          <button class="main-btn" id="verifyRegOtpBtn" onclick="verifyRegistrationOTP()">
+            <i class="fa-solid fa-check-circle"></i> Verify &amp; Continue
+          </button>
         </div>
       </div>
 
-      <span class="field-label">Email Address *</span>
-      <div class="input-group" style="margin-bottom:4px;">
-        <i class="icon fa-solid fa-at"></i>
-        <input type="email" id="reg_email" placeholder="Your email address" maxlength="200"/>
-      </div>
-
-      <div class="reg-row">
-        <div>
-          <span class="field-label">Password *</span>
-          <div class="input-group" style="margin-bottom:4px;">
-            <i class="icon fa-solid fa-lock"></i>
-            <input type="password" id="reg_password" placeholder="Min 8 chars" autocomplete="new-password" oninput="checkPwdStrength(this.value,'regStrengthFill','regStrengthLabel')"/>
-            <i class="fa-solid fa-eye pwd-eye" id="toggleRegPwd"></i>
+      <!-- Step 1: Registration form -->
+      <div id="regForm">
+        <div class="msg-box" id="regMsg"></div>
+        <div class="reg-row">
+          <div>
+            <span class="field-label">Full Name *</span>
+            <div class="input-group" style="margin-bottom:4px;">
+              <i class="icon fa-solid fa-user"></i>
+              <input type="text" id="reg_name" placeholder="Your full name" maxlength="100"/>
+            </div>
           </div>
-          <div class="strength-bar"><div class="strength-fill" id="regStrengthFill"></div></div>
-          <div class="strength-label" id="regStrengthLabel"></div>
-        </div>
-        <div>
-          <span class="field-label">Confirm Password *</span>
-          <div class="input-group" style="margin-bottom:14px;">
-            <i class="icon fa-solid fa-lock"></i>
-            <input type="password" id="reg_confirm" placeholder="Re-enter password" autocomplete="new-password"/>
-            <i class="fa-solid fa-eye pwd-eye" id="toggleRegConfirm"></i>
+          <div>
+            <span class="field-label">Mobile Number *</span>
+            <div class="input-group" style="margin-bottom:4px;">
+              <i class="icon fa-solid fa-phone"></i>
+              <input type="text" id="reg_mobile" placeholder="10-digit mobile" maxlength="10" inputmode="numeric"/>
+            </div>
           </div>
         </div>
+        <span class="field-label">Email Address *</span>
+        <div class="input-group" style="margin-bottom:4px;">
+          <i class="icon fa-solid fa-at"></i>
+          <input type="email" id="reg_email" placeholder="Your email address" maxlength="200"/>
+        </div>
+        <div class="reg-row">
+          <div>
+            <span class="field-label">Password *</span>
+            <div class="input-group" style="margin-bottom:4px;">
+              <i class="icon fa-solid fa-lock"></i>
+              <input type="password" id="reg_password" placeholder="Min 8 chars" autocomplete="new-password" oninput="checkPwdStrength(this.value,'regStrengthFill','regStrengthLabel')"/>
+              <i class="fa-solid fa-eye pwd-eye" id="toggleRegPwd"></i>
+            </div>
+            <div class="strength-bar"><div class="strength-fill" id="regStrengthFill"></div></div>
+            <div class="strength-label" id="regStrengthLabel"></div>
+          </div>
+          <div>
+            <span class="field-label">Confirm Password *</span>
+            <div class="input-group" style="margin-bottom:14px;">
+              <i class="icon fa-solid fa-lock"></i>
+              <input type="password" id="reg_confirm" placeholder="Re-enter password" autocomplete="new-password"/>
+              <i class="fa-solid fa-eye pwd-eye" id="toggleRegConfirm"></i>
+            </div>
+          </div>
+        </div>
+        <span class="field-label">Village / Town *</span>
+        <div class="input-group" style="margin-bottom:4px;">
+          <i class="icon fa-solid fa-house"></i>
+          <input type="text" id="reg_village" placeholder="Your village or town" maxlength="100"/>
+        </div>
+        <span class="field-label">Full Address <span style="color:#bbb;font-weight:400;">(optional)</span></span>
+        <div class="input-group" style="margin-bottom:20px;">
+          <i class="icon fa-solid fa-map-pin" style="top:18px;transform:none;"></i>
+          <input type="text" id="reg_address" placeholder="Street, locality, district..." maxlength="300" style="padding-left:44px;"/>
+        </div>
+        <button class="main-btn" id="regBtn" onclick="submitRegistration()">
+          <i class="fa-solid fa-paper-plane"></i> Submit Registration
+        </button>
+        <p style="font-size:11.5px;color:#aaa;margin:0;line-height:1.5;">
+          <i class="fa-solid fa-shield-halved" style="color:#f7a01a;"></i>
+          Your account will be reviewed by the temple admin before activation.
+        </p>
       </div>
 
-      <span class="field-label">Village / Town *</span>
-      <div class="input-group" style="margin-bottom:4px;">
-        <i class="icon fa-solid fa-house"></i>
-        <input type="text" id="reg_village" placeholder="Your village or town" maxlength="100"/>
+      <!-- Step 2: Success -->
+      <div id="regSuccess" style="display:none;">
+        <div class="reg-pending">
+          <div class="pend-icon">🙏</div>
+          <h3>Registration Submitted!</h3>
+          <p>Your request has been sent to the temple admin for review.<br/><br/>
+            You will receive an email once approved. You can then login with your mobile and password.</p>
+        </div>
+        <div style="margin-top:20px;">
+          <button class="main-btn" onclick="closeRegisterModal()"><i class="fa-solid fa-check"></i> Got it, Back to Login</button>
+        </div>
       </div>
 
-      <span class="field-label">Full Address <span style="color:#bbb;font-weight:400;">(optional)</span></span>
-      <div class="input-group" style="margin-bottom:20px;">
-        <i class="icon fa-solid fa-map-pin" style="top:18px;transform:none;"></i>
-        <input type="text" id="reg_address" placeholder="Street, locality, district..." maxlength="300" style="padding-left:44px;"/>
-      </div>
-
-      <button class="main-btn" id="regBtn" onclick="submitRegistration()">
-        <i class="fa-solid fa-paper-plane"></i> Submit Registration
-      </button>
-      <p style="font-size:11.5px;color:#aaa;margin:0;line-height:1.5;">
-        <i class="fa-solid fa-shield-halved" style="color:#f7a01a;"></i>
-        Your account will be reviewed by the temple admin before activation.
-      </p>
-    </div>
-
-    <div id="regSuccess" style="display:none;">
-      <div class="reg-pending">
-        <div class="pend-icon">🙏</div>
-        <h3>Registration Submitted!</h3>
-        <p>Your request has been sent to the temple admin for review.<br/><br/>
-          You will receive an email once approved. You can then login with your mobile and password.</p>
-      </div>
-      <div style="margin-top:20px;text-align:center;">
-        <button class="main-btn" onclick="closeRegisterModal()"><i class="fa-solid fa-check"></i> Got it, Back to Login</button>
-      </div>
     </div>
   </div>
 </div>
@@ -508,7 +564,8 @@ function openForgotModal(){
   document.getElementById("resetStep1").style.display="block";
   document.getElementById("resetStep2").style.display="none";
 }
-function closeForgotModal(){document.getElementById("forgotModal").style.display="none";}
+function closeForgotModal(){
+  _setForgotHeader(1);document.getElementById("forgotModal").style.display="none";}
 
 function sendOTP(){
   const email=document.getElementById("resetEmail").value.trim();
@@ -598,6 +655,7 @@ function clearFieldErrors(){
 //  REGISTRATION — single consolidated function, field-level errors
 // ══════════════════════════════════════════════════════════════════
 function openRegisterModal(){
+  _setRegHeader("envelope-circle-check","Verify Email First","We'll send a 6-digit code to confirm your email");
   ["reg_name","reg_mobile","reg_email","reg_password","reg_confirm","reg_village","reg_address"].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value="";
   });
@@ -645,6 +703,7 @@ async function submitRegistration(){
     if(res&&res.status==="success"){
       document.getElementById("regForm").style.display="none";
       document.getElementById("regSuccess").style.display="block";
+      _setRegHeader("circle-check","All Done!","Your registration has been submitted");
     }else{
       setMsg("regMsg","❌ "+(res&&res.message?res.message:"Registration failed. Please try again."),"error");
     }
@@ -665,9 +724,27 @@ window.addEventListener("load",function(){
   try{
     getData("getChatbotConfig").then(function(cfg){
       if(!cfg)return;
+      const timings=cfg.timings_en||"";
+      const bar=document.getElementById("timingsBar");
+      const txt=document.getElementById("timingsText");
+      if(bar&&txt&&timings){txt.textContent=timings;bar.style.display="block";}
     }).catch(function(){});
   }catch(e){}
 });
+
+// ══ Modal header swap helpers ══
+function _setRegHeader(icon, title, sub){
+  const t=document.getElementById("regModalTitle");
+  const s=document.getElementById("regModalSub");
+  if(t)t.textContent=title;
+  if(s)s.textContent=sub;
+}
+function _setForgotHeader(step){
+  const h1=document.getElementById("forgotHeader1");
+  const h2=document.getElementById("forgotHeader2");
+  if(step===2){if(h1)h1.style.display="none";if(h2)h2.style.display="";}
+  else{if(h1)h1.style.display="";if(h2)h2.style.display="none";}
+}
 
 // ══ Y1: Registration email OTP verification ══
 let _regOtpTargetUserId = null;
@@ -681,7 +758,6 @@ async function sendRegistrationOTP() {
   btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
   setMsg("regOtpMsg","","");
   try {
-    // Use a special OTP endpoint for registration (mobile is dummy "0000000000" since we only have email)
     const s = document.createElement("script");
     const cb = "cb_regOtp_" + Date.now();
     let done = false;
@@ -689,13 +765,17 @@ async function sendRegistrationOTP() {
       window[cb] = function(res){ if(done)return;done=true;clearTimeout(t);delete window[cb];s.remove();resolve(res); };
       const t = setTimeout(()=>{ if(done)return;done=true;delete window[cb];s.remove();reject(new Error("Timed out.")); },15000);
       s.onerror = function(){ if(done)return;done=true;clearTimeout(t);delete window[cb];s.remove();reject(new Error("Network error.")); };
-      // Use sendEmailOTP with a dummy mobile flag for registration
       s.src = API_URL + "?action=sendRegistrationOTP&email=" + encodeURIComponent(email) + "&callback=" + cb;
       document.body.appendChild(s);
     }).then(res => {
       if (res && res.status === "success") {
         _regOtpTargetUserId = res.otpKey || email;
         window._regVerifiedEmail = email;
+        // Lock email field and hide big send button, show resend link
+        const emailInput = document.getElementById("regOtpEmail");
+        if(emailInput) emailInput.readOnly = true;
+        document.getElementById("sendRegOtpBtn").style.display = "none";
+        document.getElementById("resendOtpRow").style.display = "block";
         document.getElementById("regOtpInputRow").style.display = "block";
         setMsg("regOtpMsg","✅ OTP sent! Check your email inbox (also check spam).","success");
       } else {
@@ -704,6 +784,15 @@ async function sendRegistrationOTP() {
     });
   } catch(err) { setMsg("regOtpMsg","❌ " + err.message,"error"); }
   finally { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Send Verification Code'; }
+}
+
+async function resendRegistrationOTP() {
+  // Unlock email temporarily, re-enable send button, then trigger send
+  const emailInput = document.getElementById("regOtpEmail");
+  if(emailInput) emailInput.readOnly = false;
+  document.getElementById("sendRegOtpBtn").style.display = "block";
+  document.getElementById("resendOtpRow").style.display = "none";
+  await sendRegistrationOTP();
 }
 
 async function verifyRegistrationOTP() {
@@ -728,6 +817,7 @@ async function verifyRegistrationOTP() {
         // Move to registration form
         document.getElementById("regOtpStep").style.display="none";
         document.getElementById("regForm").style.display="block";
+        _setRegHeader("user-plus","Create Account","Fill in your details to complete registration");
         toast("✅ Email verified! Complete your registration below.");
       } else {
         setMsg("regOtpMsg","❌ " + (res?.message||"Invalid OTP."),"error");

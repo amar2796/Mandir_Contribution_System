@@ -1257,7 +1257,7 @@
 
       /* ── menu items slightly more compact ── */
       .menu-item {
-        padding: 12px 14px;
+        padding: 13px 14px;
       }
       .menu-icon {
         width: 36px;
@@ -1665,28 +1665,49 @@
     .menu-grid {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       margin-bottom: 14px;
     }
-    .menu-item {
-      background: var(--white);
-      border: 1px solid rgba(247,160,26,0.1);
+    /* Each accordion wrap is the card — uniform border + shadow here */
+    .menu-acc-wrap {
+      display: flex;
+      flex-direction: column;
       border-radius: var(--rad-lg);
-      padding: 13px 16px;
+      border: 1.5px solid rgba(247,160,26,0.15);
+      background: var(--white);
+      box-shadow: var(--sh-sm);
+      overflow: hidden;
+      transition: border-color var(--t), box-shadow var(--t), transform var(--t);
+    }
+    .menu-acc-wrap:hover {
+      border-color: rgba(247,160,26,0.35);
+      box-shadow: var(--sh-md);
+      transform: translateY(-1px);
+    }
+    .menu-acc-wrap:has(.acc-open) {
+      border-color: var(--gold);
+      box-shadow: 0 4px 20px rgba(247,160,26,0.15), var(--sh-md);
+      transform: none;
+    }
+    .menu-item {
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 14px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
       cursor: pointer;
-      transition: box-shadow var(--t), border-color var(--t), transform var(--t);
-      box-shadow: var(--sh-sm);
+      transition: background var(--t);
+      box-shadow: none;
     }
     .menu-item:hover {
-      border-color: rgba(247,160,26,0.3);
-      box-shadow: var(--sh-md);
-      transform: translateY(-1px);
+      background: rgba(247,160,26,0.03);
+      box-shadow: none;
+      transform: none;
     }
-    .menu-item:active { transform: scale(.98); }
+    .menu-item:active { transform: none; opacity: 0.85; }
     .menu-item-left { display: flex; align-items: center; gap: 12px; }
     .menu-icon {
       width: 38px; height: 38px; border-radius: 11px;
@@ -1700,10 +1721,10 @@
     .menu-desc { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
     .menu-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
     .menu-arrow {
-      font-size: 16px; color: var(--ink-faint); transition: transform var(--t);
-      line-height: 1;
+      font-size: 16px; color: var(--ink-faint); transition: transform var(--t), color var(--t);
+      line-height: 1; display: inline-block;
     }
-    .menu-item:hover .menu-arrow { transform: translateX(3px); color: var(--gold); }
+    .menu-acc-wrap:hover .menu-arrow { color: var(--gold); }
     .menu-badge {
       font-size: 10px; font-weight: 700; padding: 2px 8px;
       border-radius: 12px; white-space: nowrap;
@@ -1711,6 +1732,34 @@
     .mb-amber { background: rgba(247,160,26,0.15); color: #b45309; border: 1px solid rgba(247,160,26,0.2); }
     .mb-green { background: rgba(34,197,94,0.12); color: #15803d; border: 1px solid rgba(34,197,94,0.2); }
     .mb-blue  { background: rgba(59,130,246,0.12); color: #1d4ed8; border: 1px solid rgba(59,130,246,0.2); }
+
+    /* ─── ACCORDION ─── */
+    .menu-item.acc-open {
+      background: linear-gradient(90deg, rgba(247,160,26,0.07) 0%, rgba(247,160,26,0.02) 70%, transparent 100%);
+      border-bottom: 1.5px solid rgba(247,160,26,0.2);
+    }
+    .menu-item.acc-open .menu-title {
+      color: #a05000;
+    }
+    .menu-item.acc-open .menu-arrow {
+      transform: rotate(90deg);
+      color: var(--gold);
+    }
+    .acc-body {
+      background: #fffdf8;
+      border-top: none;
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.38s cubic-bezier(.4,0,.2,1), opacity 0.28s ease;
+      opacity: 0;
+    }
+    .acc-body.acc-open {
+      opacity: 1;
+    }
+    .acc-body-inner {
+      padding: 0;
+    }
+    .acc-body .sec-panel-back { display: none; }
 
     /* ─── BOTTOM SHEET ─── */
     .bs-overlay {
@@ -1856,8 +1905,32 @@
     .ra-view-all:hover { background: #fffbf2; }
 
     /* ─── DARK MODE: new elements ─── */
+    body.user-dark .menu-acc-wrap {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
+    }
+    body.user-dark .menu-acc-wrap:hover {
+      border-color: rgba(247,160,26,0.3) !important;
+    }
+    body.user-dark .menu-acc-wrap:has(.acc-open) {
+      border-color: var(--gold) !important;
+      box-shadow: 0 4px 20px rgba(247,160,26,0.12), 0 2px 12px rgba(0,0,0,0.3) !important;
+    }
     body.user-dark .menu-item {
-      background: #1e293b !important; border-color: #334155 !important;
+      background: transparent !important;
+      border-color: transparent !important;
+    }
+    body.user-dark .menu-item.acc-open {
+      background: linear-gradient(90deg, rgba(247,160,26,0.10) 0%, rgba(247,160,26,0.03) 70%, transparent 100%) !important;
+      border-bottom-color: rgba(247,160,26,0.25) !important;
+    }
+    body.user-dark .menu-item.acc-open .menu-title {
+      color: var(--gold) !important;
+    }
+    body.user-dark .acc-body {
+      background: #192030 !important;
+      border-color: transparent !important;
     }
     body.user-dark .menu-title { color: #e2e8f0 !important; }
     body.user-dark .menu-desc { color: #64748b !important; }
@@ -2018,79 +2091,115 @@
     <div class="sec-lbl"><i class="fa-solid fa-list-ul"></i> Menu</div>
     <div class="menu-grid" id="mainMenu">
 
-      <div class="menu-item" onclick="_openMenuSection('panelRecords')">
-        <div class="menu-item-left">
-          <div class="menu-icon" style="background:rgba(34,197,94,0.12);">💳</div>
-          <div>
-            <div class="menu-title">My Contributions</div>
-            <div class="menu-desc">Full history · filter by year, month, type</div>
+      <!-- My Contributions -->
+      <div class="menu-acc-wrap">
+        <div class="menu-item" id="accBtn-panelRecords" onclick="_toggleAccordion('panelRecords')">
+          <div class="menu-item-left">
+            <div class="menu-icon" style="background:rgba(34,197,94,0.12);">💳</div>
+            <div>
+              <div class="menu-title">My Contributions</div>
+              <div class="menu-desc">Full history · filter by year, month, type</div>
+            </div>
+          </div>
+          <div class="menu-right">
+            <span class="menu-badge mb-green" id="menuBadgeRecords" style="display:none;"></span>
+            <span class="menu-arrow">›</span>
           </div>
         </div>
-        <div class="menu-right">
-          <span class="menu-badge mb-green" id="menuBadgeRecords" style="display:none;"></span>
-          <span class="menu-arrow">›</span>
+        <div class="acc-body" id="accBody-panelRecords">
+          <div class="acc-body-inner" id="accInner-panelRecords"></div>
         </div>
       </div>
 
-      <div class="menu-item" onclick="_openMenuSection('panelPayment')">
-        <div class="menu-item-left">
-          <div class="menu-icon" style="background:rgba(247,160,26,0.12);">📋</div>
-          <div>
-            <div class="menu-title">Submit Payment</div>
-            <div class="menu-desc">Submit & track your payment requests</div>
+      <!-- Submit Payment -->
+      <div class="menu-acc-wrap">
+        <div class="menu-item" id="accBtn-panelPayment" onclick="_toggleAccordion('panelPayment')">
+          <div class="menu-item-left">
+            <div class="menu-icon" style="background:rgba(247,160,26,0.12);">📋</div>
+            <div>
+              <div class="menu-title">Submit Payment</div>
+              <div class="menu-desc">Submit &amp; track your payment requests</div>
+            </div>
+          </div>
+          <div class="menu-right">
+            <span class="menu-badge mb-amber" id="menuBadgePending" style="display:none;"></span>
+            <span class="menu-arrow">›</span>
           </div>
         </div>
-        <div class="menu-right">
-          <span class="menu-badge mb-amber" id="menuBadgePending" style="display:none;"></span>
-          <span class="menu-arrow">›</span>
+        <div class="acc-body" id="accBody-panelPayment">
+          <div class="acc-body-inner" id="accInner-panelPayment"></div>
         </div>
       </div>
 
-      <div class="menu-item" onclick="_openMenuSection('panelStats')">
-        <div class="menu-item-left">
-          <div class="menu-icon" style="background:rgba(99,102,241,0.1);">📊</div>
-          <div>
-            <div class="menu-title">Statistics</div>
-            <div class="menu-desc">Month-wise & type breakdown</div>
+      <!-- Statistics -->
+      <div class="menu-acc-wrap">
+        <div class="menu-item" id="accBtn-panelStats" onclick="_toggleAccordion('panelStats')">
+          <div class="menu-item-left">
+            <div class="menu-icon" style="background:rgba(99,102,241,0.1);">📊</div>
+            <div>
+              <div class="menu-title">Statistics</div>
+              <div class="menu-desc">Month-wise &amp; type breakdown</div>
+            </div>
           </div>
+          <div class="menu-right"><span class="menu-arrow">›</span></div>
         </div>
-        <div class="menu-right"><span class="menu-arrow">›</span></div>
-      </div>
-
-      <div class="menu-item" onclick="_openMenuSection('panelEvents')">
-        <div class="menu-item-left">
-          <div class="menu-icon" style="background:rgba(247,160,26,0.1);">📅</div>
-          <div>
-            <div class="menu-title">Events & Festivals</div>
-            <div class="menu-desc">Upcoming · ongoing temple events</div>
-          </div>
-        </div>
-        <div class="menu-right">
-          <span class="menu-badge mb-amber" id="menuBadgeEvents" style="display:none;"></span>
-          <span class="menu-arrow">›</span>
+        <div class="acc-body" id="accBody-panelStats">
+          <div class="acc-body-inner" id="accInner-panelStats"></div>
         </div>
       </div>
 
-      <div class="menu-item" onclick="_openMenuSection('panelFeedback')">
-        <div class="menu-item-left">
-          <div class="menu-icon" style="background:rgba(59,130,246,0.1);">💬</div>
-          <div>
-            <div class="menu-title">Feedback</div>
-            <div class="menu-desc">Share suggestions with temple admin</div>
+      <!-- Events & Festivals -->
+      <div class="menu-acc-wrap">
+        <div class="menu-item" id="accBtn-panelEvents" onclick="_toggleAccordion('panelEvents')">
+          <div class="menu-item-left">
+            <div class="menu-icon" style="background:rgba(247,160,26,0.1);">📅</div>
+            <div>
+              <div class="menu-title">Events &amp; Festivals</div>
+              <div class="menu-desc">Upcoming · ongoing temple events</div>
+            </div>
+          </div>
+          <div class="menu-right">
+            <span class="menu-badge mb-amber" id="menuBadgeEvents" style="display:none;"></span>
+            <span class="menu-arrow">›</span>
           </div>
         </div>
-        <div class="menu-right"><span class="menu-arrow">›</span></div>
+        <div class="acc-body" id="accBody-panelEvents">
+          <div class="acc-body-inner" id="accInner-panelEvents"></div>
+        </div>
       </div>
 
-      <div class="menu-item" onclick="_openMenuSection('panelContact')">
-        <div class="menu-item-left">
-          <div class="menu-icon" style="background:rgba(34,197,94,0.1);">📞</div>
-          <div>
-            <div class="menu-title">Temple Contact</div>
-            <div class="menu-desc">Phone, email & address</div>
+      <!-- Feedback -->
+      <div class="menu-acc-wrap">
+        <div class="menu-item" id="accBtn-panelFeedback" onclick="_toggleAccordion('panelFeedback')">
+          <div class="menu-item-left">
+            <div class="menu-icon" style="background:rgba(59,130,246,0.1);">💬</div>
+            <div>
+              <div class="menu-title">Feedback</div>
+              <div class="menu-desc">Share suggestions with temple admin</div>
+            </div>
           </div>
+          <div class="menu-right"><span class="menu-arrow">›</span></div>
         </div>
-        <div class="menu-right"><span class="menu-arrow">›</span></div>
+        <div class="acc-body" id="accBody-panelFeedback">
+          <div class="acc-body-inner" id="accInner-panelFeedback"></div>
+        </div>
+      </div>
+
+      <!-- Temple Contact -->
+      <div class="menu-acc-wrap">
+        <div class="menu-item" id="accBtn-panelContact" onclick="_toggleAccordion('panelContact')">
+          <div class="menu-item-left">
+            <div class="menu-icon" style="background:rgba(34,197,94,0.1);">📞</div>
+            <div>
+              <div class="menu-title">Temple Contact</div>
+              <div class="menu-desc">Phone, email &amp; address</div>
+            </div>
+          </div>
+          <div class="menu-right"><span class="menu-arrow">›</span></div>
+        </div>
+        <div class="acc-body" id="accBody-panelContact">
+          <div class="acc-body-inner" id="accInner-panelContact"></div>
+        </div>
       </div>
 
     </div><!-- /menu-grid -->
@@ -3302,6 +3411,99 @@
     let _statsLoaded = false;
     let _eventsLoaded = false;
 
+    // ── Accordion toggle for Menu section
+    let _accActivePanel = null;
+
+    function _toggleAccordion(id) {
+      const panel     = document.getElementById(id);
+      const accBody   = document.getElementById("accBody-" + id);
+      const accInner  = document.getElementById("accInner-" + id);
+      const accBtn    = document.getElementById("accBtn-" + id);
+      if (!panel || !accBody || !accInner || !accBtn) return;
+
+      const isOpen = accBtn.classList.contains("acc-open");
+
+      // Close any currently open accordion first
+      if (_accActivePanel && _accActivePanel !== id) {
+        const prevBtn   = document.getElementById("accBtn-"  + _accActivePanel);
+        const prevBody  = document.getElementById("accBody-" + _accActivePanel);
+        const prevInner = document.getElementById("accInner-"+ _accActivePanel);
+        if (prevBtn)   prevBtn.classList.remove("acc-open");
+        if (prevBody)  { prevBody.style.maxHeight = "0"; prevBody.classList.remove("acc-open"); }
+        if (prevInner) {
+          // Put the panel back in its hidden holding spot
+          const prevPanel = document.getElementById(_accActivePanel);
+          if (prevPanel) {
+            prevPanel.style.display = "none";
+            const footer = document.getElementById("userVersionFooter");
+            const main   = document.querySelector(".main");
+            if (main) { if (footer) main.insertBefore(prevPanel, footer); else main.appendChild(prevPanel); }
+          }
+          prevInner.innerHTML = "";
+        }
+        _accActivePanel = null;
+      }
+
+      if (isOpen) {
+        // Close this one
+        accBtn.classList.remove("acc-open");
+        accBody.style.maxHeight = "0";
+        accBody.classList.remove("acc-open");
+        // Move panel back to hidden area
+        panel.style.display = "none";
+        const footer = document.getElementById("userVersionFooter");
+        const main   = document.querySelector(".main");
+        if (main) { if (footer) main.insertBefore(panel, footer); else main.appendChild(panel); }
+        accInner.innerHTML = "";
+        _accActivePanel = null;
+      } else {
+        // Open this one — move panel content into accordion body
+        accInner.innerHTML = "";
+        accInner.appendChild(panel);
+        panel.style.display = "block";
+        accBtn.classList.add("acc-open");
+        accBody.classList.add("acc-open");
+        // Animate to content height
+        accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
+        _accActivePanel = id;
+
+        // Scroll the header into view smoothly
+        setTimeout(function() {
+          accBtn.scrollIntoView({ behavior: "smooth", block: "start" });
+          // Re-measure after lazy content may have loaded
+          accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
+        }, 60);
+
+        // Lazy load triggers — same as _openMenuSection
+        if (id === "panelRecords") {
+          if (!_recordsLoaded) { loadFilters(); _recordsLoaded = true; }
+          _initFilterState();
+          try { renderTable(data); } catch(e) {}
+        }
+        if (id === "panelStats") {
+          if (!_statsLoaded) { loadSummaryYears(); _statsLoaded = true; }
+          try { renderSummaries(); } catch(e) {}
+        }
+        if (id === "panelEvents" && !_eventsLoaded) {
+          _loadUserEvents(); _eventsLoaded = true;
+        }
+        if (id === "panelPayment") {
+          try { _loadUserContribRequests(); } catch(e) {}
+        }
+
+        // After data loads, re-measure height so content isn't clipped
+        setTimeout(function() {
+          if (_accActivePanel === id)
+            accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
+        }, 800);
+        setTimeout(function() {
+          if (_accActivePanel === id)
+            accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
+        }, 2000);
+      }
+    }
+
+    // Keep _openMenuSection working (used by quick-action buttons & recent activity)
     // ── Bottom sheet panel config (title + icon per panel)
     const _bsPanelMeta = {
       panelRecords:  { icon: "fa-receipt",             title: "My Contributions" },
