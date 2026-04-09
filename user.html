@@ -30,7 +30,6 @@
       --green: #22c55e;
       --red: #ef4444;
       --blue: #3b82f6;
-      --idcolor: #6366f1;
       --brown-grad: linear-gradient(135deg, #2a0f00 0%, #3c1a00 60%, #2a0f00 100%);
       --brown-border: rgba(247, 160, 26, 0.35);
       --rad-xl: 22px;
@@ -269,13 +268,6 @@
       color: var(--red);
     }
 
-    .hdr-drop-item.idcard {
-      color: var(--idcolor);
-    }
-
-    .hdr-drop-item.idcard i {
-      color: var(--idcolor);
-    }
 
     .hdr-drop-item.danger:hover {
       background: #fff5f5;
@@ -1985,7 +1977,7 @@
           <div class="hdr-drop-item" onclick="closeDropdown();openEditProfileDirect()">
             <i class="fa-solid fa-pen-to-square"></i> Edit Profile
           </div>
-          <div class="hdr-drop-item idcard" onclick="closeDropdown();downloadMemberIDCard()">
+          <div class="hdr-drop-item " onclick="closeDropdown();downloadMemberIDCard()">
             <i class="fa-solid fa-address-card"></i> ID Card
           </div>
           <div class="hdr-drop-item danger" onclick="logout()">
