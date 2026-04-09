@@ -1183,7 +1183,11 @@ function doGet(e) {
   else if (action === "saveChatbotConfig") result = saveChatbotConfig(e.parameter);
 
   // ── M1: MANUAL TRIGGER for monthly reminder (also runs via time-based trigger)
-  else if (action === "triggerMonthlyReminder") { result = sendMonthlyReminders(); }
+  else if (action === "triggerMonthlyReminder") {
+    const month = sanitize(e.parameter.month || "", 20);
+    const year  = sanitize(e.parameter.year  || "", 10);
+    result = sendMonthlyReminders(month || null, year || null, true);
+  }
  
   else if (action === "registerUser")      result = registerUser(e.parameter);
  
@@ -1581,7 +1585,7 @@ function doGet(e) {
       // Check all required sheets exist
       const requiredSheets = ["USERS","CONTRIBUTIONS","EXPENSES","GOALS","TYPES",
         "OCCASIONS","EXPENSE_TYPES","AUDIT_LOGS","SETTINGS","GALLERY",
-        "ANNOUNCEMENT","BROADCAST","EVENTS","EVENT_EXPENSES"];
+        "ANNOUNCEMENT","BROADCAST","EVENTS","EVENT_EXPENSES","CONTRIBUTION_REQUESTS"];
       requiredSheets.forEach(function(name) {
         checks["sheet_" + name] = !!ss.getSheetByName(name);
       });
@@ -1842,6 +1846,25 @@ function doGet(e) {
             if (rejNoteCol !== -1) sheet.getRange(i+1, rejNoteCol+1).setValue(rejNote);
             SpreadsheetApp.flush();
             logAction(admin, "ResolveContributionRequest", reqId + " → " + status);
+            // Send rejection email to user
+            if (status === "Rejected") {
+              try {
+                const userId   = String(data2[i][hdrs.indexOf("UserId")] || "");
+                const forMonth = String(data2[i][hdrs.indexOf("ForMonth")] || "");
+                const year     = String(data2[i][hdrs.indexOf("Year")] || "");
+                const amount   = Number(data2[i][hdrs.indexOf("Amount")] || 0);
+                const allUsers = getSheetData(SHEETS.USERS);
+                const donor    = allUsers.find(u => String(u.UserId) === userId);
+                const toEmail  = donor ? String(donor.Email || "").trim() : "";
+                if (toEmail && tryConsumeEmailQuota()) {
+                  MailApp.sendEmail({
+                    to: toEmail,
+                    subject: CFG.name + " — Payment Request Update",
+                    htmlBody: _buildContribRejectionEmail(donor, amount, forMonth, year, rejNote)
+                  });
+                }
+              } catch(mailErr) { /* non-fatal */ }
+            }
             result = {status:"success"};
             break;
           }
@@ -1849,6 +1872,40 @@ function doGet(e) {
         if (!result.status) result = {status:"error",message:"Request not found"};
       }
     } catch(err) { result = {status:"error",message:err.message}; }
+  }
+
+  // ── User: delete their own APPROVED or REJECTED contribution request
+  else if (action === "deleteContributionRequest") {
+    try {
+      const reqId  = sanitize(e.parameter.ReqId, 30);
+      const userId = sanitize(e.parameter.userId || e.parameter.UserId || "", 30);
+      if (!reqId || !userId) { result = { status:"error", message:"ReqId and userId required." }; }
+      else {
+        const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CONTRIBUTION_REQUESTS");
+        if (!sheet) { result = { status:"error", message:"Sheet not found." }; }
+        else {
+          const data2 = sheet.getDataRange().getValues();
+          const hdrs  = data2[0];
+          const idCol     = hdrs.indexOf("ReqId");
+          const userCol   = hdrs.indexOf("UserId");
+          const statusCol = hdrs.indexOf("Status");
+          let found = false;
+          for (let i = 1; i < data2.length; i++) {
+            const rowReqId  = String(data2[i][idCol]   || data2[i][0] || "");
+            const rowUserId = String(data2[i][userCol]  || "");
+            const rowStatus = String(data2[i][statusCol]|| "Pending");
+            // Only allow deleting Approved or Rejected (not Pending)
+            if (rowReqId === reqId && rowUserId === userId && rowStatus !== "Pending") {
+              sheet.deleteRow(i + 1);
+              SpreadsheetApp.flush();
+              logAction(userId, "DeleteContributionRequest", "ReqId: " + reqId + " Status: " + rowStatus);
+              result = { status:"deleted" }; found = true; break;
+            }
+          }
+          if (!found) result = { status:"error", message:"Request not found or not eligible for deletion." };
+        }
+      }
+    } catch(err) { result = { status:"error", message:err.message }; }
   }
 
   // ── Y1: Send OTP for registration email verification
@@ -2130,20 +2187,22 @@ function deleteRow(name, id) {
 function updateRow(name, body) {
   let sheet  = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   let values = sheet.getDataRange().getValues();
+  const headers = values[0];
   let rowIndex = values.map(r=>String(r[0])).indexOf(String(sanitize(body.Id,30)));
   if (rowIndex !== -1) {
     let row = rowIndex + 1;
-    sheet.getRange(row,3).setValue(sanitize(body.Amount,  20));
-    sheet.getRange(row,5).setValue(sanitize(body.ForMonth,20));
-    if (body.Year) sheet.getRange(row,6).setValue(sanitize(body.Year,10));
-    sheet.getRange(row,7).setValue(sanitize(body.TypeId,  30));
-    // Update PaymentMode if provided
-    if (body.PaymentMode) {
-      // Find or detect PaymentMode column (col 11)
-      const headers = values[0];
-      const pmCol = headers.indexOf("PaymentMode");
-      if (pmCol !== -1) sheet.getRange(row, pmCol+1).setValue(sanitize(body.PaymentMode,30));
+    // Header-based updates — safe regardless of column order
+    function setCol(h, val) {
+      const c = headers.indexOf(h);
+      if (c !== -1 && val !== undefined) sheet.getRange(row, c+1).setValue(val);
     }
+    setCol("Amount",      sanitize(body.Amount,    20));
+    setCol("ForMonth",    sanitize(body.ForMonth,  20));
+    if (body.Year) setCol("Year", sanitize(body.Year, 10));
+    setCol("TypeId",      sanitize(body.TypeId,    30));
+    if (body.OccasionId !== undefined) setCol("OccasionId", sanitize(body.OccasionId, 30));
+    if (body.Note       !== undefined) setCol("Note",       sanitize(body.Note,       500));
+    if (body.PaymentMode)              setCol("PaymentMode",sanitize(body.PaymentMode, 30));
     return { status: "updated" };
   }
   return { status: "not found" };
@@ -2471,10 +2530,10 @@ function verifyEmailSystem() {
 //  Also callable manually from admin via triggerMonthlyReminder action.
 //  Only runs if monthly_reminder toggle is ON in email settings.
 // ════════════════════════════════════════════════════════════════
-function sendMonthlyReminders(overrideMonth, overrideYear) {
+function sendMonthlyReminders(overrideMonth, overrideYear, bypassToggle) {
   const settings = getEmailSettings();
-  // Reuse the monthly_report toggle to gate this — or add a separate key if preferred
-  if (!settings.monthly_report) {
+  // Toggle bypassed when bypassToggle=true (manual admin trigger)
+  if (!bypassToggle && !settings.monthly_report) {
     return { status: "ok", sent: 0, skipped: 0, message: "Monthly emails disabled in settings." };
   }
 
@@ -3053,6 +3112,51 @@ function _buildRejectionEmail(user, reason) {
     <div style="color:#a16207;font-size:12px;margin-top:4px;">${CFG.name}</div>
   </td></tr>
   <tr><td style="background:#f8fafc;padding:12px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+    <div style="color:#94a3b8;font-size:10px;">${CFG.name} | ${CFG.address}</div>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+}
+
+
+// ── Contribution request rejection notification email
+function _buildContribRejectionEmail(user, amount, forMonth, year, reason) {
+  const name      = user ? (user.Name || "Member") : "Member";
+  const amtFmt    = "Rs. " + Number(amount).toLocaleString("en-IN");
+  const reasonHtml = reason
+    ? `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:14px 16px;margin:14px 0;">
+         <div style="color:#991b1b;font-size:12px;font-weight:700;margin-bottom:6px;">Reason from Admin:</div>
+         <div style="color:#7f1d1d;font-size:13px;line-height:1.6;">${reason}</div>
+       </div>`
+    : `<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin:14px 0;color:#92400e;font-size:13px;">
+         No specific reason provided. Please contact the temple admin for details.
+       </div>`;
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);max-width:560px;width:100%;">
+  <tr><td style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);padding:24px 32px;text-align:center;border-top:4px solid #f7a01a;">
+    ${_logoHtml()}
+    <div style="color:#f7a01a;font-size:18px;font-weight:700;">${CFG.name.toUpperCase()}</div>
+    <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${CFG.location}</div>
+    <div style="margin-top:10px;"><span style="background:#64748b;color:#fff;padding:4px 16px;border-radius:20px;font-size:11px;font-weight:700;">PAYMENT REQUEST UPDATE</span></div>
+  </td></tr>
+  <tr><td style="padding:24px 32px;">
+    <p style="color:#334155;font-size:15px;margin:0 0 10px;">Dear <strong>${name}</strong>,</p>
+    <p style="color:#475569;font-size:13px;line-height:1.7;margin:0 0 10px;">
+      Your payment request of <strong>${amtFmt}</strong> for <strong>${forMonth} ${year}</strong>
+      has been reviewed and could not be approved at this time.
+    </p>
+    ${reasonHtml}
+    <p style="color:#475569;font-size:13px;line-height:1.7;margin:0;">
+      If you have questions or would like to resubmit with correct details, please contact the temple admin.
+    </p>
+  </td></tr>
+  <tr><td style="background:#fef9ee;padding:16px 32px;text-align:center;border-top:2px solid #fde68a;">
+    <div style="color:#92400e;font-size:13px;font-weight:700;">Jai Shree Ram 🙏</div>
+    <div style="color:#a16207;font-size:12px;margin-top:4px;">${CFG.tagline} | ${CFG.name}</div>
+  </td></tr>
+  <tr><td style="background:#f8fafc;padding:10px 32px;text-align:center;border-top:1px solid #e2e8f0;">
     <div style="color:#94a3b8;font-size:10px;">${CFG.name} | ${CFG.address}</div>
   </td></tr>
 </table></td></tr></table></body></html>`;
