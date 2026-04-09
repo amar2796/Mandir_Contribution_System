@@ -1206,6 +1206,64 @@
         width: 32px;
         height: 32px;
       }
+
+      /* ── 1. Quick actions: 2×2 grid on mobile ── */
+      .qa-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        overflow-x: unset;
+        gap: 8px;
+        padding-bottom: 0;
+      }
+      .qa-btn {
+        flex-shrink: unset;
+        justify-content: center;
+        padding: 11px 10px;
+        font-size: 12px;
+        border-radius: 14px;
+      }
+
+      /* ── 2. Bottom sheet taller on mobile ── */
+      .bs-sheet {
+        max-height: 92vh;
+      }
+
+      /* ── 3. Filter section collapsible toggle ── */
+      .f-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      /* ── 4. Mob contribution cards — bigger tap targets ── */
+      .mob-c-card {
+        padding: 15px 16px;
+        gap: 7px;
+      }
+      .mob-c-amt {
+        font-size: 1.1rem;
+      }
+      .mob-c-date {
+        font-size: 12px;
+      }
+      .mob-c-month {
+        font-size: 13px;
+      }
+
+      /* ── 5. Pagination bigger tap targets on mobile ── */
+      .pg-btn {
+        min-width: 38px;
+        height: 38px;
+        font-size: 14px;
+      }
+
+      /* ── menu items slightly more compact ── */
+      .menu-item {
+        padding: 12px 14px;
+      }
+      .menu-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+      }
     }
 
     @media(max-width:400px) {
@@ -1216,6 +1274,11 @@
 
       .hero-stat-v {
         font-size: .92rem;
+      }
+
+      .qa-btn {
+        font-size: 11.5px;
+        padding: 10px 8px;
       }
     }
 
@@ -1266,6 +1329,77 @@
     ::-webkit-scrollbar-thumb:hover {
       background: var(--gold);
     }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── TAP RIPPLE ─── */
+    .ripple-host { position: relative; overflow: hidden; }
+    @keyframes ripple-anim {
+      to { transform: scale(4); opacity: 0; }
+    }
+    .ripple-circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      width: 60px; height: 60px;
+      margin-top: -30px; margin-left: -30px;
+      animation: ripple-anim .55s ease-out forwards;
+      pointer-events: none;
+    }
+
+    /* ─── PULL TO REFRESH ─── */
+    #ptr-indicator {
+      position: fixed;
+      top: 58px; left: 50%;
+      transform: translateX(-50%) translateY(-60px);
+      background: var(--white);
+      border: 1.5px solid rgba(247,160,26,0.3);
+      border-radius: 30px;
+      padding: 7px 16px 7px 12px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 600; color: var(--ink-soft);
+      box-shadow: var(--sh-md);
+      z-index: 550;
+      transition: transform .25s cubic-bezier(.32,1,.23,1), opacity .25s;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #ptr-indicator.ptr-visible {
+      transform: translateX(-50%) translateY(10px);
+      opacity: 1;
+    }
+    #ptr-indicator .ptr-spin {
+      width: 16px; height: 16px;
+      border: 2px solid var(--gold-dim);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    #ptr-indicator .ptr-spin.spinning {
+      animation: spin .7s linear infinite;
+    }
+    body.user-dark #ptr-indicator {
+      background: #1e293b !important;
+      border-color: rgba(247,160,26,0.2) !important;
+      color: #94a3b8 !important;
+    }
+
+    /* ─── SKELETON LOADERS ─── */
+    @keyframes shimmer {
+      0%   { background-position: -600px 0; }
+      100% { background-position: 600px 0; }
+    }
+    .skel {
+      background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 75%);
+      background-size: 600px 100%;
+      animation: shimmer 1.4s infinite linear;
+      border-radius: 6px;
+    }
+    .skel-hero-amt  { height: 44px; width: 160px; border-radius: 8px; margin-bottom: 14px; }
+    .skel-hero-pill { height: 24px; width: 90px; border-radius: 30px; }
+    .skel-hero-stat { height: 52px; flex: 1; min-width: 90px; border-radius: 12px; }
+    .skel-ra        { height: 52px; border-radius: 0; margin: 0; border-bottom: 1px solid #f2f4fa; }
+    .skel-ra:last-child { border-bottom: none; }
 
     /* ── L2: User dark mode ── */
     body.user-dark {
@@ -1479,6 +1613,213 @@
     body.user-dark #scrollTopBtn {
       background: var(--gold) !important;
     }
+
+    /* ─── MENU ITEMS ─── */
+    .menu-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .menu-item {
+      background: var(--white);
+      border: 1px solid rgba(247,160,26,0.1);
+      border-radius: var(--rad-lg);
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      transition: box-shadow var(--t), border-color var(--t), transform var(--t);
+      box-shadow: var(--sh-sm);
+    }
+    .menu-item:hover {
+      border-color: rgba(247,160,26,0.3);
+      box-shadow: var(--sh-md);
+      transform: translateY(-1px);
+    }
+    .menu-item:active { transform: scale(.98); }
+    .menu-item-left { display: flex; align-items: center; gap: 12px; }
+    .menu-icon {
+      width: 38px; height: 38px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .menu-title {
+      font-family: var(--font-h); font-size: 13.5px; font-weight: 700;
+      color: var(--ink); line-height: 1.2;
+    }
+    .menu-desc { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+    .menu-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+    .menu-arrow {
+      font-size: 16px; color: var(--ink-faint); transition: transform var(--t);
+      line-height: 1;
+    }
+    .menu-item:hover .menu-arrow { transform: translateX(3px); color: var(--gold); }
+    .menu-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
+      border-radius: 12px; white-space: nowrap;
+    }
+    .mb-amber { background: rgba(247,160,26,0.15); color: #b45309; border: 1px solid rgba(247,160,26,0.2); }
+    .mb-green { background: rgba(34,197,94,0.12); color: #15803d; border: 1px solid rgba(34,197,94,0.2); }
+    .mb-blue  { background: rgba(59,130,246,0.12); color: #1d4ed8; border: 1px solid rgba(59,130,246,0.2); }
+
+    /* ─── BOTTOM SHEET ─── */
+    .bs-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      z-index: 600;
+      transition: background .3s ease;
+    }
+    .bs-overlay.open {
+      display: block;
+      background: rgba(0,0,0,0.45);
+    }
+    .bs-sheet {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 700;
+      background: var(--white);
+      border-radius: 22px 22px 0 0;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform .35s cubic-bezier(.32,1,.23,1);
+      will-change: transform;
+    }
+    .bs-sheet.open {
+      transform: translateY(0);
+    }
+    .bs-handle-bar {
+      width: 40px; height: 4px;
+      background: #d1d5db;
+      border-radius: 4px;
+      margin: 10px auto 0;
+      flex-shrink: 0;
+      cursor: grab;
+    }
+    .bs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px 10px;
+      border-bottom: 1.5px solid rgba(247,160,26,0.12);
+      flex-shrink: 0;
+      background: linear-gradient(90deg, rgba(247,160,26,0.04), transparent);
+      border-radius: 22px 22px 0 0;
+    }
+    .bs-title {
+      font-family: var(--font-h);
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bs-title i { color: var(--gold); font-size: .85rem; }
+    .bs-close {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: none;
+      box-shadow: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; color: var(--ink-soft);
+      cursor: pointer; padding: 0;
+      transition: background var(--t), color var(--t);
+      flex-shrink: 0;
+    }
+    .bs-close:hover { background: var(--bg2); color: var(--ink); }
+    .bs-close:active { transform: scale(.93); }
+    .bs-body {
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 14px 32px;
+      padding-bottom: max(32px, calc(16px + env(safe-area-inset-bottom)));
+      flex: 1;
+    }
+    /* hide old back button inside sheet */
+    .bs-body .sec-panel-back { display: none; }
+
+    /* Dark mode */
+    body.user-dark .bs-sheet {
+      background: #1e293b !important;
+    }
+    body.user-dark .bs-header {
+      border-bottom-color: rgba(247,160,26,0.1) !important;
+      background: rgba(255,255,255,0.02) !important;
+    }
+    body.user-dark .bs-title { color: #e2e8f0 !important; }
+    body.user-dark .bs-handle-bar { background: #475569 !important; }
+    body.user-dark .bs-close {
+      background: #0f172a !important;
+      color: #94a3b8 !important;
+    }
+    body.user-dark .bs-close:hover { background: #334155 !important; }
+    body.user-dark .bs-body { background: #1e293b !important; }
+
+    /* keep sec-panel hidden — content lives inside sheet now */
+    .sec-panel { display: none; }
+    .sec-panel.open { display: block; }
+    .sec-panel-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600; color: var(--ink-soft);
+      cursor: pointer; margin-bottom: 12px; padding: 5px 0;
+      border: none; background: none; box-shadow: none;
+      transition: color var(--t);
+    }
+    .sec-panel-back:hover { color: var(--gold); }
+    .sec-panel-back:active { transform: none; }
+
+    /* ─── RECENT ACTIVITY STRIP ─── */
+    .ra-list { display: flex; flex-direction: column; }
+    .ra-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 18px; border-bottom: 1px solid rgba(247,160,26,0.08);
+      transition: background var(--t); cursor: pointer;
+    }
+    .ra-item:last-child { border-bottom: none; }
+    .ra-item:hover { background: #fffbf2; }
+    .ra-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .ra-dot-gold { background: var(--gold); }
+    .ra-dot-amber { background: #d97706; }
+    .ra-dot-red { background: var(--red); }
+    .ra-month { font-size: 13px; font-weight: 600; color: var(--ink); flex: 1; }
+    .ra-type { font-size: 11px; color: var(--ink-soft); }
+    .ra-right { text-align: right; flex-shrink: 0; }
+    .ra-amt { font-family: var(--font-h); font-size: 13px; font-weight: 700; color: var(--green); }
+    .ra-status { font-size: 10px; margin-top: 1px; }
+    .ra-view-all {
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px; font-size: 12px; font-weight: 600;
+      color: var(--gold); cursor: pointer; gap: 5px;
+      border-top: 1px solid rgba(247,160,26,0.1);
+      transition: background var(--t);
+    }
+    .ra-view-all:hover { background: #fffbf2; }
+
+    /* ─── DARK MODE: new elements ─── */
+    body.user-dark .menu-item {
+      background: #1e293b !important; border-color: #334155 !important;
+    }
+    body.user-dark .menu-title { color: #e2e8f0 !important; }
+    body.user-dark .menu-desc { color: #64748b !important; }
+    body.user-dark .ra-item:hover { background: #1e293b !important; }
+    body.user-dark .ra-item { border-bottom-color: #334155 !important; }
+    body.user-dark .ra-month { color: #e2e8f0 !important; }
+    body.user-dark .ra-view-all { border-top-color: #334155 !important; }
+    body.user-dark .ra-view-all:hover { background: #1e293b !important; }
+    body.user-dark .sec-panel-back { color: #94a3b8 !important; }
   </style>
 </head>
 
@@ -1505,12 +1846,12 @@
         style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:700;color:var(--ink-mid);line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;min-width:36px;">EN</button>
       <div class="hdr-avatar-wrap">
         <img id="hdr_photo" class="hdr-avatar" src=""
-          onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'><circle cx=\'20\' cy=\'20\' r=\'20\' fill=\'%23f7a01a\'/><text x=\'20\' y=\'26\' text-anchor=\'middle\' fill=\'white\' font-size=\'18\' font-family=\'Arial\'>&#128100;</text></svg>'"
+          onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',40);"
           onclick="toggleUserDropdown()" title="Account" />
         <div id="userDropdown" class="hdr-dropdown">
           <div class="hdr-drop-head">
             <img id="hdr_drop_photo" src=""
-              onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'34\' height=\'34\'><circle cx=\'17\' cy=\'17\' r=\'17\' fill=\'%23f7a01a\'/><text x=\'17\' y=\'22\' text-anchor=\'middle\' fill=\'white\' font-size=\'15\' font-family=\'Arial\'>&#128100;</text></svg>'"
+              onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',34);"
               alt="" />
             <div>
               <div class="hdr-drop-head-name" id="hdr_drop_name">—</div>
@@ -1538,24 +1879,52 @@
 
     <!-- HERO -->
     <div class="hero">
-      <div class="hero-row">
-        <div>
-          <div class="hero-label">Donated This Year (<span id="heroYearLabel">2025</span>)</div>
-          <div class="hero-amount">₹ <span id="thisYearAmount">0</span></div>
-          <div id="lastDonationRow" style="display:none;margin-top:7px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <span style="font-size:11px;color:var(--ink-faint);">Last donation:</span>
-            <span id="lastDonationAmt" style="font-size:12px;font-weight:700;color:var(--gold-lt);font-family:var(--font-h);"></span>
-            <span style="font-size:11px;color:rgba(255,255,255,0.45);">·</span>
-            <span id="lastDonationDate" style="font-size:11px;color:var(--ink-faint);"></span>
+      <!-- Skeleton shown while data loads -->
+      <div id="heroSkeleton">
+        <div class="hero-row">
+          <div>
+            <!-- label line -->
+            <div class="skel" style="height:10px;width:130px;border-radius:5px;margin-bottom:10px;opacity:.45;"></div>
+            <!-- big amount -->
+            <div class="skel skel-hero-amt"></div>
+            <!-- last donation row -->
+            <div class="skel" style="height:9px;width:180px;border-radius:5px;margin-top:8px;opacity:.35;"></div>
+          </div>
+          <div style="text-align:right;">
+            <!-- pill -->
+            <div class="skel skel-hero-pill" style="margin-left:auto;"></div>
+            <!-- all time label -->
+            <div class="skel" style="height:8px;width:50px;border-radius:4px;margin:10px 0 5px auto;opacity:.3;"></div>
+            <!-- all time amount -->
+            <div class="skel" style="height:18px;width:80px;border-radius:6px;margin-left:auto;opacity:.4;"></div>
           </div>
         </div>
-        <div style="text-align:right;">
-          <div class="hero-pill" id="heroPill" style="display:none;"></div>
-          <div style="margin-top:8px;font-size:10px;color:var(--ink-faint);letter-spacing:.5px;text-transform:uppercase;">All time</div>
-          <div style="font-family:var(--font-h);font-size:1.1rem;font-weight:700;color:rgba(255,255,255,0.6);">₹ <span id="totalAmount">0</span></div>
+        <div class="hero-stats">
+          <div class="skel skel-hero-stat"></div>
+          <div class="skel skel-hero-stat"></div>
         </div>
       </div>
-      <div class="hero-stats" id="quickStats"></div>
+      <!-- Real content hidden until data arrives -->
+      <div id="heroContent" style="display:none;">
+        <div class="hero-row">
+          <div>
+            <div class="hero-label">Donated This Year (<span id="heroYearLabel">2025</span>)</div>
+            <div class="hero-amount">₹ <span id="thisYearAmount">0</span></div>
+            <div id="lastDonationRow" style="display:none;margin-top:7px;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:var(--ink-faint);">Last donation:</span>
+              <span id="lastDonationAmt" style="font-size:12px;font-weight:700;color:var(--gold-lt);font-family:var(--font-h);"></span>
+              <span style="font-size:11px;color:rgba(255,255,255,0.45);">·</span>
+              <span id="lastDonationDate" style="font-size:11px;color:var(--ink-faint);"></span>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div class="hero-pill" id="heroPill" style="display:none;"></div>
+            <div style="margin-top:8px;font-size:10px;color:var(--ink-faint);letter-spacing:.5px;text-transform:uppercase;">All time</div>
+            <div style="font-family:var(--font-h);font-size:1.1rem;font-weight:700;color:rgba(255,255,255,0.6);">₹ <span id="totalAmount">0</span></div>
+          </div>
+        </div>
+        <div class="hero-stats" id="quickStats"></div>
+      </div>
     </div>
 
     <!-- QUICK ACTIONS -->
@@ -1565,249 +1934,361 @@
         <i class="fa-solid fa-file-invoice"></i> Annual Receipt
       </button>
       <button class="qa-btn qa-dark"
-        onclick="document.getElementById('submitPaymentSection').scrollIntoView({behavior:'smooth'})">
+        onclick="_openMenuSection('panelPayment')">
         <i class="fa-solid fa-hand-holding-dollar"></i> New Payment
       </button>
       <button class="qa-btn qa-ghost" onclick="exportPDF()">
         <i class="fa-solid fa-file-pdf"></i> Full PDF
       </button>
       <button class="qa-btn qa-ghost"
-        onclick="document.getElementById('filterSection').scrollIntoView({behavior:'smooth'})">
+        onclick="_openMenuSection('panelRecords')">
         <i class="fa-solid fa-magnifying-glass"></i> Search
       </button>
     </div>
 
-    <!-- GOALS -->
+    <!-- GOALS (always visible — small, injected by JS) -->
     <div id="goalsContainer"></div>
 
-    <!-- BROADCASTS -->
+    <!-- BROADCASTS / NOTICES (always visible) -->
     <div id="broadcastContainer"></div>
 
-    <!-- STATS -->
-    <div class="sec-lbl"><i class="fa-solid fa-chart-bar"></i> Statistics</div>
-    <div class="grid-2">
+    <!-- RECENT ACTIVITY -->
+    <div class="sec-lbl"><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</div>
+    <div class="card" style="margin-bottom:14px;overflow:hidden;">
+      <div class="ra-list" id="recentActivityList">
+        <div style="padding:28px 20px;text-align:center;">
+          <div style="width:36px;height:36px;border:3px solid var(--gold-dim);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px;"></div>
+          <div style="font-size:12px;color:var(--ink-faint);font-weight:500;">Loading activity…</div>
+        </div>
+      </div>
+      <div class="ra-view-all" onclick="_openMenuSection('panelRecords')">
+        View all records <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>
+      </div>
+    </div>
+
+    <!-- MENU -->
+    <div class="sec-lbl"><i class="fa-solid fa-list-ul"></i> Menu</div>
+    <div class="menu-grid" id="mainMenu">
+
+      <div class="menu-item" onclick="_openMenuSection('panelRecords')">
+        <div class="menu-item-left">
+          <div class="menu-icon" style="background:rgba(34,197,94,0.12);">💳</div>
+          <div>
+            <div class="menu-title">My Contributions</div>
+            <div class="menu-desc">Full history · filter by year, month, type</div>
+          </div>
+        </div>
+        <div class="menu-right">
+          <span class="menu-badge mb-green" id="menuBadgeRecords" style="display:none;"></span>
+          <span class="menu-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="menu-item" onclick="_openMenuSection('panelPayment')">
+        <div class="menu-item-left">
+          <div class="menu-icon" style="background:rgba(247,160,26,0.12);">📋</div>
+          <div>
+            <div class="menu-title">Submit Payment</div>
+            <div class="menu-desc">Submit & track your payment requests</div>
+          </div>
+        </div>
+        <div class="menu-right">
+          <span class="menu-badge mb-amber" id="menuBadgePending" style="display:none;"></span>
+          <span class="menu-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="menu-item" onclick="_openMenuSection('panelStats')">
+        <div class="menu-item-left">
+          <div class="menu-icon" style="background:rgba(99,102,241,0.1);">📊</div>
+          <div>
+            <div class="menu-title">Statistics</div>
+            <div class="menu-desc">Month-wise & type breakdown</div>
+          </div>
+        </div>
+        <div class="menu-right"><span class="menu-arrow">›</span></div>
+      </div>
+
+      <div class="menu-item" onclick="_openMenuSection('panelEvents')">
+        <div class="menu-item-left">
+          <div class="menu-icon" style="background:rgba(247,160,26,0.1);">📅</div>
+          <div>
+            <div class="menu-title">Events & Festivals</div>
+            <div class="menu-desc">Upcoming · ongoing temple events</div>
+          </div>
+        </div>
+        <div class="menu-right">
+          <span class="menu-badge mb-amber" id="menuBadgeEvents" style="display:none;"></span>
+          <span class="menu-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="menu-item" onclick="_openMenuSection('panelFeedback')">
+        <div class="menu-item-left">
+          <div class="menu-icon" style="background:rgba(59,130,246,0.1);">💬</div>
+          <div>
+            <div class="menu-title">Feedback</div>
+            <div class="menu-desc">Share suggestions with temple admin</div>
+          </div>
+        </div>
+        <div class="menu-right"><span class="menu-arrow">›</span></div>
+      </div>
+
+      <div class="menu-item" onclick="_openMenuSection('panelContact')">
+        <div class="menu-item-left">
+          <div class="menu-icon" style="background:rgba(34,197,94,0.1);">📞</div>
+          <div>
+            <div class="menu-title">Temple Contact</div>
+            <div class="menu-desc">Phone, email & address</div>
+          </div>
+        </div>
+        <div class="menu-right"><span class="menu-arrow">›</span></div>
+      </div>
+
+    </div><!-- /menu-grid -->
+
+    <!-- ═══ SECTION PANELS (hidden, revealed on menu tap) ═══ -->
+
+    <!-- PANEL: Records + Filter -->
+    <div class="sec-panel" id="panelRecords">
+      <button class="sec-panel-back" onclick="_closeMenuSection('panelRecords')">
+        <i class="fa-solid fa-arrow-left"></i> Back
+      </button>
+      <div class="sec-lbl" id="filterSection" style="cursor:pointer;" onclick="_toggleFilter()">
+        <i class="fa-solid fa-filter"></i> Filter & Search
+        <span id="filterToggleIcon" style="margin-left:auto;font-size:13px;color:var(--gold);font-family:var(--font-b);font-weight:700;">▾</span>
+      </div>
+      <div id="filterBody" class="card" style="margin-bottom:14px;">
+        <div class="card-body">
+          <div class="f-grid">
+            <div class="f-grp"><label>Year</label><select id="filterYear" onchange="applyFilter()"></select></div>
+            <div class="f-grp"><label>Month</label><select id="filterMonth" onchange="applyFilter()"></select></div>
+            <div class="f-grp"><label>Type</label><select id="filterType" onchange="applyFilter()"></select></div>
+            <div class="f-grp"><label>Search</label><input type="text" id="searchInput" placeholder="Amount, MNR-…" onkeyup="searchData()" /></div>
+          </div>
+          <div class="f-actions">
+            <button class="btn-secondary btn-sm" onclick="applyFilter()"><i class="fa-solid fa-magnifying-glass"></i> Apply</button>
+            <button class="btn-ghost btn-sm" onclick="resetFilter()"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+          </div>
+        </div>
+      </div>
+      <div class="sec-lbl"><i class="fa-solid fa-list-ul"></i> Contribution Records</div>
       <div class="card">
         <div class="card-hdr">
-          <div class="card-title"><i class="fa-solid fa-calendar-days"></i> Month-wise</div>
-          <select id="summaryYear" class="inl-sel" onchange="renderSummaries()"></select>
+          <div class="card-title"><i class="fa-solid fa-receipt"></i> Records <span class="c-badge" id="recordsCount">0</span></div>
+          <span style="font-size:11.5px;color:var(--ink-faint);">Tap row for receipt</span>
         </div>
-        <div class="card-body" style="padding-top:10px;padding-bottom:8px;">
-          <div id="monthSummary"></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-hdr">
-          <div class="card-title"><i class="fa-solid fa-chart-pie"></i> By Type</div>
-          <span style="font-size:11px;color:var(--ink-faint);">same year</span>
-        </div>
-        <div class="card-body" style="padding-top:10px;padding-bottom:8px;">
-          <div id="typeSummary"></div>
+        <div class="card-body" style="padding:0;">
+          <div class="t-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Amount (₹)</th>
+                  <th>Month</th>
+                  <th class="col-year">Year</th>
+                  <th>Tracking / Type</th>
+                  <th>Date</th>
+                  <th class="col-rcpt">Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="mob-card-list" id="mobCardList"></div>
+          <div id="paginationBar"></div>
         </div>
       </div>
     </div>
 
-    <!-- FILTER -->
-    <div class="sec-lbl" id="filterSection"><i class="fa-solid fa-filter"></i> Filter & Search</div>
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-body">
-        <div class="f-grid">
-          <div class="f-grp"><label>Year</label><select id="filterYear" onchange="applyFilter()"></select></div>
-          <div class="f-grp"><label>Month</label><select id="filterMonth" onchange="applyFilter()"></select></div>
-          <div class="f-grp"><label>Type</label><select id="filterType" onchange="applyFilter()"></select></div>
-          <div class="f-grp"><label>Search</label><input type="text" id="searchInput" placeholder="Amount, MNR-…"
-              onkeyup="searchData()" placeholder="Search by amount or reference…" /></div>
+    <!-- PANEL: Stats -->
+    <div class="sec-panel" id="panelStats">
+      <button class="sec-panel-back" onclick="_closeMenuSection('panelStats')">
+        <i class="fa-solid fa-arrow-left"></i> Back
+      </button>
+      <div class="sec-lbl"><i class="fa-solid fa-chart-bar"></i> Statistics</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-hdr">
+            <div class="card-title"><i class="fa-solid fa-calendar-days"></i> Month-wise</div>
+            <select id="summaryYear" class="inl-sel" onchange="renderSummaries()"></select>
+          </div>
+          <div class="card-body" style="padding-top:10px;padding-bottom:8px;">
+            <div id="monthSummary"></div>
+          </div>
         </div>
-        <div class="f-actions">
-          <button class="btn-secondary btn-sm" onclick="applyFilter()"><i class="fa-solid fa-magnifying-glass"></i>
-            Apply</button>
-          <button class="btn-ghost btn-sm" onclick="resetFilter()"><i class="fa-solid fa-rotate-right"></i>
-            Reset</button>
+        <div class="card">
+          <div class="card-hdr">
+            <div class="card-title"><i class="fa-solid fa-chart-pie"></i> By Type</div>
+            <span style="font-size:11px;color:var(--ink-faint);">same year</span>
+          </div>
+          <div class="card-body" style="padding-top:10px;padding-bottom:8px;">
+            <div id="typeSummary"></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- RECORDS -->
-    <div class="sec-lbl"><i class="fa-solid fa-list-ul"></i> Contribution Records</div>
-    <div class="card">
-      <div class="card-hdr">
-        <div class="card-title"><i class="fa-solid fa-receipt"></i> Records <span class="c-badge"
-            id="recordsCount">0</span></div>
-        <span style="font-size:11.5px;color:var(--ink-faint);">Tap row for receipt</span>
-      </div>
-      <div class="card-body" style="padding:0;">
-        <div class="t-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Amount (₹)</th>
-                <th>Month</th>
-                <th class="col-year">Year</th>
-                <th>Tracking / Type</th>
-                <th>Date</th>
-                <th class="col-rcpt">Receipt</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-          </table>
+    <!-- PANEL: Events -->
+    <div class="sec-panel" id="panelEvents">
+      <button class="sec-panel-back" onclick="_closeMenuSection('panelEvents')">
+        <i class="fa-solid fa-arrow-left"></i> Back
+      </button>
+      <div class="sec-lbl"><i class="fa-solid fa-calendar-star"></i> Upcoming Events</div>
+      <div id="eventsContainer">
+        <div class="card" style="text-align:center;color:var(--ink-faint);padding:24px;font-size:13px;">
+          <i class="fa-solid fa-spinner fa-spin"></i> Loading events…
         </div>
-        <div class="mob-card-list" id="mobCardList"></div>
-        <div id="paginationBar"></div>
       </div>
     </div>
 
-
-    <!-- M14: Upcoming Events section -->
-    <div class="sec-lbl"><i class="fa-solid fa-calendar-star"></i> Upcoming Events</div>
-    <div id="eventsContainer">
-      <div class="card" style="text-align:center;color:var(--ink-faint);padding:24px;font-size:13px;">
-        <i class="fa-solid fa-spinner fa-spin"></i> Loading events…
-      </div>
-    </div>
-
-    <!-- M4: Contribution Request / Payment Proof -->
-    <div class="sec-lbl" id="submitPaymentSection"><i class="fa-solid fa-hand-holding-dollar"></i> Submit Payment / Request Entry</div>
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-body">
-        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">
-          Already paid via UPI or Cash? Submit your payment details here — temple admin will verify and record it
-          officially.
-        </div>
-        <div class="f-grid" style="gap:10px;">
-          <div class="f-grp">
-            <label>Month *</label>
-            <select id="pr_month"
-              style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;">
-              <option value="">Select Month</option>
-            </select>
+    <!-- PANEL: Payment + My Requests -->
+    <div class="sec-panel" id="panelPayment">
+      <button class="sec-panel-back" onclick="_closeMenuSection('panelPayment')">
+        <i class="fa-solid fa-arrow-left"></i> Back
+      </button>
+      <div class="sec-lbl" id="submitPaymentSection"><i class="fa-solid fa-hand-holding-dollar"></i> Submit Payment / Request Entry</div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">
+            Already paid via UPI or Cash? Submit your payment details here — temple admin will verify and record it officially.
           </div>
-          <div class="f-grp">
-            <label>Amount (₹) *</label>
-            <input type="number" id="pr_amount" placeholder="e.g. 500" min="1" style="width:100%;" />
-          </div>
-          <div class="f-grp">
-            <label>Payment Mode</label>
-            <select id="pr_mode"
-              style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;">
-              <option>UPI</option>
-              <option>Cash</option>
-              <option>Bank Transfer</option>
-              <option>Cheque</option>
-            </select>
-          </div>
-          <div class="f-grp" style="grid-column:1/-1;">
-            <label>UTR / Reference Number (optional)</label>
-            <input type="text" id="pr_utr" placeholder="UPI transaction ID or cheque number" style="width:100%;" />
-          </div>
-          <div class="f-grp" style="grid-column:1/-1;">
-            <label>Note (optional)</label>
-            <input type="text" id="pr_note" placeholder="Any additional info for admin..." maxlength="200"
-              style="width:100%;" />
-          </div>
-          <div class="f-grp" style="grid-column:1/-1;">
-            <label>Payment Slip / Screenshot (optional)</label>
-            <div
-              style="border:1.5px dashed #e2e8f0;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px;background:#fafafa;cursor:pointer;"
-              onclick="document.getElementById('pr_slip').click()">
-              <i class="fa-solid fa-image" style="color:var(--gold);font-size:1.2rem;"></i>
-              <div style="flex:1;">
-                <div id="pr_slip_name" style="font-size:13px;color:var(--ink-soft);">Tap to attach payment slip or
-                  screenshot</div>
-                <div id="pr_slip_preview_wrap" style="display:none;margin-top:6px;">
-                  <img id="pr_slip_preview" style="max-height:60px;border-radius:6px;border:1px solid #e2e8f0;"
-                    src="" />
+          <div class="f-grid" style="gap:10px;">
+            <div class="f-grp">
+              <label>Month *</label>
+              <select id="pr_month" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;">
+                <option value="">Select Month</option>
+              </select>
+            </div>
+            <div class="f-grp">
+              <label>Amount (₹) *</label>
+              <input type="number" id="pr_amount" placeholder="e.g. 500" min="1" style="width:100%;" />
+            </div>
+            <div class="f-grp">
+              <label>Payment Mode</label>
+              <select id="pr_mode" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;">
+                <option>UPI</option><option>Cash</option><option>Bank Transfer</option><option>Cheque</option>
+              </select>
+            </div>
+            <div class="f-grp" style="grid-column:1/-1;">
+              <label>UTR / Reference Number (optional)</label>
+              <input type="text" id="pr_utr" placeholder="UPI transaction ID or cheque number" style="width:100%;" />
+            </div>
+            <div class="f-grp" style="grid-column:1/-1;">
+              <label>Note (optional)</label>
+              <input type="text" id="pr_note" placeholder="Any additional info for admin..." maxlength="200" style="width:100%;" />
+            </div>
+            <div class="f-grp" style="grid-column:1/-1;">
+              <label>Payment Slip / Screenshot (optional)</label>
+              <div style="border:1.5px dashed #e2e8f0;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px;background:#fafafa;cursor:pointer;" onclick="document.getElementById('pr_slip').click()">
+                <i class="fa-solid fa-image" style="color:var(--gold);font-size:1.2rem;"></i>
+                <div style="flex:1;">
+                  <div id="pr_slip_name" style="font-size:13px;color:var(--ink-soft);">Tap to attach payment slip or screenshot</div>
+                  <div id="pr_slip_preview_wrap" style="display:none;margin-top:6px;">
+                    <img id="pr_slip_preview" style="max-height:60px;border-radius:6px;border:1px solid #e2e8f0;" src="" />
+                  </div>
                 </div>
+                <input type="file" id="pr_slip" accept="image/*" style="display:none;" onchange="handlePrSlip(this)" />
               </div>
-              <input type="file" id="pr_slip" accept="image/*" style="display:none;" onchange="handlePrSlip(this)" />
             </div>
           </div>
+          <button onclick="submitPaymentRequest()" style="background:var(--gold);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;">
+            <i class="fa-solid fa-paper-plane"></i> Submit Request to Admin
+          </button>
+          <div id="prMsg" style="font-size:12px;margin:10px 0 0;display:none;padding:10px 14px;border-radius:8px;border-left:3px solid;"></div>
         </div>
-        <button onclick="submitPaymentRequest()"
-          style="background:var(--gold);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;">
-          <i class="fa-solid fa-paper-plane"></i> Submit Request to Admin
-        </button>
-        <div id="prMsg"
-          style="font-size:12px;margin:10px 0 0;display:none;padding:10px 14px;border-radius:8px;border-left:3px solid;">
+      </div>
+      <div id="myContribRequestsSection" style="display:none;">
+        <div class="sec-lbl"><i class="fa-solid fa-clock-rotate-left"></i> My Payment Requests</div>
+        <div id="myContribRequestsList"></div>
+      </div>
+    </div>
+
+    <!-- PANEL: Feedback -->
+    <div class="sec-panel" id="panelFeedback">
+      <button class="sec-panel-back" onclick="_closeMenuSection('panelFeedback')">
+        <i class="fa-solid fa-arrow-left"></i> Back
+      </button>
+      <div class="sec-lbl"><i class="fa-solid fa-comment-dots"></i> Submit Feedback</div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">Share your suggestions or concerns with the temple admin.</div>
+          <div class="f-grid" style="grid-template-columns:1fr;gap:10px;">
+            <div class="f-grp">
+              <label>Subject</label>
+              <input type="text" id="fb_subject" placeholder="e.g. Suggestion about prasad timing" maxlength="200" />
+            </div>
+            <div class="f-grp">
+              <label>Message</label>
+              <textarea id="fb_message" placeholder="Write your feedback here…" maxlength="1000" style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:var(--font-b);font-size:13px;resize:vertical;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+            </div>
+          </div>
+          <div id="fbMsg" style="font-size:12px;margin:8px 0;display:none;"></div>
+          <button onclick="submitFeedback()" style="background:var(--gold);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;margin-top:6px;">
+            <i class="fa-solid fa-paper-plane"></i> Submit Feedback
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- My Contribution Requests Status -->
-    <div id="myContribRequestsSection" style="display:none;">
-      <div class="sec-lbl"><i class="fa-solid fa-clock-rotate-left"></i> My Payment Requests</div>
-      <div id="myContribRequestsList"></div>
-    </div>
-
-    <!-- L12: Feedback form -->
-    <div class="sec-lbl"><i class="fa-solid fa-comment-dots"></i> Submit Feedback</div>
-    <div class="card" style="margin-bottom:20px;">
-      <div class="card-body">
-        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">Share your suggestions or concerns with
-          the temple admin.</div>
-        <div class="f-grid" style="grid-template-columns:1fr;gap:10px;">
-          <div class="f-grp">
-            <label>Subject</label>
-            <input type="text" id="fb_subject" placeholder="e.g. Suggestion about prasad timing" maxlength="200" />
-          </div>
-          <div class="f-grp">
-            <label>Message</label>
-            <textarea id="fb_message" placeholder="Write your feedback here…" maxlength="1000"
-              style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:var(--font-b);font-size:13px;resize:vertical;outline:none;box-sizing:border-box;"
-              onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
-          </div>
-        </div>
-        <div id="fbMsg" style="font-size:12px;margin:8px 0;display:none;"></div>
-        <button onclick="submitFeedback()"
-          style="background:var(--gold);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;margin-top:6px;">
-          <i class="fa-solid fa-paper-plane"></i> Submit Feedback
-        </button>
-      </div>
-    </div>
-
-    <!-- M13: Temple Contact Info -->
-    <div class="sec-lbl"><i class="fa-solid fa-phone"></i> Temple Contact</div>
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-body" style="padding:14px 16px;">
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-size:1.3rem;">📞</span>
-            <div>
-              <div
-                style="font-size:11px;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">
-                Phone</div>
-              <a id="templePhone" href=""
-                style="font-size:14px;font-weight:600;color:var(--gold);text-decoration:none;"></a>
+    <!-- PANEL: Contact -->
+    <div class="sec-panel" id="panelContact">
+      <button class="sec-panel-back" onclick="_closeMenuSection('panelContact')">
+        <i class="fa-solid fa-arrow-left"></i> Back
+      </button>
+      <div class="sec-lbl"><i class="fa-solid fa-phone"></i> Temple Contact</div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-body" style="padding:14px 16px;">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <i class="fa-solid fa-phone" style="color:var(--gold);font-size:1.2rem;width:22px;text-align:center;"></i>
+              <div>
+                <div style="font-size:11px;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Phone</div>
+                <a id="templePhone" href="" style="font-size:14px;font-weight:600;color:var(--gold);text-decoration:none;"></a>
+              </div>
             </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-size:1.3rem;">✉️</span>
-            <div>
-              <div
-                style="font-size:11px;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">
-                Email</div>
-              <a id="templeEmail" href=""
-                style="font-size:14px;font-weight:600;color:var(--gold);text-decoration:none;"></a>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <i class="fa-solid fa-envelope" style="color:var(--gold);font-size:1.2rem;width:22px;text-align:center;"></i>
+              <div>
+                <div style="font-size:11px;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Email</div>
+                <a id="templeEmail" href="" style="font-size:14px;font-weight:600;color:var(--gold);text-decoration:none;"></a>
+              </div>
             </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-size:1.3rem;">📍</span>
-            <div>
-              <div
-                style="font-size:11px;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">
-                Address</div>
-              <div id="templeAddress" style="font-size:13px;color:var(--ink-mid);"></div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <i class="fa-solid fa-location-dot" style="color:var(--gold);font-size:1.2rem;width:22px;text-align:center;"></i>
+              <div>
+                <div style="font-size:11px;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Address</div>
+                <div id="templeAddress" style="font-size:13px;color:var(--ink-mid);"></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- M18: Version footer -->
-
-    <div id="userVersionFooter" style="text-align:center;font-size:10px;color:var(--ink-faint);padding:8px 0 20px;">
-    </div>
+    <!-- VERSION FOOTER -->
+    <div id="userVersionFooter" style="text-align:center;font-size:10px;color:var(--ink-faint);padding:8px 0 20px;"></div>
 
   </div><!-- /main -->
+
+  <!-- ═══ BOTTOM SHEET ═══ -->
+  <div class="bs-overlay" id="bsOverlay" onclick="_closeSheet()"></div>
+  <div class="bs-sheet" id="bsSheet">
+    <div class="bs-handle-bar" id="bsHandle"></div>
+    <div class="bs-header">
+      <div class="bs-title" id="bsTitle"><i class="fa-solid fa-list-ul"></i> Menu</div>
+      <button class="bs-close" onclick="_closeSheet()" title="Close">✕</button>
+    </div>
+    <div class="bs-body" id="bsBody">
+      <!-- panel content injected here dynamically -->
+    </div>
+  </div>
+
+  <!-- Pull to refresh indicator -->
+  <div id="ptr-indicator">
+    <div class="ptr-spin" id="ptrSpinner"></div>
+    <span id="ptrText">Pull to refresh</span>
+  </div>
 
   <!-- Scroll to top button -->
   <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">
@@ -1838,6 +2319,25 @@
       }
       if (s.role !== "User") { location.replace("admin.html"); return; }
       s.expiry = Date.now() + 30 * 60 * 1000; localStorage.setItem("session", JSON.stringify(s));
+      // ── Show name instantly from session — no API wait needed
+      try {
+        const nameEl = document.getElementById("hdr_name");
+        const dropNameEl = document.getElementById("hdr_drop_name");
+        if (nameEl && s.name) nameEl.innerText = s.name;
+        if (dropNameEl && s.name) dropNameEl.innerText = s.name;
+        if (s.name) {
+          const _mkAv = function(name, size) {
+            const p = name.trim().split(/\s+/), ini = (p[0][0]+(p[1]?p[1][0]:"")).toUpperCase();
+            const col = ["#c2410c","#b45309","#15803d","#1d4ed8","#7c3aed","#be185d","#0f766e"][name.charCodeAt(0)%7];
+            const fs = Math.round(size*0.38);
+            return "data:image/svg+xml,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='"+size+"' height='"+size+"'><circle cx='"+(size/2)+"' cy='"+(size/2)+"' r='"+(size/2)+"' fill='"+col+"'/><text x='"+(size/2)+"' y='"+(size/2+fs*0.36)+"' text-anchor='middle' fill='white' font-size='"+fs+"' font-family='Arial' font-weight='700'>"+ini+"</text></svg>");
+          };
+          const av40 = document.getElementById("hdr_photo");
+          const av34 = document.getElementById("hdr_drop_photo");
+          if (av40 && !av40.src) av40.src = _mkAv(s.name, 40);
+          if (av34 && !av34.src) av34.src = _mkAv(s.name, 34);
+        }
+      } catch(e) {}
     })();
     window.addEventListener("pageshow", () => {
       let s = JSON.parse(localStorage.getItem("session"));
@@ -1879,15 +2379,44 @@
       if (fileId) return "https://lh3.googleusercontent.com/d/" + fileId + "=w400";
       return s;
     }
+    // ── Generate initials avatar SVG (used as instant placeholder & fallback)
+    function _initialsAvatar(name, size) {
+      const parts = (name || "?").trim().split(/\s+/);
+      const initials = (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
+      // Pick a warm color from name charcode for variety
+      const colors = ["#c2410c","#b45309","#15803d","#1d4ed8","#7c3aed","#be185d","#0f766e"];
+      const col = colors[(name || "").charCodeAt(0) % colors.length];
+      const fs = Math.round(size * 0.38);
+      return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><circle cx='${size/2}' cy='${size/2}' r='${size/2}' fill='${col}'/><text x='${size/2}' y='${size/2+fs*0.36}' text-anchor='middle' fill='white' font-size='${fs}' font-family='Arial' font-weight='700'>${initials}</text></svg>`)}`;
+    }
+
+    // ── Smooth photo load: show initials instantly, fade in real photo when ready
+    function _loadPhotoSmooth(imgEl, photoUrl, name, size) {
+      const initials = _initialsAvatar(name, size);
+      imgEl.src = initials; // instant placeholder
+      imgEl.style.opacity = "1";
+      if (!photoUrl) return;
+      const tmp = new Image();
+      tmp.onload = function() {
+        imgEl.style.transition = "opacity 0.35s ease";
+        imgEl.style.opacity = "0";
+        setTimeout(function() {
+          imgEl.src = photoUrl;
+          imgEl.style.opacity = "1";
+        }, 160);
+      };
+      tmp.onerror = function() { /* keep initials avatar — already set */ };
+      tmp.src = photoUrl;
+    }
+
     function updateHeader(myProfile, s) {
       const name = myProfile?.Name || s.name;
       document.getElementById("hdr_name").innerText = name;
       document.getElementById("hdr_drop_name").innerText = name;
-      // PhotoURL: prefer profile data, fall back to session cache (set at login)
-      // so photo shows immediately before getAllData resolves on first load
       const rawUrl = myProfile?.PhotoURL || s.photoURL || "";
       const url = _fixDrivePhotoUrl(rawUrl);
-      if (url) { document.getElementById("hdr_photo").src = url; document.getElementById("hdr_drop_photo").src = url; }
+      _loadPhotoSmooth(document.getElementById("hdr_photo"), url, name, 40);
+      _loadPhotoSmooth(document.getElementById("hdr_drop_photo"), url, name, 34);
     }
 
     let _pendingCroppedB64 = "";
@@ -2435,9 +2964,24 @@
         allContributions = allData.contributions || []; allGoals = allData.goals || [];
         data = allContributions.filter(c => String(c.UserId) === String(s.userId));
         let myProfile = users.find(u => String(u.UserId) === String(s.userId));
-        updateHeader(myProfile, s); loadFilters(); loadSummaryYears();
-        renderTable(data); calculateTotal(); renderSummaries();
-        renderGoals(allGoals); await renderBroadcasts();
+        updateHeader(myProfile, s);
+        calculateTotal();
+
+        // ── Reveal hero FIRST — user sees their data immediately
+        const heroSkel = document.getElementById("heroSkeleton");
+        const heroContent = document.getElementById("heroContent");
+        if (heroSkel) heroSkel.style.display = "none";
+        if (heroContent) { heroContent.style.display = "block"; heroContent.style.animation = "slideUp .35s ease"; }
+
+        // ── Only render what is visible on home screen
+        _renderRecentActivity();
+        renderGoals(allGoals);
+
+        // ── Broadcasts in background — separate API call, don't block UI
+        renderBroadcasts();
+
+        // ── Everything else is deferred to panel open (records, stats, filters)
+
       } catch (err) { toast("Failed to load: " + err.message, "error"); }
     }
 
@@ -2671,7 +3215,316 @@
 
     function applyFilter() { _applyAllFilters(); }
     function searchData() { _applyAllFilters(); }
-    function resetFilter() { ["filterYear", "filterMonth", "filterType"].forEach(id => document.getElementById(id).value = ""); document.getElementById("searchInput").value = ""; _pgPage = 1; renderTable(data); }
+    function resetFilter() {
+      ["filterYear", "filterMonth", "filterType"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("searchInput").value = "";
+      _pgPage = 1;
+      renderTable(data);
+    }
+
+    // ── Collapsible filter on mobile
+    let _filterOpen = true;
+    function _toggleFilter() {
+      const body = document.getElementById("filterBody");
+      const icon = document.getElementById("filterToggleIcon");
+      if (!body) return;
+      _filterOpen = !_filterOpen;
+      body.style.display = _filterOpen ? "block" : "none";
+      if (icon) icon.textContent = _filterOpen ? "▾" : "▸";
+    }
+    // Auto-collapse filter on mobile when sheet opens
+    function _initFilterState() {
+      if (window.innerWidth <= 600) {
+        _filterOpen = false;
+        const body = document.getElementById("filterBody");
+        const icon = document.getElementById("filterToggleIcon");
+        if (body) body.style.display = "none";
+        if (icon) icon.textContent = "▸";
+      } else {
+        _filterOpen = true;
+        const body = document.getElementById("filterBody");
+        const icon = document.getElementById("filterToggleIcon");
+        if (body) body.style.display = "block";
+        if (icon) icon.textContent = "▾";
+      }
+    }
+
+    // ── Lazy load flags
+    let _recordsLoaded = false;
+    let _statsLoaded = false;
+    let _eventsLoaded = false;
+
+    // ── Bottom sheet panel config (title + icon per panel)
+    const _bsPanelMeta = {
+      panelRecords:  { icon: "fa-receipt",             title: "My Contributions" },
+      panelStats:    { icon: "fa-chart-bar",            title: "Statistics" },
+      panelEvents:   { icon: "fa-calendar-star",        title: "Events & Festivals" },
+      panelPayment:  { icon: "fa-hand-holding-dollar",  title: "Submit Payment" },
+      panelFeedback: { icon: "fa-comment-dots",         title: "Feedback" },
+      panelContact:  { icon: "fa-phone",                title: "Temple Contact" },
+    };
+
+    // ── Open bottom sheet with panel content
+    function _openMenuSection(id) {
+      const panel = document.getElementById(id);
+      if (!panel) return;
+
+      // Move panel content into sheet body
+      const body = document.getElementById("bsBody");
+      const titleEl = document.getElementById("bsTitle");
+      const meta = _bsPanelMeta[id] || { icon: "fa-list-ul", title: "Menu" };
+
+      titleEl.innerHTML = `<i class="fa-solid ${meta.icon}"></i> ${meta.title}`;
+      body.innerHTML = "";
+      body.appendChild(panel);
+      panel.style.display = "block";
+      body.scrollTop = 0;
+
+      // Show overlay + slide sheet up
+      const overlay = document.getElementById("bsOverlay");
+      const sheet = document.getElementById("bsSheet");
+      overlay.classList.add("open");
+      // force reflow so transition plays
+      sheet.offsetHeight;
+      sheet.classList.add("open");
+      document.body.style.overflow = "hidden";
+
+      // Lazy load triggers — run AFTER panel is in DOM
+      if (id === "panelRecords") {
+        if (!_recordsLoaded) { loadFilters(); _recordsLoaded = true; }
+        _initFilterState();
+        // Always re-render table on every open so data is never stale
+        try { renderTable(data); } catch(e) {}
+      }
+      if (id === "panelStats") {
+        if (!_statsLoaded) { loadSummaryYears(); _statsLoaded = true; }
+        // Always re-render on open so stats reflect latest data
+        try { renderSummaries(); } catch(e) {}
+      }
+      if (id === "panelEvents" && !_eventsLoaded) {
+        _loadUserEvents(); _eventsLoaded = true;
+      }
+      if (id === "panelPayment") {
+        try { _loadUserContribRequests(); } catch(e) {}
+      }
+
+      // Store which panel is open so we can put it back on close
+      sheet._activePanelId = id;
+    }
+
+    // ── Close bottom sheet — put panel back in DOM so it stays available
+    function _closeSheet() {
+      const sheet = document.getElementById("bsSheet");
+      const overlay = document.getElementById("bsOverlay");
+      sheet.classList.remove("open");
+      overlay.classList.remove("open");
+      document.body.style.overflow = "";
+
+      // After animation ends, move panel back to main and hide it
+      setTimeout(function() {
+        const activePanelId = sheet._activePanelId;
+        if (!activePanelId) return;
+        const panel = document.getElementById(activePanelId);
+        const main = document.querySelector(".main");
+        if (panel && main) {
+          panel.style.display = "none";
+          // Put it back before version footer
+          const footer = document.getElementById("userVersionFooter");
+          if (footer) main.insertBefore(panel, footer);
+          else main.appendChild(panel);
+        }
+        document.getElementById("bsBody").innerHTML = "";
+        sheet._activePanelId = null;
+      }, 360);
+    }
+
+    // Keep old _closeMenuSection as alias (called by back buttons inside panels)
+    function _closeMenuSection(id) { _closeSheet(); }
+
+    // ── Haptic feedback (silent fail on unsupported devices)
+    function _haptic(ms) {
+      try { if (navigator.vibrate) navigator.vibrate(ms || 8); } catch(e) {}
+    }
+
+    // ── Tap ripple — call on any button/menu tap
+    function _ripple(e) {
+      const el = e.currentTarget;
+      if (!el) return;
+      el.classList.add("ripple-host");
+      const r = document.createElement("div");
+      r.className = "ripple-circle";
+      const rect = el.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+      r.style.left = x + "px";
+      r.style.top = y + "px";
+      el.appendChild(r);
+      r.addEventListener("animationend", function() { r.remove(); });
+    }
+
+    // ── Attach ripple + haptic to menu items and qa-btns
+    (function() {
+      function _attach(el) {
+        el.addEventListener("click", function(e) { _ripple(e); _haptic(8); });
+      }
+      document.querySelectorAll(".menu-item, .qa-btn").forEach(_attach);
+    })();
+
+    // ── Pull to refresh
+    (function() {
+      let startY = 0, pulling = false, triggered = false;
+      const indicator = document.getElementById("ptr-indicator");
+      const spinner = document.getElementById("ptrSpinner");
+      const ptrText = document.getElementById("ptrText");
+      if (!indicator) return;
+
+      document.addEventListener("touchstart", function(e) {
+        // Only activate when at top of page and sheet is closed
+        const sheet = document.getElementById("bsSheet");
+        if (sheet && sheet.classList.contains("open")) return;
+        if (window.scrollY === 0) {
+          startY = e.touches[0].clientY;
+          pulling = true;
+          triggered = false;
+        }
+      }, { passive: true });
+
+      document.addEventListener("touchmove", function(e) {
+        if (!pulling) return;
+        const dist = e.touches[0].clientY - startY;
+        if (dist < 0) { pulling = false; return; }
+        if (dist > 20 && dist < 90) {
+          indicator.classList.add("ptr-visible");
+          ptrText.textContent = "Pull to refresh";
+          spinner.classList.remove("spinning");
+        }
+        if (dist >= 90 && !triggered) {
+          triggered = true;
+          ptrText.textContent = "Release to refresh";
+        }
+      }, { passive: true });
+
+      document.addEventListener("touchend", function() {
+        if (!pulling) return;
+        pulling = false;
+        if (triggered) {
+          // Show spinning state
+          spinner.classList.add("spinning");
+          ptrText.textContent = "Refreshing…";
+          _haptic(12);
+          // Re-run init to refresh data
+          try {
+            // Reset lazy flags — filters + stats year selector rebuild, events refetch
+            _recordsLoaded = false;
+            _statsLoaded = false;
+            _eventsLoaded = false;
+            _contribReqsLoaded = false;
+            if (typeof init === "function") init().then(function() {
+              indicator.classList.remove("ptr-visible");
+              spinner.classList.remove("spinning");
+            }).catch(function() {
+              indicator.classList.remove("ptr-visible");
+              spinner.classList.remove("spinning");
+            });
+          } catch(e) {
+            indicator.classList.remove("ptr-visible");
+          }
+        } else {
+          indicator.classList.remove("ptr-visible");
+        }
+        triggered = false;
+      });
+    })();
+
+    // ── Swipe down to close gesture
+    (function() {
+      const handle = document.getElementById("bsHandle");
+      const sheet = document.getElementById("bsSheet");
+      if (!handle || !sheet) return;
+      let startY = 0, currentY = 0, dragging = false;
+
+      function onStart(e) {
+        if (!sheet.classList.contains("open")) return;
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
+        dragging = true;
+        sheet.style.transition = "none";
+      }
+      function onMove(e) {
+        if (!dragging) return;
+        currentY = (e.touches ? e.touches[0].clientY : e.clientY) - startY;
+        if (currentY < 0) currentY = 0;
+        sheet.style.transform = `translateY(${currentY}px)`;
+      }
+      function onEnd() {
+        if (!dragging) return;
+        dragging = false;
+        sheet.style.transition = "transform .35s cubic-bezier(.32,1,.23,1)";
+        if (currentY > 120) {
+          _closeSheet();
+          sheet.style.transform = "";
+        } else {
+          sheet.style.transform = "translateY(0)";
+        }
+        currentY = 0;
+      }
+      handle.addEventListener("touchstart", onStart, { passive: true });
+      document.addEventListener("touchmove", onMove, { passive: true });
+      document.addEventListener("touchend", onEnd);
+      handle.addEventListener("mousedown", onStart);
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onEnd);
+    })();
+
+    // ── Close sheet on Escape key
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape") _closeSheet();
+    });
+
+    // ── Recent Activity strip (last 5 records) ──
+    function _renderRecentActivity() {
+      var el = document.getElementById("recentActivityList");
+      if (!el || !data || data.length === 0) {
+        if (el) el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-faint);font-size:13px;"><i class="fa-solid fa-receipt" style="opacity:.3;font-size:1.6rem;display:block;margin-bottom:6px;"></i>No records yet</div>';
+        return;
+      }
+      var sorted = data.slice().sort(function(a, b) { return new Date(b.PaymentDate || 0) - new Date(a.PaymentDate || 0); });
+      var recent = sorted.slice(0, 5);
+      el.innerHTML = recent.map(function(c) {
+        var type = (types.find(function(t) { return String(t.TypeId) === String(c.TypeId); }) || {}).TypeName || "Contribution";
+        var dotCls = "ra-dot-gold";
+        var statusTxt = '<span class="ra-status" style="color:var(--green);">Approved</span>';
+        el.innerHTML = ""; // reset before building
+        return '<div class="ra-item" onclick="_openMenuSection(\'panelRecords\')">'
+          + '<div class="ra-dot ' + dotCls + '"></div>'
+          + '<div style="flex:1;min-width:0;">'
+          + '<div class="ra-month">' + escapeHtml(c.ForMonth || "—") + " " + (c.Year || "") + '</div>'
+          + '<div class="ra-type">' + escapeHtml(type) + '</div>'
+          + '</div>'
+          + '<div class="ra-right">'
+          + '<div class="ra-amt">₹ ' + fmt(c.Amount) + '</div>'
+          + statusTxt
+          + '</div>'
+          + '</div>';
+      }).join("");
+      // Fix: rebuild cleanly
+      el.innerHTML = recent.map(function(c) {
+        var type = (types.find(function(t) { return String(t.TypeId) === String(c.TypeId); }) || {}).TypeName || "Contribution";
+        return '<div class="ra-item" onclick="_openMenuSection(\'panelRecords\')">'
+          + '<div class="ra-dot ra-dot-gold"></div>'
+          + '<div style="flex:1;min-width:0;">'
+          + '<div class="ra-month">' + escapeHtml(c.ForMonth || "—") + " " + (c.Year || "") + '</div>'
+          + '<div class="ra-type">' + escapeHtml(type) + '</div>'
+          + '</div>'
+          + '<div class="ra-right">'
+          + '<div class="ra-amt">₹ ' + fmt(c.Amount) + '</div>'
+          + '<div class="ra-status" style="color:var(--green);font-size:10px;">Approved</div>'
+          + '</div>'
+          + '</div>';
+      }).join("");
+      // Update records menu badge
+      var mb = document.getElementById("menuBadgeRecords");
+      if (mb && data.length > 0) { mb.textContent = data.length + " records"; mb.style.display = "inline"; }
+    }
     function _applyAllFilters() {
       let y = document.getElementById("filterYear").value, m = document.getElementById("filterMonth").value,
         t = document.getElementById("filterType").value, txt = document.getElementById("searchInput").value.toLowerCase();
@@ -2984,14 +3837,13 @@
       } catch (e) { }
     })();
 
-    // ── Hook into init to populate year hero after data loads
+    // ── Hook into init to populate hero pill after data loads
     const _origInit = window.init;
     if (typeof _origInit === "function") {
       window.init = async function () {
         await _origInit();
-        _loadUserEvents();
         _setUserVersion();
-        _loadUserContribRequests();
+        // Events, records, stats, payment requests — all lazy-loaded on panel open
         // Hero pill — show member status
         try {
           const s2 = JSON.parse(localStorage.getItem("session") || "{}");
@@ -3240,11 +4092,10 @@
       }, { passive: true });
     })();
 
-    // ── Direct bootstrap calls (init() already ran before this script block)
+    // ── Direct bootstrap calls
     window.addEventListener("load", function () {
-      _loadUserEvents();
       _setUserVersion();
-      _loadUserContribRequests();
+      // Events, records, stats, payment requests — all lazy-loaded on panel open
     });
 
 
@@ -3350,12 +4201,21 @@
       } catch (err) { show("❌ " + err.message, false); }
     }
 
-    // ── Load & display user's own contribution requests
+    // ── Load & display user's own contribution requests (lazy — only on first panel open)
+    let _contribReqsLoaded = false;
     async function _loadUserContribRequests() {
       const s = JSON.parse(localStorage.getItem("session") || "{}");
       const section = document.getElementById("myContribRequestsSection");
       const listEl = document.getElementById("myContribRequestsList");
       if (!section || !listEl || !s.userId) return;
+      // Show spinner while fetching
+      section.style.display = "block";
+      listEl.innerHTML = `<div class="card" style="margin-bottom:10px;">
+        <div class="card-body" style="text-align:center;padding:22px 16px;color:var(--ink-faint);">
+          <i class="fa-solid fa-spinner fa-spin" style="font-size:1.4rem;display:block;margin-bottom:8px;color:var(--gold);"></i>
+          <div style="font-size:13px;">Loading your requests…</div>
+        </div>
+      </div>`;
       let dismissed = [];
       try { dismissed = JSON.parse(localStorage.getItem("dismissed_contrib_reqs") || "[]"); } catch (e) { }
       try {
@@ -3426,6 +4286,7 @@
             </div>`;
         }).join("");
       } catch (e) { section.style.display = "none"; }
+      _contribReqsLoaded = true;
     }
 
     function _confirmDelete(reqId) {
