@@ -11,10 +11,9 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-  <script src="chatbot_widget.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css" />
+
   <style>
     :root {
       --gold: #f7a01a;
@@ -1104,6 +1103,56 @@
       margin: 0;
     }
 
+    /* ─── MOBILE CONTRIBUTION CARDS (replaces table on small screens) ─── */
+    .mob-card-list { display: none; }
+
+    @media(max-width:600px) {
+      .mob-card-list { display: block; }
+      .t-wrap table { display: none; }
+
+      .mob-c-card {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 13px 14px;
+        border-bottom: 1px solid #fef3e2;
+        cursor: pointer;
+        transition: background var(--t);
+      }
+      .mob-c-card:last-child { border-bottom: none; }
+      .mob-c-card:hover { background: #fffbf2; }
+      .mob-c-card:active { background: #fef3e2; }
+
+      .mob-c-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .mob-c-amt {
+        font-family: var(--font-h);
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--green);
+      }
+      .mob-c-date {
+        font-size: 11px;
+        color: var(--ink-faint);
+        flex-shrink: 0;
+      }
+      .mob-c-bottom {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+      }
+      .mob-c-month {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-mid);
+      }
+    }
+
     /* ─── RESPONSIVE ─── */
     @media(max-width:600px) {
       .main {
@@ -1491,10 +1540,20 @@
     <div class="hero">
       <div class="hero-row">
         <div>
-          <div class="hero-label">Your Total Contributions</div>
-          <div class="hero-amount">₹ <span id="totalAmount">0</span></div>
+          <div class="hero-label">Donated This Year (<span id="heroYearLabel">2025</span>)</div>
+          <div class="hero-amount">₹ <span id="thisYearAmount">0</span></div>
+          <div id="lastDonationRow" style="display:none;margin-top:7px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--ink-faint);">Last donation:</span>
+            <span id="lastDonationAmt" style="font-size:12px;font-weight:700;color:var(--gold-lt);font-family:var(--font-h);"></span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.45);">·</span>
+            <span id="lastDonationDate" style="font-size:11px;color:var(--ink-faint);"></span>
+          </div>
         </div>
-        <div class="hero-pill" id="heroPill" style="display:none;"></div>
+        <div style="text-align:right;">
+          <div class="hero-pill" id="heroPill" style="display:none;"></div>
+          <div style="margin-top:8px;font-size:10px;color:var(--ink-faint);letter-spacing:.5px;text-transform:uppercase;">All time</div>
+          <div style="font-family:var(--font-h);font-size:1.1rem;font-weight:700;color:rgba(255,255,255,0.6);">₹ <span id="totalAmount">0</span></div>
+        </div>
       </div>
       <div class="hero-stats" id="quickStats"></div>
     </div>
@@ -1502,18 +1561,19 @@
     <!-- QUICK ACTIONS -->
     <div class="qa-row">
       <button class="qa-btn qa-gold"
+        onclick="exportYearStatementPDF()" title="Download your annual receipt — useful for tax records">
+        <i class="fa-solid fa-file-invoice"></i> Annual Receipt
+      </button>
+      <button class="qa-btn qa-dark"
         onclick="document.getElementById('submitPaymentSection').scrollIntoView({behavior:'smooth'})">
         <i class="fa-solid fa-hand-holding-dollar"></i> New Payment
       </button>
-      <button class="qa-btn qa-dark"
+      <button class="qa-btn qa-ghost" onclick="exportPDF()">
+        <i class="fa-solid fa-file-pdf"></i> Full PDF
+      </button>
+      <button class="qa-btn qa-ghost"
         onclick="document.getElementById('filterSection').scrollIntoView({behavior:'smooth'})">
         <i class="fa-solid fa-magnifying-glass"></i> Search
-      </button>
-      <button class="qa-btn qa-green" onclick="exportPDF()">
-        <i class="fa-solid fa-file-pdf"></i> Export PDF
-      </button>
-      <button class="qa-btn" style="background:var(--red);color:#fff;" onclick="exportYearStatementPDF()">
-        <i class="fa-solid fa-calendar-check"></i> Year PDF
       </button>
     </div>
 
@@ -1591,6 +1651,7 @@
             <tbody id="tableBody"></tbody>
           </table>
         </div>
+        <div class="mob-card-list" id="mobCardList"></div>
         <div id="paginationBar"></div>
       </div>
     </div>
@@ -1858,7 +1919,7 @@
               <div class="_row" style="border-bottom:1px solid #fef3e2;"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-envelope" style="color:#f7a01a;font-size:11px;"></i></span> Email</span><span class="_rv" style="word-break:break-all;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Email || "—")}</span></div>
               ${myProfile.Village ? `<div class="_row" style="border-bottom:1px solid #fef3e2;"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-map-pin" style="color:#f7a01a;font-size:11px;"></i></span> Village</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Village)}</span></div>` : ""}
               ${myProfile.Address ? `<div class="_row" style="border-bottom:1px solid #fef3e2;"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-location-dot" style="color:#f7a01a;font-size:11px;"></i></span> Address</span><span class="_rv" style="white-space:pre-wrap;text-align:right;max-width:220px;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Address)}</span></div>` : ""}
-              <div class="_row"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-regular fa-id-badge" style="color:#f7a01a;font-size:11px;"></i></span> Member ID</span><span class="_rv" style="font-family:monospace;font-size:12px;font-weight:700;color:#3c1a00;letter-spacing:.5px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
+              <div class="_row"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-id-card" style="color:#f7a01a;font-size:11px;"></i></span> Member ID</span><span class="_rv" style="font-family:monospace;font-size:12px;font-weight:700;color:#3c1a00;letter-spacing:.5px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
             </div>
           </div>
               <div class="_mft" style="flex-wrap:wrap;gap:8px;border-top:2px solid rgba(247,160,26,0.15);background:linear-gradient(90deg,rgba(247,160,26,0.04),transparent);">
@@ -2461,7 +2522,7 @@
             </div>
           </div>`;
         }).join("") ||
-        `<div class="empty"><i class="fa-regular fa-calendar-xmark"></i><p>No data for ${yr}</p></div>`;
+        `<div class="empty"><i class="fa-solid fa-calendar-xmark"></i><p>No data for ${yr}</p></div>`;
       let tM = {}; yd.forEach(c => { let t = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Other"; tM[t] = (tM[t] || 0) + Number(c.Amount || 0); });
       document.getElementById("typeSummary").innerHTML =
         Object.keys(tM).map(t => `<div class="s-item"><span class="s-lbl">${t}</span><span class="s-val">₹ ${fmt(tM[t])}</span></div>`).join("") ||
@@ -2516,6 +2577,32 @@
             </tr>`;
         }).join("");
 
+      // ── Mobile card list ──
+      const mobList = document.getElementById("mobCardList");
+      if (mobList) {
+        mobList.innerHTML = list.length === 0
+          ? `<div class="empty" style="padding:28px 16px;"><i class="fa-solid fa-receipt"></i><p>No records found</p></div>`
+          : pageItems.map((c, i) => {
+            const globalIdx = start + i;
+            let type = types.find(t => String(t.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
+            let oName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
+            let uName = users.find(u => String(u.UserId) === String(c.UserId))?.Name || "Me";
+            const rid = _storeReceipt(c, uName, type, oName);
+            let dRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+            return `<div class="mob-c-card" onclick="showReceiptById('${rid}')">
+                <div class="mob-c-top">
+                  <span class="mob-c-amt">₹ ${fmt(c.Amount)}</span>
+                  <span class="mob-c-date">${escapeHtml(formatPaymentDate(c.PaymentDate))}</span>
+                </div>
+                <div class="mob-c-bottom">
+                  <span class="mob-c-month">${escapeHtml(c.ForMonth || "—")} ${c.Year || ""}</span>
+                  <span class="type-chip">${escapeHtml(type)}</span>
+                  <span class="rid-mono" style="font-size:10px;color:var(--ink-faint);">${escapeHtml(dRID)}</span>
+                </div>
+              </div>`;
+          }).join("");
+      }
+
       // Pagination bar
       const bar = document.getElementById("paginationBar");
       if (!bar) return;
@@ -2555,11 +2642,29 @@
       const total = data.reduce((s, c) => s + Number(c.Amount || 0), 0);
       document.getElementById("totalAmount").innerText = fmt(total);
       const now = new Date(), curY = now.getFullYear(), curM = months[now.getMonth()];
+
+      // ── This-year hero number ──
       const thisYear = data.filter(c => String(c.Year) === String(curY)).reduce((s, c) => s + Number(c.Amount || 0), 0);
+      const tyEl = document.getElementById("thisYearAmount");
+      if (tyEl) tyEl.innerText = fmt(thisYear);
+      const ylEl = document.getElementById("heroYearLabel");
+      if (ylEl) ylEl.textContent = curY;
+
+      // ── Last donation row ──
+      const sorted = data.slice().sort((a, b) => new Date(b.PaymentDate || 0) - new Date(a.PaymentDate || 0));
+      const last = sorted[0];
+      const ldrEl = document.getElementById("lastDonationRow");
+      if (last && ldrEl) {
+        document.getElementById("lastDonationAmt").textContent = "₹" + fmt(last.Amount);
+        document.getElementById("lastDonationDate").textContent = formatPaymentDate(last.PaymentDate);
+        ldrEl.style.display = "flex";
+      }
+
+      // ── Quick stats: This Month + Records ──
       const thisMonth = data.filter(c => String(c.Year) === String(curY) && c.ForMonth === curM).reduce((s, c) => s + Number(c.Amount || 0), 0);
       const qs = document.getElementById("quickStats");
       if (qs) {
-        qs.innerHTML = [["📅 This Month", "₹" + fmt(thisMonth)], ["📆 This Year", "₹" + fmt(thisYear)], ["🧾 Records", data.length]].map(([l, v]) =>
+        qs.innerHTML = [["📅 This Month", "₹" + fmt(thisMonth)], ["🧾 Records", data.length]].map(([l, v]) =>
           `<div class="hero-stat"><div class="hero-stat-l">${l}</div><div class="hero-stat-v">${v}</div></div>`).join("");
       }
     }
@@ -2580,7 +2685,26 @@
       }));
     }
 
-    function exportPDF() {
+    // ── Lazy-load jsPDF + autotable on first export click (saves ~450KB on page load)
+    let _jspdfLoading = null;
+    function _loadJsPDF() {
+      if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+      if (_jspdfLoading) return _jspdfLoading;
+      function _addScript(src) {
+        return new Promise(function(resolve, reject) {
+          var s = document.createElement("script");
+          s.src = src; s.onload = resolve; s.onerror = reject;
+          document.head.appendChild(s);
+        });
+      }
+      _jspdfLoading = _addScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+        .then(function() { return _addScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"); })
+        .then(function() { _jspdfLoading = null; });
+      return _jspdfLoading;
+    }
+
+    async function exportPDF() {
+      await _loadJsPDF();
       const { jsPDF } = window.jspdf; let doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       let s = JSON.parse(localStorage.getItem("session")), w = doc.internal.pageSize.getWidth();
       doc.setFillColor(51, 65, 85); doc.rect(0, 0, w, 28, "F");
@@ -2634,6 +2758,7 @@
 
     async function downloadMemberIDCard() {
       try {
+        await _loadJsPDF();
         const { jsPDF } = window.jspdf;
 
         const s = JSON.parse(localStorage.getItem("session") || "{}");
@@ -2936,7 +3061,7 @@
             + '<div style="flex:1;min-width:0;">'
             + '<div style="font-family:var(--font-h);font-weight:700;font-size:14px;color:var(--ink);margin-bottom:3px;">' + escapeHtml(ev.EventName || ev.Name || "") + '</div>'
             + '<div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;display:flex;align-items:center;gap:5px;">'
-            + '<i class="fa-regular fa-calendar" style="color:' + color + ';font-size:10px;"></i>'
+            + '<i class="fa-solid fa-calendar" style="color:' + color + ';font-size:10px;"></i>'
             + '<span>' + escapeHtml(dateStr) + '</span>'
             + ' <span style="background:' + color + '18;color:' + color + ';font-size:10px;font-weight:700;padding:1px 8px;border-radius:10px;border:1px solid ' + color + '33;">' + escapeHtml(cat) + '</span>'
             + '</div>'
@@ -2988,7 +3113,7 @@
     }
 
     // ── H6: Export Year Statement PDF
-    function exportYearStatementPDF() {
+    async function exportYearStatementPDF() {
       const s = JSON.parse(localStorage.getItem("session") || "null");
       if (!s) { toast("Not logged in.", "error"); return; }
       const yr = String(new Date().getFullYear());
@@ -2998,6 +3123,7 @@
       if (yearData.length === 0) { toast("No records for " + yr, "warn"); return; }
 
       try {
+        await _loadJsPDF();
         const { jsPDF } = window.jspdf || window;
         const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
         const W = 210, M = 14;
@@ -3244,7 +3370,7 @@
           section.style.display = "block";
           listEl.innerHTML = `<div class="card" style="margin-bottom:10px;">
             <div class="card-body" style="text-align:center;padding:24px 16px;">
-              <i class="fa-regular fa-file-lines" style="font-size:2rem;color:var(--ink-faint);opacity:0.4;display:block;margin-bottom:10px;"></i>
+              <i class="fa-solid fa-file-lines" style="font-size:2rem;color:var(--ink-faint);opacity:0.4;display:block;margin-bottom:10px;"></i>
               <div style="font-size:13px;color:var(--ink-faint);font-weight:500;">No payment requests yet — submit one below ↓</div>
             </div>
           </div>`;
@@ -3258,7 +3384,7 @@
           const isApproved = st === "Approved";
           const stColor = isPending ? "#f59e0b" : isRejected ? "#ef4444" : "#22c55e";
           const stBg = isPending ? "#fffbeb" : isRejected ? "#fef2f2" : "#f0fdf4";
-          const stIcon = isPending ? '<i class="fa-regular fa-clock"></i>' : isRejected ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-check"></i>';
+          const stIcon = isPending ? '<i class="fa-solid fa-clock"></i>' : isRejected ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-check"></i>';
           const reqId = escapeHtml(String(r.ReqId || ""));
           const slipUrl = r.SlipURL ? escapeHtml(r.SlipURL) : "";
           const dateStr = escapeHtml(formatPaymentDate(r.RequestedAt || "").split(" ")[0] || "");
