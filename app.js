@@ -1162,7 +1162,6 @@ async function exportReceiptPDF(rid){
   const {c,userName,typeName,occasionName} = stored;
   if(typeof window.jspdf==="undefined"){toast("PDF library not loaded.","error");return;}
 
-  /* jsPDF Helvetica cannot render Unicode emoji — strip them from all PDF text */
   function _pdf(str){
     return String(str||"")
       .replace(/[\u{1F000}-\u{1FFFF}]/gu,"")
@@ -1173,98 +1172,115 @@ async function exportReceiptPDF(rid){
   }
 
   const displayRID  = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
-  const payMode     = c.PaymentMode || "—";
+  const payMode     = _pdf(c.PaymentMode || "—");
   const {jsPDF}     = window.jspdf;
   const pdfName     = _pdf(APP.name);
   const pdfLocation = _pdf(APP.location);
   const pdfTagline  = _pdf(APP.tagline);
   const pdfThankYou = _pdf(APP.thankYouMsg);
-  const pdfSign     = _pdf(APP.signatory);
-  const pdfDesig    = _pdf(APP.designation);
+  const pdfDesig    = _pdf(APP.designation) || "Authorized Signatory";
+  const amtNum      = Number(c.Amount||0);
+  const amtFmt      = "Rs. " + amtNum.toLocaleString("en-IN");
 
-  const doc = new jsPDF({format:"a5", unit:"mm"});
-  const W   = doc.internal.pageSize.getWidth();
-  const PH  = doc.internal.pageSize.getHeight();
+  /* QR text: single pipe-separated line — DO NOT CHANGE — tested working */
+  const qrText = displayRID
+    + " | " + _pdf(userName)
+    + " | Rs." + amtNum.toLocaleString("en-IN")
+    + " | " + _pdf((c.ForMonth||"") + " " + (c.Year||""))
+    + " | " + formatPaymentDate(c.PaymentDate)
+    + " | " + pdfName;
+
+  /* Pre-generate QR before any drawing */
+  let _qrDataUrl = null;
+  try { _qrDataUrl = await _generateQRDataUrl(qrText, 200); } catch(e){}
+
+  const doc = new jsPDF({format:"a4", unit:"mm"});
+  const W   = doc.internal.pageSize.getWidth();   /* 210mm */
   let   Y   = 0;
 
-  /* Gold top stripe */
-  doc.setFillColor(247,160,26); doc.rect(0,0,W,2,"F"); Y=2;
+  /* 1. GOLD BAND — starts flush at Y=0, no stripe above, no white gap.
+        "OFFICIAL RECEIPT" left, Receipt No right */
+  const BAND_H = 10;
+  doc.setFillColor(247,160,26); doc.rect(0,0,W,BAND_H,"F");
+  doc.setTextColor(26,10,0); doc.setFontSize(8); doc.setFont(undefined,"bold");
+  doc.text("OFFICIAL RECEIPT", 10, 6.8);
+  doc.text(displayRID, W-10, 6.8, {align:"right"});
+  Y = BAND_H;
 
-  /* Dark header band */
-  const HDR_H=44;
-  doc.setFillColor(30,41,59); doc.rect(0,Y,W,HDR_H,"F");
+  /* 2. DARK HEADER — logo+name+location centered on FULL PAGE WIDTH,
+        QR independently placed top-right (absolute, does not affect centering) */
+  const HDR_H = 58;
+  const CX    = W / 2;   /* true page center = 105mm */
 
-  /* Logo: gold ring > white circle > image or OM text */
-  const LOGO_CY=Y+14, LOGO_R=9.5;
-  doc.setFillColor(247,160,26); doc.circle(W/2,LOGO_CY,LOGO_R+1.2,"F");
-  doc.setFillColor(255,255,255); doc.circle(W/2,LOGO_CY,LOGO_R,"F");
-  let logoOk=false;
+  doc.setFillColor(20,30,50); doc.rect(0,Y,W,HDR_H,"F");
+
+  /* QR — white card pinned top-right, 26mm at 200px = ~195 DPI, scans well */
+  const QR_MM  = 26;
+  const QR_PAD = 3;
+  const QR_CARD_W = QR_MM + QR_PAD*2;
+  const QR_CARD_H = QR_MM + QR_PAD*2 + 5;
+  const QR_CARD_X = W - QR_CARD_W - 5;
+  const QR_CARD_Y = Y + 4;
+
+  if(_qrDataUrl){
+    doc.setFillColor(255,255,255);
+    doc.roundedRect(QR_CARD_X, QR_CARD_Y, QR_CARD_W, QR_CARD_H, 2, 2, "F");
+    doc.addImage(_qrDataUrl, "PNG", QR_CARD_X+QR_PAD, QR_CARD_Y+QR_PAD, QR_MM, QR_MM);
+    doc.setFontSize(5.5); doc.setTextColor(80,80,80); doc.setFont(undefined,"normal");
+    doc.text("Scan to verify", QR_CARD_X+QR_CARD_W/2, QR_CARD_Y+QR_PAD+QR_MM+3.5, {align:"center"});
+  }
+
+  /* Logo — centered on full page width */
+  const LOGO_CY = Y + 16;
+  const LOGO_R  = 13;
+  doc.setFillColor(247,160,26); doc.circle(CX, LOGO_CY, LOGO_R+2, "F");
+  doc.setFillColor(255,255,255); doc.circle(CX, LOGO_CY, LOGO_R, "F");
+  let logoOk = false;
   if(window._logoB64){
     try{
-      const lr=LOGO_R-0.8;
-      doc.addImage(window._logoB64,"PNG",W/2-lr,LOGO_CY-lr,lr*2,lr*2);
-      logoOk=true;
+      const lr = LOGO_R - 1;
+      doc.addImage(window._logoB64,"PNG", CX-lr, LOGO_CY-lr, lr*2, lr*2);
+      logoOk = true;
     }catch(e){}
   }
   if(!logoOk){
-    doc.setTextColor(120,53,15); doc.setFontSize(10); doc.setFont(undefined,"bold");
-    doc.text("OM",W/2,LOGO_CY+3.5,{align:"center"});
+    doc.setTextColor(120,53,15); doc.setFontSize(12); doc.setFont(undefined,"bold");
+    doc.text("OM", CX, LOGO_CY+4, {align:"center"});
   }
 
-  /* Mandir name */
-  doc.setTextColor(247,160,26); doc.setFontSize(11.5); doc.setFont(undefined,"bold");
-  doc.text(pdfName.toUpperCase(),W/2,Y+31,{align:"center"});
+  /* Temple name — centered on full page width */
+  doc.setTextColor(247,160,26); doc.setFontSize(16); doc.setFont(undefined,"bold");
+  doc.text(pdfName.toUpperCase(), CX, Y+38, {align:"center"});
 
-  /* Location */
-  doc.setTextColor(148,163,184); doc.setFontSize(6.5); doc.setFont(undefined,"normal");
-  doc.text(pdfLocation,W/2,Y+37,{align:"center"});
+  /* Location — centered on full page width */
+  doc.setTextColor(148,163,184); doc.setFontSize(8); doc.setFont(undefined,"normal");
+  doc.text(pdfLocation, CX, Y+46, {align:"center"});
 
-  /* Green OFFICIAL RECEIPT badge */
-  doc.setFillColor(22,163,74);
-  doc.roundedRect(W/2-26,Y+39,52,6,1.5,1.5,"F");
-  doc.setTextColor(255,255,255); doc.setFontSize(6.5); doc.setFont(undefined,"bold");
-  doc.text("*  OFFICIAL RECEIPT",W/2,Y+43.2,{align:"center"});
+  Y += HDR_H;
 
-  Y+=HDR_H;
+  /* 3. GOLD DIVIDER */
+  doc.setFillColor(247,160,26); doc.rect(0,Y,W,2,"F"); Y+=2;
 
-  /* Gold divider under header */
-  doc.setFillColor(247,160,26); doc.rect(0,Y,W,1.2,"F"); Y+=1.2;
-
-  /* Receipt ID band */
-  doc.setFillColor(254,243,199); doc.rect(0,Y,W,9.5,"F");
-  doc.setDrawColor(253,211,77); doc.setLineWidth(0.3); doc.line(0,Y+9.5,W,Y+9.5);
-  doc.setTextColor(120,53,15); doc.setFontSize(7); doc.setFont(undefined,"normal");
-  doc.text("Receipt No:",10,Y+6.5);
-  doc.setFont(undefined,"bold"); doc.setFontSize(8.5); doc.setTextColor(146,64,14);
-  doc.text(displayRID,W-10,Y+6.5,{align:"right"});
-  Y+=9.5;
-
-  /* Amount hero */
-  const AMT_H=23;
-  doc.setFillColor(248,255,250); doc.rect(0,Y,W,AMT_H,"F");
-  doc.setTextColor(100,116,139); doc.setFontSize(6.5); doc.setFont(undefined,"normal");
-  doc.text("AMOUNT RECEIVED",W/2,Y+7,{align:"center"});
-  doc.setTextColor(21,128,61); doc.setFontSize(22); doc.setFont(undefined,"bold");
-  doc.text("Rs. "+Number(c.Amount||0).toLocaleString("en-IN"),W/2,Y+16,{align:"center"});
-
-  /* Payment mode pill */
-  const pillW=46;
-  doc.setFillColor(240,253,244);
-  doc.roundedRect(W/2-pillW/2,Y+17.5,pillW,4.5,1.5,1.5,"F");
-  doc.setDrawColor(134,239,172); doc.setLineWidth(0.25);
-  doc.roundedRect(W/2-pillW/2,Y+17.5,pillW,4.5,1.5,1.5,"S");
-  doc.setTextColor(22,101,52); doc.setFontSize(6.5); doc.setFont(undefined,"bold");
-  doc.text("Payment: "+payMode,W/2,Y+21,{align:"center"});
+  /* 4. AMOUNT HERO */
+  const AMT_H=32;
+  doc.setFillColor(237,253,244); doc.rect(0,Y,W,AMT_H,"F");
+  doc.setFillColor(187,247,208); doc.rect(0,Y,W,1.5,"F");
+  doc.setTextColor(100,116,139); doc.setFontSize(8); doc.setFont(undefined,"normal");
+  doc.text("AMOUNT RECEIVED",W/2,Y+10,{align:"center"});
+  doc.setTextColor(21,128,61); doc.setFontSize(28); doc.setFont(undefined,"bold");
+  doc.text(amtFmt,W/2,Y+22,{align:"center"});
+  const pillTxt="Payment Mode: "+payMode, pillW=72;
+  doc.setFillColor(255,255,255);
+  doc.roundedRect(W/2-pillW/2,Y+24,pillW,7,3,3,"F");
+  doc.setDrawColor(134,239,172); doc.setLineWidth(0.4);
+  doc.roundedRect(W/2-pillW/2,Y+24,pillW,7,3,3,"S");
+  doc.setTextColor(22,101,52); doc.setFontSize(7.5); doc.setFont(undefined,"bold");
+  doc.text(pillTxt,W/2,Y+29,{align:"center"});
   Y+=AMT_H;
 
-  /* Dashed separator */
-  doc.setLineDashPattern([1,1],0);
-  doc.setDrawColor(200,215,225); doc.setLineWidth(0.3);
-  doc.line(8,Y+1,W-8,Y+1);
-  doc.setLineDashPattern([],0);
-  Y+=3;
+  /* 5. DETAILS TABLE */
+  doc.setFillColor(247,160,26); doc.rect(0,Y,W,0.6,"F"); Y+=2;
 
-  /* Details table */
   const tableRows=[
     ["Donor Name",     _pdf(userName)||"—"],
     ["For Month/Year", _pdf((c.ForMonth||"—")+" "+(c.Year||""))],
@@ -1272,77 +1288,66 @@ async function exportReceiptPDF(rid){
   ];
   if(occasionName&&occasionName!=="—") tableRows.push(["Occasion",_pdf(occasionName)]);
   if(c.Note) tableRows.push(["Note",_pdf(c.Note)]);
-  tableRows.push(["Date Recorded", formatPaymentDate(c.PaymentDate)]);
-  tableRows.push(["Receipt No",    displayRID]);
+  tableRows.push(["Date Recorded",formatPaymentDate(c.PaymentDate)]);
+  tableRows.push(["Receipt No",displayRID]);
 
   doc.autoTable({
-    body:tableRows,
-    startY:Y,
-    theme:"grid",
+    body:tableRows, startY:Y, theme:"plain",
     columnStyles:{
-      0:{fontStyle:"bold",cellWidth:40,fillColor:[254,238,218],textColor:[120,56,14],fontSize:7.5},
-      1:{cellWidth:W-54,textColor:[30,41,59],fontSize:7.5}
+      0:{fontStyle:"bold",cellWidth:52,fillColor:[255,247,237],textColor:[120,56,14],fontSize:8},
+      1:{cellWidth:W-68,textColor:[20,30,55],fontSize:8,fillColor:[255,255,255]}
     },
-    styles:{cellPadding:{top:3.5,bottom:3.5,left:4,right:4},
-            font:"helvetica",lineColor:[225,235,245],lineWidth:0.25},
-    alternateRowStyles:{fillColor:[253,250,247]},
-    margin:{left:7,right:7},
+    styles:{cellPadding:{top:5,bottom:5,left:8,right:5},font:"helvetica",lineColor:[235,240,250],lineWidth:0.3},
+    alternateRowStyles:{fillColor:[249,250,255]},
+    margin:{left:8,right:8},
     didParseCell:function(d){
       if(d.row.index===0&&d.column.index===1){
         d.cell.styles.fontStyle="bold";
-        d.cell.styles.fontSize=8;
+        d.cell.styles.fontSize=10;
         d.cell.styles.textColor=[15,30,55];
+      }
+    },
+    didDrawCell:function(d){
+      if(d.column.index===0){
+        doc.setFillColor(247,160,26);
+        doc.rect(d.cell.x,d.cell.y+1.5,3,d.cell.height-3,"F");
       }
     }
   });
 
-  Y=doc.lastAutoTable.finalY;
+  Y=doc.lastAutoTable.finalY+1;
+  doc.setFillColor(247,160,26); doc.rect(0,Y,W,0.6,"F"); Y+=1;
 
-  /* Signature section */
+  /* 6. SIGNATURE */
   const SIG_H=20;
   doc.setFillColor(248,250,252); doc.rect(0,Y,W,SIG_H,"F");
   doc.setDrawColor(226,232,240); doc.setLineWidth(0.3); doc.line(0,Y,W,Y);
-  doc.setFontSize(8); doc.setFont(undefined,"bold"); doc.setTextColor(51,65,85);
-  doc.text(pdfSign,10,Y+7);
-  doc.setFont(undefined,"normal"); doc.setFontSize(6.5); doc.setTextColor(100,116,139);
+  doc.setFontSize(9); doc.setFont(undefined,"bold"); doc.setTextColor(30,41,59);
+  doc.text(pdfName,10,Y+7);
+  doc.setFont(undefined,"normal"); doc.setFontSize(7.5); doc.setTextColor(100,116,139);
   doc.text(pdfDesig,10,Y+12);
-  doc.text(pdfName,10,Y+16.5);
+  doc.text(pdfLocation,10,Y+17);
   doc.setFontSize(6.5); doc.setTextColor(148,163,184);
   doc.text("System-generated receipt",W-10,Y+7,{align:"right"});
   doc.text("No signature required",W-10,Y+12,{align:"right"});
   Y+=SIG_H;
 
-  /* Thank you footer — immediately after signature, no large gap */
-  const FTR_H=16;
-  doc.setFillColor(254,249,238); doc.rect(0,Y,W,FTR_H,"F");
-  doc.setFillColor(252,211,77);  doc.rect(0,Y,W,1.2,"F");
-  doc.setFontSize(8.5); doc.setTextColor(146,64,14); doc.setFont(undefined,"bold");
-  doc.text(pdfThankYou,W/2,Y+8,{align:"center"});
-  doc.setFont(undefined,"normal"); doc.setFontSize(6); doc.setTextColor(161,98,7);
-  doc.text(pdfName+" | "+pdfLocation+" | "+pdfTagline,W/2,Y+13.5,{align:"center"});
+  /* 7. THANK YOU FOOTER */
+  const FTR_H=20;
+  doc.setFillColor(255,249,235); doc.rect(0,Y,W,FTR_H,"F");
+  doc.setFillColor(247,160,26);  doc.rect(0,Y,W,2,"F");
+  doc.setFontSize(11); doc.setTextColor(146,64,14); doc.setFont(undefined,"bold");
+  doc.text(pdfThankYou,W/2,Y+11,{align:"center"});
+  doc.setFont(undefined,"normal"); doc.setFontSize(7.5); doc.setTextColor(161,98,7);
+  doc.text(pdfName+" | "+pdfLocation+" | "+pdfTagline,W/2,Y+17,{align:"center"});
   Y+=FTR_H;
 
-  /* Gold bottom stripe */
-  doc.setFillColor(247,160,26); doc.rect(0,Y,W,2,"F");
-
-  /* ── QR code in signature area (right side) ── */
-  try {
-    const qrDataUrl = await _generateQRDataUrl(displayRID, 72);
-    if (qrDataUrl) {
-      const QR_SIZE = 14; // mm
-      const sigY = Y - 20 - 16; // back up to signature section Y
-      doc.addImage(qrDataUrl, "PNG", W - 10 - QR_SIZE, sigY + 1, QR_SIZE, QR_SIZE);
-      // Replace the two text lines on the right of signature with just a label
-      doc.setFillColor(248,250,252);
-      doc.rect(W - 10 - QR_SIZE - 1, sigY, QR_SIZE + 2, QR_SIZE + 3, "F");
-      doc.addImage(qrDataUrl, "PNG", W - 10 - QR_SIZE, sigY + 1, QR_SIZE, QR_SIZE);
-      doc.setFontSize(5.5); doc.setTextColor(148,163,184); doc.setFont(undefined,"normal");
-      doc.text("Scan to verify", W - 10 - QR_SIZE/2, sigY + QR_SIZE + 2.5, {align:"center"});
-    }
-  } catch(e) { /* QR generation failed — PDF still saves cleanly */ }
+  /* 8. GOLD BOTTOM STRIPE */
+  doc.setFillColor(247,160,26); doc.rect(0,Y,W,3,"F");
 
   doc.save("Receipt_"+displayRID+".pdf");
 }
+
 
 /* ── Generate QR code as PNG dataURL using qrcodejs ──
    Loads qrcodejs from cdnjs if not already loaded.

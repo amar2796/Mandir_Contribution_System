@@ -1347,6 +1347,53 @@
       pointer-events: none;
     }
 
+    /* ─── BUTTON LOADING STATE ─── */
+    button.btn-loading {
+      position: relative;
+      color: transparent !important;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+    button.btn-loading::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      top: 50%; left: 50%;
+      margin-top: -8px; margin-left: -8px;
+    }
+    /* for dark buttons where spinner should be gold */
+    button.btn-loading.btn-loading-gold::after {
+      border-color: rgba(247,160,26,0.3);
+      border-top-color: var(--gold);
+    }
+
+    /* ─── COLOR SYNC — modals and popups match dashboard theme ─── */
+    ._modal > div,
+    [id="_editContribModal"] > div,
+    [id="_slipPreviewModal"] > div,
+    [id="_mobileConfirmOverlay"] > div {
+      border-radius: var(--rad-xl) !important;
+      overflow: hidden;
+    }
+    /* modal headers → brown gradient like hero */
+    ._mhdr,
+    [id="_editContribModal"] > div > div:first-child,
+    [id="_slipPreviewModal"] > div > div:first-child {
+      background: linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%) !important;
+      border-bottom: 2px solid rgba(247,160,26,0.35) !important;
+    }
+    /* modal footers → subtle gold tint */
+    ._mft,
+    [id="_editContribModal"] > div > div:last-child,
+    [id="_slipPreviewModal"] > div > div:last-child {
+      background: rgba(247,160,26,0.03) !important;
+      border-top: 1.5px solid rgba(247,160,26,0.1) !important;
+    }
+
     /* ─── PULL TO REFRESH ─── */
     #ptr-indicator {
       position: fixed;
@@ -1929,15 +1976,16 @@
 
     <!-- QUICK ACTIONS -->
     <div class="qa-row">
-      <button class="qa-btn qa-gold"
-        onclick="exportYearStatementPDF()" title="Download your annual receipt — useful for tax records">
+      <button class="qa-btn qa-gold" id="btnAnnualReceipt"
+        onclick="_btnLoad(this);exportYearStatementPDF().finally(()=>_btnDone(document.getElementById('btnAnnualReceipt')))" title="Download your annual receipt — useful for tax records">
         <i class="fa-solid fa-file-invoice"></i> Annual Receipt
       </button>
-      <button class="qa-btn qa-dark"
+      <button class="qa-btn qa-dark" id="btnNewPayment"
         onclick="_openMenuSection('panelPayment')">
         <i class="fa-solid fa-hand-holding-dollar"></i> New Payment
       </button>
-      <button class="qa-btn qa-ghost" onclick="exportPDF()">
+      <button class="qa-btn qa-ghost" id="btnFullPDF"
+        onclick="_btnLoad(this);exportPDF().finally(()=>_btnDone(document.getElementById('btnFullPDF')))">
         <i class="fa-solid fa-file-pdf"></i> Full PDF
       </button>
       <button class="qa-btn qa-ghost"
@@ -2192,7 +2240,7 @@
               </div>
             </div>
           </div>
-          <button onclick="submitPaymentRequest()" style="background:var(--gold);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;">
+          <button id="btnSubmitPayment" onclick="_btnLoad(this);submitPaymentRequest().finally(()=>_btnDone(document.getElementById('btnSubmitPayment')))" style="background:var(--gold);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;">
             <i class="fa-solid fa-paper-plane"></i> Submit Request to Admin
           </button>
           <div id="prMsg" style="font-size:12px;margin:10px 0 0;display:none;padding:10px 14px;border-radius:8px;border-left:3px solid;"></div>
@@ -2224,7 +2272,7 @@
             </div>
           </div>
           <div id="fbMsg" style="font-size:12px;margin:8px 0;display:none;"></div>
-          <button onclick="submitFeedback()" style="background:var(--gold);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;margin-top:6px;">
+          <button id="btnSubmitFeedback" onclick="_btnLoad(this);submitFeedback().finally(()=>_btnDone(document.getElementById('btnSubmitFeedback')))" style="background:var(--gold);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;margin-top:6px;">
             <i class="fa-solid fa-paper-plane"></i> Submit Feedback
           </button>
         </div>
@@ -3346,6 +3394,22 @@
       try { if (navigator.vibrate) navigator.vibrate(ms || 8); } catch(e) {}
     }
 
+    // ── Button loading state helpers
+    function _btnLoad(btn, goldSpinner) {
+      if (!btn) return;
+      btn._origHTML = btn.innerHTML;
+      btn._origDisabled = btn.disabled;
+      btn.classList.add("btn-loading");
+      if (goldSpinner) btn.classList.add("btn-loading-gold");
+      btn.disabled = true;
+    }
+    function _btnDone(btn) {
+      if (!btn) return;
+      btn.classList.remove("btn-loading", "btn-loading-gold");
+      btn.disabled = btn._origDisabled || false;
+      if (btn._origHTML !== undefined) btn.innerHTML = btn._origHTML;
+    }
+
     // ── Tap ripple — call on any button/menu tap
     function _ripple(e) {
       const el = e.currentTarget;
@@ -3558,28 +3622,163 @@
 
     async function exportPDF() {
       await _loadJsPDF();
-      const { jsPDF } = window.jspdf; let doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      // Load QRCode lib if not already loaded
+      if (!window.QRCode) {
+        await new Promise(function(res, rej) {
+          const s = document.createElement("script");
+          s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+          s.onload = res; s.onerror = res; // silent fail
+          document.head.appendChild(s);
+        });
+      }
+
+      const { jsPDF } = window.jspdf;
+      let doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       let s = JSON.parse(localStorage.getItem("session")), w = doc.internal.pageSize.getWidth();
-      doc.setFillColor(51, 65, 85); doc.rect(0, 0, w, 28, "F");
-      doc.setTextColor(247, 160, 26); doc.setFontSize(16); doc.setFont(undefined, "bold"); doc.text("SHREE HANUMAN MANDIR", w / 2, 11, { align: "center" });
-      doc.setTextColor(255, 255, 255); doc.setFontSize(9); doc.setFont(undefined, "normal");
-      doc.text("PALIYA, SULTANPUR  |  CONTRIBUTION STATEMENT", w / 2, 18, { align: "center" });
-      doc.text("OFFICIAL DOCUMENT — FOR INTERNAL USE ONLY", w / 2, 24, { align: "center" });
-      let fY = document.getElementById("filterYear").value, fM = document.getElementById("filterMonth").value, fT = document.getElementById("filterType").value, srch = document.getElementById("searchInput").value.toLowerCase();
-      const fLbl = [fY ? `Year: ${fY}` : "", fM ? `Month: ${fM}` : "", fT ? `Type: ${(types.find(t => String(t.TypeId) === fT) || {}).TypeName || ""}` : "", srch ? `Search: "${srch}"` : ""].filter(Boolean).join("  |  ") || "All Records";
-      doc.setTextColor(50, 50, 50); doc.setFontSize(10); doc.setFont(undefined, "bold"); doc.text(`Member: ${s.name.toUpperCase()}`, 14, 36);
-      doc.setFont(undefined, "normal"); doc.setFontSize(9); doc.text(`Filters: ${fLbl}  |  Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 42); doc.text("System Generated — Not Manually Signed", 14, 47);
+
+      // ── BROWN/GOLD header matching dashboard theme
+      // Header bg — brown gradient approximated as solid
+      doc.setFillColor(42, 15, 0);
+      doc.rect(0, 0, w, 32, "F");
+      // Gold accent line
+      doc.setFillColor(247, 160, 26);
+      doc.rect(0, 32, w, 1.2, "F");
+
+      // Temple name
+      doc.setTextColor(247, 160, 26);
+      doc.setFontSize(15); doc.setFont(undefined, "bold");
+      doc.text("SHREE HANUMAN MANDIR", w / 2, 10, { align: "center" });
+
+      // Subtitle
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8.5); doc.setFont(undefined, "normal");
+      doc.text("Paliya, Sultanpur, Uttar Pradesh", w / 2, 16, { align: "center" });
+      doc.text("CONTRIBUTION STATEMENT — OFFICIAL DOCUMENT", w / 2, 21, { align: "center" });
+
+      // Gold Om symbol right side
+      doc.setTextColor(247, 160, 26);
+      doc.setFontSize(18);
+      doc.text("ॐ", w - 10, 18, { align: "right" });
+
+      // ── Member info block
+      let Y = 40;
+      doc.setFillColor(253, 248, 240);
+      doc.rect(10, Y - 5, w - 20, 22, "F");
+      doc.setDrawColor(247, 160, 26);
+      doc.setLineWidth(0.4);
+      doc.rect(10, Y - 5, w - 20, 22);
+
+      doc.setTextColor(42, 15, 0);
+      doc.setFontSize(10); doc.setFont(undefined, "bold");
+      doc.text("Member:", 14, Y + 2);
+      doc.setFont(undefined, "normal");
+      doc.setTextColor(30, 41, 59);
+      doc.text(s.name.toUpperCase(), 38, Y + 2);
+
+      let fY = document.getElementById("filterYear")?.value || "",
+          fM = document.getElementById("filterMonth")?.value || "",
+          fT = document.getElementById("filterType")?.value || "",
+          srch = document.getElementById("searchInput")?.value?.toLowerCase() || "";
+      const fLbl = [fY ? `Year: ${fY}` : "", fM ? `Month: ${fM}` : "",
+        fT ? `Type: ${(types.find(t => String(t.TypeId) === fT) || {}).TypeName || ""}` : "",
+        srch ? `Search: "${srch}"` : ""].filter(Boolean).join("  ·  ") || "All Records";
+
+      doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+      doc.text(`Filter: ${fLbl}`, 14, Y + 8);
+      doc.text(`Generated: ${new Date().toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" })}`, 14, Y + 13);
+      doc.setFont(undefined, "italic");
+      doc.text("System Generated — Not Manually Signed", w - 14, Y + 13, { align: "right" });
+
+      Y += 28;
+
+      // ── Filtered data
       let filtered = data.filter(c => {
-        let t = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "", dR = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
-        let base = (!fY || String(c.Year) === fY) && (!fM || c.ForMonth === fM) && (!fT || String(c.TypeId) === String(fT)); if (!base) return false; if (!srch) return true;
-        return t.toLowerCase().includes(srch) || String(c.Amount).includes(srch) || (c.ForMonth || "").toLowerCase().includes(srch) || dR.toLowerCase().includes(srch);
+        let t = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "",
+            dR = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+        let base = (!fY || String(c.Year) === fY) && (!fM || c.ForMonth === fM) && (!fT || String(c.TypeId) === String(fT));
+        if (!base) return false; if (!srch) return true;
+        return t.toLowerCase().includes(srch) || String(c.Amount).includes(srch) ||
+          (c.ForMonth || "").toLowerCase().includes(srch) || dR.toLowerCase().includes(srch);
       });
       let tot = filtered.reduce((s, c) => s + Number(c.Amount || 0), 0);
-      doc.setFont(undefined, "bold"); doc.setFontSize(10); doc.text(`Total: Rs. ${tot.toLocaleString("en-IN")}  (${filtered.length} record${filtered.length !== 1 ? "s" : ""})`, 14, 53);
-      let rows = filtered.map((c, i) => { let tN = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "—", dR = (c.ReceiptID || "").replace(/^TRX-/, "MNR-"); return [String(i + 1), "Rs." + Number(c.Amount || 0).toLocaleString("en-IN"), c.ForMonth || "—", String(c.Year || "—"), tN, dR, formatPaymentDate(c.PaymentDate)]; });
-      if (rows.length > 0) { doc.autoTable({ head: [["#", "Amount (Rs.)", "Month", "Year", "Type", "Tracking ID", "Date"]], body: rows, startY: 56, theme: "grid", headStyles: { fillColor: [51, 65, 85], fontStyle: "bold", fontSize: 9 }, styles: { fontSize: 8.5, cellPadding: 3 }, columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 25 }, 5: { cellWidth: 35 } }, alternateRowStyles: { fillColor: [253, 251, 247] } }); }
-      else { doc.text("No records found.", 14, 58); }
-      let pc = doc.internal.getNumberOfPages(); for (let i = 1; i <= pc; i++) { doc.setPage(i); let ph = doc.internal.pageSize.getHeight(); doc.setFontSize(7); doc.setTextColor(170, 170, 170); doc.text("SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  |  System Generated — Not Manually Signed", w / 2, ph - 5, { align: "center" }); doc.text(`Page ${i} of ${pc}`, w - 14, ph - 5, { align: "right" }); }
+
+      // Total summary pill
+      doc.setFillColor(42, 15, 0);
+      doc.roundedRect(14, Y - 4, 80, 10, 2, 2, "F");
+      doc.setTextColor(247, 160, 26);
+      doc.setFontSize(9); doc.setFont(undefined, "bold");
+      doc.text(`Total: Rs. ${tot.toLocaleString("en-IN")}  (${filtered.length} record${filtered.length !== 1 ? "s" : ""})`, 18, Y + 2.5);
+
+      Y += 10;
+
+      // ── Table with brown/gold theme
+      let rows = filtered.map((c, i) => {
+        let tN = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "—",
+            dR = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+        return [String(i + 1), "Rs." + Number(c.Amount || 0).toLocaleString("en-IN"),
+          c.ForMonth || "—", String(c.Year || "—"), tN, dR, formatPaymentDate(c.PaymentDate)];
+      });
+
+      if (rows.length > 0) {
+        doc.autoTable({
+          head: [["#", "Amount (Rs.)", "Month", "Year", "Type", "Tracking ID", "Date"]],
+          body: rows, startY: Y,
+          theme: "grid",
+          headStyles: { fillColor: [42, 15, 0], textColor: [247, 160, 26], fontStyle: "bold", fontSize: 9 },
+          styles: { fontSize: 8.5, cellPadding: 3, textColor: [30, 41, 59] },
+          columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 26 }, 5: { cellWidth: 36 } },
+          alternateRowStyles: { fillColor: [253, 248, 240] },
+          rowPageBreak: "auto",
+        });
+      } else {
+        doc.setTextColor(100, 116, 139);
+        doc.setFontSize(10);
+        doc.text("No records found for selected filters.", 14, Y + 6);
+      }
+
+      // ── QR code with user info embedded
+      try {
+        if (window.QRCode) {
+          const qrText = `Member: ${s.name} | Total: Rs.${tot.toLocaleString("en-IN")} | Records: ${filtered.length} | Date: ${new Date().toLocaleDateString("en-IN")} | Mandir: Shree Hanuman Mandir, Paliya`;
+          const qrDiv = document.createElement("div");
+          qrDiv.style.cssText = "position:absolute;left:-9999px;top:0;";
+          document.body.appendChild(qrDiv);
+          new window.QRCode(qrDiv, { text: qrText, width: 80, height: 80, colorDark: "#2a0f00", colorLight: "#ffffff" });
+          await new Promise(r => setTimeout(r, 300));
+          const qrCanvas = qrDiv.querySelector("canvas");
+          if (qrCanvas) {
+            const qrData = qrCanvas.toDataURL("image/png");
+            const ph = doc.internal.pageSize.getHeight();
+            const lastY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : Y + 20;
+            // QR box
+            doc.setFillColor(253, 248, 240);
+            doc.rect(w - 36, lastY, 32, 32, "F");
+            doc.setDrawColor(247, 160, 26);
+            doc.setLineWidth(0.4);
+            doc.rect(w - 36, lastY, 32, 32);
+            doc.addImage(qrData, "PNG", w - 35, lastY + 1, 30, 30);
+            doc.setFontSize(6); doc.setTextColor(100, 116, 139);
+            doc.text("Scan to verify", w - 20, lastY + 34, { align: "center" });
+          }
+          document.body.removeChild(qrDiv);
+        }
+      } catch(e) { /* QR optional */ }
+
+      // ── Footer on every page
+      let pc = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pc; i++) {
+        doc.setPage(i);
+        let ph = doc.internal.pageSize.getHeight();
+        doc.setFillColor(42, 15, 0);
+        doc.rect(0, ph - 10, w, 10, "F");
+        doc.setFillColor(247, 160, 26);
+        doc.rect(0, ph - 10, w, 0.8, "F");
+        doc.setFontSize(6.5); doc.setTextColor(180, 140, 80); doc.setFont(undefined, "normal");
+        doc.text("SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  ·  System Generated", w / 2, ph - 4, { align: "center" });
+        doc.setTextColor(120, 100, 60);
+        doc.text(`Page ${i} of ${pc}`, w - 10, ph - 4, { align: "right" });
+      }
+
       doc.save(`Mandir_Statement_${s.name.replace(/\s+/g, "_")}_${Date.now()}.pdf`);
     }
 
@@ -3811,6 +4010,62 @@
 
     init();
     (function () { const s = JSON.parse(localStorage.getItem("session") || "null"); if (s && s.userId) broadcastSessionRevoke(s.userId); })();
+    //    1. Auto-load jsPDF if not loaded (fixes "PDF library not loaded" error)
+    //    2. Enhance QR data to include name + amount + date
+    //    3. Sync receipt header to brown/gold dashboard theme
+    const _origExportReceiptPDF = window.exportReceiptPDF;
+    window.exportReceiptPDF = async function(rid) {
+      // Ensure jsPDF is loaded before calling app.js version
+      try { await _loadJsPDF(); } catch(e) {}
+      // Ensure QRCode lib is loaded
+      if (!window.QRCode) {
+        await new Promise(function(res) {
+          const s = document.createElement("script");
+          s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+          s.onload = res; s.onerror = res;
+          document.head.appendChild(s);
+        });
+      }
+      // Patch _generateQRDataUrl to embed richer data
+      const _origQR = window._generateQRDataUrl;
+      window._generateQRDataUrl = async function(text, sizePx) {
+        // text is displayRID — enrich it with user context
+        const stored = window._rcptStore && Object.values(window._rcptStore).find(function(v) {
+          return v && v.c && ((v.c.ReceiptID || "").replace(/^TRX-/, "MNR-") === text || text === (v.c.ReceiptID || "").replace(/^TRX-/, "MNR-"));
+        });
+        let richText = text;
+        if (stored) {
+          const s = JSON.parse(localStorage.getItem("session") || "{}");
+          richText = "Receipt: " + text
+            + " | Member: " + (stored.userName || s.name || "")
+            + " | Amount: Rs." + Number(stored.c.Amount || 0).toLocaleString("en-IN")
+            + " | Month: " + (stored.c.ForMonth || "") + " " + (stored.c.Year || "")
+            + " | Date: " + formatPaymentDate(stored.c.PaymentDate)
+            + " | Mandir: Shree Hanuman Mandir, Paliya";
+        }
+        if (_origQR) return _origQR(richText, sizePx);
+        return null;
+      };
+      if (_origExportReceiptPDF) await _origExportReceiptPDF(rid);
+      // Restore original
+      window._generateQRDataUrl = _origQR;
+    };
+
+    // ── Override showReceipt to sync header color to brown/gold theme
+    const _origShowReceipt = window.showReceipt;
+    window.showReceipt = function(c, userName, typeName, occasionName, isAdmin) {
+      _origShowReceipt(c, userName, typeName, occasionName, isAdmin);
+      // After modal renders, patch header background to brown
+      setTimeout(function() {
+        const modal = document.querySelector("._mbdy");
+        if (!modal) return;
+        const hdrBand = modal.querySelector("div[style*='1e293b']") ||
+                        modal.querySelector("div[style*='334155']");
+        if (hdrBand) {
+          hdrBand.style.background = "linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%)";
+        }
+      }, 30);
+    };
   </script>
 
 
@@ -4253,8 +4508,8 @@
           if (isPending) {
             actionBtns = `
                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
-                  ${slipUrl ? `<button class="btn-sm btn-blue" onclick="previewContribSlip('${slipUrl}')" style="font-size:11px;padding:5px 11px;"><i class="fa-solid fa-image"></i> Preview Slip</button>` : ""}
-                  <button class="btn-sm btn-ghost req-edit-btn" onclick="openEditContribRequest('${reqId}')" style="font-size:11px;padding:5px 11px;border-color:#e2e8f0;transition:background 0.18s,color 0.18s,border-color 0.18s,transform 0.15s;"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                  ${slipUrl ? `<button class="btn-sm btn-blue" onclick="previewContribSlip('${slipUrl}')" style="font-size:11px;padding:6px 12px;border-radius:20px;"><i class="fa-solid fa-image"></i> Preview Slip</button>` : ""}
+                  <button class="btn-sm req-edit-btn" onclick="_editBtnClick(this,'${reqId}')" style="font-size:11px;padding:6px 14px;border-radius:20px;background:linear-gradient(135deg,#2a0f00,#3c1a00);color:#f7a01a;border:1.5px solid rgba(247,160,26,0.35);font-weight:700;box-shadow:0 2px 8px rgba(42,15,0,0.2);transition:all 0.18s;"><i class="fa-solid fa-pen-to-square"></i> Edit Request</button>
                 </div>`;
           } else {
             actionBtns = "";
@@ -4287,6 +4542,13 @@
         }).join("");
       } catch (e) { section.style.display = "none"; }
       _contribReqsLoaded = true;
+    }
+
+    // ── Edit button with loading state
+    async function _editBtnClick(btn, reqId) {
+      _btnLoad(btn);
+      try { await openEditContribRequest(reqId); } catch(e) {}
+      setTimeout(function() { _btnDone(btn); }, 400);
     }
 
     function _confirmDelete(reqId) {
