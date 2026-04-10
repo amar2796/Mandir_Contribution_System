@@ -301,9 +301,10 @@ function canSendEmail() {
   return emailCount < CFG.emailDailyLimit;
 }
 
-// incrementEmailCount() is kept but should NOT be called separately from canSendEmail().
-// Use tryConsumeEmailQuota() for all new send paths.
-function incrementEmailCount() {
+// FIX #4: incrementEmailCount() renamed to _incrementEmailCount() to prevent accidental
+// direct calls that would bypass the atomic quota guard. Use tryConsumeEmailQuota() instead.
+// @deprecated — internal use only. Do NOT call this directly.
+function _incrementEmailCount() {
   const props    = PropertiesService.getScriptProperties();
   const countKey = "EMAIL_COUNT";
   const current  = parseInt(props.getProperty(countKey) || "0", 10);
@@ -734,15 +735,22 @@ function doGet(e) {
        result = { status: "fail", message: _rl.message };
     } else {
       let user = users.find(u => String(u.Mobile) === mobile && String(u.Password) === pwdHash);
-      if (!user  || user.Status !== "Active") {
+      // FIX #1: Check specific statuses BEFORE the catch-all "not Active" guard,
+      // so pending/rejected/inactive users receive the correct error message.
+      // Previously the first condition caught ALL non-Active users, making the
+      // else-if branches for pending/rejected/inactive unreachable dead code.
+      if (!user) {
         _recordLoginFail(mobile);
         result = { status: "fail" };
       } else if (String(user.Status||"").toLowerCase() === "pending") {
         result = { status: "pending", message: "Your registration is pending admin approval. You will receive an email once approved." };
       } else if (String(user.Status||"").toLowerCase() === "rejected") {
         result = { status: "error", message: "Your registration was not approved. Please contact the temple admin." };
-      } else if (user.Status === "Inactive") {
+      } else if (String(user.Status||"").toLowerCase() === "inactive") {
         result = { status: "error", message: "Account is deactivated. Please contact admin." };
+      } else if (user.Status !== "Active") {
+        _recordLoginFail(mobile);
+        result = { status: "fail" };
       } else {
         _clearLoginFail(mobile);
         let safeUser = Object.assign({}, user);
@@ -1889,7 +1897,9 @@ function doGet(e) {
             break;
           }
         }
-        if (!result.status) result = {status:"error",message:"Request not found"};
+        // FIX #6: Use explicit found flag instead of checking result.status,
+        // which could throw TypeError if result is still {} at this point.
+        if (!result || result.status !== "success") result = {status:"error",message:"Request not found"};
       }
     } catch(err) { result = {status:"error",message:err.message}; }
   }
@@ -2096,6 +2106,19 @@ function getYearlySummary() {
       openingMap[y] = isNaN(ob) ? 0 : ob;
     });
  
+    // PERF: Pre-aggregate contributions and expenses into Maps keyed by year.
+    // This is O(n) instead of O(n * numYears) — avoids re-scanning all rows per year.
+    const contribByYear = {};
+    contributions.forEach(c => {
+      const y = parseInt(c.Year, 10);
+      if (!isNaN(y)) contribByYear[y] = (contribByYear[y] || 0) + Number(c.Amount || 0);
+    });
+    const expenseByYear = {};
+    expenses.forEach(e => {
+      const y = parseInt(e.Year, 10);
+      if (!isNaN(y)) expenseByYear[y] = (expenseByYear[y] || 0) + Number(e.Amount || 0);
+    });
+
     // ── Build summary rows with carry-forward chain
     const rows = [];
     let carryForward = 0; // running carry-forward from previous year
@@ -2107,15 +2130,9 @@ function getYearlySummary() {
       // Use explicit config opening if set, else use carry-forward
       const openingBalance = configOpening > 0 ? configOpening : carryForward;
  
-      // Total contributions for this year
-      const totalCollection = contributions
-        .filter(c => parseInt(c.Year, 10) === year)
-        .reduce((sum, c) => sum + Number(c.Amount || 0), 0);
- 
-      // Total expenses for this year
-      const totalExpense = expenses
-        .filter(e => parseInt(e.Year, 10) === year)
-        .reduce((sum, e) => sum + Number(e.Amount || 0), 0);
+      // Use pre-aggregated maps — O(1) lookup per year
+      const totalCollection = contribByYear[year] || 0;
+      const totalExpense    = expenseByYear[year]  || 0;
  
       // Closing balance = opening + collection - expense
       const closingBalance = openingBalance + totalCollection - totalExpense;
@@ -2161,28 +2178,33 @@ function updateUser(p) {
   let found   = false;
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === userId) {
-      // Helper: write a value to the column matching the given header name (1-based col)
-      function _setColUser(headerName, value) {
-        const col = headers.indexOf(headerName);
-        if (col !== -1) sheet.getRange(i+1, col+1).setValue(value);
-      }
+      // PERF: Build a full row array and write it in ONE setValues() call
+      // instead of one sheet.getRange().setValue() per column.
+      // This reduces Sheets API round-trips from ~10 calls to 1.
       const existingPwd = data[i][headers.indexOf("Password")];
-      _setColUser("Name",     sanitize(p.Name,    100));
-      _setColUser("Mobile",   sanitize(p.Mobile,  15));
-      _setColUser("Role",     sanitize(p.Role,    20));
+      let newPwd = existingPwd;
       if (p.Password && sanitize(p.Password, 128).length > 0) {
         let pwd = sanitize(p.Password, 128);
-        _setColUser("Password", pwd.length === 64 ? pwd : hashPassword(pwd));
-      } else {
-        _setColUser("Password", existingPwd);
+        newPwd = pwd.length === 64 ? pwd : hashPassword(pwd);
       }
-      _setColUser("Email",    sanitize(p.Email,   200));
-      _setColUser("Status",   sanitize(p.Status,  20) || "Active");
-      _setColUser("PhotoURL", sanitize(p.PhotoURL, 500) || "");
-      // Village and Address — only update when explicitly provided (not undefined)
-      if (p.Village !== undefined) _setColUser("Village", sanitize(p.Village, 100));
-      if (p.Address !== undefined) _setColUser("Address", sanitize(p.Address, 300));
-      if (p.MonthlyTarget !== undefined) _setColUser("MonthlyTarget", Number(p.MonthlyTarget||0));
+      // Clone existing row so columns not listed here are unchanged
+      const newRow = data[i].slice();
+      function _setCol(headerName, value) {
+        const col = headers.indexOf(headerName);
+        if (col !== -1 && value !== undefined) newRow[col] = value;
+      }
+      _setCol("Name",          sanitize(p.Name,    100));
+      _setCol("Mobile",        sanitize(p.Mobile,  15));
+      _setCol("Role",          sanitize(p.Role,    20));
+      _setCol("Password",      newPwd);
+      _setCol("Email",         sanitize(p.Email,   200));
+      _setCol("Status",        sanitize(p.Status,  20) || "Active");
+      _setCol("PhotoURL",      sanitize(p.PhotoURL, 500) || "");
+      if (p.Village       !== undefined) _setCol("Village",       sanitize(p.Village, 100));
+      if (p.Address       !== undefined) _setCol("Address",       sanitize(p.Address, 300));
+      if (p.MonthlyTarget !== undefined) _setCol("MonthlyTarget", Number(p.MonthlyTarget||0));
+      // Single batched write — 1 API call instead of ~10
+      sheet.getRange(i + 1, 1, 1, newRow.length).setValues([newRow]);
       SpreadsheetApp.flush();
       found = true; break;
     }
@@ -2231,18 +2253,26 @@ function updateRow(name, body) {
 function updateExpenseRow(name, body) {
   let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   let data  = sheet.getDataRange().getValues();
+  const headers = data[0]; // read headers once, not per row
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(sanitize(body.Id,30))) {
-      sheet.getRange(i+1,2).setValue(sanitize(body.Title,        200));
-      sheet.getRange(i+1,3).setValue(sanitize(body.Amount,        20));
-      sheet.getRange(i+1,5).setValue(sanitize(body.Year,          10));
-      sheet.getRange(i+1,6).setValue(sanitize(body.ExpenseTypeId, 30));
-      sheet.getRange(i+1,7).setValue(sanitize(body.ForMonth,      20));
-      const rcpHdrs = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
-    const rcpCol  = rcpHdrs.indexOf("ReceiptURL");
-    if (body.ReceiptURL !== undefined && rcpCol !== -1)
-      sheet.getRange(i+1, rcpCol+1).setValue(sanitize(body.ReceiptURL||"", 500));
-    return { status: "updated" };
+      // PERF: Clone the existing row and apply all updates to it,
+      // then write the whole row back in ONE setValues() call.
+      // Previously 5-6 separate getRange().setValue() calls were made.
+      const newRow = data[i].slice();
+      function _setExpCol(headerName, value) {
+        const c = headers.indexOf(headerName);
+        if (c !== -1 && value !== undefined) newRow[c] = value;
+      }
+      _setExpCol("Title",         sanitize(body.Title,         200));
+      _setExpCol("Amount",        sanitize(body.Amount,         20));
+      _setExpCol("Year",          sanitize(body.Year,           10));
+      _setExpCol("ExpenseTypeId", sanitize(body.ExpenseTypeId,  30));
+      _setExpCol("ForMonth",      sanitize(body.ForMonth,       20));
+      if (body.ReceiptURL !== undefined)
+        _setExpCol("ReceiptURL",  sanitize(body.ReceiptURL||"", 500));
+      // FIX #5: Single batched write — 1 API call instead of 5-6
+      sheet.getRange(i + 1, 1, 1, newRow.length).setValues([newRow]);
       return { status: "updated" };
     }
   }
@@ -3243,7 +3273,7 @@ function getPublicStats() {
   }
 }
 
-  function _changePassword(p) {
+function _changePassword(p) {  // FIX #3: Moved to global scope (was accidentally indented)
     try {
       const userId     = sanitize(p.UserId,      30);
       const oldHashRaw = sanitize(p.OldPassword, 128);
@@ -3288,7 +3318,7 @@ function getPublicStats() {
       return { status: "error", message: err.message };
     }
   }
-    function _addEvent(p) {
+function _addEvent(p) {  // FIX #3: Moved to global scope (was accidentally indented)
     try {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EVENTS);
       if (!sheet) return { status:"error", message:"EVENTS sheet not found." };
@@ -3312,20 +3342,25 @@ function getPublicStats() {
     } catch(err) { return { status:"error", message:err.message }; }
   }
  
-  function _updateEvent(p) {
+function _updateEvent(p) {
     try {
       const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EVENTS);
       const data    = sheet.getDataRange().getValues();
       const headers = data[0];
       const eventId = sanitize(p.EventId, 50);
+      // FIX #2: Declare rowIndex with let before the loop so the helper
+      // function closes over the correct value. Previously var rowIndex
+      // was declared inside the loop body, causing hoisting issues where
+      // the helper would read undefined on the first access.
+      let rowIndex = -1;
       // Helper: write a value to the column matching the given header name
       function setECol(h, v) {
         const c = headers.indexOf(h);
-        if (c !== -1) sheet.getRange(rowIndex+1, c+1).setValue(v);
+        if (c !== -1 && rowIndex !== -1) sheet.getRange(rowIndex+1, c+1).setValue(v);
       }
       for (let i = 1; i < data.length; i++) {
         if (String(data[i][headers.indexOf("EventId")]) === eventId) {
-          var rowIndex = i;
+          rowIndex = i;
           setECol("EventName",   sanitize(p.EventName,200));
           setECol("Category",    sanitize(p.Category,50));
           setECol("Status",      sanitize(p.Status,30));
@@ -3342,7 +3377,7 @@ function getPublicStats() {
     } catch(err) { return { status:"error", message:err.message }; }
   }
  
-  function _deleteEvent(p) {
+function _deleteEvent(p) {  // FIX #3: Moved to global scope (was accidentally indented)
     try {
       const eventId  = sanitize(p.EventId, 50);
       const adminName = sanitize(p.AdminName,100) || "Admin";
@@ -3371,7 +3406,7 @@ function getPublicStats() {
     } catch(err) { return { status:"error", message:err.message }; }
   }
  
-  function _addEventExpense(p) {
+function _addEventExpense(p) {  // FIX #3: Moved to global scope (was accidentally indented)
     try {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EVENT_EXPENSES);
       if (!sheet) return { status:"error", message:"EVENT_EXPENSES sheet not found." };

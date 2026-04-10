@@ -33,20 +33,27 @@
       var name = "_botCb_" + _cbIdx + "_" + Date.now();
       var script = document.createElement("script");
       var done = false;
+  
+      // [IMPROVEMENT] Extracted duplicate cleanup logic into a single inner function
+      function _cleanup() {
+        try { delete window[name]; script.remove(); } catch (e) {}
+      }
+  
       window[name] = function (data) {
         if (done) return; done = true;
-        clearTimeout(timer); delete window[name]; script.remove();
+        clearTimeout(timer);
+        _cleanup();
         cb(null, data);
       };
       var timer = setTimeout(function () {
         if (done) return; done = true;
-        window[name] = function () { try { delete window[name]; script.remove(); } catch (e) {} };
+        window[name] = _cleanup;
         cb(new Error("timeout"), null);
       }, 25000);
       script.onerror = function () {
         if (done) return; done = true;
         clearTimeout(timer);
-        window[name] = function () { try { delete window[name]; script.remove(); } catch (e) {} };
+        window[name] = _cleanup;
         cb(new Error("network"), null);
       };
       script.src = url + (url.indexOf("?") === -1 ? "?" : "&") + "callback=" + name;
@@ -57,7 +64,6 @@
     function _loadConfig(cb) {
       var now = Date.now();
       if (_botConfig && (now - _botConfigTime) < 30000) { cb(_botConfig); return; }
-      // Use typeof to access const API_URL (const does NOT attach to window)
       var apiUrl = (typeof API_URL !== "undefined" ? API_URL : "") || (window.API_URL || "");
       if (!apiUrl) { _botConfig = {}; cb(_botConfig); return; }
       _fetchJSON(apiUrl + "?action=getChatbotConfig", function (err, data) {
@@ -74,10 +80,12 @@
   
     function _t(key) { return _cfg(key + "_" + _botLang) || _cfg(key + "_en") || ""; }
   
+    /* ── [IMPROVEMENT] Bilingual helper — replaces 15+ inline ternaries ── */
+    function _bi(en, hi) { return _botLang === "en" ? en : hi; }
+  
     /* ══════════════ INJECT CSS ══════════════ */
     function _injectCSS() {
       if (document.getElementById("_mbotCSS")) return;
-      // Both audio btn (left) and chatbot btn (right) sit at the same bottom — no need to raise
       var chatBtnBottom = "24px";
       var chatWinBottom = "94px";
       var css = `
@@ -114,7 +122,7 @@
   @media (max-width: 420px) {
     #_mbotHelpBubble { right: 70px; font-size: 11.5px; padding: 7px 12px; }
   }
-
+  
   #_mbotBtn {
     position: fixed; bottom: ${chatBtnBottom}; right: 24px; z-index: 99990;
     width: 54px; height: 54px; border-radius: 50%;
@@ -148,19 +156,19 @@
     display: flex; align-items: center; gap: 10px;
     border-top: 3px solid #f7a01a; flex-shrink: 0;
   }
-
+  
   /* login logo */
-      #_mbotHdr .mbot-logo {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid rgba(247,160,26,0.55);
-        box-shadow: 0 0 10px rgba(247,160,26,0.35);
-        flex-shrink: 0;
-        background: #78501e;
+  #_mbotHdr .mbot-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(247,160,26,0.55);
+    box-shadow: 0 0 10px rgba(247,160,26,0.35);
+    flex-shrink: 0;
+    background: #78501e;
   }
-
+  
   #_mbotHdr .mbot-avatar {
     width: 34px; height: 34px; border-radius: 50%;
     background: #f7a01a; display: flex; align-items: center;
@@ -262,34 +270,37 @@
     }
   
     /* ══════════════ BUILD DOM ══════════════ */
+  
+    // [IMPROVEMENT] Extracted _alignBubble to module scope so the resize listener
+    // references a stable function (avoids a new closure per _buildDOM call).
+    function _alignBubble() {
+      var btnEl = document.getElementById("_mbotBtn");
+      var bub = document.getElementById("_mbotHelpBubble");
+      if (!btnEl || !bub) return;
+      var rect = btnEl.getBoundingClientRect();
+      bub.style.bottom = (window.innerHeight - rect.bottom + (rect.height / 2) - 18) + "px";
+    }
+  
     function _buildDOM() {
       if (document.getElementById("_mbotBtn")) return;
-
+  
       /* Help bubble tooltip */
       var bubble = document.createElement("div");
       bubble.id = "_mbotHelpBubble";
       bubble.innerHTML = "How can I help you? 🙏";
       bubble.style.cssText = "opacity:0;";
       document.body.appendChild(bubble);
-
+  
       /* Floating button */
       var btn = document.createElement("div");
       btn.id = "_mbotBtn";
       btn.innerHTML = '🙏<div id="_mbotUnread"></div>';
       btn.onclick = _toggleChat;
       document.body.appendChild(btn);
-
-      /* Position bubble vertically aligned with button */
-      function _alignBubble() {
-        var btnEl = document.getElementById("_mbotBtn");
-        var bub = document.getElementById("_mbotHelpBubble");
-        if (!btnEl || !bub) return;
-        var rect = btnEl.getBoundingClientRect();
-        bub.style.bottom = (window.innerHeight - rect.bottom + (rect.height / 2) - 18) + "px";
-      }
+  
       _alignBubble();
       window.addEventListener("resize", _alignBubble);
-
+  
       /* Show bubble after 1.8s, hide after 6s or on first click */
       setTimeout(function () {
         var bub = document.getElementById("_mbotHelpBubble");
@@ -300,7 +311,7 @@
           }, 5000);
         }
       }, 1800);
-
+  
       /* Chat window */
       var win = document.createElement("div");
       win.id = "_mbotWin";
@@ -324,7 +335,7 @@
         </div>
       `;
       document.body.appendChild(win);
-
+  
       document.getElementById("_mbotInput").addEventListener("keydown", function (e) {
         if (e.key === "Enter") _mbotHandleInput();
       });
@@ -374,22 +385,18 @@
       if (el) setTimeout(function () { el.scrollTop = el.scrollHeight; }, 50);
     }
   
-    function _addBotMsg(text) {
+    // [IMPROVEMENT] Unified _addBotMsg / _addUserMsg into a single _addMsg function.
+    // Both were identical except for the CSS class; zero behaviour change.
+    function _addMsg(text, role) {
       var div = document.createElement("div");
-      div.className = "mbot-msg bot";
+      div.className = "mbot-msg " + role;
       div.textContent = text;
       document.getElementById("_mbotMsgs").appendChild(div);
       _scrollBottom();
       return div;
     }
-  
-    function _addUserMsg(text) {
-      var div = document.createElement("div");
-      div.className = "mbot-msg user";
-      div.textContent = text;
-      document.getElementById("_mbotMsgs").appendChild(div);
-      _scrollBottom();
-    }
+    function _addBotMsg(text)  { return _addMsg(text, "bot"); }
+    function _addUserMsg(text) { _addMsg(text, "user"); }
   
     function _showTyping() {
       var div = document.createElement("div");
@@ -403,6 +410,13 @@
     function _removeTyping() {
       var el = document.getElementById("_mbotTyping");
       if (el) el.remove();
+    }
+  
+    // [IMPROVEMENT] Extracted the repeated _showTyping + setTimeout + _removeTyping
+    // pattern into a single _withTyping helper. Delay stays at 600 ms.
+    function _withTyping(fn) {
+      _showTyping();
+      setTimeout(function () { _removeTyping(); fn(); }, 600);
     }
   
     function _addReplies(pills) {
@@ -422,12 +436,12 @@
     /* ══════════════ MAIN MENU ══════════════ */
     function _showMainMenu() {
       var pills = [
-        { label: _botLang === "en" ? "🕒 Timings"       : "🕒 समय",          action: function () { _answer("timings"); } },
-        { label: _botLang === "en" ? "📍 Location"      : "📍 स्थान",         action: function () { _answer("location"); } },
-        { label: _botLang === "en" ? "💰 How to Donate" : "💰 दान कैसे करें", action: function () { _answer("donate"); } },
-        { label: _botLang === "en" ? "🏦 Bank Details"  : "🏦 बैंक विवरण",    action: function () { _answer("bank"); } },
-        { label: _botLang === "en" ? "📱 UPI / QR"      : "📱 UPI / QR",       action: function () { _answer("upi"); } },
-        { label: _botLang === "en" ? "📞 Contact"       : "📞 संपर्क",         action: function () { _answer("contact"); } }
+        { label: _bi("🕒 Timings", "🕒 समय"),             action: function () { _answer("timings"); } },
+        { label: _bi("📍 Location", "📍 स्थान"),            action: function () { _answer("location"); } },
+        { label: _bi("💰 How to Donate", "💰 दान कैसे करें"), action: function () { _answer("donate"); } },
+        { label: _bi("🏦 Bank Details", "🏦 बैंक विवरण"),    action: function () { _answer("bank"); } },
+        { label: "📱 UPI / QR",                            action: function () { _answer("upi"); } },
+        { label: _bi("📞 Contact", "📞 संपर्क"),             action: function () { _answer("contact"); } }
       ];
       // Add custom questions if set
       var q1 = _t("custom_q1");
@@ -439,16 +453,17 @@
   
     function _showBackMenu() {
       _addReplies([
-        { label: _botLang === "en" ? "⬅ Main Menu" : "⬅ मुख्य मेनू", action: function () { _addBotMsg(_t("welcome") || "How else can I help?"); _showMainMenu(); } }
+        { label: _bi("⬅ Main Menu", "⬅ मुख्य मेनू"), action: function () { _addBotMsg(_t("welcome") || "How else can I help?"); _showMainMenu(); } }
       ]);
     }
   
     /* ══════════════ ANSWERS ══════════════ */
     function _answer(topic) {
       _addUserMsg(_topicLabel(topic));
-      _showTyping();
-      setTimeout(function () {
-        _removeTyping();
+      // [IMPROVEMENT] Uses _withTyping — no more duplicate _showTyping/setTimeout/
+      // _removeTyping blocks. Early-return cases (bank/upi/contact) call _showBackMenu
+      // themselves, so we gate _showBackMenu only for the remaining cases.
+      _withTyping(function () {
         switch (topic) {
           case "timings":
             _addBotMsg(_t("timings") || "Please contact the temple for timings.");
@@ -459,15 +474,9 @@
           case "donate":
             _addBotMsg(_t("donate") || "Please contact the temple to learn how to donate.");
             break;
-          case "bank":
-            _answerBank();
-            return; // _answerBank handles _showBackMenu
-          case "upi":
-            _answerUPI();
-            return;
-          case "contact":
-            _answerContact();
-            return;
+          case "bank":    _answerBank();    return;
+          case "upi":     _answerUPI();     return;
+          case "contact": _answerContact(); return;
           case "custom1":
             _addBotMsg(_t("custom_a1") || "Please contact the temple for more information.");
             break;
@@ -476,35 +485,43 @@
             break;
         }
         _showBackMenu();
-      }, 600);
+      });
     }
   
     function _topicLabel(topic) {
       var labels = {
-        timings: _botLang === "en" ? "Timings" : "समय",
-        location: _botLang === "en" ? "Location" : "स्थान",
-        donate: _botLang === "en" ? "How to Donate" : "दान कैसे करें",
-        bank: _botLang === "en" ? "Bank Details" : "बैंक विवरण",
-        upi: "UPI / QR",
-        contact: _botLang === "en" ? "Contact" : "संपर्क",
-        custom1: _t("custom_q1") || "Question",
-        custom2: _t("custom_q2") || "Question"
+        timings:  _bi("Timings", "समय"),
+        location: _bi("Location", "स्थान"),
+        donate:   _bi("How to Donate", "दान कैसे करें"),
+        bank:     _bi("Bank Details", "बैंक विवरण"),
+        upi:      "UPI / QR",
+        contact:  _bi("Contact", "संपर्क"),
+        custom1:  _t("custom_q1") || "Question",
+        custom2:  _t("custom_q2") || "Question"
       };
       return labels[topic] || topic;
     }
   
+    // [IMPROVEMENT] Shared bilingual line builder used by _answerBank and _answerContact.
+    // Eliminates repeated pattern: if (val) lines += (_bi(en, hi)) + val + "\n"
+    function _biLine(en, hi, val) {
+      return val ? (_bi(en, hi) + val + "\n") : "";
+    }
+  
     function _answerBank() {
-      var bn = _cfg("bank_name"), ba = _cfg("bank_account"), bi = _cfg("bank_ifsc"), bb = _cfg("bank_branch");
+      var bn = _cfg("bank_name"), ba = _cfg("bank_account"),
+          bi = _cfg("bank_ifsc"), bb = _cfg("bank_branch");
       if (!bn && !ba) {
-        _addBotMsg(_botLang === "en"
-          ? "Bank details have not been set yet. Please contact the temple admin."
-          : "बैंक विवरण अभी उपलब्ध नहीं है। कृपया मंदिर प्रशासक से संपर्क करें।");
+        _addBotMsg(_bi(
+          "Bank details have not been set yet. Please contact the temple admin.",
+          "बैंक विवरण अभी उपलब्ध नहीं है। कृपया मंदिर प्रशासक से संपर्क करें।"
+        ));
       } else {
-        var lines = _botLang === "en" ? "Bank Details:\n\n" : "बैंक विवरण:\n\n";
-        if (bn) lines += (_botLang === "en" ? "Bank: " : "बैंक: ") + bn + "\n";
-        if (ba) lines += (_botLang === "en" ? "Account: " : "खाता नं: ") + ba + "\n";
-        if (bi) lines += "IFSC: " + bi + "\n";
-        if (bb) lines += (_botLang === "en" ? "Branch: " : "शाखा: ") + bb;
+        var lines = _bi("Bank Details:\n\n", "बैंक विवरण:\n\n");
+        lines += _biLine("Bank: ",    "बैंक: ",    bn);
+        lines += _biLine("Account: ", "खाता नं: ", ba);
+        lines += bi ? "IFSC: " + bi + "\n" : "";
+        lines += _biLine("Branch: ",  "शाखा: ",    bb);
         _addBotMsg(lines.trim());
       }
       _showBackMenu();
@@ -513,13 +530,14 @@
     function _answerUPI() {
       var upiId = _cfg("upi_id");
       if (!upiId) {
-        _addBotMsg(_botLang === "en"
-          ? "UPI details have not been set yet. Please contact the temple admin."
-          : "UPI विवरण अभी उपलब्ध नहीं है।");
+        _addBotMsg(_bi(
+          "UPI details have not been set yet. Please contact the temple admin.",
+          "UPI विवरण अभी उपलब्ध नहीं है।"
+        ));
         _showBackMenu();
         return;
       }
-      _addBotMsg(_botLang === "en" ? "Scan the QR code to donate via UPI:" : "दान के लिए QR कोड स्कैन करें:");
+      _addBotMsg(_bi("Scan the QR code to donate via UPI:", "दान के लिए QR कोड स्कैन करें:"));
       // QR card
       var qrWrap = document.createElement("div");
       qrWrap.className = "mbot-qr-wrap";
@@ -532,7 +550,7 @@
       qrWrap.appendChild(idDiv);
       var lbl = document.createElement("div");
       lbl.className = "mbot-qr-label";
-      lbl.textContent = _botLang === "en" ? "Any UPI app" : "कोई भी UPI ऐप";
+      lbl.textContent = _bi("Any UPI app", "कोई भी UPI ऐप");
       qrWrap.appendChild(lbl);
       document.getElementById("_mbotMsgs").appendChild(qrWrap);
       _scrollBottom();
@@ -557,14 +575,15 @@
       if (!ph && window.APP && APP.phone) ph = APP.phone;
       if (!em && window.APP && APP.email) em = APP.email;
       if (!ph && !em && !wa) {
-        _addBotMsg(_botLang === "en"
-          ? "Contact details have not been set yet. Please visit the temple directly."
-          : "संपर्क विवरण उपलब्ध नहीं है।");
+        _addBotMsg(_bi(
+          "Contact details have not been set yet. Please visit the temple directly.",
+          "संपर्क विवरण उपलब्ध नहीं है।"
+        ));
       } else {
-        var lines = _botLang === "en" ? "Contact Us:\n\n" : "संपर्क करें:\n\n";
-        if (ph) lines += (_botLang === "en" ? "Phone: " : "फोन: ") + ph + "\n";
-        if (em) lines += (_botLang === "en" ? "Email: " : "ईमेल: ") + em + "\n";
-        if (wa) lines += "WhatsApp: " + wa;
+        var lines = _bi("Contact Us:\n\n", "संपर्क करें:\n\n");
+        lines += _biLine("Phone: ",     "फोन: ",   ph);
+        lines += _biLine("Email: ",     "ईमेल: ",  em);
+        lines += wa ? "WhatsApp: " + wa : "";
         _addBotMsg(lines.trim());
       }
       _showBackMenu();
@@ -592,36 +611,26 @@
           matched = topic; break;
         }
       }
+      // [IMPROVEMENT] Removed the duplicate switch block that mirrored _answer().
+      // Now we just delegate to _answer() for matched topics, and use _withTyping
+      // for the "not understood" fallback — both use the same 600 ms delay.
       if (matched) {
-        _showTyping();
-        setTimeout(function () {
-          _removeTyping();
-          switch (matched) {
-            case "timings":  _addBotMsg(_t("timings")  || "Please contact the temple for timings."); break;
-            case "location": _addBotMsg(_t("location") || "Please contact the temple for location details."); break;
-            case "donate":   _addBotMsg(_t("donate")   || "Please contact the temple to learn how to donate."); break;
-            case "bank":     _answerBank(); return;
-            case "upi":      _answerUPI(); return;
-            case "contact":  _answerContact(); return;
-          }
-          _showBackMenu();
-        }, 600);
+        _answer(matched);
       } else {
-        _showTyping();
-        setTimeout(function () {
-          _removeTyping();
-          _addBotMsg(_botLang === "en"
-            ? "I'm not sure about that. Please choose from the options below:"
-            : "मुझे समझ नहीं आया। नीचे से चुनें:");
+        _withTyping(function () {
+          _addBotMsg(_bi(
+            "I'm not sure about that. Please choose from the options below:",
+            "मुझे समझ नहीं आया। नीचे से चुनें:"
+          ));
           _showMainMenu();
-        }, 600);
+        });
       }
     };
   
     /* ══════════════ LANGUAGE TOGGLE ══════════════ */
     window._mbotToggleLang = function () {
       _botLang = _botLang === "en" ? "hi" : "en";
-      document.getElementById("_mbotLangBtn").textContent = _botLang === "en" ? "EN" : "HI";
+      document.getElementById("_mbotLangBtn").textContent = _bi("EN", "HI");
       // Clear and restart
       document.getElementById("_mbotMsgs").innerHTML = "";
       _addBotMsg(_t("welcome") || "Jai Shree Ram!");

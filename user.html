@@ -4,6 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- DNS prefetch for external resources -->
+  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <!-- Preload local JS files so browser fetches them early while HTML parses -->
+  <link rel="preload" href="constants.js" as="script" />
+  <link rel="preload" href="config.js" as="script" />
+  <link rel="preload" href="app.js" as="script" />
 
   <title>My Dashboard — Mandir</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,8 +19,13 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css" />
+  <!-- Font Awesome: preload then load both sheets together -->
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css" />
+  </noscript>
 
   <style>
     :root {
@@ -513,6 +526,8 @@
       border: 1px solid rgba(247, 160, 26, 0.1);
       transition: box-shadow var(--t), transform var(--t), border-color var(--t);
       overflow: hidden;
+    }
+    .card:hover {
       will-change: transform;
     }
 
@@ -2179,6 +2194,23 @@
       background: rgba(247,160,26,0.22);
       color: var(--ink);
     }
+
+    /* ── PREFERS-REDUCED-MOTION: disable decorative animations for accessibility + perf ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      /* Keep only functional transitions — sheet open/close, accordion */
+      .bs-sheet       { transition: transform 0.01ms !important; }
+      .acc-body       { transition: max-height 0.01ms !important, opacity 0.01ms !important; }
+      #page-progress  { transition: none !important; }
+      .goal-fill::after,
+      .ra-item:first-child .ra-dot-gold,
+      .skel,
+      .ptr-spin { animation: none !important; }
+    }
   </style>
 </head>
 
@@ -2465,7 +2497,8 @@
             <div class="f-grp"><label>Year</label><select id="filterYear" onchange="applyFilter()"></select></div>
             <div class="f-grp"><label>Month</label><select id="filterMonth" onchange="applyFilter()"></select></div>
             <div class="f-grp"><label>Type</label><select id="filterType" onchange="applyFilter()"></select></div>
-            <div class="f-grp"><label>Search</label><input type="text" id="searchInput" placeholder="Amount, MNR-…" onkeyup="searchData()" /></div>
+            <div class="f-grp"><label>Search</label><input type="text" id="searchInput" id="searchInput" <!-- set placeholder via JS: document.getElementById('searchInput').placeholder = `Amount, ${APP.receiptPrefix}-…` -->
+               onkeyup="searchData()" /></div>
           </div>
           <div class="f-actions">
             <button class="btn-secondary btn-sm" onclick="applyFilter()"><i class="fa-solid fa-magnifying-glass"></i> Apply</button>
@@ -3503,7 +3536,7 @@
           let oName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
           let uName = users.find(u => String(u.UserId) === String(c.UserId))?.Name || "Me";
           const rid = _storeReceipt(c, uName, type, oName);
-          let dRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+          let dRID = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
           return `<tr onclick="showReceiptById('${rid}')" title="Click for receipt">
               <td style="color:var(--ink-faint);font-size:12px;">${globalIdx + 1}</td>
               <td class="amt-col">₹ ${fmt(c.Amount)}</td>
@@ -4747,19 +4780,26 @@
       document.addEventListener("DOMContentLoaded", function () { _applyUserLang("HI"); const b = document.getElementById("userLangBtn"); if (b) b.textContent = "हिं"; });
     }
 
-    // ── Scroll to top button + page progress bar
+    // ── Scroll to top button + page progress bar (rAF-throttled for performance)
     (function() {
       const btn = document.getElementById("scrollTopBtn");
       const bar = document.getElementById("page-progress");
-      window.addEventListener("scroll", function() {
-        if (btn) btn.classList.toggle("visible", window.scrollY > 320);
-        if (bar) {
-          const doc = document.documentElement;
-          const scrolled = doc.scrollTop || document.body.scrollTop;
-          const total = doc.scrollHeight - doc.clientHeight;
-          bar.style.transform = total > 0 ? `scaleX(${Math.min(scrolled / total, 1)})` : 'scaleX(0)';
-        }
-      }, { passive: true });
+      let _rafPending = false;
+      function _onScroll() {
+        if (_rafPending) return;
+        _rafPending = true;
+        requestAnimationFrame(function() {
+          _rafPending = false;
+          if (btn) btn.classList.toggle("visible", window.scrollY > 320);
+          if (bar) {
+            const doc = document.documentElement;
+            const scrolled = doc.scrollTop || document.body.scrollTop;
+            const total = doc.scrollHeight - doc.clientHeight;
+            bar.style.transform = total > 0 ? `scaleX(${Math.min(scrolled / total, 1)})` : 'scaleX(0)';
+          }
+        });
+      }
+      window.addEventListener("scroll", _onScroll, { passive: true });
     })();
 
     // ── Direct bootstrap calls
