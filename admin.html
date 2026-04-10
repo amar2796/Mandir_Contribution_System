@@ -10,12 +10,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/brands.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
+      font-family: inherit;
     }
 
     body {
@@ -98,7 +98,6 @@
       display: flex;
       flex-direction: column;
       min-width: 0;
-      scroll-behavior: smooth;
       min-height: 100vh;
     }
 
@@ -132,7 +131,6 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      font-family: "Poppins", sans-serif;
       font-weight: 600;
       transition: all 0.3s ease;
       box-shadow: 0 4px 10px rgba(247, 160, 26, 0.3);
@@ -228,6 +226,7 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
       border-top: 4px solid #f7a01a;
       margin-bottom: 20px;
+      transition: box-shadow 0.25s ease;
     }
 
     .card h3 {
@@ -246,6 +245,7 @@
     /* Prevent anchor scroll from hiding under sticky header */
     html {
       scroll-padding-top: 70px;
+      scroll-behavior: smooth;
     }
 
     .card h3 i {
@@ -302,7 +302,6 @@
       margin-bottom: 14px;
       border: 1px solid #ddd;
       border-radius: 8px;
-      font-family: "Poppins", sans-serif;
       outline: none;
       transition: border-color 0.3s;
       font-size: 14px;
@@ -515,6 +514,8 @@
       border-radius: 10px;
       font-size: 11px;
       font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      letter-spacing: 0.2px;
     }
 
     .badge-green {
@@ -538,12 +539,6 @@
     }
 
     .search-bar {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-family: "Poppins", sans-serif;
-      outline: none;
       margin-bottom: 14px;
       font-size: 13px;
     }
@@ -825,10 +820,6 @@
       background: linear-gradient(90deg, rgba(16, 185, 129, 0.65), rgba(5, 150, 105, 0.50)) !important;
       border-left-color: #6ee7b7 !important;
     }
-/* 
-   
-
-
     /* Audit — red tint */
     .nav-audit-item {
       color: #6ee7b7;
@@ -867,10 +858,6 @@
       box-shadow: inset 3px 0 0 #f7a01a;
     }
 
-    .card {
-      transition: box-shadow 0.25s ease;
-    }
-
     .card:hover {
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
     }
@@ -883,10 +870,6 @@
 
     .goal-bar-fill {
       animation: goalFill 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
-    }
-
-    .header {
-      border-bottom: 2px solid #f7a01a22;
     }
 
     @keyframes shimmer {
@@ -908,11 +891,6 @@
       animation: shimmer 1.4s infinite linear;
       color: transparent !important;
       border-radius: 4px;
-    }
-
-    .badge {
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-      letter-spacing: 0.2px;
     }
 
     ::-webkit-scrollbar {
@@ -1875,7 +1853,7 @@
         </div>
         <div class="sidebar-brand-text">
           <div class="sidebar-brand-title">Admin Panel</div>
-          <div class="sidebar-brand-sub">Shree Hanuman Mandir</div>
+          <div id="sidebarBrandSub" class="sidebar-brand-sub">Shree Hanuman Mandir</div>
         </div>
       </div>
 
@@ -1972,7 +1950,7 @@
               letter-spacing: 0.5px;
               text-transform: uppercase;
             ">
-          <i class="fa-solid fa-chart-simple"></i> SHREE HANUMAN MANDIR
+          <i class="fa-solid fa-chart-simple"></i> <span id="chartHeaderBrand">SHREE HANUMAN MANDIR</span>
         </div>
         <div style="
               color: #aaa;
@@ -2288,7 +2266,7 @@
         </div>
       </div>
 
-      <!-- DASHBOARD -->
+      <!-- DASHBOARD — merged inline (no iframe, reuses admin data) -->
       <div id="dashboardPage" class="page">
         <!-- H10: Local download reminder banner -->
         <div id="localDownloadBanner"
@@ -2303,7 +2281,151 @@
             <i class="fa-solid fa-download"></i> Download Now
           </button>
         </div>
-        <iframe id="dashboardFrame" src="" style="width: 100%; height: 100vh; border: none"></iframe>
+
+        <!-- Dashboard refresh bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+          <div style="font-size:12px;color:#94a3b8;" id="dash_lastLoaded">Showing data loaded at page start.</div>
+          <button onclick="refreshDashboardData()" style="background:#334155;box-shadow:none;padding:7px 14px;font-size:12px;">
+            <i class="fa-solid fa-rotate-right"></i> Refresh Dashboard
+          </button>
+        </div>
+
+        <!-- Dashboard content (was dashboard.html body) -->
+        <div id="dash_loadingMsg" style="text-align:center;padding:30px;font-size:1rem;color:#666;display:none;">
+          <i class="fa-solid fa-spinner fa-spin"></i> Refreshing data...
+        </div>
+
+        <div class="grid-layout" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));">
+          <div class="card summary-text">
+            <h3 id="dash_yearTitle"><i class="fa-solid fa-wallet"></i> Year Summary</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;">
+              <div style="background:linear-gradient(135deg,#eafaf1,#d5f5e3);border-radius:10px;padding:12px;text-align:center;border-left:4px solid #27ae60;">
+                <div style="font-size:10px;color:#555;font-weight:600;margin-bottom:4px;">OPENING BALANCE</div>
+                <div style="font-size:1.1rem;font-weight:700;color:#27ae60;">₹ <span id="dash_opening">0</span></div>
+              </div>
+              <div style="background:linear-gradient(135deg,#eafaf1,#d5f5e3);border-radius:10px;padding:12px;text-align:center;border-left:4px solid #2ecc71;">
+                <div style="font-size:10px;color:#555;font-weight:600;margin-bottom:4px;">YEAR COLLECTION</div>
+                <div style="font-size:1.1rem;font-weight:700;color:#27ae60;">₹ <span id="dash_yearFullC">0</span></div>
+              </div>
+              <div style="background:linear-gradient(135deg,#fdedec,#fad5d2);border-radius:10px;padding:12px;text-align:center;border-left:4px solid #e74c3c;">
+                <div style="font-size:10px;color:#555;font-weight:600;margin-bottom:4px;">FILTERED EXPENSES</div>
+                <div style="font-size:1.1rem;font-weight:700;color:#e74c3c;">₹ <span id="dash_yearTotalE">0</span></div>
+              </div>
+              <div style="background:linear-gradient(135deg,#fef9ee,#fdebd0);border-radius:10px;padding:12px;text-align:center;border-left:4px solid #f7a01a;">
+                <div style="font-size:10px;color:#555;font-weight:600;margin-bottom:4px;">CLOSING BALANCE</div>
+                <div style="font-size:1.1rem;font-weight:700;color:#f7a01a;">₹ <span id="dash_closing">0</span></div>
+              </div>
+            </div>
+            <div style="background:#f8f8f8;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#666;">
+              <span style="color:#999;font-size:11px;" id="dash_filteredCountLabel">↳ Filtered Contributions:</span>
+              <b style="color:#27ae60;float:right;">+ ₹ <span id="dash_yearTotalC">0</span></b>
+            </div>
+            <div style="background:linear-gradient(135deg,#334155,#1e293b);border-radius:10px;padding:14px;text-align:center;">
+              <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">💰 OVERALL NET BALANCE</div>
+              <div style="font-size:1.5rem;font-weight:700;color:#f7a01a;">₹ <span id="dash_grandTotal">0</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3><i class="fa-solid fa-filter"></i> Advanced Data Filters</h3>
+            <label>Select Year</label>
+            <select id="dash_yearSelect" onchange="dash_applyFilter()"></select>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+              <div>
+                <label>User Search</label>
+                <input type="text" id="dash_userSearch" placeholder="Name or Mobile" onkeyup="dash_applyFilter()" style="margin-bottom:0;" />
+              </div>
+              <div>
+                <label>Tracking ID (MNR-)</label>
+                <input type="text" id="dash_trackingSearch" placeholder="MNR-... or TRX-..." onkeyup="dash_applyFilter()" style="margin-bottom:0;" />
+              </div>
+              <div>
+                <label>Start Date</label>
+                <div style="position:relative;">
+                  <input type="text" id="dash_startDate" placeholder="Select date" readonly onclick="dash_openCal('start')" style="cursor:pointer;padding-right:32px;margin-bottom:0;" />
+                  <i class="fa-solid fa-calendar-days" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#f7a01a;pointer-events:none;font-size:14px;"></i>
+                </div>
+              </div>
+              <div>
+                <label>End Date</label>
+                <div style="position:relative;">
+                  <input type="text" id="dash_endDate" placeholder="Select date" readonly onclick="dash_openCal('end')" style="cursor:pointer;padding-right:32px;margin-bottom:0;" />
+                  <i class="fa-solid fa-calendar-days" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#f7a01a;pointer-events:none;font-size:14px;"></i>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+              <button onclick="dash_applyFilter()"><i class="fa-solid fa-filter"></i> Filter</button>
+              <button onclick="dash_clearDates()"><i class="fa-solid fa-xmark"></i> Clear</button>
+              <button style="background:#25d366;box-shadow:none;" onclick="dash_whatsApp()"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+              <button style="background:#2980b9;box-shadow:none;" onclick="dash_email()"><i class="fa-solid fa-envelope"></i> Email</button>
+              <button style="background:#27ae60;box-shadow:none;" onclick="dash_exportPDF()"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly bar chart -->
+        <div class="card" style="margin-bottom:16px;">
+          <h3 style="margin-bottom:14px;"><i class="fa-solid fa-chart-bar" style="color:#f7a01a;"></i> Monthly Income vs Expense</h3>
+          <div id="dash_monthlyBarChart" style="display:flex;align-items:flex-end;gap:6px;height:140px;padding:0 4px;overflow-x:auto;">
+            <div style="color:#aaa;font-size:12px;padding:10px;">Loading chart…</div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;font-weight:600;">
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:#22c55e;border-radius:3px;display:inline-block;"></span>Income</span>
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:#f97316;border-radius:3px;display:inline-block;"></span>Expense</span>
+          </div>
+        </div>
+
+        <!-- Month-wise and User-wise -->
+        <div class="grid-layout" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));">
+          <div class="card">
+            <h3><i class="fa-solid fa-calendar-days"></i> Month-wise Tracking</h3>
+            <div class="table-responsive">
+              <table>
+                <thead><tr><th>Month</th><th>Contributions (₹)</th><th>Expenses (₹)</th></tr></thead>
+                <tbody id="dash_monthWiseBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <h3><i class="fa-solid fa-users"></i> User-wise Tracking</h3>
+            <div class="table-responsive">
+              <table>
+                <thead><tr><th>User Name</th><th>Total Contributed (₹)</th></tr></thead>
+                <tbody id="dash_userWiseBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transaction log -->
+        <div class="card">
+          <h3><i class="fa-solid fa-list-check"></i> Transaction Log
+            <span style="font-size:11px;font-weight:400;color:#999;">— click contribution row for receipt</span>
+          </h3>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th><th>Name / Title</th><th>Type</th><th>Month</th>
+                  <th>Occasion</th><th>Amount</th><th>Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="dash_detailBody"></tbody>
+            </table>
+          </div>
+          <div id="dash_txnPagination" style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:12px;"></div>
+        </div>
+
+        <!-- Custom Calendar Popup (dashboard date picker) -->
+        <div id="dash_calPop" style="display:none;position:fixed;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:77777;padding:16px;min-width:260px;font-family:Poppins,sans-serif;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <button onclick="dash_calNav(-1)" style="background:none;border:none;color:#334155;font-size:18px;cursor:pointer;box-shadow:none;padding:4px 8px;transform:none!important;">&#8592;</button>
+            <span id="dash_calTitle" style="font-weight:700;font-size:14px;color:#334155;"></span>
+            <button onclick="dash_calNav(1)" style="background:none;border:none;color:#334155;font-size:18px;cursor:pointer;box-shadow:none;padding:4px 8px;transform:none!important;">&#8594;</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;" id="dash_calGrid"></div>
+        </div>
       </div>
 
       <!-- CONTRIBUTIONS -->
@@ -3958,7 +4080,7 @@
       if (!s || Date.now() > s.expiry || s.role !== "Admin") {
         // H12: try remember-me token before redirecting to login
         try {
-          const rt = JSON.parse(localStorage.getItem("mandir_remember_token") || "null");
+          const rt = getRememberToken();
           if (rt && rt.role === "Admin" && Date.now() < rt.expiry) {
             s = {
               userId: rt.userId, name: rt.name, role: rt.role, email: rt.email || "",
@@ -3993,6 +4115,18 @@
       let s = JSON.parse(localStorage.getItem("session"));
       if (!s) return;
       document.getElementById("welcomeUser").innerText = s.name || "Admin";
+      // Populate brand text and dynamic placeholders from APP constants
+      if (typeof APP !== "undefined") {
+        const sb = document.getElementById("sidebarBrandSub");
+        const ch = document.getElementById("chartHeaderBrand");
+        if (sb) sb.textContent = APP.name;
+        if (ch) ch.textContent = APP.name.toUpperCase();
+        // Receipt prefix placeholders
+        const ts = document.getElementById("dash_trackingSearch");
+        const sc = document.getElementById("searchContrib");
+        if (ts) ts.placeholder = APP.receiptPrefix + "-... or TRX-...";
+        if (sc) sc.placeholder = "🔍 Search name, mobile, amount, " + APP.receiptPrefix + "-...";
+      }
       // Set admin avatar if profile photo exists
       let myProfile = users.find(
         (u) => String(u.UserId) === String(s.userId)
@@ -4026,7 +4160,7 @@
       } catch (e) { }
       // Set _navFlag so beforeunload skips the beacon (logout already handled token clear above)
       window._navFlag = true;
-      try { localStorage.removeItem("mandir_remember_token"); } catch (e) { } // H12: clear remember-me on explicit logout
+      clearRememberToken(); // H12: clear remember-me on explicit logout
       localStorage.clear();
       sessionStorage.clear();
       setTimeout(() => {
@@ -4769,9 +4903,58 @@
 
     function openDashboard(el) {
       showPage("dashboardPage", el);
-      let f = document.getElementById("dashboardFrame");
-      // Always reload dashboard so new contributions/expenses reflect immediately
-      f.src = "dashboard.html?" + Date.now();
+      // Initialize dashboard view using already-loaded admin data (no extra API call)
+      if (!window._dashInitialized) {
+        initDashboardView();
+        window._dashInitialized = true;
+      }
+    }
+
+    // Called on walk-in save / contribution add to keep dashboard in sync
+    // without a full API reload (updates in-memory dash data from admin globals)
+    function _dashSyncFromAdmin() {
+      if (!window._dashInitialized) return;
+      dash_contributions = data.slice();
+      dash_expenses      = expenses.slice();
+      dash_users         = users.slice();
+      dash_types         = types.slice();
+      dash_expenseTypes  = expenseTypes.slice();
+      dash_occasions     = occasions.slice();
+      dash_yearConfig    = yearConfig.slice();
+      dash_applyFilter();
+    }
+
+    // Manual refresh button: re-fetches from API then re-renders
+    async function refreshDashboardData() {
+      const btn = document.querySelector('[onclick="refreshDashboardData()"]');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Refreshing...'; }
+      document.getElementById("dash_loadingMsg").style.display = "block";
+      try {
+        mandirCacheBust("getAllData");
+        const allData = (await getCached("getAllData")) || {};
+        // Update admin globals too so rest of panel stays fresh
+        users        = allData.users        || [];
+        types        = allData.types        || [];
+        expenseTypes = allData.expenseTypes || [];
+        occasions    = allData.occasions    || [];
+        data         = allData.contributions || [];
+        expenses     = allData.expenses     || [];
+        goals        = allData.goals        || [];
+        yearConfig   = allData.yearConfig   || [];
+        // Sync dashboard local copies
+        _dashSyncFromAdmin();
+        // Refresh admin summary panels too
+        loadSummary();
+        const now = new Date().toLocaleTimeString("en-IN");
+        const lbl = document.getElementById("dash_lastLoaded");
+        if (lbl) lbl.textContent = "Last refreshed: " + now;
+        toast("✅ Dashboard data refreshed.");
+      } catch (err) {
+        toast("❌ Refresh failed: " + err.message, "error");
+      } finally {
+        document.getElementById("dash_loadingMsg").style.display = "none";
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Refresh Dashboard'; }
+      }
     }
     function setLoading(show) {
       document
@@ -5147,7 +5330,7 @@
           .join("\n");
         if (walkInTotal > 0)
           memberLines += `\n  🚶 Walk-in Donors: ₹${fmt(walkInTotal)}`;
-        msg = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n📅 *Monthly Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n━━━━━━━━━━━━━━━━━━━━\n💰 Total Collected: ₹${fmt(
+        msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📅 *Monthly Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n━━━━━━━━━━━━━━━━━━━━\n💰 Total Collected: ₹${fmt(
           monthTotal
         )}\n💸 Total Expenses: ₹${fmt(
           monthExp
@@ -5201,7 +5384,7 @@
         })
           .filter(Boolean)
           .join("\n");
-        msg = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n📆 *Annual Report — ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n📅 *Month-wise Breakdown:*\n${monthLines || "  No data"
+        msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📆 *Annual Report — ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n📅 *Month-wise Breakdown:*\n${monthLines || "  No data"
           }\n\n━━━━━━━━━━━━━━━━━━━━\n💰 Total Collected: ₹${fmt(
             yearTotal
           )}\n💸 Total Expenses: ₹${fmt(
@@ -5270,9 +5453,9 @@
 
       // Mandir name
       doc.setTextColor(247, 160, 26); doc.setFontSize(16); doc.setFont(undefined, "bold");
-      doc.text("SHREE HANUMAN MANDIR", w / 2, 14, { align: "center" });
+      doc.text(APP.name.toUpperCase(), w / 2, 14, { align: "center" });
       doc.setTextColor(200, 215, 230); doc.setFontSize(8); doc.setFont(undefined, "normal");
-      doc.text("PALIYA, SULTANPUR  |  CONFIDENTIAL FINANCIAL REPORT", w / 2, 21, { align: "center" });
+      doc.text(APP.address.toUpperCase() + "  |  CONFIDENTIAL FINANCIAL REPORT", w / 2, 21, { align: "center" });
       // Report title bar
       doc.setFillColor(247, 160, 26); doc.roundedRect(w / 2 - 45, 24, 90, 8, 2, 2, "F");
       doc.setTextColor(30, 41, 59); doc.setFontSize(8); doc.setFont(undefined, "bold");
@@ -5359,14 +5542,14 @@
         doc.setPage(i);
         doc.setFillColor(51, 65, 85); doc.rect(0, ph - 10, w, 10, "F");
         doc.setFontSize(6.5); doc.setTextColor(180, 195, 210); doc.setFont(undefined, "normal");
-        doc.text("SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  |  Confidential — For Internal Use Only", w / 2, ph - 5.5, { align: "center" });
+        doc.text(APP.name.toUpperCase() + ", " + APP.address.toUpperCase() + "  |  Confidential — For Internal Use Only", w / 2, ph - 5.5, { align: "center" });
         doc.setTextColor(247, 160, 26); doc.setFont(undefined, "bold");
         doc.text(`Page ${i} of ${pages}`, w - 8, ph - 5.5, { align: "right" });
       }
 
       doc.save("Mandir_Report_" + selYear + "_" + selMonth + ".pdf");
       setTimeout(() => {
-        let msg = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n\n📊 *Financial Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Month Collected: ₹${fmt(
+        let msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📊 *Financial Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Month Collected: ₹${fmt(
           moTotal
         )}\n💸 Month Expenses: ₹${fmt(moExp)}\n📅 Year Collected: ₹${fmt(
           yrTotal
@@ -5577,7 +5760,7 @@
               (o) => String(o.OccasionId) === String(c.OccasionId)
             )?.OccasionName || "";
           const _rid = _storeReceipt(c, name, tName, oName);
-          let displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+          let displayRID = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
           let walkInBadge = String(c.UserId).startsWith("WALKIN_")
             ? `<span style="font-size:9px;background:#946c44;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">WALK-IN</span>`
             : "";
@@ -5747,7 +5930,7 @@
       const end = document.getElementById("contribEnd").value;
       const filtered = data.filter((c) => {
         const user = users.find((u) => String(u.UserId) === String(c.UserId));
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
         const walkInName = String(c.UserId).startsWith("WALKIN_")
           ? (
             String(c.Note || "")
@@ -6316,7 +6499,7 @@
     /* inline edit popups for master data */
     function openEditType(id, val) {
       openModal(
-        `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Type</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Type Name</label><input class="_fi" id="edit_val" value="${escapeHtml(
+        `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Type</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Type Name</label><input class="_fi edit_val" value="${escapeHtml(
           val
         )}"/></div><div class="_mft"><button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button><button class="_mbtn" style="background:#f7a01a;" onclick="saveType('${id}')">Save</button></div>`,
         "400px"
@@ -6326,7 +6509,7 @@
       let res = await postData({
         action: "updateType",
         TypeId: id,
-        TypeName: document.getElementById("edit_val").value,
+        TypeName: document.querySelector(".edit_val").value,
       });
       toast(
         res.status === "updated" ? "✅ Updated." : "❌ Failed.",
@@ -6338,7 +6521,7 @@
 
     function openEditOccasion(id, val) {
       openModal(
-        `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Occasion</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Occasion Name</label><input class="_fi" id="edit_val" value="${escapeHtml(
+        `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Occasion</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Occasion Name</label><input class="_fi edit_val" value="${escapeHtml(
           val
         )}"/></div><div class="_mft"><button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button><button class="_mbtn" style="background:#f7a01a;" onclick="saveOccasion('${id}')">Save</button></div>`,
         "400px"
@@ -6348,7 +6531,7 @@
       let res = await postData({
         action: "updateOccasion",
         OccasionId: id,
-        OccasionName: document.getElementById("edit_val").value,
+        OccasionName: document.querySelector(".edit_val").value,
       });
       toast(
         res.status === "updated" ? "✅ Updated." : "❌ Failed.",
@@ -6360,7 +6543,7 @@
 
     function openEditExpenseType(id, val) {
       openModal(
-        `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Expense Type</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Name</label><input class="_fi" id="edit_val" value="${escapeHtml(
+        `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Expense Type</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Name</label><input class="_fi edit_val" value="${escapeHtml(
           val
         )}"/></div><div class="_mft"><button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button><button class="_mbtn" style="background:#f7a01a;" onclick="saveExpType('${id}')">Save</button></div>`,
         "400px"
@@ -6370,7 +6553,7 @@
       let res = await postData({
         action: "updateExpenseType",
         ExpenseTypeId: id,
-        Name: document.getElementById("edit_val").value,
+        Name: document.querySelector(".edit_val").value,
       });
       toast(
         res.status === "updated" ? "✅ Updated." : "❌ Failed.",
@@ -6598,46 +6781,6 @@
       smartRefresh("contributions");
     }
 
-    async function _runBulkInsert_UNUSED() {
-      // Kept for reference — logic moved to _executeBulkInsert
-      let status = document.getElementById("bk_status");
-      status.textContent = `Inserting 0 / ${rows.length}...`;
-      let done = 0,
-        failed = 0;
-      for (let r of rows) {
-        try {
-          let res = await postData({
-            action: "addContribution",
-            Id: Date.now() + "_" + r.month,
-            UserId: userId,
-            Amount: r.amount,
-            ForMonth: r.month,
-            Year: year,
-            TypeId: typeId,
-            OccasionId: "",
-            Note: note,
-          });
-          if (res.status === "success") done++;
-          else failed++;
-        } catch (e) {
-          failed++;
-        }
-        status.textContent = `Inserting ${done + failed} / ${rows.length}...`;
-        await new Promise((r) => setTimeout(r, 300));
-      }
-      status.textContent = `✅ Done: ${done} inserted${failed > 0 ? " | ❌ " + failed + " failed" : ""
-        }`;
-      toast(
-        done > 0
-          ? "✅ Bulk insert complete! " + done + " records added."
-          : "❌ All inserts failed.",
-        done > 0 ? "" : "error"
-      );
-      setTimeout(() => {
-        closeModal();
-        smartRefresh("contributions");
-      }, 1200);
-    }
     // #17 — Auto-suggest last contribution amount when member is selected
     function _suggestLastAmount(userId) {
       if (!userId || !data || data.length === 0) return;
@@ -6701,9 +6844,8 @@
           document.getElementById("amount").value = "";
           document.getElementById("note").value = "";
           smartRefresh("contributions");
-          // Refresh dashboard iframe so totals stay in sync
-          const _dfi = document.getElementById("dashboardFrame");
-          if (_dfi && _dfi.src && _dfi.src !== "") _dfi.src = "dashboard.html?" + Date.now();
+          // Sync inline dashboard so totals stay in sync without extra API call
+          _dashSyncFromAdmin();
         } else toast("❌ Failed to add.", "error");
       } catch (err) {
         toast("❌ " + err.message, "error");
@@ -7703,7 +7845,7 @@
         `━━━━━━━━━━━━━━\n` +
         `*Expense Breakdown:*\n${lines}\n` +
         `━━━━━━━━━━━━━━\n` +
-        `_${new Date().toLocaleDateString("en-IN")} · Shree Hanuman Mandir_`;
+        `_${new Date().toLocaleDateString("en-IN")} · ${APP.name}_`;
 
       window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
     }
@@ -7834,6 +7976,33 @@
       if (!d) return;
       showReceipt(d.c, d.userName, d.typeName, d.occasionName, true);
     }
+
+    // Called when clicking a row in the inline dashboard transaction log
+    function viewDashboardEntry(rid) {
+      const d = window._rcptStore ? window._rcptStore[rid] : null;
+      if (!d) { showReceiptById(rid); return; }
+      const { c, userName, typeName, occasionName } = d;
+      const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, APP.receiptPrefix + "-");
+      const html = `
+        <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Contribution Details</h3><button class="_mcls" onclick="closeModal()">×</button></div>
+        <div class="_mbdy">
+          <div style="border:1px solid #f0f0f0;border-radius:10px;padding:4px 16px;">
+            <div class="_row"><span class="_rl">Tracking ID</span><span class="_rv" style="color:#f7a01a;font-family:monospace;">${escapeHtml(displayRID)}</span></div>
+            <div class="_row"><span class="_rl">Donor</span><span class="_rv">${escapeHtml(userName)}</span></div>
+            <div class="_row"><span class="_rl">Amount</span><span class="_rv" style="color:#27ae60;font-size:1.1rem;">₹ ${fmt(c.Amount)}</span></div>
+            <div class="_row"><span class="_rl">Month / Year</span><span class="_rv">${escapeHtml(c.ForMonth || "—")} ${escapeHtml(String(c.Year || ""))}</span></div>
+            <div class="_row"><span class="_rl">Type</span><span class="_rv">${escapeHtml(typeName || "—")}</span></div>
+            <div class="_row"><span class="_rl">Occasion</span><span class="_rv">${escapeHtml(occasionName || "—")}</span></div>
+            <div class="_row"><span class="_rl">Date Recorded</span><span class="_rv">${escapeHtml(c.PaymentDate || "—")}</span></div>
+          </div>
+        </div>
+        <div class="_mft">
+          <button class="_mbtn" style="background:#999;" onclick="closeModal()">Close</button>
+          <button class="_mbtn" style="background:#27ae60;" onclick="closeModal();showReceiptById('${rid}')"><i class="fa-solid fa-receipt"></i> View Receipt</button>
+        </div>`;
+      openModal(html, "480px");
+    }
+
     // FIX #13: viewContrib_receipt — only show receipt when explicitly requested
     function viewContrib_receipt(rid) {
       showReceiptById(rid);
@@ -7879,7 +8048,7 @@
         important: "⚠️ IMPORTANT — ",
         urgent: "🚨 URGENT — ",
       };
-      const preview = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n━━━━━━━━━━━━━━━━━━━━\n${prioLabels[priority]
+      const preview = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n━━━━━━━━━━━━━━━━━━━━\n${prioLabels[priority]
         }${typeLabels[type] || type
         }\n\n*${title}*\n\n${message}\n━━━━━━━━━━━━━━━━━━━━\n_${new Date().toLocaleDateString(
           "en-IN"
@@ -7934,7 +8103,7 @@
         type === "poll"
           ? "\n\nRespond with:\n✅ Yes  |  ❌ No  |  💬 Suggestion"
           : "";
-      const msg = `🕉️ *SHREE HANUMAN MANDIR*\n📍 Paliya, Sultanpur\n━━━━━━━━━━━━━━━━━━━━\n${prioLabels[priority]
+      const msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n━━━━━━━━━━━━━━━━━━━━\n${prioLabels[priority]
         }${typeLabels[type] || type
         }\n\n*${title}*\n\n${message}${pollBlock}\n━━━━━━━━━━━━━━━━━━━━\n_${new Date().toLocaleDateString(
           "en-IN"
@@ -8190,7 +8359,7 @@
 
       const list = data.filter(function (c) {
         const user = users.find(u => String(u.UserId) === String(c.UserId));
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
         const walkInName = String(c.UserId).startsWith("WALKIN_")
           ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "").toLowerCase()
           : "";
@@ -8234,7 +8403,7 @@
         const mobile = user?.Mobile || (isWalkIn ? (String(c.Note || "").match(/\|\s*(\d+)/)?.[1] || "") : "");
         const typeName = types.find(t => String(t.TypeId) === String(c.TypeId))?.TypeName || "";
         const occName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "";
-        const rid = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+        const rid = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
         const pDate = formatPaymentDate(c.PaymentDate);
 
         return [
@@ -8781,9 +8950,8 @@
           );
           closeModal();
           smartRefresh("contributions");
-          // Refresh dashboard iframe so live summary reflects the new walk-in entry
-          const _df = document.getElementById("dashboardFrame");
-          if (_df && _df.src && _df.src !== "") _df.src = "dashboard.html?" + Date.now();
+          // Sync dashboard data so it reflects the new walk-in entry without API call
+          _dashSyncFromAdmin();
           setTimeout(
             () =>
               showReceipt(
@@ -10198,6 +10366,477 @@
       queue.push({ title, message, type, priority, scheduled: scheduled.toISOString(), adminName: s.name || "Admin" });
       localStorage.setItem("mandir_bc_queue", JSON.stringify(queue));
       toast("📅 Broadcast scheduled for " + scheduled.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) + ". It will send when quota resets.");
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  INLINE DASHBOARD — all logic below replaces dashboard.html
+    //  Uses admin globals: data, expenses, users, types, expenseTypes,
+    //  occasions, yearConfig, selectedYear (from app.js)
+    //  Private copies prefixed dash_ to avoid any variable collision.
+    // ════════════════════════════════════════════════════════════════
+
+    // Dashboard-local data copies (populated from admin globals on init/refresh)
+    var dash_contributions = [];
+    var dash_expenses      = [];
+    var dash_users         = [];
+    var dash_types         = [];
+    var dash_expenseTypes  = [];
+    var dash_occasions     = [];
+    var dash_yearConfig    = [];
+
+    // Dashboard filter state
+    var dash_filteredC = [];
+    var dash_filteredE = [];
+    var dash_selectedYear = new Date().getFullYear();
+    var _dash_txnRows = [];
+    var _dash_txnPage = 1;
+    var _DASH_TXN_PG  = 10;
+
+    // Calendar state
+    var _dash_calTarget = "start";
+    var _dash_calYear   = new Date().getFullYear();
+    var _dash_calMonth  = new Date().getMonth();
+    var _dash_months    = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+    // ── Called once when admin first opens Dashboard page
+    function initDashboardView() {
+      // Copy from admin globals
+      dash_contributions = data.slice();
+      dash_expenses      = expenses.slice();
+      dash_users         = users.slice();
+      dash_types         = types.slice();
+      dash_expenseTypes  = expenseTypes.slice();
+      dash_occasions     = occasions.slice();
+      dash_yearConfig    = (yearConfig || []).slice();
+
+      dash_loadYearDropdown();
+      dash_applyFilter();
+
+      const now = new Date().toLocaleTimeString("en-IN");
+      const lbl = document.getElementById("dash_lastLoaded");
+      if (lbl) lbl.textContent = "Showing data as of " + now + " (use Refresh to get latest).";
+    }
+
+    function dash_loadYearDropdown() {
+      const sel = document.getElementById("dash_yearSelect");
+      if (!sel) return;
+      const yr = new Date().getFullYear();
+      const years = new Set();
+      dash_contributions.forEach(c => { const y = Number(c.Year); if (y > 2000) years.add(y); });
+      dash_expenses.forEach(e => { const y = Number(e.Year); if (y > 2000) years.add(y); });
+      for (let y = 2023; y <= yr; y++) years.add(y);
+      sel.innerHTML = Array.from(years).sort((a,b) => b-a)
+        .map(y => `<option value="${y}"${y === yr ? " selected" : ""}>${y}</option>`).join("");
+      dash_selectedYear = yr;
+      sel.onchange = function() { dash_selectedYear = Number(this.value); dash_applyFilter(); };
+    }
+
+    // ── Opening balance (mirrors dashboard.html getOpeningBalance exactly)
+    function dash_getOpeningBalance(year, yc, contribs, exps) {
+      if (!yc || yc.length === 0) return 0;
+      const found = yc.find(y => Number(y.Year) === Number(year));
+      if (found && found.OpeningBalance !== "" && found.OpeningBalance !== undefined)
+        return Number(found.OpeningBalance);
+      const minYear = Math.min(...yc.map(y => Number(y.Year)));
+      if (year <= minYear) return 0;
+      const prevY  = year - 1;
+      const prevO  = dash_getOpeningBalance(prevY, yc, contribs, exps);
+      const prevC  = contribs.filter(c => Number(c.Year) === prevY).reduce((s,c) => s + Number(c.Amount||0), 0);
+      const prevE  = exps.filter(e => Number(e.Year) === prevY).reduce((s,e) => s + Number(e.Amount||0), 0);
+      return prevO + prevC - prevE;
+    }
+
+    function dash_applyFilter() {
+      const txt      = (document.getElementById("dash_userSearch")?.value || "").toLowerCase();
+      const trackTxt = (document.getElementById("dash_trackingSearch")?.value || "").toLowerCase();
+      const startRaw = document.getElementById("dash_startDate")?.dataset.val || "";
+      const endRaw   = document.getElementById("dash_endDate")?.dataset.val || "";
+      const targetYear = Number(dash_selectedYear);
+
+      dash_filteredC = dash_contributions.filter(c => {
+        if (Number(c.Year) !== targetYear) return false;
+        const user = dash_users.find(u => String(u.UserId) === String(c.UserId));
+        const uMatch = !txt ||
+          (user?.Name.toLowerCase() || "").includes(txt) ||
+          String(user?.Mobile || "").includes(txt);
+        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
+        const trkMatch = !trackTxt ||
+          (c.ReceiptID || "").toLowerCase().includes(trackTxt) ||
+          displayRID.toLowerCase().includes(trackTxt);
+        let dMatch = true;
+        if ((startRaw || endRaw) && c.PaymentDate) {
+          const parts = String(c.PaymentDate).split(" ")[0].split("-");
+          if (parts.length === 3) {
+            const cd = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            dMatch = (!startRaw || cd >= startRaw) && (!endRaw || cd <= endRaw);
+          }
+        }
+        return uMatch && trkMatch && dMatch;
+      });
+
+      dash_filteredE = dash_expenses.filter(e => {
+        if (Number(e.Year) !== targetYear) return false;
+        let dMatch = true;
+        if ((startRaw || endRaw) && e.PaymentDate) {
+          const parts = String(e.PaymentDate).split(" ")[0].split("-");
+          if (parts.length === 3) {
+            const ed = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            dMatch = (!startRaw || ed >= startRaw) && (!endRaw || ed <= endRaw);
+          }
+        }
+        return dMatch;
+      });
+
+      dash_renderAll();
+    }
+
+    function dash_clearDates() {
+      ["dash_startDate","dash_endDate"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ""; el.dataset.val = ""; }
+      });
+      ["dash_userSearch","dash_trackingSearch"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+      });
+      dash_applyFilter();
+    }
+
+    function dash_renderAll() {
+      dash_summary();
+      dash_renderMonthWise();
+      dash_renderUserWise();
+      dash_renderDetails();
+      dash_renderMonthlyBarChart();
+    }
+
+    function dash_summary() {
+      const yr      = dash_selectedYear;
+      const titleEl = document.getElementById("dash_yearTitle");
+      if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-wallet"></i> Year Summary (${yr})`;
+
+      const totalC  = dash_filteredC.reduce((s,c) => s + Number(c.Amount||0), 0);
+      const totalE  = dash_filteredE.reduce((s,e) => s + Number(e.Amount||0), 0);
+      const opening = dash_getOpeningBalance(yr, dash_yearConfig, dash_contributions, dash_expenses);
+      const yrAllC  = dash_contributions.filter(c => Number(c.Year) === yr).reduce((s,c) => s + Number(c.Amount||0), 0);
+      const yrAllE  = dash_expenses.filter(e => Number(e.Year) === yr).reduce((s,e) => s + Number(e.Amount||0), 0);
+      const closing = opening + yrAllC - yrAllE;
+
+      const oldest  = [...dash_yearConfig].sort((a,b) => Number(a.Year) - Number(b.Year))[0];
+      const initO   = oldest ? Number(oldest.OpeningBalance) : 0;
+      const grandTotal = initO
+        + dash_contributions.reduce((s,c) => s + Number(c.Amount||0), 0)
+        - dash_expenses.reduce((s,e) => s + Number(e.Amount||0), 0);
+
+      const fullYearC = dash_contributions.filter(c => Number(c.Year) === yr).reduce((s,c) => s + Number(c.Amount||0), 0);
+
+      _setTxt("dash_opening",    fmt(opening));
+      _setTxt("dash_yearFullC",  fmt(fullYearC));
+      _setTxt("dash_yearTotalC", fmt(totalC));
+      _setTxt("dash_yearTotalE", fmt(totalE));
+      _setTxt("dash_closing",    fmt(closing));
+      _setTxt("dash_grandTotal", fmt(grandTotal));
+
+      const filtLbl = document.getElementById("dash_filteredCountLabel");
+      if (filtLbl) {
+        const n = dash_filteredC.length;
+        filtLbl.textContent = "↳ " + (n > 0 ? n + " Filtered Contribution" + (n !== 1 ? "s" : "") : "Filtered Contributions") + ":";
+      }
+    }
+
+    function _setTxt(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.innerText = val;
+    }
+
+    function dash_renderMonthWise() {
+      const mapC = {}, mapE = {};
+      dash_filteredC.forEach(c => { mapC[c.ForMonth] = (mapC[c.ForMonth] || 0) + Number(c.Amount||0); });
+      dash_filteredE.forEach(e => {
+        let mn = e.ForMonth || e.Note;
+        if (!mn && e.PaymentDate) {
+          const p = String(e.PaymentDate).split(" ")[0].split("-");
+          if (p.length >= 2) { const mi = parseInt(p[1]) - 1; if (_dash_months[mi]) mn = _dash_months[mi]; }
+        }
+        mn = mn || "Unknown";
+        mapE[mn] = (mapE[mn] || 0) + Number(e.Amount||0);
+      });
+      const html = _dash_months.map(m => {
+        const cA = mapC[m] || 0, eA = mapE[m] || 0;
+        if (cA === 0 && eA === 0) return "";
+        return `<tr><td><b>${m}</b></td><td class="amt-green">₹ ${fmt(cA)}</td><td style="color:#e74c3c;font-weight:600;">₹ ${fmt(eA)}</td></tr>`;
+      }).join("");
+      const el = document.getElementById("dash_monthWiseBody");
+      if (el) el.innerHTML = html || `<tr><td colspan="3" style="text-align:center;color:#aaa;">No data</td></tr>`;
+    }
+
+    function dash_getDisplayName(uid, note) {
+      if (!String(uid).startsWith("WALKIN_"))
+        return dash_users.find(x => String(x.UserId) === String(uid))?.Name || "Unknown";
+      const match = String(note || "").match(/Walk-in:\s*([^|]+)/);
+      return match ? match[1].trim() : "Walk-in Donor";
+    }
+
+    function dash_getDisplayHTML(uid, note) {
+      const name = dash_getDisplayName(uid, note);
+      const isWalkIn = String(uid).startsWith("WALKIN_");
+      const badge = isWalkIn
+        ? `<span style="font-size:9px;background:#946c44;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">WALK-IN</span>`
+        : "";
+      return `<b>${escapeHtml(name)}</b>${badge}`;
+    }
+
+    function dash_renderUserWise() {
+      const map = {}, noteMap = {};
+      dash_filteredC.forEach(c => {
+        map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount||0);
+        if (!noteMap[c.UserId]) noteMap[c.UserId] = c.Note || "";
+      });
+      const html = Object.keys(map).sort((a,b) => map[b]-map[a])
+        .map(uid => `<tr><td>${dash_getDisplayHTML(uid, noteMap[uid])}</td><td class="amt-green">₹ ${fmt(map[uid])}</td></tr>`)
+        .join("");
+      const el = document.getElementById("dash_userWiseBody");
+      if (el) el.innerHTML = html || `<tr><td colspan="2" style="text-align:center;color:#aaa;">No data</td></tr>`;
+    }
+
+    function dash_renderDetails() {
+      const rows = [];
+      dash_filteredC.forEach(c => {
+        const uName  = dash_getDisplayName(c.UserId, c.Note);
+        const uHTML  = dash_getDisplayHTML(c.UserId, c.Note);
+        const tName  = dash_types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
+        const oName  = dash_occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
+        const _drid  = _storeReceipt(c, uName, tName, oName);
+        rows.push({
+          date: c.PaymentDate || "0",
+          html: `<tr style="cursor:pointer;" onclick="viewDashboardEntry('${_drid}')">
+            <td>${escapeHtml(String(c.PaymentDate || "N/A"))}</td>
+            <td><i class="fa-solid fa-user" style="color:#aaa;margin-right:4px;font-size:11px;"></i>${uHTML}</td>
+            <td><span class="badge badge-green">${escapeHtml(tName)}</span></td>
+            <td>${escapeHtml(c.ForMonth || "—")}</td>
+            <td>${escapeHtml(oName)}</td>
+            <td class="amt-green">+ ₹ ${fmt(c.Amount)}</td>
+            <td><button class="btn-sm btn-info" style="box-shadow:none;" onclick="event.stopPropagation();showReceiptById('${_drid}')"><i class="fa-solid fa-receipt"></i> Receipt</button></td>
+          </tr>`
+        });
+      });
+      dash_filteredE.forEach(e => {
+        const tName = dash_expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
+        rows.push({
+          date: e.PaymentDate || "0",
+          html: `<tr>
+            <td>${escapeHtml(String(e.PaymentDate || "N/A"))}</td>
+            <td><i class="fa-solid fa-file-invoice-dollar" style="color:#aaa;margin-right:4px;font-size:11px;"></i>${escapeHtml(e.Title || "")}</td>
+            <td><span class="badge badge-red">${escapeHtml(tName)}</span></td>
+            <td>${escapeHtml(e.ForMonth || "—")}</td>
+            <td>—</td>
+            <td style="color:#e74c3c;font-weight:600;">- ₹ ${fmt(e.Amount)}</td>
+            <td>—</td>
+          </tr>`
+        });
+      });
+      rows.sort((a,b) => _dash_parseDateSort(b.date).localeCompare(_dash_parseDateSort(a.date)));
+      _dash_txnRows = rows;
+      _dash_txnPage = 1;
+      _dash_renderTxnPage();
+    }
+
+    // ── Shared helper: convert "dd-mm-yyyy hh:mm" → "yyyy-mm-dd" for sorting
+    function _dash_parseDateSort(str) {
+      const p = String(str || "").split(" ")[0].split("-");
+      return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : "0";
+    }
+
+    function _dash_renderTxnPage() {
+      const totalPages = Math.ceil(_dash_txnRows.length / _DASH_TXN_PG);
+      const start  = (_dash_txnPage - 1) * _DASH_TXN_PG;
+      const items  = _dash_txnRows.slice(start, start + _DASH_TXN_PG);
+      const el     = document.getElementById("dash_detailBody");
+      if (el) el.innerHTML = items.map(r => r.html).join("") ||
+        '<tr><td colspan="7" style="text-align:center;color:#aaa;">No records</td></tr>';
+      _dash_buildTxnPagination(totalPages, _dash_txnPage);
+    }
+
+    function _dash_gotoTxnPage(p) {
+      const total = Math.ceil(_dash_txnRows.length / _DASH_TXN_PG);
+      _dash_txnPage = Math.max(1, Math.min(p, total));
+      _dash_renderTxnPage();
+    }
+
+    function _dash_buildTxnPagination(totalPages, currentPage) {
+      const el = document.getElementById("dash_txnPagination");
+      if (!el) return;
+      if (!totalPages || totalPages <= 1) { el.innerHTML = ""; return; }
+      let html = "";
+      html += `<button class="pg-btn" onclick="_dash_gotoTxnPage(${currentPage-1})" ${currentPage<=1?"disabled":""}>&#8249; Prev</button>`;
+      const start = Math.max(1, currentPage-2), end = Math.min(totalPages, currentPage+2);
+      if (start > 1) { html += `<button class="pg-btn" onclick="_dash_gotoTxnPage(1)">1</button>`; if (start > 2) html += `<span style="font-size:12px;color:#94a3b8;">…</span>`; }
+      for (let p = start; p <= end; p++) html += `<button class="pg-btn${p===currentPage?" active":""}" onclick="_dash_gotoTxnPage(${p})">${p}</button>`;
+      if (end < totalPages) { if (end < totalPages-1) html += `<span style="font-size:12px;color:#94a3b8;">…</span>`; html += `<button class="pg-btn" onclick="_dash_gotoTxnPage(${totalPages})">${totalPages}</button>`; }
+      html += `<button class="pg-btn" onclick="_dash_gotoTxnPage(${currentPage+1})" ${currentPage>=totalPages?"disabled":""}>Next &#8250;</button>`;
+      html += `<span style="font-size:12px;color:#94a3b8;">Page ${currentPage} of ${totalPages} (${_dash_txnRows.length} records)</span>`;
+      el.innerHTML = html;
+    }
+
+    // ── Monthly bar chart
+    function dash_renderMonthlyBarChart() {
+      const el = document.getElementById("dash_monthlyBarChart");
+      if (!el) return;
+      const mapC = {}, mapE = {};
+      dash_filteredC.forEach(c => { const m = c.ForMonth||""; if(m) mapC[m]=(mapC[m]||0)+Number(c.Amount||0); });
+      dash_filteredE.forEach(e => { const m = e.ForMonth||""; if(m) mapE[m]=(mapE[m]||0)+Number(e.Amount||0); });
+      const active = _dash_months.filter(m => (mapC[m]||0) > 0 || (mapE[m]||0) > 0);
+      if (active.length === 0) { el.innerHTML = '<div style="color:#aaa;font-size:12px;padding:10px;">No data for selected period.</div>'; return; }
+      const maxVal = Math.max(...active.map(m => Math.max(mapC[m]||0, mapE[m]||0)), 1);
+      el.innerHTML = active.map(m => {
+        const cH = Math.round(((mapC[m]||0)/maxVal)*120);
+        const eH = Math.round(((mapE[m]||0)/maxVal)*120);
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:28px;flex:1;">
+          <div style="display:flex;align-items:flex-end;gap:2px;height:120px;">
+            <div title="Income: ₹${(mapC[m]||0).toLocaleString("en-IN")}" style="width:10px;height:${cH}px;background:#22c55e;border-radius:3px 3px 0 0;min-height:2px;cursor:pointer;"></div>
+            <div title="Expense: ₹${(mapE[m]||0).toLocaleString("en-IN")}" style="width:10px;height:${eH}px;background:#f97316;border-radius:3px 3px 0 0;min-height:2px;cursor:pointer;"></div>
+          </div>
+          <div style="font-size:9px;color:#64748b;font-weight:600;">${m.slice(0,3)}</div>
+        </div>`;
+      }).join("");
+    }
+
+    // ── PDF export (same logic as dashboard.html exportDashboardPDF)
+    function dash_exportPDF() {
+      if (typeof window.jspdf === "undefined") { toast("PDF library not loaded.", "error"); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF("p","mm","a4");
+      const w = doc.internal.pageSize.getWidth();
+      doc.setFillColor(51,65,85); doc.rect(0,0,w,22,"F");
+      doc.setTextColor(247,160,26); doc.setFontSize(14); doc.setFont(undefined,"bold");
+      doc.text(APP.name.toUpperCase() + " — FINANCIAL REPORT " + dash_selectedYear, w/2, 13, {align:"center"});
+      const totalC = document.getElementById("dash_yearTotalC")?.innerText || "0";
+      const totalE = document.getElementById("dash_yearTotalE")?.innerText || "0";
+      doc.setFontSize(8); doc.setTextColor(50,50,50); doc.setFont(undefined,"normal");
+      doc.text(`Contributions: Rs. ${totalC}   |   Expenses: Rs. ${totalE}   |   Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 30);
+
+      const rows = [];
+      const sortedC = [...dash_filteredC].sort((a,b) => _dash_parseDateSort(b.PaymentDate).localeCompare(_dash_parseDateSort(a.PaymentDate)));
+      sortedC.forEach(c => {
+        const rawName  = dash_getDisplayName(c.UserId, c.Note);
+        const isWalkIn = String(c.UserId).startsWith("WALKIN_");
+        const tName    = dash_types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
+        const oName    = dash_occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
+        rows.push([c.PaymentDate||"N/A", isWalkIn ? rawName+" (Walk-In)" : rawName, tName, c.ForMonth||"—", oName, "+ Rs."+Number(c.Amount||0).toLocaleString("en-IN")]);
+      });
+      const sortedE = [...dash_filteredE].sort((a,b) => _dash_parseDateSort(b.PaymentDate).localeCompare(_dash_parseDateSort(a.PaymentDate)));
+      sortedE.forEach(e => {
+        const tName = dash_expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
+        rows.push([e.PaymentDate||"N/A", e.Title||"—", tName, e.ForMonth||"—", "—", "- Rs."+Number(e.Amount||0).toLocaleString("en-IN")]);
+      });
+      doc.autoTable({ head:[["Date","Name / Title","Type","Month","Occasion","Amount"]], body:rows, startY:35, theme:"grid",
+        headStyles:{fillColor:[51,65,85],fontStyle:"bold"}, styles:{fontSize:8}, alternateRowStyles:{fillColor:[253,251,247]} });
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        const ph = doc.internal.pageSize.getHeight();
+        doc.setFontSize(7); doc.setTextColor(170,170,170);
+        doc.text(APP.name.toUpperCase() + ", " + APP.address.toUpperCase() + "  |  System Generated — Not Manually Signed", w/2, ph-5, {align:"center"});
+        doc.text(`Page ${i} of ${pageCount}`, w-14, ph-5, {align:"right"});
+      }
+      doc.save(`Mandir_Report_${dash_selectedYear}_${Date.now()}.pdf`);
+    }
+
+    // ── Shared helper: builds per-member contribution map from dash_filteredC
+    function _dash_buildMemberMap() {
+      const map = {}, noteMap = {};
+      dash_filteredC.forEach(c => {
+        map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
+        if (!noteMap[c.UserId]) noteMap[c.UserId] = c.Note || "";
+      });
+      return { map, noteMap };
+    }
+
+    // ── WhatsApp share
+    function dash_whatsApp() {
+      const genDate = new Date().toLocaleDateString("en-IN");
+      const totalC  = document.getElementById("dash_yearFullC")?.innerText || "0";
+      const totalE  = document.getElementById("dash_yearTotalE")?.innerText || "0";
+      const { map, noteMap } = _dash_buildMemberMap();
+      const memberLines = Object.keys(map).map(uid => {
+        const name  = dash_getDisplayName(uid, noteMap[uid]);
+        const label = String(uid).startsWith("WALKIN_") ? `${name} (Walk-In)` : name;
+        return `  ✅ ${label}: ₹${Number(map[uid]).toLocaleString("en-IN")}`;
+      }).join("\n") || "  No contributions found";
+      const msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📊 *Financial Report — ${dash_selectedYear}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Year Collection: ₹${totalC}\n💸 Expenses: ₹${totalE}\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n━━━━━━━━━━━━━━━━━━━━\n_System Generated — ${genDate}_`;
+      window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+    }
+
+    // ── Email share
+    function dash_email() {
+      const genDate = new Date().toLocaleDateString("en-IN");
+      const totalC  = document.getElementById("dash_yearFullC")?.innerText || "0";
+      const totalE  = document.getElementById("dash_yearTotalE")?.innerText || "0";
+      const { map, noteMap } = _dash_buildMemberMap();
+      const subject = encodeURIComponent(`Financial Report ${dash_selectedYear} — ${APP.name}`);
+      const memberLines = Object.keys(map).map(uid => {
+        const name  = dash_getDisplayName(uid, noteMap[uid]);
+        const label = String(uid).startsWith("WALKIN_") ? `${name} (Walk-In)` : name;
+        return `  ${label}: Rs.${Number(map[uid]).toLocaleString("en-IN")}`;
+      }).join("\n") || "  No contributions found";
+      const body = encodeURIComponent(`${APP.name.toUpperCase()} — FINANCIAL REPORT ${dash_selectedYear}\n${APP.location}\n\nYear Collection : Rs.${totalC}\nExpenses        : Rs.${totalE}\n\nMEMBER-WISE CONTRIBUTIONS:\n${memberLines}\n\nSystem Generated — ${genDate}\nNot Manually Signed`);
+      window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+    }
+
+    // ── Calendar picker (all prefixed dash_ to avoid collision with any other cal)
+    function dash_openCal(target) {
+      _dash_calTarget = target;
+      const pop = document.getElementById("dash_calPop");
+      const inp = document.getElementById(target === "start" ? "dash_startDate" : "dash_endDate");
+      const rect = inp.getBoundingClientRect();
+      pop.style.display = "block";
+      let top = rect.bottom + window.scrollY + 4;
+      let left = rect.left + window.scrollX;
+      if (left + 270 > window.innerWidth) left = window.innerWidth - 276;
+      pop.style.top = top + "px";
+      pop.style.left = left + "px";
+      dash_renderCal();
+      setTimeout(() => document.addEventListener("click", _dash_closeCal, {once:true}), 10);
+    }
+    function _dash_closeCal(e) {
+      const pop = document.getElementById("dash_calPop");
+      if (pop && !pop.contains(e.target)) pop.style.display = "none";
+    }
+    function dash_calNav(dir) {
+      _dash_calMonth += dir;
+      if (_dash_calMonth > 11) { _dash_calMonth = 0; _dash_calYear++; }
+      if (_dash_calMonth < 0)  { _dash_calMonth = 11; _dash_calYear--; }
+      dash_renderCal();
+    }
+    function dash_renderCal() {
+      const titleEl = document.getElementById("dash_calTitle");
+      if (titleEl) titleEl.textContent = _dash_months[_dash_calMonth].substring(0,3) + " " + _dash_calYear;
+      const today = new Date();
+      const firstDay = new Date(_dash_calYear, _dash_calMonth, 1).getDay();
+      const daysInMonth = new Date(_dash_calYear, _dash_calMonth+1, 0).getDate();
+      const startVal = document.getElementById("dash_startDate")?.dataset.val || "";
+      const endVal   = document.getElementById("dash_endDate")?.dataset.val || "";
+      const g = document.getElementById("dash_calGrid");
+      if (!g) return;
+      g.innerHTML = ["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => `<div style="text-align:center;font-size:10px;color:#aaa;font-weight:600;padding:4px 0;">${d}</div>`).join("");
+      for (let i = 0; i < firstDay; i++) g.innerHTML += `<div></div>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = _dash_calYear + "-" + String(_dash_calMonth+1).padStart(2,"0") + "-" + String(d).padStart(2,"0");
+        const isToday = d===today.getDate() && _dash_calMonth===today.getMonth() && _dash_calYear===today.getFullYear();
+        const isSel   = dateStr===startVal || dateStr===endVal;
+        const bg = isSel ? "#334155" : isToday ? "#f7a01a" : "transparent";
+        const co = (isSel || isToday) ? "#fff" : "#333";
+        g.innerHTML += `<div onclick="dash_pickDate('${dateStr}')" style="text-align:center;font-size:12px;padding:5px 2px;border-radius:6px;cursor:pointer;background:${bg};color:${co};font-weight:${(isSel||isToday)?700:400};">${d}</div>`;
+      }
+    }
+    function dash_pickDate(dateStr) {
+      const parts = dateStr.split("-");
+      const display = parts[2]+"-"+parts[1]+"-"+parts[0];
+      const el = document.getElementById(_dash_calTarget === "start" ? "dash_startDate" : "dash_endDate");
+      if (el) { el.value = display; el.dataset.val = dateStr; }
+      const pop = document.getElementById("dash_calPop");
+      if (pop) pop.style.display = "none";
+      dash_applyFilter();
     }
 
   </script>

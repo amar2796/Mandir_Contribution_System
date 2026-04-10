@@ -397,6 +397,8 @@ function mandirCacheBust(action) {
       console.warn("smartRefresh failed, falling back to init():", err);
       if (typeof init === "function") init();
     }
+    // Keep inline dashboard in sync after every data refresh
+    if (typeof _dashSyncFromAdmin === "function") _dashSyncFromAdmin();
   }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1081,7 +1083,7 @@ async function sendReceiptEmailDirect(rid){
 }
 
 /* Legacy alias kept for backward compatibility */
-function sendReceiptEmail(rid){
+function triggerReceiptEmail(rid){
   sendReceiptEmailDirect(rid);
 }
 

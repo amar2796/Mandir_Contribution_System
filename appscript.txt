@@ -17,7 +17,7 @@ const CFG = {
   receiptPrefix: "MNR",          // Receipt IDs: MNR-2025-00001
   signatory:     "Temple Trust",
   designation:   "Authorized Signatory",
-  tagline:       "Jai Shree Ram",
+  tagline:       "Jai Shree Ram 🙏",
   thankYouMsg:   "Thank you for your generous contribution",
   emailDailyLimit: 90,           // Gmail free = 100/day; keep 10 buffer for OTPs
   // Logo: place your logo at Image/logo.PNG in your web app folder.
@@ -2162,27 +2162,27 @@ function updateUser(p) {
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === userId) {
       // Helper: write a value to the column matching the given header name (1-based col)
-      function setCol(headerName, value) {
+      function _setColUser(headerName, value) {
         const col = headers.indexOf(headerName);
         if (col !== -1) sheet.getRange(i+1, col+1).setValue(value);
       }
       const existingPwd = data[i][headers.indexOf("Password")];
-      setCol("Name",     sanitize(p.Name,    100));
-      setCol("Mobile",   sanitize(p.Mobile,  15));
-      setCol("Role",     sanitize(p.Role,    20));
+      _setColUser("Name",     sanitize(p.Name,    100));
+      _setColUser("Mobile",   sanitize(p.Mobile,  15));
+      _setColUser("Role",     sanitize(p.Role,    20));
       if (p.Password && sanitize(p.Password, 128).length > 0) {
         let pwd = sanitize(p.Password, 128);
-        setCol("Password", pwd.length === 64 ? pwd : hashPassword(pwd));
+        _setColUser("Password", pwd.length === 64 ? pwd : hashPassword(pwd));
       } else {
-        setCol("Password", existingPwd);
+        _setColUser("Password", existingPwd);
       }
-      setCol("Email",    sanitize(p.Email,   200));
-      setCol("Status",   sanitize(p.Status,  20) || "Active");
-      setCol("PhotoURL", sanitize(p.PhotoURL, 500) || "");
+      _setColUser("Email",    sanitize(p.Email,   200));
+      _setColUser("Status",   sanitize(p.Status,  20) || "Active");
+      _setColUser("PhotoURL", sanitize(p.PhotoURL, 500) || "");
       // Village and Address — only update when explicitly provided (not undefined)
-      if (p.Village !== undefined) setCol("Village", sanitize(p.Village, 100));
-      if (p.Address !== undefined) setCol("Address", sanitize(p.Address, 300));
-      if (p.MonthlyTarget !== undefined) setCol("MonthlyTarget", Number(p.MonthlyTarget||0));
+      if (p.Village !== undefined) _setColUser("Village", sanitize(p.Village, 100));
+      if (p.Address !== undefined) _setColUser("Address", sanitize(p.Address, 300));
+      if (p.MonthlyTarget !== undefined) _setColUser("MonthlyTarget", Number(p.MonthlyTarget||0));
       SpreadsheetApp.flush();
       found = true; break;
     }
@@ -2212,17 +2212,17 @@ function updateRow(name, body) {
   if (rowIndex !== -1) {
     let row = rowIndex + 1;
     // Header-based updates — safe regardless of column order
-    function setCol(h, val) {
+    function _setColRow(h, val) {
       const c = headers.indexOf(h);
       if (c !== -1 && val !== undefined) sheet.getRange(row, c+1).setValue(val);
     }
-    setCol("Amount",      sanitize(body.Amount,    20));
-    setCol("ForMonth",    sanitize(body.ForMonth,  20));
-    if (body.Year) setCol("Year", sanitize(body.Year, 10));
-    setCol("TypeId",      sanitize(body.TypeId,    30));
-    if (body.OccasionId !== undefined) setCol("OccasionId", sanitize(body.OccasionId, 30));
-    if (body.Note       !== undefined) setCol("Note",       sanitize(body.Note,       500));
-    if (body.PaymentMode)              setCol("PaymentMode",sanitize(body.PaymentMode, 30));
+    _setColRow("Amount",      sanitize(body.Amount,    20));
+    _setColRow("ForMonth",    sanitize(body.ForMonth,  20));
+    if (body.Year) _setColRow("Year", sanitize(body.Year, 10));
+    _setColRow("TypeId",      sanitize(body.TypeId,    30));
+    if (body.OccasionId !== undefined) _setColRow("OccasionId", sanitize(body.OccasionId, 30));
+    if (body.Note       !== undefined) _setColRow("Note",       sanitize(body.Note,       500));
+    if (body.PaymentMode)              _setColRow("PaymentMode",sanitize(body.PaymentMode, 30));
     return { status: "updated" };
   }
   return { status: "not found" };
@@ -3318,12 +3318,14 @@ function getPublicStats() {
       const data    = sheet.getDataRange().getValues();
       const headers = data[0];
       const eventId = sanitize(p.EventId, 50);
+      // Helper: write a value to the column matching the given header name
+      function setECol(h, v) {
+        const c = headers.indexOf(h);
+        if (c !== -1) sheet.getRange(rowIndex+1, c+1).setValue(v);
+      }
       for (let i = 1; i < data.length; i++) {
         if (String(data[i][headers.indexOf("EventId")]) === eventId) {
-          function setECol(h, v) {
-            const c = headers.indexOf(h);
-            if (c !== -1) sheet.getRange(i+1, c+1).setValue(v);
-          }
+          var rowIndex = i;
           setECol("EventName",   sanitize(p.EventName,200));
           setECol("Category",    sanitize(p.Category,50));
           setECol("Status",      sanitize(p.Status,30));
