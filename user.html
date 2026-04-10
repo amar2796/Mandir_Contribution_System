@@ -51,7 +51,7 @@
     }
 
     html {
-      scroll-padding-top: 68px;
+      scroll-padding-top: 72px;
     }
 
     body {
@@ -511,8 +511,9 @@
       box-shadow: var(--sh-sm);
       margin-bottom: 14px;
       border: 1px solid rgba(247, 160, 26, 0.1);
-      transition: box-shadow var(--t);
+      transition: box-shadow var(--t), transform var(--t), border-color var(--t);
       overflow: hidden;
+      will-change: transform;
     }
 
     .card:hover {
@@ -1305,22 +1306,89 @@
 
     /* ── SCROLLBAR ─── */
     ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
     }
 
     ::-webkit-scrollbar-track {
-      background: transparent;
+      background: rgba(0,0,0,0.03);
+      border-radius: 6px;
     }
 
     ::-webkit-scrollbar-thumb {
-      background: #d1d5db;
-      border-radius: 4px;
+      background: rgba(209,213,219,0.8);
+      border-radius: 6px;
+      transition: background 0.2s;
     }
 
     ::-webkit-scrollbar-thumb:hover {
       background: var(--gold);
     }
+
+    /* ── SMOOTH SCROLL ── */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* ── HORIZONTAL SCROLL FADE EDGES ── */
+    .qa-row-wrap {
+      position: relative;
+    }
+    .qa-row-wrap::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0; bottom: 2px;
+      width: 32px;
+      background: linear-gradient(to left, #eef1f8, transparent);
+      pointer-events: none;
+      border-radius: 0 30px 30px 0;
+    }
+    body.user-dark .qa-row-wrap::after {
+      background: linear-gradient(to left, #0f172a, transparent);
+    }
+
+    /* ── PAGE PROGRESS BAR ── */
+    #page-progress {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), #e8920a);
+      transform-origin: left;
+      transform: scaleX(0);
+      z-index: 9999;
+      transition: transform 0.1s linear;
+      pointer-events: none;
+    }
+
+    /* ── SECTION ANCHOR HIGHLIGHT ── */
+    @keyframes anchorPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(247,160,26,0.4); }
+      70%  { box-shadow: 0 0 0 8px rgba(247,160,26,0); }
+      100% { box-shadow: 0 0 0 0 rgba(247,160,26,0); }
+    }
+    .anchor-highlight {
+      animation: anchorPulse 0.7s ease-out;
+    }
+
+    /* ── TABLE HORIZONTAL SCROLL SHADOW ── */
+    .t-wrap {
+      position: relative;
+    }
+    .t-wrap::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 20px;
+      background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+      pointer-events: none;
+      border-radius: 0 var(--rad-lg) var(--rad-lg) 0;
+      transition: opacity 0.2s;
+    }
+
+    /* ── BS-BODY SCROLLBAR ── */
+    .bs-body::-webkit-scrollbar { width: 4px; }
+    .bs-body::-webkit-scrollbar-thumb { background: rgba(209,213,219,0.6); border-radius: 4px; }
+    .bs-body::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -1933,10 +2001,191 @@
     body.user-dark .ra-view-all { border-top-color: #334155 !important; }
     body.user-dark .ra-view-all:hover { background: #1e293b !important; }
     body.user-dark .sec-panel-back { color: #94a3b8 !important; }
+
+    /* ══════════════════════════════════════════════
+       SAFE VISUAL IMPROVEMENTS — no logic impact
+       ══════════════════════════════════════════════ */
+
+    /* 1. Focus ring — consistent gold glow on all interactive elements */
+    button:focus-visible,
+    select:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible {
+      outline: 2.5px solid var(--gold);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px var(--gold-dim);
+    }
+
+    /* 2. Smoother hero skeleton shimmer in dark mode */
+    body.user-dark .skel {
+      background: linear-gradient(90deg,
+        rgba(255,255,255,0.04) 25%,
+        rgba(255,255,255,0.09) 50%,
+        rgba(255,255,255,0.04) 75%
+      ) !important;
+      background-size: 600px 100% !important;
+    }
+
+    /* 3. Section label — subtle entrance animation */
+    .sec-lbl {
+      animation: fadein-lbl 0.4s ease both;
+    }
+    @keyframes fadein-lbl {
+      from { opacity: 0; transform: translateX(-6px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* 4. Toast improvement — add subtle entrance/exit feel via existing class */
+    #toast {
+      letter-spacing: 0.1px;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    /* 5. Bottom sheet handle — wider tap zone & hover indicator */
+    .bs-handle-bar {
+      transition: background 0.2s, width 0.2s;
+      margin-bottom: 0;
+    }
+    .bs-sheet:hover .bs-handle-bar,
+    .bs-handle-bar:hover {
+      background: var(--gold);
+      width: 52px;
+    }
+
+    /* 6. Quick action buttons — subtle icon lift on hover */
+    .qa-btn i {
+      transition: transform 0.18s cubic-bezier(.4,0,.2,1);
+      display: inline-block;
+    }
+    .qa-btn:hover i {
+      transform: translateY(-1px) scale(1.12);
+    }
+
+    /* 7. Menu icon wrapper — soft glow on parent hover */
+    .menu-acc-wrap:hover .menu-icon {
+      box-shadow: 0 2px 10px rgba(247,160,26,0.2);
+      transition: box-shadow 0.2s;
+    }
+
+    /* 8. Goal progress bar — shimmer when < 100% */
+    .goal-fill {
+      position: relative;
+      overflow: hidden;
+    }
+    .goal-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; bottom: 0;
+      width: 60%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+      animation: goal-shimmer 2.2s ease-in-out infinite;
+    }
+    @keyframes goal-shimmer {
+      0%   { left: -70%; }
+      100% { left: 120%; }
+    }
+
+    /* 9. Recent activity dot — subtle pulse on latest item */
+    .ra-item:first-child .ra-dot-gold {
+      animation: dot-pulse 2s ease-in-out infinite;
+    }
+    @keyframes dot-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(247,160,26,0.5); }
+      50%       { box-shadow: 0 0 0 4px rgba(247,160,26,0); }
+    }
+
+    /* 10. Input placeholder color — softer, more readable */
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--ink-faint);
+      opacity: 0.75;
+    }
+
+    /* 11. Hero stat hover — gold text on amount */
+    .hero-stat:hover .hero-stat-v {
+      color: var(--gold);
+      transition: color 0.2s;
+    }
+
+    /* 12. Scroll-to-top button — ring indicator */
+    #scrollTopBtn::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2px solid rgba(247,160,26,0.3);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    #scrollTopBtn:hover::before {
+      opacity: 1;
+    }
+
+    /* 13. Dark mode — slightly warmer card background for depth */
+    body.user-dark .menu-acc-wrap {
+      background: linear-gradient(135deg, #1e293b 0%, #1a2540 100%) !important;
+    }
+
+    /* 14. Pagination — active button ring */
+    .pg-btn.active {
+      box-shadow: 0 0 0 2px rgba(247,160,26,0.3);
+    }
+
+    /* 15. Broadcast item — left border glow on hover */
+    .bc-item {
+      transition: box-shadow 0.2s, transform 0.18s;
+    }
+    .bc-item:hover {
+      transform: translateX(2px);
+      box-shadow: var(--sh-md);
+    }
+
+    /* 16. Card header icon — consistent sizing */
+    .card-title i {
+      width: 18px;
+      text-align: center;
+    }
+
+    /* 17. Accordion open — body background matches dark mode */
+    body.user-dark .acc-body.acc-open {
+      background: #131d2e !important;
+    }
+
+    /* 18. Table — sticky header for long tables */
+    .t-wrap {
+      max-height: 480px;
+      overflow-y: auto;
+    }
+    .t-wrap thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    /* 19. Mobile: card hover → subtle scale instead of translateY (feels more native) */
+    @media(max-width:600px) {
+      .card:hover {
+        transform: none;
+        box-shadow: var(--sh-md);
+      }
+      .bc-item:hover {
+        transform: none;
+      }
+    }
+
+    /* 20. Selection color — brand-consistent */
+    ::selection {
+      background: rgba(247,160,26,0.22);
+      color: var(--ink);
+    }
   </style>
 </head>
 
 <body>
+
+  <!-- PAGE SCROLL PROGRESS BAR -->
+  <div id="page-progress"></div>
 
   <!-- HEADER -->
   <header class="header">
@@ -2041,6 +2290,7 @@
     </div>
 
     <!-- QUICK ACTIONS -->
+    <div class="qa-row-wrap">
     <div class="qa-row">
       <button class="qa-btn qa-gold" id="btnAnnualReceipt"
         onclick="_btnLoad(this);exportYearStatementPDF().finally(()=>_btnDone(document.getElementById('btnAnnualReceipt')))" title="Download your annual receipt — useful for tax records">
@@ -2058,7 +2308,8 @@
         onclick="_openMenuSection('panelRecords')">
         <i class="fa-solid fa-magnifying-glass"></i> Search
       </button>
-    </div>
+    </div><!-- /.qa-row -->
+    </div><!-- /.qa-row-wrap -->
 
     <!-- GOALS (always visible — small, injected by JS) -->
     <div id="goalsContainer"></div>
@@ -2317,7 +2568,6 @@
             <div class="f-grp">
               <label>Payment Mode</label>
               <select id="pr_mode" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;">
-                <option>UPI</option><option>Cash</option><option>Bank Transfer</option><option>Cheque</option>
               </select>
             </div>
             <div class="f-grp" style="grid-column:1/-1;">
@@ -2449,6 +2699,16 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script>
+    // ── Initials avatar — defined early so session guard IIFE can use it below
+    function _initialsAvatar(name, size) {
+      const parts = (name || "?").trim().split(/\s+/);
+      const initials = (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
+      const colors = ["#c2410c","#b45309","#15803d","#1d4ed8","#7c3aed","#be185d","#0f766e"];
+      const col = colors[(name || "").charCodeAt(0) % colors.length];
+      const fs = Math.round(size * 0.38);
+      return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><circle cx='${size/2}' cy='${size/2}' r='${size/2}' fill='${col}'/><text x='${size/2}' y='${size/2+fs*0.36}' text-anchor='middle' fill='white' font-size='${fs}' font-family='Arial' font-weight='700'>${initials}</text></svg>`)}`;
+    }
+
     // ── Session guard — with Remember Me restore (H12)
     (function () {
       let s = JSON.parse(localStorage.getItem("session") || "null");
@@ -2476,16 +2736,10 @@
         if (nameEl && s.name) nameEl.innerText = s.name;
         if (dropNameEl && s.name) dropNameEl.innerText = s.name;
         if (s.name) {
-          const _mkAv = function(name, size) {
-            const p = name.trim().split(/\s+/), ini = (p[0][0]+(p[1]?p[1][0]:"")).toUpperCase();
-            const col = ["#c2410c","#b45309","#15803d","#1d4ed8","#7c3aed","#be185d","#0f766e"][name.charCodeAt(0)%7];
-            const fs = Math.round(size*0.38);
-            return "data:image/svg+xml,"+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='"+size+"' height='"+size+"'><circle cx='"+(size/2)+"' cy='"+(size/2)+"' r='"+(size/2)+"' fill='"+col+"'/><text x='"+(size/2)+"' y='"+(size/2+fs*0.36)+"' text-anchor='middle' fill='white' font-size='"+fs+"' font-family='Arial' font-weight='700'>"+ini+"</text></svg>");
-          };
           const av40 = document.getElementById("hdr_photo");
           const av34 = document.getElementById("hdr_drop_photo");
-          if (av40 && !av40.src) av40.src = _mkAv(s.name, 40);
-          if (av34 && !av34.src) av34.src = _mkAv(s.name, 34);
+          if (av40 && !av40.src) av40.src = _initialsAvatar(s.name, 40);
+          if (av34 && !av34.src) av34.src = _initialsAvatar(s.name, 34);
         }
       } catch(e) {}
     })();
@@ -2510,6 +2764,7 @@
 
     let users = [], types = [], occasions = [], data = [], allContributions = [], allGoals = [];
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const PAYMENT_MODES = ["UPI", "Cash", "Bank Transfer", "Cheque"]; // from constants.js pattern
 
     function _fixDrivePhotoUrl(url) {
       if (!url) return "";
@@ -2529,17 +2784,6 @@
       if (fileId) return "https://lh3.googleusercontent.com/d/" + fileId + "=w400";
       return s;
     }
-    // ── Generate initials avatar SVG (used as instant placeholder & fallback)
-    function _initialsAvatar(name, size) {
-      const parts = (name || "?").trim().split(/\s+/);
-      const initials = (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
-      // Pick a warm color from name charcode for variety
-      const colors = ["#c2410c","#b45309","#15803d","#1d4ed8","#7c3aed","#be185d","#0f766e"];
-      const col = colors[(name || "").charCodeAt(0) % colors.length];
-      const fs = Math.round(size * 0.38);
-      return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><circle cx='${size/2}' cy='${size/2}' r='${size/2}' fill='${col}'/><text x='${size/2}' y='${size/2+fs*0.36}' text-anchor='middle' fill='white' font-size='${fs}' font-family='Arial' font-weight='700'>${initials}</text></svg>`)}`;
-    }
-
     // ── Smooth photo load: show initials instantly, fade in real photo when ready
     function _loadPhotoSmooth(imgEl, photoUrl, name, size) {
       const initials = _initialsAvatar(name, size);
@@ -3407,6 +3651,25 @@
     // ── Accordion toggle for Menu section
     let _accActivePanel = null;
 
+    // ── Shared lazy-load triggers — called by both _toggleAccordion and _openMenuSection
+    function _lazyLoadPanel(id) {
+      if (id === "panelRecords") {
+        if (!_recordsLoaded) { loadFilters(); _recordsLoaded = true; }
+        _initFilterState();
+        try { renderTable(data); } catch(e) {}
+      }
+      if (id === "panelStats") {
+        if (!_statsLoaded) { loadSummaryYears(); _statsLoaded = true; }
+        try { renderSummaries(); } catch(e) {}
+      }
+      if (id === "panelEvents" && !_eventsLoaded) {
+        _loadUserEvents(); _eventsLoaded = true;
+      }
+      if (id === "panelPayment") {
+        try { _loadUserContribRequests(); } catch(e) {}
+      }
+    }
+
     function _toggleAccordion(id) {
       const panel     = document.getElementById(id);
       const accBody   = document.getElementById("accBody-" + id);
@@ -3467,22 +3730,8 @@
           accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
         }, 60);
 
-        // Lazy load triggers — same as _openMenuSection
-        if (id === "panelRecords") {
-          if (!_recordsLoaded) { loadFilters(); _recordsLoaded = true; }
-          _initFilterState();
-          try { renderTable(data); } catch(e) {}
-        }
-        if (id === "panelStats") {
-          if (!_statsLoaded) { loadSummaryYears(); _statsLoaded = true; }
-          try { renderSummaries(); } catch(e) {}
-        }
-        if (id === "panelEvents" && !_eventsLoaded) {
-          _loadUserEvents(); _eventsLoaded = true;
-        }
-        if (id === "panelPayment") {
-          try { _loadUserContribRequests(); } catch(e) {}
-        }
+        // Lazy load triggers — via shared helper
+        _lazyLoadPanel(id);
 
         // After data loads, re-measure height so content isn't clipped
         setTimeout(function() {
@@ -3532,24 +3781,8 @@
       sheet.classList.add("open");
       document.body.style.overflow = "hidden";
 
-      // Lazy load triggers — run AFTER panel is in DOM
-      if (id === "panelRecords") {
-        if (!_recordsLoaded) { loadFilters(); _recordsLoaded = true; }
-        _initFilterState();
-        // Always re-render table on every open so data is never stale
-        try { renderTable(data); } catch(e) {}
-      }
-      if (id === "panelStats") {
-        if (!_statsLoaded) { loadSummaryYears(); _statsLoaded = true; }
-        // Always re-render on open so stats reflect latest data
-        try { renderSummaries(); } catch(e) {}
-      }
-      if (id === "panelEvents" && !_eventsLoaded) {
-        _loadUserEvents(); _eventsLoaded = true;
-      }
-      if (id === "panelPayment") {
-        try { _loadUserContribRequests(); } catch(e) {}
-      }
+      // Lazy load triggers — via shared helper
+      _lazyLoadPanel(id);
 
       // Store which panel is open so we can put it back on close
       sheet._activePanelId = id;
@@ -3750,24 +3983,6 @@
       var recent = sorted.slice(0, 5);
       el.innerHTML = recent.map(function(c) {
         var type = (types.find(function(t) { return String(t.TypeId) === String(c.TypeId); }) || {}).TypeName || "Contribution";
-        var dotCls = "ra-dot-gold";
-        var statusTxt = '<span class="ra-status" style="color:var(--green);">Approved</span>';
-        el.innerHTML = ""; // reset before building
-        return '<div class="ra-item" onclick="_openMenuSection(\'panelRecords\')">'
-          + '<div class="ra-dot ' + dotCls + '"></div>'
-          + '<div style="flex:1;min-width:0;">'
-          + '<div class="ra-month">' + escapeHtml(c.ForMonth || "—") + " " + (c.Year || "") + '</div>'
-          + '<div class="ra-type">' + escapeHtml(type) + '</div>'
-          + '</div>'
-          + '<div class="ra-right">'
-          + '<div class="ra-amt">₹ ' + fmt(c.Amount) + '</div>'
-          + statusTxt
-          + '</div>'
-          + '</div>';
-      }).join("");
-      // Fix: rebuild cleanly
-      el.innerHTML = recent.map(function(c) {
-        var type = (types.find(function(t) { return String(t.TypeId) === String(c.TypeId); }) || {}).TypeName || "Contribution";
         return '<div class="ra-item" onclick="_openMenuSection(\'panelRecords\')">'
           + '<div class="ra-dot ra-dot-gold"></div>'
           + '<div style="flex:1;min-width:0;">'
@@ -3842,12 +4057,12 @@
       // Temple name
       doc.setTextColor(247, 160, 26);
       doc.setFontSize(15); doc.setFont(undefined, "bold");
-      doc.text("SHREE HANUMAN MANDIR", w / 2, 10, { align: "center" });
+      doc.text(APP.name.toUpperCase(), w / 2, 10, { align: "center" });
 
       // Subtitle
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(8.5); doc.setFont(undefined, "normal");
-      doc.text("Paliya, Sultanpur, Uttar Pradesh", w / 2, 16, { align: "center" });
+      doc.text(APP.address, w / 2, 16, { align: "center" });
       doc.text("CONTRIBUTION STATEMENT — OFFICIAL DOCUMENT", w / 2, 21, { align: "center" });
 
       // Gold Om symbol right side
@@ -3934,7 +4149,7 @@
       // ── QR code with user info embedded
       try {
         if (window.QRCode) {
-          const qrText = `Member: ${s.name} | Total: Rs.${tot.toLocaleString("en-IN")} | Records: ${filtered.length} | Date: ${new Date().toLocaleDateString("en-IN")} | Mandir: Shree Hanuman Mandir, Paliya`;
+          const qrText = `Member: ${s.name} | Total: Rs.${tot.toLocaleString("en-IN")} | Records: ${filtered.length} | Date: ${new Date().toLocaleDateString("en-IN")} | Mandir: ${APP.name}, ${APP.location}`;
           const qrDiv = document.createElement("div");
           qrDiv.style.cssText = "position:absolute;left:-9999px;top:0;";
           document.body.appendChild(qrDiv);
@@ -3969,7 +4184,7 @@
         doc.setFillColor(247, 160, 26);
         doc.rect(0, ph - 10, w, 0.8, "F");
         doc.setFontSize(6.5); doc.setTextColor(180, 140, 80); doc.setFont(undefined, "normal");
-        doc.text("SHREE HANUMAN MANDIR, PALIYA, SULTANPUR  ·  System Generated", w / 2, ph - 4, { align: "center" });
+        doc.text((APP.name + ", " + APP.location + "  ·  System Generated").toUpperCase(), w / 2, ph - 4, { align: "center" });
         doc.setTextColor(120, 100, 60);
         doc.text(`Page ${i} of ${pc}`, w - 10, ph - 4, { align: "right" });
       }
@@ -4090,13 +4305,13 @@
         doc.setTextColor(...GOLD);
         doc.setFontSize(10);
         doc.setFont(undefined, "bold");
-        doc.text("SHREE HANUMAN MANDIR", textStartX, 6);
+        doc.text(APP.name.toUpperCase(), textStartX, 6);
 
         // Address
         doc.setTextColor(...WHITE);
         doc.setFontSize(6);
         doc.setFont(undefined, "normal");
-        doc.text("Paliya, Sultanpur, Uttar Pradesh", textStartX, 11);
+        doc.text(APP.address, textStartX, 11);
 
         // 🔲 Square Photo area
         const photoSize = 20;
@@ -4185,7 +4400,7 @@
         doc.setTextColor(...GOLD);
         doc.setFontSize(6);
         doc.setFont(undefined, "bold");
-        doc.text("Jai Shree Ram", 4, H - 3);
+        doc.text(APP.tagline, 4, H - 3);
 
         doc.setTextColor(148, 163, 184);
         doc.setFontSize(5.5);
@@ -4236,7 +4451,7 @@
             + " | Amount: Rs." + Number(stored.c.Amount || 0).toLocaleString("en-IN")
             + " | Month: " + (stored.c.ForMonth || "") + " " + (stored.c.Year || "")
             + " | Date: " + formatPaymentDate(stored.c.PaymentDate)
-            + " | Mandir: Shree Hanuman Mandir, Paliya";
+            + " | Mandir: " + APP.name + ", " + APP.location;
         }
         if (_origQR) return _origQR(richText, sizePx);
         return null;
@@ -4257,7 +4472,7 @@
         const hdrBand = modal.querySelector("div[style*='1e293b']") ||
                         modal.querySelector("div[style*='334155']");
         if (hdrBand) {
-          hdrBand.style.background = "linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%)";
+          hdrBand.style.background = "var(--brown-grad)";
         }
       }, 30);
     };
@@ -4316,9 +4531,8 @@
     // ── M18: Version footer
     function _setUserVersion() {
       const el = document.getElementById("userVersionFooter");
-      if (el && typeof APP !== "undefined" && APP.version) {
-        el.textContent = "v" + APP.version + " · " + (APP.name || "Mandir System");
-      }
+      if (el) el.textContent = "v" + APP.version + " · " + APP.name;
+      document.title = "My Dashboard — " + APP.name;
     }
 
     // ── M14: Load upcoming events for user portal
@@ -4434,7 +4648,7 @@
         // Header bar
         doc.setFillColor(30, 41, 64); doc.rect(0, 0, W, 26, "F");
         doc.setTextColor(247, 160, 26); doc.setFontSize(13); doc.setFont(undefined, "bold");
-        doc.text((typeof APP !== "undefined" ? APP.name : "Mandir").toUpperCase(), W / 2, 10, { align: "center" });
+        doc.text(APP.name.toUpperCase(), W / 2, 10, { align: "center" });
         doc.setTextColor(148, 163, 184); doc.setFontSize(8); doc.setFont(undefined, "normal");
         doc.text("Annual Contribution Statement — " + yr, W / 2, 18, { align: "center" });
 
@@ -4476,7 +4690,7 @@
         // Gold stripe footer
         doc.setFillColor(247, 160, 26); doc.rect(0, 285, W, 2, "F");
         doc.setTextColor(148, 163, 184); doc.setFontSize(7);
-        doc.text("System-generated receipt. " + (typeof APP !== "undefined" ? APP.tagline : ""), W / 2, 292, { align: "center" });
+        doc.text("System-generated receipt. " + APP.tagline, W / 2, 292, { align: "center" });
 
         doc.save("YearStatement_" + s.name + "_" + yr + ".pdf");
         toast("✅ Year statement downloaded!");
@@ -4533,12 +4747,18 @@
       document.addEventListener("DOMContentLoaded", function () { _applyUserLang("HI"); const b = document.getElementById("userLangBtn"); if (b) b.textContent = "हिं"; });
     }
 
-    // ── Scroll to top button
+    // ── Scroll to top button + page progress bar
     (function() {
       const btn = document.getElementById("scrollTopBtn");
-      if (!btn) return;
+      const bar = document.getElementById("page-progress");
       window.addEventListener("scroll", function() {
-        btn.classList.toggle("visible", window.scrollY > 320);
+        if (btn) btn.classList.toggle("visible", window.scrollY > 320);
+        if (bar) {
+          const doc = document.documentElement;
+          const scrolled = doc.scrollTop || document.body.scrollTop;
+          const total = doc.scrollHeight - doc.clientHeight;
+          bar.style.transform = total > 0 ? `scaleX(${Math.min(scrolled / total, 1)})` : 'scaleX(0)';
+        }
       }, { passive: true });
     })();
 
@@ -4550,7 +4770,6 @@
 
 
     function _populateTempleContact() {
-      if (typeof APP === "undefined") return;
       const ph = document.getElementById("templePhone");
       const em = document.getElementById("templeEmail");
       const ad = document.getElementById("templeAddress");
@@ -4558,10 +4777,15 @@
       if (em && APP.email) { em.textContent = APP.email; em.href = "mailto:" + APP.email; }
       if (ad && APP.address) ad.textContent = APP.address;
       // Also populate payment request month dropdown
+      // Populate payment month dropdown
       const prMonth = document.getElementById("pr_month");
       if (prMonth && prMonth.options.length <= 1) {
-        const mos = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        mos.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; prMonth.appendChild(o); });
+        months.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; prMonth.appendChild(o); });
+      }
+      // Populate payment mode dropdown from PAYMENT_MODES constant
+      const prMode = document.getElementById("pr_mode");
+      if (prMode && prMode.options.length === 0) {
+        PAYMENT_MODES.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; prMode.appendChild(o); });
       }
     }
     window.addEventListener("load", _populateTempleContact);
@@ -4825,9 +5049,8 @@
       const existing = document.getElementById("_editContribModal");
       if (existing) existing.remove();
 
-      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       const moOptions = months.map(m => `<option value="${m}" ${m === req.ForMonth ? "selected" : ""}>${m}</option>`).join("");
-      const modeOptions = ["UPI", "Cash", "Bank Transfer", "Cheque"].map(m => `<option value="${m}" ${m === req.PaymentMode ? "selected" : ""}>${m}</option>`).join("");
+      const modeOptions = PAYMENT_MODES.map(m => `<option value="${m}" ${m === req.PaymentMode ? "selected" : ""}>${m}</option>`).join("");
 
       const m = document.createElement("div");
       m.id = "_editContribModal";
