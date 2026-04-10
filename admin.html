@@ -1540,6 +1540,53 @@
       align-items: center;
     }
 
+    /* ── PAGINATION CONTROLS ── */
+    .pagination-bar {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      padding: 4px 0;
+    }
+    .pg-btn {
+      padding: 5px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      background: #fff;
+      color: #334155;
+      font-size: 12px;
+      font-family: "Poppins", sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+      line-height: 1.4;
+      box-shadow: none;
+      transform: none;
+    }
+    .pg-btn:hover:not(:disabled) {
+      background: #f7a01a;
+      color: #fff;
+      border-color: #f7a01a;
+      transform: none;
+      box-shadow: none;
+    }
+    .pg-btn.active {
+      background: #f7a01a;
+      color: #fff;
+      border-color: #f7a01a;
+    }
+    .pg-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .pg-info {
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
     .nav-event {
       color: #fcd34d;
     }
@@ -2395,6 +2442,7 @@
               <tbody id="tb"></tbody>
             </table>
           </div>
+          <div id="contrib_pagination" class="pagination-bar"></div>
         </div>
       </div>
 
@@ -2471,6 +2519,7 @@
               <tbody id="expenseRecordsBody"></tbody>
             </table>
           </div>
+          <div id="expense_pagination" class="pagination-bar"></div>
         </div>
       </div>
 
@@ -2543,6 +2592,7 @@
               <tbody id="userTable"></tbody>
             </table>
           </div>
+          <div id="users_pagination" class="pagination-bar"></div>
         </div>
       </div>
 
@@ -2594,6 +2644,7 @@
               <tbody id="goalTableBody"></tbody>
             </table>
           </div>
+          <div id="goals_pagination" class="pagination-bar"></div>
         </div>
       </div>
       <!-- YEAR SUMMARY -->
@@ -2740,6 +2791,7 @@
               </tbody>
             </table>
           </div>
+          <div id="req_pagination" class="pagination-bar"></div>
         </div>
       </div>
 
@@ -3463,6 +3515,7 @@
               </tbody>
             </table>
           </div>
+          <div id="fb_pagination" class="pagination-bar"></div>
         </div>
       </div>
       <!-- ══ EMAIL AUTOMATION PAGE ══ -->
@@ -5436,11 +5489,76 @@
           .join("");
     }
 
+    /* ══ PAGINATION UTILITY ══════════════════════════════════════════
+       _renderPagination(containerId, totalPages, currentPage, onPageFn)
+       Renders Previous / numbered / Next buttons into the given container.
+    ═══════════════════════════════════════════════════════════════════ */
+    function _renderPagination(containerId, totalPages, currentPage, onPageFn) {
+      var el = document.getElementById(containerId);
+      if (!el) return;
+      if (totalPages <= 1) { el.innerHTML = ""; return; }
+      var html = "";
+      html += '<button class="pg-btn" onclick="(' + onPageFn.toString() + ')(' + (currentPage - 1) + ')" ' + (currentPage <= 1 ? "disabled" : "") + '>&#8249; Prev</button>';
+      var start = Math.max(1, currentPage - 2);
+      var end = Math.min(totalPages, currentPage + 2);
+      if (start > 1) { html += '<button class="pg-btn" onclick="(' + onPageFn.toString() + ')(1)">1</button>'; if (start > 2) html += '<span class="pg-info">…</span>'; }
+      for (var p = start; p <= end; p++) {
+        html += '<button class="pg-btn' + (p === currentPage ? " active" : "") + '" onclick="(' + onPageFn.toString() + ')(' + p + ')">' + p + '</button>';
+      }
+      if (end < totalPages) { if (end < totalPages - 1) html += '<span class="pg-info">…</span>'; html += '<button class="pg-btn" onclick="(' + onPageFn.toString() + ')(' + totalPages + ')">' + totalPages + '</button>'; }
+      html += '<button class="pg-btn" onclick="(' + onPageFn.toString() + ')(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages ? "disabled" : "") + '>Next &#8250;</button>';
+      html += '<span class="pg-info">Page ' + currentPage + ' of ' + totalPages + '</span>';
+      el.innerHTML = html;
+    }
+
+    /* — Pagination state — */
+    var _contribPage = 1, _contribList = [];
+    var _expensePage = 1, _expenseList = [];
+    var _goalsPage = 1, _goalsList = [];
+    var _usersPage = 1, _usersList = [];
+    var _reqPage = 1, _reqList = [];
+    var _feedbackPage = 1, _feedbackList = [];
+    var _PG = 10; /* records per page for all sections */
+
+    /* PAGE_SIZE alias used by pre-existing code */
+    var PAGE_SIZE = 10;
+
+    /* _buildPagination — wrapper used by pre-existing paged functions.
+       fnName is a string (e.g. "_gotoReqPage") callable from inline onclick. */
+    function _buildPagination(containerId, currentPage, totalPages, fnName) {
+      var el = document.getElementById(containerId);
+      if (!el) return;
+      if (!totalPages || totalPages <= 1) { el.innerHTML = ""; return; }
+      var html = "";
+      html += '<button class="pg-btn" onclick="' + fnName + '(' + (currentPage - 1) + ')" ' + (currentPage <= 1 ? "disabled" : "") + '>&#8249; Prev</button>';
+      var start = Math.max(1, currentPage - 2);
+      var end = Math.min(totalPages, currentPage + 2);
+      if (start > 1) { html += '<button class="pg-btn" onclick="' + fnName + '(1)">1</button>'; if (start > 2) html += '<span class="pg-info">…</span>'; }
+      for (var p = start; p <= end; p++) {
+        html += '<button class="pg-btn' + (p === currentPage ? " active" : "") + '" onclick="' + fnName + '(' + p + ')">' + p + '</button>';
+      }
+      if (end < totalPages) { if (end < totalPages - 1) html += '<span class="pg-info">…</span>'; html += '<button class="pg-btn" onclick="' + fnName + '(' + totalPages + ')">' + totalPages + '</button>'; }
+      html += '<button class="pg-btn" onclick="' + fnName + '(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages ? "disabled" : "") + '>Next &#8250;</button>';
+      html += '<span class="pg-info">Page ' + currentPage + ' of ' + totalPages + '</span>';
+      el.innerHTML = html;
+    }
+
     /* ── RENDER CONTRIBUTIONS — view-only rows, edit via popup ── */
     function render(list) {
       if (!list) list = data;
-      let n = 0;
-      document.getElementById("tb").innerHTML = list
+      _contribList = list;
+      _contribPage = 1;
+      _renderContribPage(1);
+    }
+
+    function _renderContribPage(page) {
+      _contribPage = page;
+      var totalPages = Math.ceil(_contribList.length / _PG);
+      if (page > totalPages && totalPages > 0) { _contribPage = totalPages; page = totalPages; }
+      var start = (page - 1) * _PG;
+      var items = _contribList.slice(start, start + _PG);
+      var n = start;
+      document.getElementById("tb").innerHTML = items
         .map((c) => {
           n++;
           let isWalkIn = String(c.UserId).startsWith("WALKIN_");
@@ -5486,6 +5604,7 @@
       </tr>`;
         })
         .join("");
+      _renderPagination("contrib_pagination", totalPages, page, function(p){ _renderContribPage(p); });
     }
 
     /* VIEW contribution detail popup */
@@ -5654,14 +5773,27 @@
         }
         return nameMatch && dateMatch;
       });
+      window._contribList = filtered;
+      window._contribPage = 1;
       render(filtered);
     }
 
     /* ── RENDER EXPENSES — view-only rows ── */
     function renderExpenses(list) {
       if (!list) list = expenses;
-      let n = 0;
-      document.getElementById("expenseRecordsBody").innerHTML = list
+      _expenseList = list;
+      _expensePage = 1;
+      _renderExpensePage(1);
+    }
+
+    function _renderExpensePage(page) {
+      _expensePage = page;
+      var totalPages = Math.ceil(_expenseList.length / _PG);
+      if (page > totalPages && totalPages > 0) { _expensePage = totalPages; page = totalPages; }
+      var start = (page - 1) * _PG;
+      var items = _expenseList.slice(start, start + _PG);
+      var n = start;
+      document.getElementById("expenseRecordsBody").innerHTML = items
         .map((e) => {
           n++;
           let tName =
@@ -5698,6 +5830,7 @@
       </tr>`;
         })
         .join("");
+      _renderPagination("expense_pagination", totalPages, page, function(p){ _renderExpensePage(p); });
     }
 
     function loadExpenseFilters() {
@@ -5857,15 +5990,30 @@
     /* ── RENDER USERS — view-only rows ── */
     function renderUsers() {
       let sv = (document.getElementById("userSearchInput")?.value || "").toLowerCase();
-      // Apply status filter from tabs
       let filtered = users.filter(u => {
         const matchSearch = (u.Name || "").toLowerCase().includes(sv) || String(u.Mobile || "").includes(sv);
         if (!matchSearch) return false;
         if (!window._userFilterStatus || window._userFilterStatus === "all") return true;
         return String(u.Status || "Active").toLowerCase() === window._userFilterStatus;
       });
-      // Update tab counts on every render
       updateUserTabCounts(users);
+      window._userList = filtered;
+      window._usersPage = 1;
+      _renderUsersPaged();
+    }
+
+    function _gotoUsersPage(p) {
+      const total = Math.ceil((window._userList || []).length / PAGE_SIZE);
+      window._usersPage = Math.max(1, Math.min(p, total));
+      _renderUsersPaged();
+    }
+
+    function _renderUsersPaged() {
+      const filtered = window._userList || [];
+      const page = window._usersPage || 1;
+      const start = (page - 1) * PAGE_SIZE;
+      const items = filtered.slice(start, start + PAGE_SIZE);
+      const total = Math.ceil(filtered.length / PAGE_SIZE);
       const statusBadge = (u) => {
         const st = String(u.Status || "Active").toLowerCase();
         if (st === "pending") return `<span class="badge" style="background:#fff3e0;color:#e67e22;border:1px solid #f7a01a;">Pending</span>`;
@@ -5874,7 +6022,7 @@
         if (st === "inactive") return `<span class="badge badge-red">Inactive</span>`;
         return `<span class="badge badge-green">${escapeHtml(u.Status || "Active")}</span>`;
       };
-      document.getElementById("userTable").innerHTML = filtered.map(u => {
+      document.getElementById("userTable").innerHTML = items.map(u => {
         const st = String(u.Status || "Active").toLowerCase();
         const isPending = st === "pending";
         const rowClass = isPending ? "row-pending" : st === "rejected" ? "row-rejected" : "";
@@ -5902,6 +6050,7 @@
         </td>
       </tr>`;
       }).join("");
+      _buildPagination("users_pagination", page, total, "_gotoUsersPage");
     }
 
     function viewUser(id) {
@@ -7060,13 +7209,30 @@
     }
 
     function renderGoals() {
+      window._goalList = goals;
+      window._goalsPage = 1;
+      _renderGoalsPaged();
+    }
+
+    function _gotoGoalsPage(p) {
+      const total = Math.ceil((window._goalList || []).length / PAGE_SIZE);
+      window._goalsPage = Math.max(1, Math.min(p, total));
+      _renderGoalsPaged();
+    }
+
+    function _renderGoalsPaged() {
+      const list = window._goalList || [];
+      const page = window._goalsPage || 1;
+      const start = (page - 1) * PAGE_SIZE;
+      const items = list.slice(start, start + PAGE_SIZE);
+      const total = Math.ceil(list.length / PAGE_SIZE);
       document.getElementById("goalTableBody").innerHTML =
-        goals.length === 0
+        list.length === 0
           ? `<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No goals yet</td></tr>`
-          : goals
-            .map((g, i) => {
+          : items
+            .map((g, idx) => {
+              const i = start + idx;
               let collected = Number(g.CurrentAmount || 0);
-              // Auto-calculate actual contributions for this goal name
               let autoCalc = data.reduce((sum, c) => {
                 let tName = (
                   types.find((x) => String(x.TypeId) === String(c.TypeId))
@@ -7121,6 +7287,7 @@
               </tr>`;
             })
             .join("");
+      _buildPagination("goals_pagination", page, total, "_gotoGoalsPage");
     }
 
     /* ═══════════════════════════════════════════════════════════════
@@ -7833,7 +8000,7 @@
     /* ═══ AUDIT LOG FUNCTIONS — ENHANCED ═══ */
     let _auditData = [];
     let _auditPage = 1;
-    const AUDIT_PAGE_SIZE = 50;
+    const AUDIT_PAGE_SIZE = 10;
 
     // ── Collect device/browser info for audit logging
     function _getDeviceInfo() {
@@ -7969,11 +8136,15 @@
       }).join("");
       // Pagination
       if (pagEl && totalPages > 1) {
-        let phtml = `<span style="font-size:12px;color:#888;align-self:center;">Page ${page}/${totalPages} &middot; ${list.length} entries</span>`;
-        for (let p = 1; p <= totalPages; p++) {
-          const ac = p === page;
-          phtml += `<button onclick="_goAuditPage(${p})" style="padding:5px 12px;border-radius:6px;border:1px solid ${ac ? "#334155" : "#ddd"};background:${ac ? "#334155" : "#fff"};color:${ac ? "#fff" : "#555"};font-size:12px;cursor:pointer;font-family:Poppins,sans-serif;">${p}</button>`;
+        let phtml = '<span class="pg-info">Page ' + page + '/' + totalPages + ' &middot; ' + list.length + ' entries</span>';
+        phtml += '<button class="pg-btn" onclick="_goAuditPage(' + Math.max(1, page - 1) + ')" ' + (page <= 1 ? 'disabled' : '') + '>&#8249; Prev</button>';
+        var pgStart = Math.max(1, page - 2), pgEnd = Math.min(totalPages, page + 2);
+        if (pgStart > 1) { phtml += '<button class="pg-btn" onclick="_goAuditPage(1)">1</button>'; if (pgStart > 2) phtml += '<span class="pg-info">…</span>'; }
+        for (let p = pgStart; p <= pgEnd; p++) {
+          phtml += '<button class="pg-btn' + (p === page ? ' active' : '') + '" onclick="_goAuditPage(' + p + ')">' + p + '</button>';
         }
+        if (pgEnd < totalPages) { if (pgEnd < totalPages - 1) phtml += '<span class="pg-info">…</span>'; phtml += '<button class="pg-btn" onclick="_goAuditPage(' + totalPages + ')">' + totalPages + '</button>'; }
+        phtml += '<button class="pg-btn" onclick="_goAuditPage(' + Math.min(totalPages, page + 1) + ')" ' + (page >= totalPages ? 'disabled' : '') + '>Next &#8250;</button>';
         pagEl.innerHTML = phtml;
       } else if (pagEl) { pagEl.innerHTML = ""; }
     }
@@ -8371,10 +8542,30 @@
       if (!tbody) return;
       if (!list || list.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
+        _buildPagination("fb_pagination", 1, 0, "_gotoFbPage");
         return;
       }
-      let visibleIdx = 0;
-      tbody.innerHTML = list.map((row, i) => {
+      window._fbList = list;
+      window._fbPage = 1;
+      _renderFbPaged();
+    }
+
+    function _gotoFbPage(p) {
+      const total = Math.ceil((window._fbList || []).length / PAGE_SIZE);
+      window._fbPage = Math.max(1, Math.min(p, total));
+      _renderFbPaged();
+    }
+
+    function _renderFbPaged() {
+      const tbody = document.getElementById("fbAdminTableBody");
+      if (!tbody) return;
+      const list = window._fbList || [];
+      const page = window._fbPage || 1;
+      const start = (page - 1) * PAGE_SIZE;
+      const items = list.slice(start, start + PAGE_SIZE);
+      const total = Math.ceil(list.length / PAGE_SIZE);
+      let visibleIdx = start;
+      tbody.innerHTML = items.map((row, idx) => {
         visibleIdx++;
         const ts = String(row.Timestamp || row[0] || '—');
         const name = String(row.Name || row[1] || '—');
@@ -8397,7 +8588,7 @@
             <td>${badge}</td>
             <td>
               <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
-                ${!isDone ? `<button onclick="replyToFeedback(f.RowIndex, f.Name||'Member', f.Mobile||''); return false;" style="background:#25d366;margin-right:4px;"><i class="fa-brands fa-whatsapp"></i> Reply</button>
+                ${!isDone ? `<button onclick="replyToFeedback(${rowIdx}, '${escapeHtml(name)}', '${escapeHtml(mobile)}')" style="background:#25d366;margin-right:4px;"><i class="fa-brands fa-whatsapp"></i> Reply</button>
               <button class="btn-sm" onclick="fbMarkResolved(${rowIdx}, this)"
                   style="background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:8px;padding:4px 9px;font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fa-solid fa-check"></i> Done</button>` : ''}
                 <button onclick="fbDeleteRow(${rowIdx}, this)"
@@ -8406,6 +8597,7 @@
             </td>
           </tr>`;
       }).join('');
+      _buildPagination("fb_pagination", page, total, "_gotoFbPage");
     }
 
     function filterFeedbackAdmin() {
@@ -8416,15 +8608,16 @@
         renderFeedbackAdmin(_fbAdminData);
         return;
       }
-      renderFeedbackAdmin(
-        _fbAdminData.filter((r) =>
-          [r.Name || r[1], r.Mobile || r[2], r.Message || r[4]].some((v) =>
-            String(v || "")
-              .toLowerCase()
-              .includes(txt)
-          )
+      const filtered = _fbAdminData.filter((r) =>
+        [r.Name || r[1], r.Mobile || r[2], r.Message || r[4]].some((v) =>
+          String(v || "")
+            .toLowerCase()
+            .includes(txt)
         )
       );
+      window._fbList = filtered;
+      window._fbPage = 1;
+      _renderFbPaged();
     }
 
     try { init(); } catch (e) { console.warn('init() error:', e); }
@@ -9094,6 +9287,7 @@
         document.body.appendChild(script);
       }
 
+      // FIX: bust quota cache and refresh sidebar + email auto page counters on success
       function _reportDone(r, timedOut) {
         if (btn) {
           btn.disabled = false;
@@ -9104,8 +9298,30 @@
           res.innerHTML = "⚠️ Still running in the background — check your Apps Script execution log. Emails may still be sent successfully.";
           res.style.color = "#92400e";
         } else if (r && r.status === "ok") {
-          res.innerHTML = "✅ Done — sent to <strong>" + (r.sent || 0) + "</strong> members, skipped <strong>" + (r.skipped || 0) + "</strong> (no email / quota). Quota remaining: " + (r.quotaRemaining ?? "—") + ".";
+          res.innerHTML = "✅ Done — sent to <strong>" + (r.sent || 0) + "</strong> members, skipped <strong>" + (r.skipped || 0) + "</strong>";
           res.style.color = "#065f46";
+          // Bust quota cache and refresh sidebar + email auto page counters
+          window._quotaCache = null;
+          window._quotaCacheTime = 0;
+          getEmailQuotaCached().then(function(q) {
+            if (!q || typeof q.used === "undefined") return;
+            // 1. Sidebar — Email Today
+            var sbEq = document.getElementById("sb_email_quota");
+            if (sbEq) {
+              var color = q.remaining < 10 ? "#f87171" : q.remaining < 30 ? "#fbbf24" : "#60a5fa";
+              sbEq.style.color = color;
+              sbEq.innerText = q.used + " / " + q.limit + " used";
+            }
+            var warnEl = document.getElementById("sb_quota_warn");
+            if (warnEl) warnEl.style.display = q.remaining < 10 ? "block" : "none";
+            // 2. Email Automation page quota display
+            var eaEl = document.getElementById("ea_quota_display");
+            if (eaEl) {
+              var pct = Math.round((q.used / q.limit) * 100);
+              var col = pct > 80 ? "#f87171" : pct > 50 ? "#fbbf24" : "#34d399";
+              eaEl.innerHTML = "<strong style='color:" + col + ";'>" + q.used + "</strong> used of <strong>" + q.limit + "</strong> today &nbsp;&middot;&nbsp; <strong style='color:#34d399;'>" + q.remaining + " remaining</strong>";
+            }
+          }).catch(function() {});
         } else {
           res.innerHTML = "❌ Failed: " + (r && r.message ? r.message : "Unknown error. Check Apps Script logs.");
           res.style.color = "#991b1b";
@@ -9115,7 +9331,6 @@
       // Start polling after 8s (give the job time to start)
       setTimeout(_pollResult, 8000);
     }
-
     // showPage lazy-init hooks handled by DOMContentLoaded listener below
 
     /* ══════════════════════════════════════════════════════════════
@@ -9427,17 +9642,38 @@
           String(r.UtrRef || "").toLowerCase().includes(q);
       });
 
+      window._reqList = list;
       window._reqListRendered = list;
+      window._reqPage = 1;
+      _renderReqPaged();
+    }
+
+    function _gotoReqPage(p) {
+      const total = Math.ceil((window._reqList || []).length / PAGE_SIZE);
+      window._reqPage = Math.max(1, Math.min(p, total));
+      _renderReqPaged();
+    }
+
+    function _renderReqPaged() {
+      const tbody = document.getElementById("reqTbody");
+      if (!tbody) return;
+      const list = window._reqList || [];
+      const page = window._reqPage || 1;
+      const start = (page - 1) * PAGE_SIZE;
+      const items = list.slice(start, start + PAGE_SIZE);
+      const total = Math.ceil(list.length / PAGE_SIZE);
 
       if (list.length === 0) {
         tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#aaa;padding:28px;">No requests found.</td></tr>';
+        _buildPagination("req_pagination", 1, 0, "_gotoReqPage");
         return;
       }
 
       const statusColor = { Pending: "#92400e", Approved: "#14532d", Rejected: "#7f1d1d" };
       const statusBg = { Pending: "#fef3c7", Approved: "#dcfce7", Rejected: "#fee2e2" };
 
-      tbody.innerHTML = list.map(function (r, i) {
+      tbody.innerHTML = items.map(function (r, idx) {
+        const i = start + idx;
         const u = (users || []).find(function (u) { return String(u.UserId) === String(r.UserId); });
         const name = u ? escapeHtml(u.Name || "Unknown") : "Unknown";
         const mobile = u ? escapeHtml(u.Mobile || "") : "";
@@ -9463,6 +9699,7 @@
           + '<td style="white-space:nowrap;">' + actBtns + '</td>'
           + '</tr>';
       }).join("");
+      _buildPagination("req_pagination", page, total, "_gotoReqPage");
     }
 
     function _approveContribRequest(idx) {

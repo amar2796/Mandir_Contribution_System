@@ -379,6 +379,51 @@
         min-width: 110px;
         justify-content: center;
       }
+      /* ── Transaction Log Pagination ── */
+      .pg-bar {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .pg-bar .pg-btn {
+        padding: 5px 12px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        background: #fff;
+        color: #334155;
+        font-size: 12px;
+        font-family: "Poppins", sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.18s;
+        line-height: 1.4;
+        display: inline-flex;
+        align-items: center;
+        gap: 0;
+        box-shadow: none;
+      }
+      .pg-bar .pg-btn:hover:not(:disabled) {
+        background: #f7a01a;
+        color: #fff;
+        border-color: #f7a01a;
+      }
+      .pg-bar .pg-btn.active {
+        background: #f7a01a;
+        color: #fff;
+        border-color: #f7a01a;
+      }
+      .pg-bar .pg-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .pg-bar .pg-info {
+        font-size: 12px;
+        color: #94a3b8;
+        font-weight: 400;
+      }
     </style>
   </head>
   <body>
@@ -668,6 +713,7 @@
           <tbody id="detailBody"></tbody>
         </table>
       </div>
+      <div id="txn_pagination" class="pg-bar"></div>
     </div>
 
     <!-- Custom Calendar Popup -->
@@ -1062,8 +1108,46 @@
           `<tr><td colspan="2" style="text-align:center;color:#aaa;">No data</td></tr>`;
       }
 
+      var _txnRows = [];
+      var _txnPage = 1;
+      var _TXN_PG = 10;
+
+      function _buildTxnPagination(totalPages, currentPage) {
+        var el = document.getElementById("txn_pagination");
+        if (!el) return;
+        if (!totalPages || totalPages <= 1) { el.innerHTML = ""; return; }
+        var html = "";
+        html += '<button class="pg-btn" onclick="_gotoTxnPage(' + (currentPage - 1) + ')" ' + (currentPage <= 1 ? "disabled" : "") + '>&#8249; Prev</button>';
+        var start = Math.max(1, currentPage - 2);
+        var end = Math.min(totalPages, currentPage + 2);
+        if (start > 1) { html += '<button class="pg-btn" onclick="_gotoTxnPage(1)">1</button>'; if (start > 2) html += '<span class="pg-info">…</span>'; }
+        for (var p = start; p <= end; p++) {
+          html += '<button class="pg-btn' + (p === currentPage ? " active" : "") + '" onclick="_gotoTxnPage(' + p + ')">' + p + '</button>';
+        }
+        if (end < totalPages) { if (end < totalPages - 1) html += '<span class="pg-info">…</span>'; html += '<button class="pg-btn" onclick="_gotoTxnPage(' + totalPages + ')">' + totalPages + '</button>'; }
+        html += '<button class="pg-btn" onclick="_gotoTxnPage(' + (currentPage + 1) + ')" ' + (currentPage >= totalPages ? "disabled" : "") + '>Next &#8250;</button>';
+        html += '<span class="pg-info">Page ' + currentPage + ' of ' + totalPages + ' (' + _txnRows.length + ' records)</span>';
+        el.innerHTML = html;
+      }
+
+      function _gotoTxnPage(p) {
+        var totalPages = Math.ceil(_txnRows.length / _TXN_PG);
+        _txnPage = Math.max(1, Math.min(p, totalPages));
+        _renderTxnPage();
+      }
+
+      function _renderTxnPage() {
+        var totalPages = Math.ceil(_txnRows.length / _TXN_PG);
+        var start = (_txnPage - 1) * _TXN_PG;
+        var items = _txnRows.slice(start, start + _TXN_PG);
+        document.getElementById("detailBody").innerHTML =
+          items.map(function(r) { return r.html; }).join("") ||
+          '<tr><td colspan="7" style="text-align:center;color:#aaa;">No records</td></tr>';
+        _buildTxnPagination(totalPages, _txnPage);
+      }
+
       function renderDetails() {
-        let rows = [];
+        var rows = [];
         filteredC.forEach((c) => {
           // FIX #12: Walk-in shows actual name with WALK-IN badge (same as contribution section)
           let uName = getDisplayName(c.UserId, c.Note);
@@ -1113,9 +1197,9 @@
           let d2 = p2.length === 3 ? `${p2[2]}-${p2[1]}-${p2[0]}` : "0";
           return d2.localeCompare(d1);
         });
-        document.getElementById("detailBody").innerHTML =
-          rows.map((r) => r.html).join("") ||
-          `<tr><td colspan="7" style="text-align:center;color:#aaa;">No records</td></tr>`;
+        _txnRows = rows;
+        _txnPage = 1;
+        _renderTxnPage();
       }
 
       function renderAll() {

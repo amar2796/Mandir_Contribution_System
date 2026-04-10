@@ -1184,9 +1184,29 @@ function doGet(e) {
 
   // ── M1: MANUAL TRIGGER for monthly reminder (also runs via time-based trigger)
   else if (action === "triggerMonthlyReminder") {
-    const month = sanitize(e.parameter.month || "", 20);
-    const year  = sanitize(e.parameter.year  || "", 10);
-    result = sendMonthlyReminders(month || null, year || null, true);
+    const month  = sanitize(e.parameter.month  || "", 20);
+    const year   = sanitize(e.parameter.year   || "", 10);
+    const jobKey = sanitize(e.parameter.jobKey || "", 50) || ("job_" + Date.now());
+    // Mark as pending immediately so first poll knows job started
+    try {
+      PropertiesService.getScriptProperties().setProperty(
+        "MREPORT_" + jobKey, JSON.stringify({ status: "pending" })
+      );
+    } catch(e) {}
+    // Run the reminders job
+    let jobResult;
+    try {
+      jobResult = sendMonthlyReminders(month || null, year || null, true);
+    } catch(err) {
+      jobResult = { status: "error", message: err.message };
+    }
+    // Store final result so poll endpoint can return it
+    try {
+      PropertiesService.getScriptProperties().setProperty(
+        "MREPORT_" + jobKey, JSON.stringify(jobResult)
+      );
+    } catch(e) {}
+    result = jobResult;
   }
  
   else if (action === "registerUser")      result = registerUser(e.parameter);
