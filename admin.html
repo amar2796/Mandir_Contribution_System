@@ -3014,53 +3014,116 @@
       <!-- END YEAR SUMMARY PAGE -->
       <!-- MASTER -->
       <div id="masterPage" class="page">
-        <div style="
-              display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-              gap: 14px;
-            ">
-          <div class="card" style="margin-bottom: 0">
-            <h3><i class="fa-solid fa-tags"></i> Contribution Types</h3>
-            <div style="display: flex; gap: 8px; margin-bottom: 10px">
-              <input id="t_name" placeholder="New Type Name" style="margin: 0; flex: 1"
-                onkeydown="if(event.key==='Enter')addType()" />
-              <button onclick="addType()" style="width:60px;padding:10px;flex-shrink:0;">Add</button>
-              <button onclick="mergeContribTypes()"
-                style="background:#f7a01a;color:#fff;border:none;padding:8px 12px;border-radius:8px;font-size:11px;cursor:pointer;flex-shrink:0;white-space:nowrap;"><i
-                  class="fa-solid fa-code-merge"></i> Merge</button>
+        <style>
+          .md-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;}
+          .md-card{background:#fff;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.05);overflow:hidden;margin-bottom:0;}
+          .md-card-hdr{padding:13px 16px 11px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;}
+          .md-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+          .md-card-meta{flex:1;min-width:0;}
+          .md-card-title{font-size:13px;font-weight:600;color:#334155;}
+          .md-card-sub{font-size:11px;color:#94a3b8;margin-top:1px;}
+          .md-count{font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;flex-shrink:0;}
+          .md-add-row{padding:10px 12px;border-bottom:1px solid #f1f5f9;display:flex;gap:6px;}
+          .md-add-input{flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:12px;font-family:Poppins,sans-serif;outline:none;margin:0;transition:border-color 0.2s;}
+          .md-add-input:focus{border-color:#f7a01a;}
+          .md-add-btn{border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;flex-shrink:0;transition:opacity 0.2s;}
+          .md-add-btn:hover{opacity:0.88;}
+          .md-list{padding:4px 0;min-height:32px;}
+          .md-row{display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid #f8fafc;position:relative;}
+          .md-row:last-child{border-bottom:none;}
+          .md-row:hover{background:#fdfbf7;}
+          .md-drag{display:flex;flex-direction:column;gap:2.5px;cursor:grab;padding:2px 3px;flex-shrink:0;opacity:0.25;}
+          .md-drag span{display:block;width:11px;height:1.5px;background:#334155;border-radius:1px;}
+          .md-row:hover .md-drag{opacity:0.5;}
+          .md-num{font-size:10px;color:#cbd5e1;width:16px;text-align:right;flex-shrink:0;font-family:monospace;}
+          .md-name{flex:1;font-size:13px;color:#334155;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+          .md-actions{display:flex;gap:3px;flex-shrink:0;opacity:0;transition:opacity 0.15s;}
+          .md-row:hover .md-actions{opacity:1;}
+          .md-edit-active .md-actions{opacity:1;}
+          .md-ibtn{background:none;border:1px solid #e2e8f0;border-radius:6px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b;font-size:11px;padding:0;transition:background 0.15s,border-color 0.15s;}
+          .md-ibtn:hover{background:#f1f5f9;color:#334155;}
+          .md-ibtn:disabled{opacity:0.18;cursor:not-allowed;pointer-events:none;}
+          .md-ibtn.del:hover{background:#fef2f2;color:#e74c3c;border-color:#fca5a5;}
+          .md-ibtn.save:hover{background:#eafaf1;color:#27ae60;border-color:#6ee7b7;}
+          .md-ibtn.cancel:hover{background:#f8fafc;color:#334155;}
+          .md-edit-input{flex:1;border:1.5px solid #f7a01a;border-radius:6px;padding:4px 8px;font-size:12px;font-family:Poppins,sans-serif;outline:none;min-width:0;background:#fffdf7;}
+          .md-footer{padding:7px 12px 8px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;}
+          .md-hint{font-size:10px;color:#cbd5e1;}
+          .md-saved{font-size:10px;color:#27ae60;opacity:0;transition:opacity 0.3s;}
+          .md-empty{padding:28px;text-align:center;color:#94a3b8;font-size:12px;}
+          @media(max-width:600px){.md-grid{grid-template-columns:1fr;}}
+        </style>
+        <div class="md-grid">
+
+          <!-- Contribution Types -->
+          <div class="md-card">
+            <div class="md-card-hdr">
+              <div class="md-icon" style="background:#e6f1fb;color:#185fa5;"><i class="fa-solid fa-tags"></i></div>
+              <div class="md-card-meta">
+                <div class="md-card-title">Contribution types</div>
+                <div class="md-card-sub">Used in Add Contribution form</div>
+              </div>
+              <span class="md-count" style="background:#e6f1fb;color:#185fa5;" id="md_typesCount">—</span>
             </div>
-            <div class="table-responsive">
-              <table>
-                <tbody id="typeTable"></tbody>
-              </table>
+            <div class="md-add-row">
+              <input class="md-add-input" id="t_name" placeholder="New type name…" onkeydown="if(event.key==='Enter')addType()" />
+              <button class="md-add-btn" style="background:#185fa5;color:#fff;" onclick="addType()">
+                <i class="fa-solid fa-plus" style="font-size:10px;"></i> Add
+              </button>
+            </div>
+            <div id="typeList" class="md-list"></div>
+            <div class="md-footer">
+              <span class="md-hint"><i class="fa-solid fa-arrows-up-down" style="font-size:9px;margin-right:3px;"></i>Arrows reorder — saved to sheet</span>
+              <span class="md-saved" id="md_typesSaved">✓ Saved</span>
             </div>
           </div>
-          <div class="card" style="margin-bottom: 0">
-            <h3><i class="fa-solid fa-star"></i> Occasions</h3>
-            <div style="display: flex; gap: 8px; margin-bottom: 10px">
-              <input id="o_name" placeholder="New Occasion" style="margin: 0; flex: 1"
-                onkeydown="if(event.key==='Enter')addOccasion()" />
-              <button onclick="addOccasion()" style="width:60px;padding:10px;flex-shrink:0;">Add</button>
+
+          <!-- Occasions -->
+          <div class="md-card">
+            <div class="md-card-hdr">
+              <div class="md-icon" style="background:#eaf3de;color:#3b6d11;"><i class="fa-solid fa-star"></i></div>
+              <div class="md-card-meta">
+                <div class="md-card-title">Occasions</div>
+                <div class="md-card-sub">Special events &amp; festivals</div>
+              </div>
+              <span class="md-count" style="background:#eaf3de;color:#3b6d11;" id="md_occasionsCount">—</span>
             </div>
-            <div class="table-responsive">
-              <table>
-                <tbody id="occasionTable"></tbody>
-              </table>
+            <div class="md-add-row">
+              <input class="md-add-input" id="o_name" placeholder="New occasion…" onkeydown="if(event.key==='Enter')addOccasion()" />
+              <button class="md-add-btn" style="background:#3b6d11;color:#fff;" onclick="addOccasion()">
+                <i class="fa-solid fa-plus" style="font-size:10px;"></i> Add
+              </button>
             </div>
-          </div>
-          <div class="card" style="margin-bottom: 0">
-            <h3><i class="fa-solid fa-receipt"></i> Expense Types</h3>
-            <div style="display: flex; gap: 8px; margin-bottom: 10px">
-              <input id="e_name" placeholder="New Expense Type" style="margin: 0; flex: 1"
-                onkeydown="if(event.key==='Enter')addExpenseType()" />
-              <button onclick="addExpenseType()" style="width:60px;padding:10px;flex-shrink:0;">Add</button>
-            </div>
-            <div class="table-responsive">
-              <table>
-                <tbody id="expenseTable"></tbody>
-              </table>
+            <div id="occasionList" class="md-list"></div>
+            <div class="md-footer">
+              <span class="md-hint"><i class="fa-solid fa-arrows-up-down" style="font-size:9px;margin-right:3px;"></i>Arrows reorder — saved to sheet</span>
+              <span class="md-saved" id="md_occasionsSaved">✓ Saved</span>
             </div>
           </div>
+
+          <!-- Expense Types -->
+          <div class="md-card">
+            <div class="md-card-hdr">
+              <div class="md-icon" style="background:#faece7;color:#993c1d;"><i class="fa-solid fa-receipt"></i></div>
+              <div class="md-card-meta">
+                <div class="md-card-title">Expense types</div>
+                <div class="md-card-sub">Categories for expense entries</div>
+              </div>
+              <span class="md-count" style="background:#faece7;color:#993c1d;" id="md_expCount">—</span>
+            </div>
+            <div class="md-add-row">
+              <input class="md-add-input" id="e_name" placeholder="New expense type…" onkeydown="if(event.key==='Enter')addExpenseType()" />
+              <button class="md-add-btn" style="background:#993c1d;color:#fff;" onclick="addExpenseType()">
+                <i class="fa-solid fa-plus" style="font-size:10px;"></i> Add
+              </button>
+            </div>
+            <div id="expenseList" class="md-list"></div>
+            <div class="md-footer">
+              <span class="md-hint"><i class="fa-solid fa-arrows-up-down" style="font-size:9px;margin-right:3px;"></i>Arrows reorder — saved to sheet</span>
+              <span class="md-saved" id="md_expSaved">✓ Saved</span>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -6529,41 +6592,141 @@
     }
 
     /* ── MASTER DATA TABLES ── */
+    /* ── shared inline-edit state ── */
+    window._mdEditing = null; // { listName, idx, id }
+
+    function _mdFlashSaved(listName) {
+      var spanId = { types:'md_typesSaved', occasions:'md_occasionsSaved', expenseTypes:'md_expSaved' }[listName];
+      var el = document.getElementById(spanId);
+      if (!el) return;
+      el.style.opacity = '1';
+      setTimeout(function(){ el.style.opacity = '0'; }, 2200);
+    }
+
+    function _mdRenderRow(listName, item, idx, total, isEditing) {
+      var id, name;
+      if (listName === 'types')        { id = item.TypeId;       name = item.TypeName; }
+      else if (listName === 'occasions'){ id = item.OccasionId;   name = item.OccasionName; }
+      else                              { id = item.ExpenseTypeId; name = item.Name; }
+      var safeId   = escapeHtml(String(id));
+      var safeName = escapeHtml(String(name));
+
+      if (isEditing) {
+        return '<div class="md-row md-edit-active">'
+          + '<div class="md-drag"><span></span><span></span><span></span></div>'
+          + '<span class="md-num">' + (idx+1) + '</span>'
+          + '<input class="md-edit-input" id="md_editInput" value="' + safeName + '" '
+          +   'onkeydown="if(event.key===\'Enter\')_mdSaveEdit(\'' + listName + '\',' + idx + ',\'' + safeId + '\');'
+          +             'if(event.key===\'Escape\')_mdCancelEdit(\'' + listName + '\');" />'
+          + '<div class="md-actions" style="opacity:1;">'
+          +   '<button class="md-ibtn save" title="Save" onclick="_mdSaveEdit(\'' + listName + '\',' + idx + ',\'' + safeId + '\')"><i class="fa-solid fa-check" style="font-size:10px;"></i></button>'
+          +   '<button class="md-ibtn cancel" title="Cancel" onclick="_mdCancelEdit(\'' + listName + '\')"><i class="fa-solid fa-xmark" style="font-size:10px;"></i></button>'
+          + '</div>'
+          + '</div>';
+      }
+
+      return '<div class="md-row">'
+        + '<div class="md-drag"><span></span><span></span><span></span></div>'
+        + '<span class="md-num">' + (idx+1) + '</span>'
+        + '<span class="md-name" title="' + safeName + '">' + safeName + '</span>'
+        + '<div class="md-actions">'
+        +   '<button class="md-ibtn" title="Move up" onclick="_moveItem(\'' + listName + '\',' + idx + ',-1)" ' + (idx===0?'disabled':'') + '><i class="fa-solid fa-chevron-up" style="font-size:9px;"></i></button>'
+        +   '<button class="md-ibtn" title="Move down" onclick="_moveItem(\'' + listName + '\',' + idx + ',1)" ' + (idx===total-1?'disabled':'') + '><i class="fa-solid fa-chevron-down" style="font-size:9px;"></i></button>'
+        +   '<button class="md-ibtn" title="Edit" onclick="_mdEdit(\'' + listName + '\',' + idx + ',\'' + safeId + '\')"><i class="fa-solid fa-pen" style="font-size:10px;"></i></button>'
+        +   '<button class="md-ibtn del" title="Delete" onclick="' + ({types:'deleteType',occasions:'deleteOccasion',expenseTypes:'deleteExpenseType'}[listName]) + '(\'' + safeId + '\')"><i class="fa-solid fa-trash" style="font-size:10px;"></i></button>'
+        + '</div>'
+        + '</div>';
+    }
+
     function renderTypes() {
-      document.getElementById("typeTable").innerHTML = types
-        .map((t, idx) => `
-      <tr><td style="width:100%;font-size:13px;">${escapeHtml(t.TypeName)}</td>
-      <td><div class="action-btns" style="flex-wrap:nowrap;gap:2px;">
-        <button class="btn-sm" title="Move Up" style="padding:3px 6px;font-size:11px;" onclick="_moveItem('types',${idx},-1)" ${idx === 0 ? 'disabled' : ''}>&#8593;</button>
-        <button class="btn-sm" title="Move Down" style="padding:3px 6px;font-size:11px;" onclick="_moveItem('types',${idx},1)" ${idx === types.length - 1 ? 'disabled' : ''}>&#8595;</button>
-        <button class="btn-sm" onclick="openEditType('${t.TypeId}','${escapeHtml(t.TypeName)}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn-sm btn-danger" onclick="deleteType('${t.TypeId}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
-      </div></td></tr>`)
-        .join("");
+      var el = document.getElementById('typeList');
+      if (!el) return;
+      var countEl = document.getElementById('md_typesCount');
+      if (countEl) countEl.textContent = types.length + ' item' + (types.length===1?'':'s');
+      if (!types.length) { el.innerHTML = '<div class="md-empty">No types yet. Add one above.</div>'; return; }
+      el.innerHTML = types.map(function(t, idx) {
+        var isEditing = window._mdEditing && window._mdEditing.listName==='types' && window._mdEditing.idx===idx;
+        return _mdRenderRow('types', t, idx, types.length, isEditing);
+      }).join('');
+      if (window._mdEditing && window._mdEditing.listName==='types') {
+        var inp = document.getElementById('md_editInput');
+        if (inp) { inp.focus(); inp.select(); }
+      }
     }
+
     function renderOccasions() {
-      document.getElementById("occasionTable").innerHTML = occasions
-        .map((o, idx) => `
-      <tr><td style="width:100%;font-size:13px;">${escapeHtml(o.OccasionName)}</td>
-      <td><div class="action-btns" style="flex-wrap:nowrap;gap:2px;">
-        <button class="btn-sm" title="Move Up" style="padding:3px 6px;font-size:11px;" onclick="_moveItem('occasions',${idx},-1)" ${idx === 0 ? 'disabled' : ''}>&#8593;</button>
-        <button class="btn-sm" title="Move Down" style="padding:3px 6px;font-size:11px;" onclick="_moveItem('occasions',${idx},1)" ${idx === occasions.length - 1 ? 'disabled' : ''}>&#8595;</button>
-        <button class="btn-sm" onclick="openEditOccasion('${o.OccasionId}','${escapeHtml(o.OccasionName)}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn-sm btn-danger" onclick="deleteOccasion('${o.OccasionId}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
-      </div></td></tr>`)
-        .join("");
+      var el = document.getElementById('occasionList');
+      if (!el) return;
+      var countEl = document.getElementById('md_occasionsCount');
+      if (countEl) countEl.textContent = occasions.length + ' item' + (occasions.length===1?'':'s');
+      if (!occasions.length) { el.innerHTML = '<div class="md-empty">No occasions yet. Add one above.</div>'; return; }
+      el.innerHTML = occasions.map(function(o, idx) {
+        var isEditing = window._mdEditing && window._mdEditing.listName==='occasions' && window._mdEditing.idx===idx;
+        return _mdRenderRow('occasions', o, idx, occasions.length, isEditing);
+      }).join('');
+      if (window._mdEditing && window._mdEditing.listName==='occasions') {
+        var inp = document.getElementById('md_editInput');
+        if (inp) { inp.focus(); inp.select(); }
+      }
     }
+
     function renderExpenseTypes() {
-      document.getElementById("expenseTable").innerHTML = expenseTypes
-        .map((e, idx) => `
-      <tr><td style="width:100%;font-size:13px;">${escapeHtml(e.Name)}</td>
-      <td><div class="action-btns" style="flex-wrap:nowrap;gap:2px;">
-        <button class="btn-sm" title="Move Up" style="padding:3px 6px;font-size:11px;" onclick="_moveItem('expenseTypes',${idx},-1)" ${idx === 0 ? 'disabled' : ''}>&#8593;</button>
-        <button class="btn-sm" title="Move Down" style="padding:3px 6px;font-size:11px;" onclick="_moveItem('expenseTypes',${idx},1)" ${idx === expenseTypes.length - 1 ? 'disabled' : ''}>&#8595;</button>
-        <button class="btn-sm" onclick="openEditExpenseType('${e.ExpenseTypeId}','${escapeHtml(e.Name)}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn-sm btn-danger" onclick="deleteExpenseType('${e.ExpenseTypeId}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
-      </div></td></tr>`)
-        .join("");
+      var el = document.getElementById('expenseList');
+      if (!el) return;
+      var countEl = document.getElementById('md_expCount');
+      if (countEl) countEl.textContent = expenseTypes.length + ' item' + (expenseTypes.length===1?'':'s');
+      if (!expenseTypes.length) { el.innerHTML = '<div class="md-empty">No expense types yet. Add one above.</div>'; return; }
+      el.innerHTML = expenseTypes.map(function(e, idx) {
+        var isEditing = window._mdEditing && window._mdEditing.listName==='expenseTypes' && window._mdEditing.idx===idx;
+        return _mdRenderRow('expenseTypes', e, idx, expenseTypes.length, isEditing);
+      }).join('');
+      if (window._mdEditing && window._mdEditing.listName==='expenseTypes') {
+        var inp = document.getElementById('md_editInput');
+        if (inp) { inp.focus(); inp.select(); }
+      }
+    }
+
+    /* ── inline edit helpers ── */
+    function _mdEdit(listName, idx, id) {
+      window._mdEditing = { listName: listName, idx: idx, id: id };
+      var renderFn = { types: renderTypes, occasions: renderOccasions, expenseTypes: renderExpenseTypes }[listName];
+      if (renderFn) renderFn();
+    }
+
+    function _mdCancelEdit(listName) {
+      window._mdEditing = null;
+      var renderFn = { types: renderTypes, occasions: renderOccasions, expenseTypes: renderExpenseTypes }[listName];
+      if (renderFn) renderFn();
+    }
+
+    async function _mdSaveEdit(listName, idx, id) {
+      var inp = document.getElementById('md_editInput');
+      var newVal = inp ? inp.value.trim() : '';
+      if (!newVal) { toast('Name cannot be empty.', 'warn'); return; }
+      var res;
+      try {
+        if (listName === 'types') {
+          res = await postData({ action: 'updateType', TypeId: id, TypeName: newVal });
+          if (res && res.status === 'updated') types[idx].TypeName = newVal;
+        } else if (listName === 'occasions') {
+          res = await postData({ action: 'updateOccasion', OccasionId: id, OccasionName: newVal });
+          if (res && res.status === 'updated') occasions[idx].OccasionName = newVal;
+        } else {
+          res = await postData({ action: 'updateExpenseType', ExpenseTypeId: id, Name: newVal });
+          if (res && res.status === 'updated') expenseTypes[idx].Name = newVal;
+        }
+      } catch(err) { toast('❌ ' + err.message, 'error'); return; }
+      window._mdEditing = null;
+      if (res && res.status === 'updated') {
+        toast('✅ Updated.');
+        // also refresh dropdowns that use types/expenseTypes
+        if (listName === 'types') loadTypes();
+        if (listName === 'expenseTypes') loadExpenseTypes();
+      } else {
+        toast('❌ Update failed.', 'error');
+      }
+      var renderFn = { types: renderTypes, occasions: renderOccasions, expenseTypes: renderExpenseTypes }[listName];
+      if (renderFn) renderFn();
     }
 
     function _moveItem(listName, idx, dir) {
@@ -6573,24 +6736,21 @@
       const newIdx = idx + dir;
       if (newIdx < 0 || newIdx >= arr.length) return;
 
-      // Swap in memory first so the UI responds instantly
+      // Cancel any open inline edit before moving
+      if (window._mdEditing && window._mdEditing.listName === listName) {
+        window._mdEditing = null;
+      }
+
+      // Swap in memory instantly
       const tmp = arr[idx]; arr[idx] = arr[newIdx]; arr[newIdx] = tmp;
       renderFn();
       if (listName === 'types') loadTypes();
       if (listName === 'expenseTypes') loadExpenseTypes();
 
-      // Show saving indicator in the table header area
-      const tableIdMap = { types: 'typeTable', occasions: 'occasionTable', expenseTypes: 'expenseTable' };
-      const tbodyEl = document.getElementById(tableIdMap[listName]);
-      const saveIndicatorId = '_sortSaving_' + listName;
-      let indicator = document.getElementById(saveIndicatorId);
-      if (!indicator && tbodyEl && tbodyEl.closest('table')) {
-        indicator = document.createElement('caption');
-        indicator.id = saveIndicatorId;
-        indicator.style.cssText = 'font-size:11px;color:#f7a01a;padding:4px 0;caption-side:bottom;text-align:right;';
-        tbodyEl.closest('table').appendChild(indicator);
-      }
-      if (indicator) indicator.textContent = '⏳ Saving order…';
+      // Show saving indicator in footer
+      const savedSpanMap = { types: 'md_typesSaved', occasions: 'md_occasionsSaved', expenseTypes: 'md_expSaved' };
+      const savedEl = document.getElementById(savedSpanMap[listName]);
+      if (savedEl) { savedEl.textContent = '⏳ Saving…'; savedEl.style.opacity = '1'; savedEl.style.color = '#f7a01a'; }
 
       // Build id-keyed sort order and persist to sheet
       const idField = { types: 'TypeId', occasions: 'OccasionId', expenseTypes: 'ExpenseTypeId' }[listName];
@@ -6599,85 +6759,17 @@
       postData({ action: 'updateSortOrder', sheet: listName, order: JSON.stringify(orderArr) })
         .then(function(res) {
           if (res && res.status === 'success') {
-            if (indicator) { indicator.textContent = '✅ Order saved'; setTimeout(function(){ indicator.textContent = ''; }, 2000); }
-            // Bust local cache so next refresh picks up new order from sheet
+            if (savedEl) { savedEl.textContent = '✓ Saved'; savedEl.style.color = '#27ae60'; setTimeout(function(){ savedEl.style.opacity = '0'; }, 2200); }
             mandirCacheBust('getAllData');
           } else {
-            if (indicator) indicator.textContent = '';
+            if (savedEl) savedEl.style.opacity = '0';
             toast('⚠️ Order saved locally but failed to persist — try again.', 'warn');
           }
         })
         .catch(function() {
-          if (indicator) indicator.textContent = '';
+          if (savedEl) savedEl.style.opacity = '0';
           toast('⚠️ Could not save order to server. Check connection.', 'warn');
         });
-    }
-
-    /* inline edit popups for master data */
-    function openEditType(id, val) {
-      openModal(
-        `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Type</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Type Name</label><input class="_fi edit_val" value="${escapeHtml(
-          val
-        )}"/></div><div class="_mft"><button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button><button class="_mbtn" style="background:#f7a01a;" onclick="saveType('${id}')">Save</button></div>`,
-        "400px"
-      );
-    }
-    async function saveType(id) {
-      let res = await postData({
-        action: "updateType",
-        TypeId: id,
-        TypeName: document.querySelector(".edit_val").value,
-      });
-      toast(
-        res.status === "updated" ? "✅ Updated." : "❌ Failed.",
-        res.status === "updated" ? "" : "error"
-      );
-      closeModal();
-      smartRefresh("types");
-    }
-
-    function openEditOccasion(id, val) {
-      openModal(
-        `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Occasion</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Occasion Name</label><input class="_fi edit_val" value="${escapeHtml(
-          val
-        )}"/></div><div class="_mft"><button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button><button class="_mbtn" style="background:#f7a01a;" onclick="saveOccasion('${id}')">Save</button></div>`,
-        "400px"
-      );
-    }
-    async function saveOccasion(id) {
-      let res = await postData({
-        action: "updateOccasion",
-        OccasionId: id,
-        OccasionName: document.querySelector(".edit_val").value,
-      });
-      toast(
-        res.status === "updated" ? "✅ Updated." : "❌ Failed.",
-        res.status === "updated" ? "" : "error"
-      );
-      closeModal();
-      smartRefresh("occasions");
-    }
-
-    function openEditExpenseType(id, val) {
-      openModal(
-        `<div class="_mhdr"><h3><i class="fa-solid fa-pen"></i> Edit Expense Type</h3><button class="_mcls" onclick="closeModal()">×</button></div><div class="_mbdy"><label class="_fl">Name</label><input class="_fi edit_val" value="${escapeHtml(
-          val
-        )}"/></div><div class="_mft"><button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button><button class="_mbtn" style="background:#f7a01a;" onclick="saveExpType('${id}')">Save</button></div>`,
-        "400px"
-      );
-    }
-    async function saveExpType(id) {
-      let res = await postData({
-        action: "updateExpenseType",
-        ExpenseTypeId: id,
-        Name: document.querySelector(".edit_val").value,
-      });
-      toast(
-        res.status === "updated" ? "✅ Updated." : "❌ Failed.",
-        res.status === "updated" ? "" : "error"
-      );
-      closeModal();
-      smartRefresh("expenseTypes");
     }
 
     /* ── BULK INSERT v2: per-row (month + custom amount) ── */
@@ -10445,55 +10537,6 @@
     }
 
     // ── L7: Type merge tool
-    async function mergeContribTypes() {
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
-      const typeOpts = (types || []).map(t => `<option value="${t.TypeId}">${escapeHtml(t.TypeName)}</option>`).join("");
-      const html = `
-          <div class="_mhdr"><h3><i class="fa-solid fa-code-merge"></i> Merge Contribution Types</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-          <div class="_mbdy">
-            <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Select the type to <strong>remove</strong> and the type to <strong>keep</strong>. All records from the removed type will be reassigned to the kept type.</p>
-            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Type to REMOVE (will be deleted)</label>
-            <select id="mergeFrom" style="width:100%;padding:9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:12px;">${typeOpts}</select>
-            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Type to KEEP</label>
-            <select id="mergeTo" style="width:100%;padding:9px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px;">${typeOpts}</select>
-            <div id="mergeMsg" style="font-size:12px;color:#e74c3c;margin-top:4px;"></div>
-          </div>
-          <div class="_mft">
-            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
-            <button class="_mbtn" style="background:#e74c3c;" onclick="_executeMergeTypes()"><i class="fa-solid fa-code-merge"></i> Merge Types</button>
-          </div>`;
-      openModal(html, "500px");
-    }
-
-    async function _executeMergeTypes() {
-      const fromId = document.getElementById("mergeFrom")?.value;
-      const toId = document.getElementById("mergeTo")?.value;
-      const msgEl = document.getElementById("mergeMsg");
-      if (fromId === toId) { if (msgEl) msgEl.textContent = "Source and target must be different types."; return; }
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
-      // Get all contributions and update those with fromId → toId
-      const allC = contributions || [];
-      const toUpdate = allC.filter(c => String(c.TypeId) === fromId);
-      if (toUpdate.length === 0) { if (msgEl) msgEl.textContent = "No contributions use the source type. Safe to delete directly."; return; }
-      closeModal();
-      toast("Merging " + toUpdate.length + " records...", "warn");
-      let done = 0;
-      for (const contrib of toUpdate) {
-        try {
-          await postData({
-            action: "updateContribution", Id: contrib.Id, UserId: contrib.UserId,
-            Amount: contrib.Amount, ForMonth: contrib.ForMonth, Year: contrib.Year,
-            TypeId: toId, OccasionId: contrib.OccasionId || "", Note: contrib.Note || "",
-            PaymentMode: contrib.PaymentMode || "", sessionToken: s.sessionToken || "", userId: s.userId || ""
-          });
-          done++;
-        } catch (e) { }
-        await new Promise(r => setTimeout(r, 200));
-      }
-      toast("✅ Merged " + done + " records. You can now delete the old type.");
-      smartRefresh("contributions");
-    }
-
     // ── M10: Drag reorder for Types, Occasions, Expense Types
     let _dragReorderSrc = null;
     function _initTypeReorder(listId) {
