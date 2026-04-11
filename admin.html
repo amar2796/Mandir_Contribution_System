@@ -517,6 +517,12 @@
       .card h3 {
         font-size: 0.92rem;
       }
+
+      /* Home dashboard: collapse 2-col and 3-col to single col on mobile */
+      #home [style*="grid-template-columns:1fr 1fr"],
+      #home [style*="grid-template-columns:1fr 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+      }
     }
 
     .badge {
@@ -2249,46 +2255,193 @@
         </div>
       </div>
 
-      <!-- HOME -->
+      <!-- HOME — Redesigned Admin Dashboard -->
       <div id="home" class="page active">
-        <div class="grid-layout">
-          <!-- card: members -->
-          <div class="card-box" style="border-left-color:#6366f1;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-              <h4 style="margin:0;">Total Members</h4>
-              <span style="width:34px;height:34px;border-radius:10px;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">👥</span>
+
+        <!-- ── Period Selector Bar ── -->
+        <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#94a3b8;margin-bottom:5px;">Viewing Period</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <!-- Month pill scroll -->
+              <div id="hm_month_pills" style="display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;max-width:420px;"></div>
+              <!-- Hidden selects kept for JS compatibility -->
+              <select id="hm_sel_month" onchange="_hmOnPeriodChange()" style="display:none;"></select>
+              <select id="hm_sel_year" onchange="_hmOnPeriodChange()" style="width:auto;padding:4px 8px;margin:0;font-size:12px;font-weight:600;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#334155;cursor:pointer;outline:none;"></select>
+              <button onclick="_hmGoToCurrentMonth()" id="hm_btn_today" style="padding:4px 12px;font-size:11px;font-weight:600;background:transparent;color:#64748b;box-shadow:none;border:1px solid #e2e8f0;display:none;">↩ Today</button>
             </div>
-            <h2 id="totalUsers" style="color:#6366f1;margin:0;">0</h2>
-            <div id="trendUsers" style="font-size:11px;color:#94a3b8;margin-top:5px;">&nbsp;</div>
           </div>
-          <!-- card: contributions -->
-          <div class="card-box" style="border-left-color:#27ae60;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-              <h4 style="margin:0;">Total Contributions <span style="font-size:11px;font-weight:400;color:#aaa;">(All Time)</span></h4>
-              <span style="width:34px;height:34px;border-radius:10px;background:rgba(39,174,96,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">💰</span>
+          <div id="hm_period_label" style="font-size:12px;font-weight:700;color:#334155;background:#fef9ee;border:1px solid #fde68a;border-radius:20px;padding:4px 16px;"></div>
+        </div>
+
+        <!-- ── Section label ── -->
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;">At a glance</div>
+
+        <!-- ── KPI Row: 4 compact stat cards ── -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;">
+
+          <!-- Month Collection -->
+          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e2e8f0;border-left:4px solid #22c55e;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="width:36px;height:36px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💰</div>
+            <div style="min-width:0;">
+              <div style="font-size:11px;font-weight:600;color:#64748b;">Month Collection</div>
+              <div id="kpi_monthC" style="font-size:1.35rem;font-weight:700;color:#16a34a;line-height:1.2;letter-spacing:-0.3px;">₹0</div>
+              <div id="kpi_monthC_trend" style="font-size:10px;color:#94a3b8;margin-top:1px;">&nbsp;</div>
             </div>
-            <h2 id="totalContribution" style="color:#27ae60;font-size:1.5rem;margin:0;">₹0</h2>
-            <div id="trendContrib" style="font-size:11px;color:#94a3b8;margin-top:5px;">&nbsp;</div>
           </div>
-          <!-- card: expenses -->
-          <div class="card-box" style="border-left-color:#e74c3c;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-              <h4 style="margin:0;">Total Expenses <span style="font-size:11px;font-weight:400;color:#aaa;">(All Time)</span></h4>
-              <span style="width:34px;height:34px;border-radius:10px;background:rgba(231,76,60,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">💸</span>
+
+          <!-- Walk-in This Month -->
+          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e2e8f0;border-left:4px solid #f59e0b;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="width:36px;height:36px;border-radius:10px;background:#fffbeb;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🚶</div>
+            <div style="min-width:0;">
+              <div style="font-size:11px;font-weight:600;color:#64748b;">Walk-in This Month</div>
+              <div id="kpi_walkinC" style="font-size:1.35rem;font-weight:700;color:#d97706;line-height:1.2;letter-spacing:-0.3px;">₹0</div>
+              <div id="kpi_walkinC_sub" style="font-size:10px;color:#94a3b8;margin-top:1px;">0 entries</div>
             </div>
-            <h2 id="totalExpense" style="color:#e74c3c;font-size:1.5rem;margin:0;">₹0</h2>
-            <div id="trendExpense" style="font-size:11px;color:#94a3b8;margin-top:5px;">&nbsp;</div>
           </div>
-          <!-- card: net balance -->
-          <div class="card-box" style="border-left-color:#f7a01a;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-              <h4 style="margin:0;">Overall Net Balance <span style="font-size:11px;font-weight:400;color:#aaa;">(All Time)</span></h4>
-              <span style="width:34px;height:34px;border-radius:10px;background:rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">⚖️</span>
+
+          <!-- Expenses This Month -->
+          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e2e8f0;border-left:4px solid #ef4444;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="width:36px;height:36px;border-radius:10px;background:#fef2f2;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💸</div>
+            <div style="min-width:0;">
+              <div style="font-size:11px;font-weight:600;color:#64748b;">Expenses This Month</div>
+              <div id="kpi_monthE" style="font-size:1.35rem;font-weight:700;color:#dc2626;line-height:1.2;letter-spacing:-0.3px;">₹0</div>
+              <div id="kpi_monthE_trend" style="font-size:10px;color:#94a3b8;margin-top:1px;">&nbsp;</div>
             </div>
-            <h2 id="netBalance" style="color:#f7a01a;font-size:1.5rem;margin:0;">₹0</h2>
-            <div id="netBalanceBreakdown" style="margin-top:5px;min-height:16px;"></div>
+          </div>
+
+          <!-- Members Pending -->
+          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e2e8f0;border-left:4px solid #6366f1;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="width:36px;height:36px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">⏳</div>
+            <div style="min-width:0;">
+              <div style="font-size:11px;font-weight:600;color:#64748b;">Members Pending</div>
+              <div id="kpi_pending" style="font-size:1.35rem;font-weight:700;color:#4f46e5;line-height:1.2;letter-spacing:-0.3px;">0</div>
+              <div id="kpi_pending_sub" style="font-size:10px;color:#94a3b8;margin-top:1px;">of <span id="kpi_total_members">0</span> active members</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── Two-column: Member Status + Walk-in ── -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+
+          <!-- Member Contribution Status -->
+          <div class="card" style="margin-bottom:0;padding:14px 16px;">
+            <h3 style="margin-bottom:10px;font-size:13px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;">
+              <i class="fa-solid fa-users"></i> Member Contribution Status
+              <span id="hm_member_badge" style="margin-left:auto;background:#fff7ed;color:#c2410c;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;border:1px solid #fed7aa;">loading...</span>
+            </h3>
+            <!-- Tabs -->
+            <div style="display:flex;gap:5px;margin-bottom:8px;" id="hm_member_tabs">
+              <button onclick="_hmMemberTab('all',this)" class="btn-sm" id="hm_tab_all" style="background:#334155;font-size:11px;padding:3px 11px;border-radius:20px;box-shadow:none;">All</button>
+              <button onclick="_hmMemberTab('paid',this)" id="hm_tab_paid" class="btn-sm" style="background:#eafaf1;color:#16a34a;border:1px solid #a7f3d0;font-size:11px;padding:3px 11px;border-radius:20px;box-shadow:none;">Paid</button>
+              <button onclick="_hmMemberTab('pending',this)" id="hm_tab_pending" class="btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;font-size:11px;padding:3px 11px;border-radius:20px;box-shadow:none;">Pending</button>
+            </div>
+            <!-- Member list -->
+            <div id="hm_member_list" style="max-height:200px;overflow-y:auto;">
+              <div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+            </div>
+            <!-- Footer -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">
+              <div id="hm_member_summary" style="font-size:10px;color:#94a3b8;"></div>
+              <button onclick="showPage('trackerPage',document.querySelector('[onclick*=trackerPage]'))" style="background:#334155;font-size:11px;padding:4px 11px;box-shadow:none;">View Tracker →</button>
+            </div>
+          </div>
+
+          <!-- Walk-in Entries -->
+          <div class="card" style="margin-bottom:0;padding:14px 16px;">
+            <h3 style="margin-bottom:10px;font-size:13px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;">
+              <i class="fa-solid fa-person-walking"></i> Walk-in Entries
+              <span id="hm_walkin_badge" style="margin-left:auto;background:#fffbeb;color:#92400e;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;border:1px solid #fde68a;">this month</span>
+            </h3>
+            <div id="hm_walkin_list" style="max-height:200px;overflow-y:auto;">
+              <div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+            </div>
+            <!-- Footer -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">
+              <div id="hm_walkin_summary" style="font-size:10px;color:#94a3b8;"></div>
+              <button onclick="showPage('contributionPage',document.querySelector('[onclick*=contributionPage]'))" style="background:#f59e0b;font-size:11px;padding:4px 11px;box-shadow:none;color:#fff;">+ Add Walk-in</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── Three-column: Chart + Smart Alerts + Quick Actions ── -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+
+          <!-- Monthly Bar Chart -->
+          <div class="card" style="margin-bottom:0;padding:14px 16px;">
+            <h3 style="margin-bottom:10px;font-size:13px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;"><i class="fa-solid fa-chart-bar"></i> Monthly Income vs Expense</h3>
+            <div id="hm_bar_chart" style="display:flex;align-items:flex-end;gap:6px;height:72px;overflow-x:auto;">
+              <div style="color:#aaa;font-size:12px;">Loading...</div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:7px;font-size:10px;font-weight:600;color:#64748b;">
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Income</span>
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#f97316;border-radius:2px;display:inline-block;"></span>Expense</span>
+            </div>
+          </div>
+
+          <!-- Smart Alerts -->
+          <div class="card" style="margin-bottom:0;padding:14px 16px;">
+            <h3 style="margin-bottom:10px;font-size:13px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;"><i class="fa-solid fa-bell"></i> Smart Alerts <span id="hm_alert_badge" style="background:#fef2f2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #fca5a5;margin-left:4px;"></span></h3>
+            <div id="hm_alerts_list">
+              <div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Checking...</div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="card" style="margin-bottom:0;padding:14px 16px;">
+            <h3 style="margin-bottom:10px;font-size:13px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;"><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <button onclick="showPage('contributionPage',document.querySelector('[onclick*=contributionPage]'))" style="background:#16a34a;text-align:left;padding:8px 13px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;border-radius:9px;"><i class="fa-solid fa-plus"></i> Add Contribution</button>
+              <button onclick="showPage('expensePage',document.querySelector('[onclick*=expensePage]'))" style="background:#dc2626;text-align:left;padding:8px 13px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;border-radius:9px;"><i class="fa-solid fa-receipt"></i> Add Expense</button>
+              <button onclick="showPage('trackerPage',document.querySelector('[onclick*=trackerPage]'))" style="background:#334155;text-align:left;padding:8px 13px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;border-radius:9px;"><i class="fa-solid fa-chart-line"></i> Tracker / Reminders</button>
+              <button onclick="openDashboard(document.querySelector('[onclick*=openDashboard]'))" style="background:#6366f1;text-align:left;padding:8px 13px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;border-radius:9px;"><i class="fa-solid fa-chart-pie"></i> Full Dashboard & Reports</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── Year Balance Tracker ── -->
+        <div class="card" style="margin-bottom:14px;padding:14px 16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;">
+            <h3 style="margin:0;font-size:13px;"><i class="fa-solid fa-scale-balanced"></i> Year Balance — <span id="hm_yr_label">2025</span></h3>
+            <span id="hm_yr_status_badge" style="font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;"></span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px;">
+            <div style="background:#f8fafc;border-radius:10px;padding:10px 12px;border-left:3px solid #22c55e;">
+              <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">All-time Contributions</div>
+              <div id="totalContribution" style="font-size:1.1rem;font-weight:700;color:#16a34a;">₹0</div>
+              <div id="trendContrib" style="font-size:10px;color:#94a3b8;margin-top:2px;">&nbsp;</div>
+            </div>
+            <div style="background:#f8fafc;border-radius:10px;padding:10px 12px;border-left:3px solid #ef4444;">
+              <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">All-time Expenses</div>
+              <div id="totalExpense" style="font-size:1.1rem;font-weight:700;color:#dc2626;">₹0</div>
+              <div id="trendExpense" style="font-size:10px;color:#94a3b8;margin-top:2px;">&nbsp;</div>
+            </div>
+            <div style="background:#f8fafc;border-radius:10px;padding:10px 12px;border-left:3px solid #6366f1;">
+              <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">Total Members</div>
+              <div id="totalUsers" style="font-size:1.1rem;font-weight:700;color:#4f46e5;">0</div>
+              <div id="trendUsers" style="font-size:10px;color:#94a3b8;margin-top:2px;">Active members</div>
+            </div>
+            <div style="background:#1e293b;border-radius:10px;padding:10px 12px;border-left:3px solid #f7a01a;">
+              <div style="font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">Net Balance</div>
+              <div id="netBalance" style="font-size:1.1rem;font-weight:700;color:#f7a01a;">₹0</div>
+              <div id="netBalanceBreakdown" style="font-size:10px;color:#64748b;margin-top:2px;">&nbsp;</div>
+            </div>
+          </div>
+          <!-- Year progress bar -->
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px;">
+              <span>Year collection progress (<span id="hm_yr_months_done">0</span> of 12 months)</span>
+              <span id="hm_yr_pct" style="font-weight:700;color:#334155;">0%</span>
+            </div>
+            <div style="height:5px;background:#f1f5f9;border-radius:4px;overflow:hidden;">
+              <div id="hm_yr_progress_fill" style="height:100%;border-radius:4px;background:#22c55e;width:0%;transition:width .7s ease;"></div>
+            </div>
           </div>
         </div>
+
       </div>
 
       <!-- DASHBOARD — merged inline (no iframe, reuses admin data) -->
@@ -5358,7 +5511,492 @@
       }
 
       updateSidebarSummary();
+      _hmInitSelectors();
+      _hmOnPeriodChange();
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       HOME DASHBOARD — render all new panels
+       Called from loadSummary() after data is ready.
+    ═══════════════════════════════════════════════════════════ */
+    var _hmMemberFilter = "all";
+
+    /* ── Init the month/year dropdowns once data is loaded ── */
+    function _hmInitSelectors() {
+      var mSel = document.getElementById("hm_sel_month");
+      var ySel = document.getElementById("hm_sel_year");
+      if (!mSel || !ySel) return;
+
+      // Build hidden month options only once
+      if (!mSel.options.length) {
+        MONTHS.forEach(function(m) {
+          var o = document.createElement("option"); o.value = m; o.textContent = m; mSel.appendChild(o);
+        });
+      }
+
+      // Build year options from data + span 2023 to current year
+      var years = new Set();
+      data.forEach(function(c) { var y = Number(c.Year); if (!isNaN(y) && y > 2000) years.add(y); });
+      expenses.forEach(function(e) { var y = Number(e.Year); if (!isNaN(y) && y > 2000) years.add(y); });
+      var cur = new Date().getFullYear();
+      for (var y = 2023; y <= cur; y++) years.add(y);
+      var prev = ySel.value;
+      ySel.innerHTML = Array.from(years).sort(function(a,b){ return b-a; }).map(function(y) {
+        return '<option value="' + y + '">' + y + '</option>';
+      }).join("");
+      if (prev && ySel.querySelector('option[value="'+prev+'"]')) ySel.value = prev;
+      else ySel.value = String(cur);
+
+      // Set month to current only on first load
+      if (!mSel.value) mSel.value = MONTHS[new Date().getMonth()];
+
+      // Render pill row
+      _hmRenderMonthPills();
+    }
+
+    /* ── Render month pill buttons ── */
+    function _hmRenderMonthPills() {
+      var mSel = document.getElementById("hm_sel_month");
+      var pillRow = document.getElementById("hm_month_pills");
+      if (!pillRow || !mSel) return;
+      var active = mSel.value || MONTHS[new Date().getMonth()];
+      pillRow.innerHTML = MONTHS.map(function(m) {
+        var isActive = m === active;
+        return '<div onclick="_hmPickMonthPill(\'' + m + '\')" style="' +
+          'border:1px solid ' + (isActive ? '#f7a01a' : '#e2e8f0') + ';' +
+          'border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600;' +
+          'color:' + (isActive ? '#fff' : '#64748b') + ';' +
+          'background:' + (isActive ? '#f7a01a' : '#fff') + ';' +
+          'cursor:pointer;white-space:nowrap;transition:all .15s;' +
+          '">' + m.slice(0,3) + '</div>';
+      }).join("");
+      // Scroll active pill into view
+      setTimeout(function() {
+        var pills = pillRow.querySelectorAll("div");
+        var idx = MONTHS.indexOf(active);
+        if (pills[idx]) pills[idx].scrollIntoView({inline:"center", behavior:"smooth"});
+      }, 60);
+    }
+
+    /* ── Click a month pill ── */
+    function _hmPickMonthPill(month) {
+      var mSel = document.getElementById("hm_sel_month");
+      if (mSel) mSel.value = month;
+      _hmRenderMonthPills();
+      _hmOnPeriodChange();
+    }
+
+    function _hmOnPeriodChange() {
+      var now = new Date();
+      var mSel = document.getElementById("hm_sel_month");
+      var ySel = document.getElementById("hm_sel_year");
+      var selMonth = mSel ? mSel.value : MONTHS[now.getMonth()];
+      var selYear  = ySel ? Number(ySel.value) : now.getFullYear();
+
+      // Show/hide "Today" restore button
+      var btn = document.getElementById("hm_btn_today");
+      var isCurrent = selMonth === MONTHS[now.getMonth()] && selYear === now.getFullYear();
+      if (btn) btn.style.display = isCurrent ? "none" : "inline-block";
+
+      // Period label pill
+      var lbl = document.getElementById("hm_period_label");
+      if (lbl) lbl.textContent = isCurrent
+        ? ("Current — " + selMonth + " " + selYear)
+        : (selMonth + " " + selYear);
+
+      // Re-render pills to reflect new selection
+      _hmRenderMonthPills();
+
+      _hmRenderDashboard(selMonth, selYear);
+    }
+
+    function _hmGoToCurrentMonth() {
+      var now = new Date();
+      var mSel = document.getElementById("hm_sel_month");
+      var ySel = document.getElementById("hm_sel_year");
+      if (mSel) mSel.value = MONTHS[now.getMonth()];
+      if (ySel) ySel.value = String(now.getFullYear());
+      _hmRenderMonthPills();
+      _hmOnPeriodChange();
+    }
+
+    function _hmRenderDashboard(overrideMonth, overrideYear) {
+      var now        = new Date();
+      var curYear    = overrideYear  ? Number(overrideYear)  : now.getFullYear();
+      var curMonth   = overrideMonth ? overrideMonth : MONTHS[now.getMonth()];
+
+      // Trend: previous month relative to selected period
+      var curMonthIdx   = MONTHS.indexOf(curMonth);
+      var lastMonthIdx  = curMonthIdx === 0 ? 11 : curMonthIdx - 1;
+      var lastMonth     = MONTHS[lastMonthIdx];
+      var lastMonthYear = curMonthIdx === 0 ? curYear - 1 : curYear;
+
+      const isWalkIn   = function(c) { return String(c.UserId).startsWith("WALKIN_"); };
+
+      // ── Month contribution split
+      var monthContribs = data.filter(function(c) {
+        return String(c.Year) === String(curYear) && c.ForMonth === curMonth;
+      });
+      var monthMembers  = monthContribs.filter(function(c) { return !isWalkIn(c); });
+      var monthWalkIns  = monthContribs.filter(function(c) { return isWalkIn(c); });
+      var monthMemberC  = monthMembers.reduce(function(s,c) { return s + Number(c.Amount||0); }, 0);
+      var monthWalkInC  = monthWalkIns.reduce(function(s,c) { return s + Number(c.Amount||0); }, 0);
+      var monthE        = expenses.filter(function(e) {
+        return String(e.Year) === String(curYear) && e.ForMonth === curMonth;
+      }).reduce(function(s,e) { return s + Number(e.Amount||0); }, 0);
+
+      // Previous month for trends
+      var lastMonthC = data.filter(function(c) {
+        return String(c.Year) === String(lastMonthYear) && c.ForMonth === lastMonth && !isWalkIn(c);
+      }).reduce(function(s,c) { return s + Number(c.Amount||0); }, 0);
+      var lastMonthE = expenses.filter(function(e) {
+        return String(e.Year) === String(lastMonthYear) && e.ForMonth === lastMonth;
+      }).reduce(function(s,e) { return s + Number(e.Amount||0); }, 0);
+
+      // Active non-admin members
+      var activeMembers = users.filter(function(u) {
+        return u.Role !== "Admin" && String(u.Status||"Active").toLowerCase() === "active";
+      });
+
+      // Who has paid this selected month (member only, no walk-ins)
+      var paidUserIds  = new Set(monthMembers.map(function(c) { return String(c.UserId); }));
+      var paidCount    = activeMembers.filter(function(u) { return paidUserIds.has(String(u.UserId)); }).length;
+      var pendingCount = activeMembers.length - paidCount;
+
+      // ── KPI Cards
+      var el;
+      el = document.getElementById("kpi_monthC");
+      if (el) _countUp(el, "₹" + fmt(monthMemberC + monthWalkInC), "#27ae60");
+      el = document.getElementById("kpi_monthC_trend");
+      if (el) {
+        if (lastMonthC === 0 && monthMemberC === 0) {
+          el.innerHTML = '<span style="color:#94a3b8;">— No data</span>';
+        } else if (lastMonthC === 0) {
+          el.innerHTML = '<span style="color:#27ae60;">New this month</span>';
+        } else {
+          var diff = monthMemberC - lastMonthC;
+          var pct  = Math.abs(Math.round((diff / lastMonthC) * 100));
+          var col  = diff >= 0 ? "#27ae60" : "#e74c3c";
+          var arrow = diff >= 0 ? "▲" : "▼";
+          el.innerHTML = '<span style="color:' + col + ';">' + arrow + ' ' + pct + '% vs ' + lastMonth + '</span>';
+        }
+      }
+
+      el = document.getElementById("kpi_walkinC");
+      if (el) _countUp(el, "₹" + fmt(monthWalkInC), "#d97706");
+      el = document.getElementById("kpi_walkinC_sub");
+      if (el) el.textContent = monthWalkIns.length + " entr" + (monthWalkIns.length === 1 ? "y" : "ies");
+
+      el = document.getElementById("kpi_monthE");
+      if (el) _countUp(el, "₹" + fmt(monthE), "#e74c3c");
+      el = document.getElementById("kpi_monthE_trend");
+      if (el) {
+        if (lastMonthE === 0 && monthE === 0) {
+          el.innerHTML = '<span style="color:#94a3b8;">— No data</span>';
+        } else if (lastMonthE === 0) {
+          el.innerHTML = '<span style="color:#94a3b8;">New this month</span>';
+        } else {
+          var diffE = monthE - lastMonthE;
+          var pctE  = Math.abs(Math.round((diffE / lastMonthE) * 100));
+          var colE  = diffE <= 0 ? "#27ae60" : "#e74c3c";
+          var arrowE = diffE >= 0 ? "▲" : "▼";
+          el.innerHTML = '<span style="color:' + colE + ';">' + arrowE + ' ' + pctE + '% vs ' + lastMonth + '</span>';
+        }
+      }
+
+      el = document.getElementById("kpi_pending");
+      if (el) _countUp(el, String(pendingCount), pendingCount > 0 ? "#e74c3c" : "#27ae60");
+      el = document.getElementById("kpi_total_members");
+      if (el) el.textContent = activeMembers.length;
+      el = document.getElementById("kpi_pending_sub");
+      if (el) {
+        var paidPct = activeMembers.length > 0 ? Math.round((paidCount / activeMembers.length) * 100) : 0;
+        el.innerHTML = 'of ' + activeMembers.length + ' members &nbsp;·&nbsp; <b style="color:#27ae60;">' + paidPct + '% paid</b>';
+      }
+
+      // ── Member badge (show selected period)
+      el = document.getElementById("hm_member_badge");
+      if (el) el.textContent = curMonth + " " + curYear;
+
+      // ── Render member list (store selected period for tab re-renders)
+      window._hmMemberData = { activeMembers: activeMembers, paidUserIds: paidUserIds, monthMembers: monthMembers, curMonth: curMonth, curYear: curYear };
+      _hmRenderMemberList();
+
+      // ── Member summary
+      el = document.getElementById("hm_member_summary");
+      if (el) el.textContent = paidCount + " paid · " + pendingCount + " pending";
+
+      // ── Walk-in list
+      _hmRenderWalkinList(monthWalkIns);
+
+      // ── Walk-in summary
+      el = document.getElementById("hm_walkin_summary");
+      if (el) el.textContent = monthWalkIns.length + " entries · ₹" + fmt(monthWalkInC) + " total";
+
+      // ── Bar chart
+      _hmRenderBarChart(curYear, curMonth);
+
+      // ── Smart alerts
+      _hmRenderAlerts(pendingCount, monthE, activeMembers, curMonth, curYear);
+
+      // ── Year tracker
+      _hmRenderYearTracker(curYear, curMonth);
+    }
+
+    function _hmMemberTab(filter, btn) {
+      _hmMemberFilter = filter;
+      // Update tab button styles
+      ["hm_tab_all", "hm_tab_paid", "hm_tab_pending"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) { el.style.background = "#f1f5f9"; el.style.color = "#334155"; }
+      });
+      if (btn) { btn.style.background = "#334155"; btn.style.color = "#fff"; }
+      _hmRenderMemberList();
+    }
+
+    function _hmRenderMemberList() {
+      var d = window._hmMemberData;
+      if (!d) return;
+      var el = document.getElementById("hm_member_list");
+      if (!el) return;
+
+      var list = d.activeMembers;
+      if (_hmMemberFilter === "paid")    list = list.filter(function(u) { return d.paidUserIds.has(String(u.UserId)); });
+      if (_hmMemberFilter === "pending") list = list.filter(function(u) { return !d.paidUserIds.has(String(u.UserId)); });
+
+      if (list.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">' +
+          (_hmMemberFilter === "paid" ? '🎉 No paid members yet' : '🎉 All members have paid!') + '</div>';
+        return;
+      }
+
+      el.innerHTML = list.map(function(u) {
+        var paid   = d.paidUserIds.has(String(u.UserId));
+        var dotCol = paid ? "#22c55e" : "#e74c3c";
+        var initials = (u.Name || "?").split(" ").map(function(w) { return w[0]; }).join("").substring(0,2).toUpperCase();
+        var bgCol  = paid ? "rgba(34,197,94,0.1)" : "rgba(231,76,60,0.1)";
+        var txtCol = paid ? "#15803d" : "#dc2626";
+
+        // Find contributions for this member this month
+        var myContribs = d.monthMembers.filter(function(c) { return String(c.UserId) === String(u.UserId); });
+        var myAmt      = myContribs.reduce(function(s,c) { return s + Number(c.Amount||0); }, 0);
+
+        var subLine = paid
+          ? "Paid · ₹" + fmt(myAmt)
+          : (String(u.Status||"").toLowerCase() === "inactive" ? "Inactive" : "Pending");
+
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;">' +
+          '<div style="width:8px;height:8px;border-radius:50%;background:' + dotCol + ';flex-shrink:0;"></div>' +
+          '<div style="width:28px;height:28px;border-radius:50%;background:' + bgCol + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:' + txtCol + ';flex-shrink:0;">' + initials + '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:12px;font-weight:600;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(u.Name||"—") + '</div>' +
+            '<div style="font-size:10px;color:#94a3b8;">' + subLine + '</div>' +
+          '</div>' +
+          '<span style="font-size:11px;font-weight:700;color:' + (paid ? "#27ae60" : "#e74c3c") + ';">' + (paid ? "₹" + fmt(myAmt) : "—") + '</span>' +
+        '</div>';
+      }).join("");
+    }
+
+    function _hmRenderWalkinList(walkIns) {
+      var el = document.getElementById("hm_walkin_list");
+      if (!el) return;
+      if (!walkIns || walkIns.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">No walk-in entries this month</div>';
+        return;
+      }
+      // Show most recent 8
+      var recent = walkIns.slice().sort(function(a,b) {
+        return String(b.PaymentDate||"").localeCompare(String(a.PaymentDate||""));
+      }).slice(0, 8);
+
+      el.innerHTML = recent.map(function(c) {
+        var nameRaw = String(c.Note||"").match(/Walk-in:\s*([^|]+)/);
+        var visitorName = nameRaw ? nameRaw[1].trim() : "Visitor";
+        var typeName = (types.find(function(t) { return String(t.TypeId) === String(c.TypeId); }) || {}).TypeName || "Daan";
+        var dateStr = c.PaymentDate
+          ? (c.PaymentDate instanceof Date
+              ? c.PaymentDate.toLocaleDateString("en-IN")
+              : String(c.PaymentDate).split(" ")[0])
+          : "—";
+        return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fffbeb;margin-bottom:5px;">' +
+          '<div style="width:28px;height:28px;border-radius:50%;background:#fde68a;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#92400e;flex-shrink:0;">W</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:12px;font-weight:600;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(visitorName) + '</div>' +
+            '<div style="font-size:10px;color:#94a3b8;">' + escapeHtml(typeName) + ' · ' + dateStr + '</div>' +
+          '</div>' +
+          '<span style="font-size:12px;font-weight:700;color:#d97706;">₹' + fmt(c.Amount) + '</span>' +
+        '</div>';
+      }).join("");
+    }
+
+    function _hmRenderBarChart(curYear, selMonth) {
+      var el = document.getElementById("hm_bar_chart");
+      if (!el) return;
+      var mapC = {}, mapE = {};
+      data.filter(function(c) { return String(c.Year) === String(curYear); }).forEach(function(c) {
+        var m = c.ForMonth||"";
+        if (m) mapC[m] = (mapC[m]||0) + Number(c.Amount||0);
+      });
+      expenses.filter(function(e) { return String(e.Year) === String(curYear); }).forEach(function(e) {
+        var m = e.ForMonth||"";
+        if (m) mapE[m] = (mapE[m]||0) + Number(e.Amount||0);
+      });
+      var active = MONTHS.filter(function(m) { return (mapC[m]||0) > 0 || (mapE[m]||0) > 0; });
+      if (active.length === 0) {
+        el.innerHTML = '<div style="color:#aaa;font-size:11px;padding:10px;">No data for ' + curYear + '</div>';
+        return;
+      }
+      var maxVal = Math.max.apply(null, active.map(function(m) { return Math.max(mapC[m]||0, mapE[m]||0); }).concat([1]));
+      el.innerHTML = active.map(function(m) {
+        var cH = Math.round(((mapC[m]||0) / maxVal) * 75);
+        var eH = Math.round(((mapE[m]||0) / maxVal) * 75);
+        var isSel = m === selMonth;
+        var cBg = isSel ? "#16a34a" : "#22c55e";
+        var eBg = isSel ? "#ea580c" : "#f97316";
+        var lbl = isSel
+          ? '<div style="font-size:8px;color:#f7a01a;font-weight:700;">' + m.slice(0,3) + '</div>'
+          : '<div style="font-size:8px;color:#64748b;font-weight:600;">' + m.slice(0,3) + '</div>';
+        return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:18px;' + (isSel ? 'background:#fef9ee;border-radius:4px;' : '') + '">' +
+          '<div style="display:flex;align-items:flex-end;gap:2px;height:75px;">' +
+            '<div title="Income ₹' + fmt(mapC[m]||0) + '" style="width:8px;height:' + Math.max(cH,2) + 'px;background:' + cBg + ';border-radius:2px 2px 0 0;"></div>' +
+            '<div title="Expense ₹' + fmt(mapE[m]||0) + '" style="width:8px;height:' + Math.max(eH,2) + 'px;background:' + eBg + ';border-radius:2px 2px 0 0;"></div>' +
+          '</div>' + lbl +
+        '</div>';
+      }).join("");
+    }
+
+    function _hmRenderAlerts(pendingCount, monthE, activeMembers, curMonth, curYear) {
+      var el = document.getElementById("hm_alerts_list");
+      var badgeEl = document.getElementById("hm_alert_badge");
+      if (!el) return;
+
+      var alerts = [];
+
+      // Alert 1: pending members
+      if (pendingCount > 0) {
+        alerts.push({
+          type: "warn",
+          text: pendingCount + " member" + (pendingCount > 1 ? "s haven't" : " hasn't") + " paid this month",
+          sub: "Go to Tracker to send reminders →",
+          action: "showPage('trackerPage',document.querySelector('[onclick*=trackerPage]'))"
+        });
+      }
+
+      // Alert 2: expenses vs contributions (selected period)
+      var monthC = data.filter(function(c) {
+        return String(c.Year) === String(curYear) && c.ForMonth === curMonth;
+      }).reduce(function(s,c) { return s + Number(c.Amount||0); }, 0);
+      if (monthE > monthC && monthC > 0) {
+        alerts.push({
+          type: "warn",
+          text: "Expenses (₹" + fmt(monthE) + ") exceed income (₹" + fmt(monthC) + ")",
+          sub: "Review expense page →",
+          action: "showPage('expensePage',document.querySelector('[onclick*=expensePage]'))"
+        });
+      }
+
+      // Alert 3: month progress (up to selected month)
+      var selMonthIdx = MONTHS.indexOf(curMonth);
+      var doneMonths = MONTHS.slice(0, selMonthIdx + 1).filter(function(m) {
+        return data.some(function(c) { return String(c.Year) === String(curYear) && c.ForMonth === m; });
+      }).length;
+      var totalMonths = selMonthIdx + 1;
+      if (doneMonths < totalMonths) {
+        var missing = totalMonths - doneMonths;
+        alerts.push({
+          type: "info",
+          text: missing + " month" + (missing>1?"s":"") + " with no contributions recorded",
+          sub: "Check contribution records →",
+          action: "showPage('contributionPage',document.querySelector('[onclick*=contributionPage]'))"
+        });
+      }
+
+      // All clear
+      if (alerts.length === 0) {
+        alerts.push({ type: "ok", text: "All clear — everything looks good!", sub: "" });
+      }
+
+      if (badgeEl) {
+        var warnCount = alerts.filter(function(a) { return a.type === "warn"; }).length;
+        if (warnCount > 0) {
+          badgeEl.textContent = warnCount + " warning" + (warnCount > 1 ? "s" : "");
+          badgeEl.style.display = "inline-block";
+        } else {
+          badgeEl.style.display = "none";
+        }
+      }
+
+      el.innerHTML = alerts.map(function(a) {
+        var bg  = a.type === "warn" ? "#fffbeb" : a.type === "info" ? "#eff6ff" : "#f0fdf4";
+        var bc  = a.type === "warn" ? "#fde68a" : a.type === "info" ? "#bfdbfe" : "#bbf7d0";
+        var ic  = a.type === "warn" ? "fa-triangle-exclamation" : a.type === "info" ? "fa-circle-info" : "fa-circle-check";
+        var ic2 = a.type === "warn" ? "#d97706" : a.type === "info" ? "#2563eb" : "#16a34a";
+        var cursor = a.action ? "cursor:pointer;" : "";
+        var onclick = a.action ? ' onclick="' + a.action + '"' : "";
+        return '<div style="background:' + bg + ';border:1px solid ' + bc + ';border-radius:8px;padding:9px 12px;margin-bottom:7px;' + cursor + '"' + onclick + '>' +
+          '<div style="display:flex;align-items:flex-start;gap:8px;">' +
+            '<i class="fa-solid ' + ic + '" style="color:' + ic2 + ';font-size:13px;margin-top:1px;flex-shrink:0;"></i>' +
+            '<div>' +
+              '<div style="font-size:12px;font-weight:600;color:#334155;">' + a.text + '</div>' +
+              (a.sub ? '<div style="font-size:11px;color:#64748b;margin-top:2px;">' + a.sub + '</div>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+    }
+
+    function _hmRenderYearTracker(curYear, curMonth) {
+      var el = document.getElementById("hm_yr_label");
+      if (el) el.textContent = curYear;
+
+      // Progress up to selected month in selected year
+      var selMonthIdx = curMonth ? MONTHS.indexOf(curMonth) : new Date().getMonth();
+      var monthsDone = MONTHS.slice(0, selMonthIdx + 1).filter(function(m) {
+        return data.some(function(c) { return String(c.Year) === String(curYear) && c.ForMonth === m; });
+      }).length;
+      var pct = Math.round((selMonthIdx + 1) / 12 * 100);
+
+      el = document.getElementById("hm_yr_months_done");
+      if (el) el.textContent = selMonthIdx + 1;
+      el = document.getElementById("hm_yr_pct");
+      if (el) el.textContent = pct + "%";
+      el = document.getElementById("hm_yr_progress_fill");
+      if (el) {
+        el.style.width = pct + "%";
+        el.style.background = pct >= 75 ? "#27ae60" : pct >= 40 ? "#f7a01a" : "#e74c3c";
+      }
+
+      // Status badge
+      el = document.getElementById("hm_yr_status_badge");
+      if (el) {
+        var yearC = data.filter(function(c) { return String(c.Year) === String(curYear); })
+          .reduce(function(s,c) { return s + Number(c.Amount||0); }, 0);
+        var yearE = expenses.filter(function(e) { return String(e.Year) === String(curYear); })
+          .reduce(function(s,e) { return s + Number(e.Amount||0); }, 0);
+        if (yearC > yearE) {
+          el.textContent = "On track";
+          el.style.background = "#f0fdf4"; el.style.color = "#166534"; el.style.border = "1px solid #bbf7d0";
+        } else if (yearE > yearC) {
+          el.textContent = "Deficit";
+          el.style.background = "#fef2f2"; el.style.color = "#991b1b"; el.style.border = "1px solid #fca5a5";
+        } else {
+          el.textContent = "Balanced"; el.style.background = "#f8fafc"; el.style.color = "#475569"; el.style.border = "1px solid #e2e8f0";
+        }
+      }
+    }
+
+    /* Also call _hmRenderDashboard after _dashSyncFromAdmin so
+       Walk-in and member lists refresh after any contribution is added */
+    var _origDashSync = typeof _dashSyncFromAdmin === "function" ? _dashSyncFromAdmin : null;
+    document.addEventListener("DOMContentLoaded", function() {
+      var origSync = window._dashSyncFromAdmin;
+      if (typeof origSync === "function") {
+        window._dashSyncFromAdmin = function() {
+          origSync();
+          setTimeout(_hmRenderDashboard, 400);
+        };
+      }
+    });
 
     function updateSidebarSummary() {
       const now = new Date();

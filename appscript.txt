@@ -412,7 +412,6 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
 
   const users         = getSheetData(SHEETS.USERS);
   const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
-  const types         = getSheetData(SHEETS.TYPES);
 
   const activeMembers = users.filter(u =>
     String(u.Role||"").toLowerCase() !== "admin" &&
@@ -422,10 +421,6 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
 
   let sent = 0, skipped = 0;
 
-  // FIX: Process each member individually with a sleep between sends.
-  // Multiple contributions per member caused large HTML → GAS timeout → "network error" in admin UI.
-  // Solution: pre-build all email bodies, then send with 300ms sleep between each.
-  // This keeps execution well under the 6-minute GAS limit and avoids MailApp rate errors.
   const emailQueue = [];
   activeMembers.forEach(member => {
     const myContribs = contributions.filter(c =>
@@ -433,10 +428,13 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
       String(c.ForMonth) === month &&
       String(c.Year) === year
     );
-    if (!canSendEmail()) { skipped++; return; } // fast read-only pre-check to avoid building HTML for nothing; atomic check happens in send loop via tryConsumeEmailQuota()
-    let htmlBody;
-    if (myContribs.length > 0) retrun;
-    const htmlBody = _buildReminderEmail(member, month, year);
+
+    // ✅ FIX 1: was "retrun" (typo) — skip members who already contributed
+    if (myContribs.length > 0) return;
+
+    if (!canSendEmail()) { skipped++; return; }
+
+    let htmlBody = _buildReminderEmail(member, month, year);
     emailQueue.push({ to: String(member.Email).trim(), htmlBody: htmlBody, name: member.Name });
   });
 
@@ -445,11 +443,11 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
       if (!tryConsumeEmailQuota()) { skipped++; return; }
       MailApp.sendEmail({
         to:       item.to,
-        subject:  CFG.name + " — " + month + " " + year + " Monthly Update",
+        // ✅ FIX 2: subject now correctly says "Contribution Reminder"
+        subject:  CFG.name + " — Gentle Reminder: " + month + " " + year + " Contribution Pending",
         htmlBody: item.htmlBody
       });
       sent++;
-      // Small sleep between sends avoids MailApp quota bursts and prevents timeout
       Utilities.sleep(300);
     } catch(e) {
       Logger.log("Failed to send to " + item.to + ": " + e.toString());
@@ -457,7 +455,7 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
     }
   });
 
-  logAction("System", "Monthly Report Sent", month + " " + year + " — sent:" + sent + ", skipped:" + skipped);
+  logAction("System", "Monthly Reminder Sent", month + " " + year + " — sent:" + sent + ", skipped:" + skipped);
   const quota = getEmailQuotaStatus();
   return { status: "ok", sent: sent, skipped: skipped, quotaRemaining: quota.remaining };
 }
