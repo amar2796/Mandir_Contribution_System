@@ -435,13 +435,8 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
     );
     if (!canSendEmail()) { skipped++; return; } // fast read-only pre-check to avoid building HTML for nothing; atomic check happens in send loop via tryConsumeEmailQuota()
     let htmlBody;
-    if (myContribs.length > 0) {
-      const totalAmt = myContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
-      // FIX: pass types array to receipt email builder — missing was causing undefined type names
-      htmlBody = _buildMonthlyReceiptEmail(member, myContribs, types, month, year, totalAmt);
-    } else {
-      htmlBody = _buildReminderEmail(member, month, year);
-    }
+    if (myContribs.length > 0) retrun;
+    const htmlBody = _buildReminderEmail(member, month, year);
     emailQueue.push({ to: String(member.Email).trim(), htmlBody: htmlBody, name: member.Name });
   });
 
