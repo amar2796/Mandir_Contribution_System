@@ -2530,7 +2530,7 @@
           <div class="filter-row" style="flex-wrap:wrap;gap:8px;">
             <div>
               <label style="font-size: 11px">Search</label><input class="search-bar" id="searchContrib" placeholder="🔍 Search name, mobile, amount, MNR-..."
-              onkeyup="filterContributions()" style="margin: 0;padding: 8px 10px;" />
+              onkeyup="_debouncedFilterContrib()" style="margin: 0;padding: 8px 10px;" />
             </div>
             <div>
               <label style="font-size: 11px">From Date</label><input type="date" id="contribStart"
@@ -3635,6 +3635,10 @@
               <option value="goal">Goal</option>
               <option value="gallery">Gallery</option>
             </select>
+            <button id="auditTodayBtn" onclick="_auditFilterToday()" title="Show only today's entries"
+              style="background:#f7a01a;box-shadow:none;padding:9px 14px;flex-shrink:0;font-size:12px;">
+              <i class="fa-solid fa-calendar-day"></i> Today
+            </button>
             <button onclick="loadAuditLog()" style="background:#334155;box-shadow:none;padding:9px 14px;flex-shrink:0;">
               <i class="fa-solid fa-rotate"></i> Refresh
             </button>
@@ -4968,6 +4972,7 @@
     }
 
     async function saveAnnouncement() {
+      if (!checkSession()) return;
       var msg = (document.getElementById("ann_message").value || "").trim();
       var badge = (document.getElementById("ann_badge").value || "").trim();
       var icon = (document.getElementById("ann_icon").value || "").trim();
@@ -4997,6 +5002,7 @@
     }
 
     async function clearAnnouncement() {
+      if (!checkSession()) return;
       if (!confirm("Remove the current announcement banner from the home page?")) return;
       var session = JSON.parse(localStorage.getItem("session") || "{}");
       try {
@@ -5802,6 +5808,15 @@
           window._allRequests = Array.isArray(res) ? res : [];
           _updateReqBadge();
         }).catch(function () { });
+        // Auto-refresh pending requests badge every 2 minutes
+        if (!window._reqBadgeTimer) {
+          window._reqBadgeTimer = setInterval(function() {
+            getData("getContributionRequests").then(function(res) {
+              window._allRequests = Array.isArray(res) ? res : [];
+              _updateReqBadge();
+            }).catch(function(){});
+          }, 2 * 60 * 1000);
+        }
       } catch (err) {
         toast("Failed to load data: " + err.message, "error");
       } finally {
@@ -6173,6 +6188,7 @@
     }
     /* debounce text search — select/date inputs call filterContributions() directly (instant) */
     var _filterContribDebounced = debounce(filterContributions, 280);
+    var _debouncedFilterContrib = _filterContribDebounced; // alias used by onkeyup in HTML
     document.addEventListener("DOMContentLoaded", function () {
       var csrch = document.getElementById("searchContrib");
       if (csrch) {
@@ -7303,6 +7319,15 @@
           toast(msg);
           document.getElementById("amount").value = "";
           document.getElementById("note").value = "";
+          // Reset month, type, occasion, paymentMode to defaults
+          const _mEl = document.getElementById("month");
+          const _now = new Date();
+          const _curMonth = ["January","February","March","April","May","June","July","August","September","October","November","December"][_now.getMonth()];
+          if (_mEl) _mEl.value = _curMonth;
+          const _pmEl = document.getElementById("paymentMode");
+          if (_pmEl) _pmEl.value = "UPI";
+          const _occEl = document.getElementById("occasion");
+          if (_occEl) _occEl.selectedIndex = 0;
           smartRefresh("contributions");
           _dashSyncFromAdmin();
         } else {
@@ -7315,9 +7340,11 @@
       }
     }
     async function del(id) {
+      if (!checkSession()) return;
       confirmModal("Delete this contribution?", async () => {
         try {
-          let res = await postData({ action: "deleteContribution", Id: id });
+          const _s = JSON.parse(localStorage.getItem("session") || "{}");
+          let res = await postData({ action: "deleteContribution", Id: id, sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
           toast(
             res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
             res.status === "deleted" ? "" : "error"
@@ -7696,9 +7723,13 @@
       }
     }
     async function deleteUser(id) {
-      confirmModal("Delete this user? This cannot be undone.", async () => {
+      if (!checkSession()) return;
+      const _u = users.find(u => String(u.UserId) === String(id));
+      const _uName = _u ? `"${_u.Name}"` : "this user";
+      confirmModal(`Delete ${_uName}? This cannot be undone.`, async () => {
         try {
-          let res = await postData({ action: "deleteUser", UserId: id });
+          const _s = JSON.parse(localStorage.getItem("session") || "{}");
+          let res = await postData({ action: "deleteUser", UserId: id, sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
           toast(
             res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
             res.status === "deleted" ? "" : "error"
@@ -8694,10 +8725,7 @@
       const d = new Date();
       const todayFmt = String(d.getDate()).padStart(2, "0") + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + d.getFullYear();
       const todayISO = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-      const todayE = list.filter(r => {
-        const ts = String(r.Timestamp || "");
-        return ts.startsWith(todayFmt) || ts.startsWith(todayISO);
-      });
+      const todayE = list.filter(r => { const ts = String(r.Timestamp||""); return ts.startsWith(todayFmt) || ts.startsWith(todayISO); });
       const logins = todayE.filter(r => /login/i.test(r.Action || "") && !/logout/i.test(r.Action || "")).length;
       const actions = todayE.filter(r => !/login/i.test(r.Action || "") && !/logout/i.test(r.Action || "")).length;
       const uniqueU = new Set(list.map(r => String(r.UserAdmin || ""))).size;
@@ -8738,38 +8766,31 @@
       tbody.innerHTML = items.map((row, i) => {
         const idx = start + i + 1;
         // ── Format timestamp → two-line human-readable display
-        // Handles both:
-        //   "11-Apr-2026 09:03 AM"      (Apps Script formatDate output)
-        //   "2026-04-11T09:03:00.000Z"  (ISO — Google Sheets auto-converts date cells)
+        // Handles: "11-Apr-2026 09:03 AM" and "2026-04-11T09:03:00.000Z" (ISO from Sheets)
         const tsRaw = String(row.Timestamp || "—");
         let tsHtml = `<span style="font-family:monospace;font-size:11px;color:#64748b;">${escapeHtml(tsRaw)}</span>`;
         try {
-          const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-          // Case 1: already formatted "dd-MMM-yyyy hh:mm a"
+          const _MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
           const tsParts = tsRaw.match(/^(\d{2}-\w{3}-\d{4})\s+(.+)$/);
           if (tsParts) {
             tsHtml = `<div style="line-height:1.5;">
               <div style="font-weight:600;font-size:11.5px;color:#334155;">${escapeHtml(tsParts[1])}</div>
               <div style="font-size:10.5px;color:#94a3b8;">${escapeHtml(tsParts[2])}</div>
             </div>`;
-          } else {
-            // Case 2: ISO "2026-04-11T09:03:00.000Z" — convert to IST (+5:30)
-            const isoMatch = tsRaw.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
-            if (isoMatch) {
-              const d = new Date(tsRaw);
-              const ist = new Date(d.getTime() + (5 * 60 + 30) * 60000);
-              const dd   = String(ist.getUTCDate()).padStart(2, "0");
-              const mm   = MON[ist.getUTCMonth()];
-              const yyyy = ist.getUTCFullYear();
-              let   hh   = ist.getUTCHours();
-              const min  = String(ist.getUTCMinutes()).padStart(2, "0");
-              const ampm = hh >= 12 ? "PM" : "AM";
-              hh = hh % 12 || 12;
-              tsHtml = `<div style="line-height:1.5;">
-                <div style="font-weight:600;font-size:11.5px;color:#334155;">${dd}-${mm}-${yyyy}</div>
-                <div style="font-size:10.5px;color:#94a3b8;">${hh}:${min} ${ampm}</div>
-              </div>`;
-            }
+          } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(tsRaw)) {
+            const _d = new Date(tsRaw);
+            const _ist = new Date(_d.getTime() + (5*60+30)*60000);
+            const _dd = String(_ist.getUTCDate()).padStart(2,"0");
+            const _mm = _MON[_ist.getUTCMonth()];
+            const _yyyy = _ist.getUTCFullYear();
+            let _hh = _ist.getUTCHours();
+            const _min = String(_ist.getUTCMinutes()).padStart(2,"0");
+            const _ap = _hh >= 12 ? "PM" : "AM";
+            _hh = _hh % 12 || 12;
+            tsHtml = `<div style="line-height:1.5;">
+              <div style="font-weight:600;font-size:11.5px;color:#334155;">${_dd}-${_mm}-${_yyyy}</div>
+              <div style="font-size:10.5px;color:#94a3b8;">${_hh}:${_min} ${_ap}</div>
+            </div>`;
           }
         } catch(e2){}
         const user    = String(row.UserAdmin || "—");
@@ -8843,7 +8864,21 @@
 
     function filterAuditLog() {
       _auditPage = 1;
+      // Reset Today button style when user manually filters
+      const tb = document.getElementById("auditTodayBtn");
+      if (tb) { tb.style.background = "#f7a01a"; tb.innerHTML = '<i class="fa-solid fa-calendar-day"></i> Today'; }
       _renderAuditPaged(_getFilteredAudit(), 1);
+    }
+    function _auditFilterToday() {
+      const d = new Date();
+      const todayFmt = String(d.getDate()).padStart(2,"0") + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + d.getFullYear();
+      const todayISO = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+      const todayList = _auditData.filter(r => { const ts = String(r.Timestamp||""); return ts.startsWith(todayFmt) || ts.startsWith(todayISO); });
+      _auditPage = 1;
+      _renderAuditPaged(todayList, 1);
+      // Highlight Today button to show filter is active
+      const tb = document.getElementById("auditTodayBtn");
+      if (tb) { tb.style.background = "#334155"; tb.innerHTML = '<i class="fa-solid fa-xmark"></i> Clear Today'; tb.onclick = function(){ tb.onclick = _auditFilterToday; filterAuditLog(); }; }
     }
     /* debounced version wired to onkeyup — replaces direct call after DOM ready */
     var _filterAuditLogDebounced = debounce(filterAuditLog, 280);
@@ -8857,18 +8892,21 @@
 
     function exportAuditCSV() {
       if (!_auditData || _auditData.length === 0) { toast("No audit data to export", "warn"); return; }
-      const hdrs = ["#", "Timestamp", "User/Admin", "Action", "Details", "Reason", "Device Info"];
-      const rows = _auditData.map((r, i) =>
-        [i + 1, r.Timestamp || "", r.UserAdmin || "", r.Action || "", r.Details || "", r.Reason || "", r.DeviceInfo || ""]
-          .map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")
-      );
-      const csv = [hdrs.join(","), ...rows].join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "audit_log_" + new Date().toISOString().slice(0, 10) + ".csv";
-      a.click(); URL.revokeObjectURL(url);
-      toast("✅ Audit log exported as CSV", "");
+      toast("⏳ Preparing audit CSV...", "warn");
+      setTimeout(function() {
+        const hdrs = ["#", "Timestamp", "User/Admin", "Action", "Details", "Reason", "Device Info"];
+        const rows = _auditData.map((r, i) =>
+          [i + 1, r.Timestamp || "", r.UserAdmin || "", r.Action || "", r.Details || "", r.Reason || "", r.DeviceInfo || ""]
+            .map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")
+        );
+        const csv = [hdrs.join(","), ...rows].join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "audit_log_" + new Date().toISOString().slice(0, 10) + ".csv";
+        a.click(); URL.revokeObjectURL(url);
+        toast("✅ Audit log exported as CSV", "");
+      }, 50);
     }
 
     /* ═══ CSV EXPORT — CONTRIBUTIONS ════════════════════════════════
@@ -8876,7 +8914,8 @@
  Falls back to full data if filter function has not run yet.
  ═══════════════════════════════════════════════════════════════ */
     function exportContribCSV() {
-      // Get currently filtered list — re-run filter logic to be safe
+      toast("⏳ Preparing contributions CSV...", "warn");
+      setTimeout(function() {
       const txt = (document.getElementById("searchContrib")?.value || "").toLowerCase();
       const start = document.getElementById("contribStart")?.value || "";
       const end = document.getElementById("contribEnd")?.value || "";
@@ -8965,6 +9004,7 @@
 
       _downloadCSV([headers.join(","), ...rows].join("\n"), filename);
       toast("✅ " + list.length + " contribution records exported", "");
+      }, 50);
     }
 
 
@@ -8972,7 +9012,8 @@
        Exports whatever is currently visible after filters are applied.
        ═══════════════════════════════════════════════════════════════ */
     function exportExpenseCSV() {
-      const txt = (document.getElementById("searchExpense")?.value || "").toLowerCase();
+      toast("⏳ Preparing expenses CSV...", "warn");
+      setTimeout(function() {
       const yr = document.getElementById("expFilterYear")?.value || "";
       const mo = document.getElementById("expFilterMonth")?.value || "";
 
@@ -9025,6 +9066,7 @@
 
       _downloadCSV([headers.join(","), ...rows].join("\n"), filename);
       toast("✅ " + list.length + " expense records exported", "");
+      }, 50);
     }
 
 
@@ -10345,7 +10387,7 @@
         window.showPage = function (id, el) {
           _origShowPage(id, el);
           if (id === "broadcastPage") _loadBroadcastQuotaInfo();
-          if (id === "healthCheckPage") runHealthCheck();
+          if (id === "healthCheckPage" && !window._hcRanOnce) { window._hcRanOnce = true; runHealthCheck(); }
           if (id === "contributionRequestsPage") loadContributionRequests();
         };
       }
