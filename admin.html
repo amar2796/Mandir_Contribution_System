@@ -3572,6 +3572,7 @@
                   <th>User / Admin</th>
                   <th>Action</th>
                   <th>Details</th>
+                  <th>Reason / Purpose</th>
                   <th>Device / Info</th>
                 </tr>
               </thead>
@@ -4200,14 +4201,16 @@
         if (s && s.userId) {
           const devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
           const params = new URLSearchParams({
-            action: "logout",
-            userId: s.userId,
-            userName: s.name || "Admin",
-            deviceInfo: devInfo,
-            callback: "cb_logout",
+            action:       "logout",
+            userId:       s.userId,
+            userName:     s.name || "Admin",
+            deviceInfo:   devInfo,
+            logoutReason: "Admin clicked logout button",
+            callback:     "cb_logout",
           });
           try { navigator.sendBeacon(API_URL + "?" + params.toString()); } catch (e) { }
-          postData({ action: "logout", userId: s.userId, userName: s.name || "Admin", deviceInfo: devInfo }).catch(() => { });
+          postData({ action: "logout", userId: s.userId, userName: s.name || "Admin",
+                     deviceInfo: devInfo, logoutReason: "Admin clicked logout button" }).catch(() => { });
         }
       } catch (e) { }
       // Set _navFlag so beforeunload skips the beacon (logout already handled token clear above)
@@ -8309,7 +8312,7 @@
     async function loadAuditLog() {
       const tbody = document.getElementById("auditTableBody");
       if (!tbody) return;
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;"><div class="spinner" style="margin:0 auto;width:28px;height:28px;"></div><br>Loading audit log...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;"><div class="spinner" style="margin:0 auto;width:28px;height:28px;"></div><br>Loading audit log...</td></tr>';
       try {
         const res = await getData("getAuditLog");
         _auditData = Array.isArray(res) ? res : [];
@@ -8317,10 +8320,10 @@
         _renderAuditStats(_auditData);
         _renderAuditPaged(_auditData, _auditPage);
         if (_auditData.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No audit log entries found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No audit log entries found.</td></tr>';
         }
       } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#e74c3c;padding:20px;">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#e74c3c;padding:20px;">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
       }
     }
 
@@ -8356,7 +8359,7 @@
       const act = (document.getElementById("auditFilterAction")?.value || "").toLowerCase();
       let list = _auditData;
       if (txt) list = list.filter(r =>
-        [r.Timestamp, r.UserAdmin, r.Action, r.Details, r.DeviceInfo]
+        [r.Timestamp, r.UserAdmin, r.Action, r.Details, r.Reason, r.DeviceInfo]
           .some(v => String(v || "").toLowerCase().includes(txt))
       );
       if (act) list = list.filter(r => String(r.Action || "").toLowerCase().includes(act));
@@ -8368,7 +8371,7 @@
       const pagEl = document.getElementById("audit_pagination");
       if (!tbody) return;
       if (!list || list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No entries found.</td></tr>';
         if (pagEl) pagEl.innerHTML = "";
         return;
       }
@@ -8377,31 +8380,49 @@
       const items = list.slice(start, start + AUDIT_PAGE_SIZE);
       tbody.innerHTML = items.map((row, i) => {
         const idx = start + i + 1;
-        const ts = String(row.Timestamp || "—");
-        const user = String(row.UserAdmin || "—");
-        const action = String(row.Action || "—");
-        const details = String(row.Details || "—");
-        const devRaw = String(row.DeviceInfo || "");
+        // ── Format timestamp: "11-Apr-2025 10:32 AM" → two-line display
+        const tsRaw = String(row.Timestamp || "—");
+        let tsHtml = `<span style="font-family:monospace;font-size:11px;color:#64748b;">${escapeHtml(tsRaw)}</span>`;
+        try {
+          // Parses "dd-MMM-yyyy hh:mm a" e.g. "11-Apr-2025 10:32 AM"
+          const tsParts = tsRaw.match(/^(\d{2}-\w{3}-\d{4})\s+(.+)$/);
+          if (tsParts) {
+            tsHtml = `<div style="line-height:1.5;">
+              <div style="font-weight:600;font-size:11.5px;color:#334155;">${escapeHtml(tsParts[1])}</div>
+              <div style="font-size:10.5px;color:#94a3b8;">${escapeHtml(tsParts[2])}</div>
+            </div>`;
+          }
+        } catch(e2){}
+        const user    = String(row.UserAdmin || "—");
+        const action  = String(row.Action   || "—");
+        const details = String(row.Details  || "—");
+        const reason  = String(row.Reason   || "");
+        const devRaw  = String(row.DeviceInfo || "");
         const aLow = action.toLowerCase();
-        const isLogin = aLow.includes("login") && !aLow.includes("logout");
+        const isLogin  = aLow.includes("login")  && !aLow.includes("logout");
         const isLogout = aLow.includes("logout");
-        const isEmail = aLow.includes("email") || aLow.includes("receipt");
+        const isEmail  = aLow.includes("email")  || aLow.includes("receipt");
         const isDelete = aLow.includes("delete");
-        const isPwd = aLow.includes("password");
-        const badgeSt = isLogin ? "background:#dcfce7;color:#16a34a;border:1px solid #86efac;"
+        const isPwd    = aLow.includes("password");
+        const badgeSt = isLogin  ? "background:#dcfce7;color:#16a34a;border:1px solid #86efac;"
           : isLogout ? "background:#fef3c7;color:#d97706;border:1px solid #fde68a;"
-            : isEmail ? "background:#ede9fe;color:#7c3aed;border:1px solid #c4b5fd;"
-              : isDelete ? "background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;"
-                : isPwd ? "background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;"
-                  : "background:#f0f4f8;color:#334155;border:1px solid #cbd5e1;";
+          : isEmail  ? "background:#ede9fe;color:#7c3aed;border:1px solid #c4b5fd;"
+          : isDelete ? "background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;"
+          : isPwd    ? "background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;"
+          :            "background:#f0f4f8;color:#334155;border:1px solid #cbd5e1;";
         const rowBg = isLogin ? "#f0fdf4" : isLogout ? "#fefce8" : "";
-        // Parse device info
+        // ── Reason cell
+        const reasonHtml = reason
+          ? `<span style="font-size:11px;color:#475569;">${escapeHtml(reason)}</span>`
+          : `<span style="color:#cbd5e1;font-size:11px;">—</span>`;
+        // ── Device info cell
         let devHtml = "<span style='color:#94a3b8;font-size:11px;'>—</span>";
         if (devRaw) {
           const parts = devRaw.split("|").map(s => s.trim()).filter(Boolean);
-          const dIcon = /android/i.test(parts[0] || "") ? "fa-android" :
-            /ios|iphone|ipad/i.test(parts[0] || "") ? "fa-apple" :
-              /mobile/i.test(parts[0] || "") ? "fa-mobile-screen-button" : "fa-desktop";
+          const dIcon = /android/i.test(parts[0] || "")       ? "fa-android"
+            : /ios|iphone|ipad/i.test(parts[0] || "")         ? "fa-apple"
+            : /mobile/i.test(parts[0] || "")                   ? "fa-mobile-screen-button"
+            :                                                     "fa-desktop";
           devHtml = `<div style="line-height:1.5;">
               <div style="font-weight:600;color:#334155;font-size:11px;"><i class="fa-brands ${dIcon}" style="margin-right:3px;"></i>${escapeHtml(parts[0] || "")} ${parts[1] ? "· " + escapeHtml(parts[1]) : ""}</div>
               ${parts[2] ? `<div style="font-size:10px;color:#64748b;">${escapeHtml(parts[2])}</div>` : ""}
@@ -8410,11 +8431,12 @@
         }
         return `<tr style="background:${rowBg};">
             <td style="color:#94a3b8;font-size:11px;">${idx}</td>
-            <td style="font-size:11px;color:#64748b;font-family:monospace;white-space:nowrap;">${escapeHtml(ts)}</td>
+            <td style="white-space:nowrap;">${tsHtml}</td>
             <td style="font-weight:600;font-size:12px;color:#1e293b;">${escapeHtml(user)}</td>
             <td><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;${badgeSt}">${escapeHtml(action)}</span></td>
-            <td style="font-size:11.5px;color:#475569;white-space:normal;max-width:200px;">${escapeHtml(details)}</td>
-            <td style="font-size:11px;min-width:140px;">${devHtml}</td>
+            <td style="font-size:11.5px;color:#475569;white-space:normal;max-width:180px;">${escapeHtml(details)}</td>
+            <td style="white-space:normal;max-width:160px;">${reasonHtml}</td>
+            <td style="font-size:11px;min-width:130px;">${devHtml}</td>
           </tr>`;
       }).join("");
       // Pagination
@@ -8456,9 +8478,9 @@
 
     function exportAuditCSV() {
       if (!_auditData || _auditData.length === 0) { toast("No audit data to export", "warn"); return; }
-      const hdrs = ["#", "Timestamp", "User/Admin", "Action", "Details", "Device Info"];
+      const hdrs = ["#", "Timestamp", "User/Admin", "Action", "Details", "Reason", "Device Info"];
       const rows = _auditData.map((r, i) =>
-        [i + 1, r.Timestamp || "", r.UserAdmin || "", r.Action || "", r.Details || "", r.DeviceInfo || ""]
+        [i + 1, r.Timestamp || "", r.UserAdmin || "", r.Action || "", r.Details || "", r.Reason || "", r.DeviceInfo || ""]
           .map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")
       );
       const csv = [hdrs.join(","), ...rows].join("\n");

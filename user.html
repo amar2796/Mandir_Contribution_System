@@ -2783,8 +2783,45 @@
       if (!document.hidden) { let s = JSON.parse(localStorage.getItem("session")); if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null, "", "login.html"); location.replace("login.html"); } }
     });
 
+    // ── Device info collector (for audit logging — works on all mobile browsers)
+    function _getDeviceInfo() {
+      try {
+        const ua = navigator.userAgent || "";
+        let device = "Desktop";
+        if (/Android/i.test(ua))          device = "Android";
+        else if (/iPhone|iPad/i.test(ua)) device = "iOS";
+        else if (/Mobile/i.test(ua))      device = "Mobile";
+        let browser = "Unknown";
+        if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) browser = "Chrome";
+        else if (/Firefox\//.test(ua))    browser = "Firefox";
+        else if (/Edg\//.test(ua))        browser = "Edge";
+        else if (/Safari\//.test(ua))     browser = "Safari";
+        const tz   = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+        const lang = navigator.language || "";
+        const sw   = window.screen ? window.screen.width + "x" + window.screen.height : "";
+        return device + " | " + browser + " | " + tz + " | " + lang + " | " + sw;
+      } catch (e) { return ""; }
+    }
+    window._getDeviceInfo = _getDeviceInfo;
+
     function logout() {
-      try { const s = JSON.parse(localStorage.getItem("session") || "{}"); if (s && s.userId) { const p = new URLSearchParams({ action: "logout", userId: s.userId, userName: s.name || "User", callback: "cb_logout" }); try { navigator.sendBeacon(API_URL + "?" + p.toString()); } catch (e) { } postData({ action: "logout", userId: s.userId, userName: s.name || "User" }).catch(() => { }); } } catch (e) { }
+      try {
+        const s = JSON.parse(localStorage.getItem("session") || "{}");
+        if (s && s.userId) {
+          const devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
+          const p = new URLSearchParams({
+            action:       "logout",
+            userId:       s.userId,
+            userName:     s.name || "User",
+            deviceInfo:   devInfo,
+            logoutReason: "User clicked logout button",
+            callback:     "cb_logout"
+          });
+          try { navigator.sendBeacon(API_URL + "?" + p.toString()); } catch (e) { }
+          postData({ action: "logout", userId: s.userId, userName: s.name || "User",
+                     deviceInfo: devInfo, logoutReason: "User clicked logout button" }).catch(() => { });
+        }
+      } catch (e) { }
       // H12: also clear remember-me token on explicit logout
       try { localStorage.removeItem("mandir_remember_token"); } catch (e) { }
       localStorage.clear(); sessionStorage.clear(); setTimeout(() => { history.replaceState(null, "", "login.html"); location.replace("login.html"); }, 150);

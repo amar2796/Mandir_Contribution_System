@@ -425,7 +425,8 @@ window._myTabToken = Math.random().toString(36).slice(2) + Date.now();
         const s = JSON.parse(localStorage.getItem("session") || "null");
         if(s && String(s.userId) === String(e.data.userId) &&
            e.data.newTabToken !== window._myTabToken){
-          _forceLogout("⚠️ Logged in from another tab. This session has ended.");
+          _forceLogout("⚠️ Logged in from another tab. This session has ended.",
+                       "Kicked - another tab opened");
         }
       }
     };
@@ -495,7 +496,8 @@ function setSessionTokenOnServer(userId, token){
         try{ delete window[cb]; script.remove(); }catch(e){}
         // Only force logout on explicit { valid: false } — not on errors or missing fields
         if(res && res.valid === false){
-          _forceLogout("⚠️ Your account was logged in from another device. This session has ended.");
+          _forceLogout("⚠️ Your account was logged in from another device. This session has ended.",
+                       "Kicked - login from another device");
         }
         // res.valid === true → do nothing, session is valid
         // res is undefined/error → do nothing, skip this poll safely
@@ -543,12 +545,14 @@ function setSessionTokenOnServer(userId, token){
 })();
 
 /* ── Shared forced-logout helper ── */
-function _forceLogout(message){
+function _forceLogout(message, logoutReason){
   const s = JSON.parse(localStorage.getItem("session") || "null");
   try {
     if(s && s.userId){
       const devInfo = typeof window._getDeviceInfo==="function" ? window._getDeviceInfo() : "";
-      postData({ action:"logout", userId:s.userId, userName:s.name||"User", deviceInfo:devInfo }).catch(()=>{});
+      const reason = logoutReason || message || "Session ended";
+      postData({ action:"logout", userId:s.userId, userName:s.name||"User",
+                 deviceInfo:devInfo, logoutReason:reason }).catch(()=>{});
     }
   } catch(e){}
   // Set nav flag so beforeunload does NOT fire another clearSessionToken beacon
@@ -601,7 +605,8 @@ function _forceLogout(message){
 function checkSession() {
   let s=JSON.parse(localStorage.getItem("session"));
   if(!s||Date.now()>s.expiry){
-    _forceLogout("Session expired. Please login again.");
+    _forceLogout("Session expired. Please login again.",
+                 "Session expired - missing or corrupted");
     return false;
   }
   // Refresh sliding expiry window on activity
@@ -628,7 +633,8 @@ function checkSession() {
       const isProtected = window.location.pathname.includes("admin") ||
                           window.location.pathname.includes("user");
       if(isProtected){
-        _forceLogout("⏰ Session expired after 30 minutes of inactivity.");
+        _forceLogout("⏰ Session expired after 30 minutes of inactivity.",
+                     "Session expired - 30 min inactivity");
       }
     }
   }, 60000);

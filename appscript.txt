@@ -112,26 +112,42 @@ function sanitize(val, maxLen) {
 }
 
 // ── Audit log helper
-function logAction(adminName, action, details, deviceInfo) {
+// Parameters:
+//   adminName  — who performed the action (user/admin name)
+//   action     — what was done (e.g. "addContribution", "deleteUser")
+//   details    — specific record info (e.g. "ReceiptId: MNR-2025-00042 | Amount: ₹500")
+//   reason     — WHY it was done (e.g. "Devotee requested cash donation for Diwali puja")
+//   deviceInfo — browser/device string (e.g. "Android | Chrome | Asia/Kolkata")
+function logAction(adminName, action, details, reason, deviceInfo) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName(SHEETS.AUDIT);
     // Auto-create AUDIT_LOGS sheet with headers if it doesn't exist
     if (!sheet) {
       sheet = ss.insertSheet(SHEETS.AUDIT);
-      sheet.appendRow(["Timestamp","UserAdmin","Action","Details","DeviceInfo"]);
+      sheet.appendRow(["Timestamp","UserAdmin","Action","Details","Reason","DeviceInfo"]);
       sheet.setFrozenRows(1);
-      // Bold header row
-      sheet.getRange(1,1,1,5).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+      sheet.getRange(1,1,1,6).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
     }
-    const ts = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+    const ts = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MMM-yyyy hh:mm a");
     sheet.appendRow([
       ts,
       sanitize(adminName, 100),
       sanitize(action, 100),
       sanitize(details, 500),
+      sanitize(reason || "", 300),      // ← Reason/purpose column
       sanitize(deviceInfo || "", 200)
     ]);
+    // ── Auto-trim: keep only latest 1000 data rows (header stays at row 1)
+    // Deletes oldest rows in one batch — fast single API call, no performance impact.
+    try {
+      const lastRow = sheet.getLastRow();
+      const MAX_ROWS = 1000;
+      const dataRows = lastRow - 1; // subtract header row
+      if (dataRows > MAX_ROWS) {
+        sheet.deleteRows(2, dataRows - MAX_ROWS); // delete oldest from row 2
+      }
+    } catch(trimErr) { /* trim failure must never crash the log write */ }
   } catch (e) { /* Audit failure must never crash main op */ }
 }
 
@@ -760,7 +776,8 @@ function doGet(e) {
           safeUser.Name || "User",
           "Login",
           "Mobile: " + mobile + " | Role: " + (safeUser.Role || "User") + " | UserId: " + (safeUser.UserId || ""),
-          deviceInfo
+          "User initiated login",          // reason
+          deviceInfo                       // deviceInfo (5th param)
         );
         result = { status: "success", user: safeUser };
       }
@@ -1090,7 +1107,7 @@ function doGet(e) {
     result.users = result.users.map(u => { let s = Object.assign({}, u); delete s.Password; return s; });
   }
 
-  // ── AUDIT LOG
+  // ── AUDIT LOG — returns latest 1000 rows, newest first, with Reason column
   else if (action === "getAuditLog") {
     try {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.AUDIT);
@@ -1099,8 +1116,14 @@ function doGet(e) {
         const data = sheet.getDataRange().getValues();
         if (data.length < 2) { result = []; }
         else {
-          result = data.slice(1).reverse().map(r => ({
-            Timestamp: r[0]||"", UserAdmin: r[1]||"", Action: r[2]||"", Details: r[3]||""
+          // slice(1) = skip header | slice(-1000) = latest 1000 | reverse = newest first
+          result = data.slice(1).slice(-1000).reverse().map(r => ({
+            Timestamp:  r[0] || "",
+            UserAdmin:  r[1] || "",
+            Action:     r[2] || "",
+            Details:    r[3] || "",
+            Reason:     r[4] || "",      // ← NEW
+            DeviceInfo: r[5] || ""
           }));
         }
       }
@@ -1182,12 +1205,30 @@ function doGet(e) {
   }
 
   else if (action === "logAudit") {
-    logAction(sanitize(e.parameter.adminName,100), sanitize(e.parameter.action2,100), sanitize(e.parameter.details,500));
+    logAction(
+      sanitize(e.parameter.adminName, 100),
+      sanitize(e.parameter.action2,   100),
+      sanitize(e.parameter.details,   500),
+      sanitize(e.parameter.reason,    300)   // reason from client
+    );
     result = { status: "ok" };
   }
 
   else if (action === "logout") {
-    logAction(sanitize(e.parameter.userName,100)||"User","Logout","UserId: "+sanitize(e.parameter.userId,30));
+    // logoutReason tells us exactly WHY session ended:
+    //   "User clicked logout"              → manual by user
+    //   "Admin clicked logout button"      → manual by admin
+    //   "Session expired - 30 min inactivity" → auto timeout
+    //   "Kicked - login from another device"  → new device login
+    //   "Kicked - another tab opened"         → same browser, new tab
+    //   "Session expired - missing or corrupted" → corrupt session
+    logAction(
+      sanitize(e.parameter.userName, 100) || "User",
+      "Logout",
+      "UserId: " + sanitize(e.parameter.userId, 30),
+      sanitize(e.parameter.logoutReason || "Session ended", 200),
+      sanitize(e.parameter.deviceInfo   || "", 200)
+    );
     result = { status: "ok" };
   }
 
