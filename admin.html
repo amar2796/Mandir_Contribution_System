@@ -9,9 +9,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <!-- Font Awesome loaded async so it never blocks first render -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </noscript>
+  <!-- jsPDF deferred — only needed when admin clicks PDF export, not on page load -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
   <style>
     * {
       box-sizing: border-box;
@@ -132,7 +138,7 @@
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
-      transition: all 0.3s ease;
+      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
       box-shadow: 0 4px 10px rgba(247, 160, 26, 0.3);
     }
 
@@ -245,7 +251,6 @@
     /* Prevent anchor scroll from hiding under sticky header */
     html {
       scroll-padding-top: 70px;
-      scroll-behavior: smooth;
     }
 
     .card h3 i {
@@ -260,6 +265,7 @@
       border-left: 5px solid #f7a01a;
       text-align: center;
       transition: transform 0.3s ease;
+      will-change: transform;
     }
 
     .card-box:hover {
@@ -2333,11 +2339,11 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
               <div>
                 <label>User Search</label>
-                <input type="text" id="dash_userSearch" placeholder="Name or Mobile" onkeyup="dash_applyFilter()" style="margin-bottom:0;" />
+                <input type="text" id="dash_userSearch" placeholder="Name or Mobile" data-debounce="dash_applyFilter" style="margin-bottom:0;" />
               </div>
               <div>
                 <label>Tracking ID (MNR-)</label>
-                <input type="text" id="dash_trackingSearch" placeholder="MNR-... or TRX-..." onkeyup="dash_applyFilter()" style="margin-bottom:0;" />
+                <input type="text" id="dash_trackingSearch" placeholder="MNR-... or TRX-..." data-debounce="dash_applyFilter" style="margin-bottom:0;" />
               </div>
               <div>
                 <label>Start Date</label>
@@ -4069,6 +4075,57 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script>
+    /* ═══════════════════════════════════════════════════════════════
+       PERFORMANCE UTILITIES
+       ─ debounce : prevents search functions firing on every keystroke
+       ─ _apiCache: avoids duplicate API calls within the same session
+    ═══════════════════════════════════════════════════════════════ */
+
+    /**
+     * debounce(fn, delay)
+     * Returns a version of fn that only fires after 'delay' ms of silence.
+     * Drop-in: anywhere you previously called fn() immediately on keyup,
+     * assign the debounced wrapper once and call that instead.
+     */
+    function debounce(fn, delay) {
+      delay = delay || 280;
+      var _t;
+      return function () {
+        var ctx = this, args = arguments;
+        clearTimeout(_t);
+        _t = setTimeout(function () { fn.apply(ctx, args); }, delay);
+      };
+    }
+
+    /**
+     * _apiCache — lightweight TTL cache for getCached() results.
+     * Data is stored in memory (not localStorage) so it's always fresh
+     * after a hard reload, and busted via mandirCacheBust() as before.
+     * TTL default: 60 s.  No logic change — getCached() still calls the
+     * real API on miss; this layer just deduplicates repeat calls.
+     */
+    (function () {
+      var _store = {};
+      var TTL = 60000; // 60 s per entry
+      window._perfCacheGet = function (key) {
+        var e = _store[key];
+        if (e && Date.now() < e.exp) return e.val;
+        return undefined;
+      };
+      window._perfCacheSet = function (key, val) {
+        _store[key] = { val: val, exp: Date.now() + TTL };
+      };
+      window._perfCacheDel = function (key) {
+        delete _store[key];
+      };
+      // Hook into mandirCacheBust so our layer is also invalidated
+      var _origBust = window.mandirCacheBust;
+      window.mandirCacheBust = function (key) {
+        _perfCacheDel(key);
+        if (typeof _origBust === "function") _origBust(key);
+      };
+    })();
+
     /* ── SESSION — security: prevents back-button bypass + URL copy ── */
     function _checkAdminSession() {
       let s = JSON.parse(localStorage.getItem("session") || "null");
@@ -5955,6 +6012,15 @@
       window._contribPage = 1;
       render(filtered);
     }
+    /* debounce text search — select/date inputs call filterContributions() directly (instant) */
+    var _filterContribDebounced = debounce(filterContributions, 280);
+    document.addEventListener("DOMContentLoaded", function () {
+      var csrch = document.getElementById("searchContrib");
+      if (csrch) {
+        csrch.removeAttribute("onkeyup");
+        csrch.addEventListener("input", _filterContribDebounced);
+      }
+    });
 
     /* ── RENDER EXPENSES — view-only rows ── */
     function renderExpenses(list) {
@@ -6075,6 +6141,15 @@
       });
       renderExpenses(filtered);
     }
+    /* debounce text search only; select dropdowns call filterExpenses() directly (instant is fine) */
+    var _filterExpensesDebounced = debounce(filterExpenses, 280);
+    document.addEventListener("DOMContentLoaded", function () {
+      var expSrch = document.getElementById("searchExpense");
+      if (expSrch) {
+        expSrch.removeAttribute("onkeyup");
+        expSrch.addEventListener("input", _filterExpensesDebounced);
+      }
+    });
 
     function viewExpense(id) {
       let e = expenses.find((x) => String(x.Id) === String(id));
@@ -6179,6 +6254,15 @@
       window._usersPage = 1;
       _renderUsersPaged();
     }
+    /* debounce user search — status tab clicks still call renderUsers() directly (instant) */
+    var _renderUsersDebounced = debounce(renderUsers, 280);
+    document.addEventListener("DOMContentLoaded", function () {
+      var usrSrch = document.getElementById("userSearchInput");
+      if (usrSrch) {
+        usrSrch.removeAttribute("onkeyup");
+        usrSrch.addEventListener("input", _renderUsersDebounced);
+      }
+    });
 
     function _gotoUsersPage(p) {
       const total = Math.ceil((window._userList || []).length / PAGE_SIZE);
@@ -6485,10 +6569,45 @@
       if (!arr) return;
       const newIdx = idx + dir;
       if (newIdx < 0 || newIdx >= arr.length) return;
+
+      // Swap in memory first so the UI responds instantly
       const tmp = arr[idx]; arr[idx] = arr[newIdx]; arr[newIdx] = tmp;
       renderFn();
       if (listName === 'types') loadTypes();
       if (listName === 'expenseTypes') loadExpenseTypes();
+
+      // Show saving indicator in the table header area
+      const tableIdMap = { types: 'typeTable', occasions: 'occasionTable', expenseTypes: 'expenseTable' };
+      const tbodyEl = document.getElementById(tableIdMap[listName]);
+      const saveIndicatorId = '_sortSaving_' + listName;
+      let indicator = document.getElementById(saveIndicatorId);
+      if (!indicator && tbodyEl && tbodyEl.closest('table')) {
+        indicator = document.createElement('caption');
+        indicator.id = saveIndicatorId;
+        indicator.style.cssText = 'font-size:11px;color:#f7a01a;padding:4px 0;caption-side:bottom;text-align:right;';
+        tbodyEl.closest('table').appendChild(indicator);
+      }
+      if (indicator) indicator.textContent = '⏳ Saving order…';
+
+      // Build id-keyed sort order and persist to sheet
+      const idField = { types: 'TypeId', occasions: 'OccasionId', expenseTypes: 'ExpenseTypeId' }[listName];
+      const orderArr = arr.map(function(item, i) { return { id: item[idField], sort: i + 1 }; });
+
+      postData({ action: 'updateSortOrder', sheet: listName, order: JSON.stringify(orderArr) })
+        .then(function(res) {
+          if (res && res.status === 'success') {
+            if (indicator) { indicator.textContent = '✅ Order saved'; setTimeout(function(){ indicator.textContent = ''; }, 2000); }
+            // Bust local cache so next refresh picks up new order from sheet
+            mandirCacheBust('getAllData');
+          } else {
+            if (indicator) indicator.textContent = '';
+            toast('⚠️ Order saved locally but failed to persist — try again.', 'warn');
+          }
+        })
+        .catch(function() {
+          if (indicator) indicator.textContent = '';
+          toast('⚠️ Could not save order to server. Check connection.', 'warn');
+        });
     }
 
     /* inline edit popups for master data */
@@ -8325,6 +8444,15 @@
       _auditPage = 1;
       _renderAuditPaged(_getFilteredAudit(), 1);
     }
+    /* debounced version wired to onkeyup — replaces direct call after DOM ready */
+    var _filterAuditLogDebounced = debounce(filterAuditLog, 280);
+    document.addEventListener("DOMContentLoaded", function () {
+      var auditSrch = document.getElementById("auditSearch");
+      if (auditSrch) {
+        auditSrch.removeAttribute("onkeyup");
+        auditSrch.addEventListener("input", _filterAuditLogDebounced);
+      }
+    });
 
     function exportAuditCSV() {
       if (!_auditData || _auditData.length === 0) { toast("No audit data to export", "warn"); return; }
@@ -8783,6 +8911,15 @@
       window._fbPage = 1;
       _renderFbPaged();
     }
+    /* debounced version — replaces inline onkeyup after DOM ready */
+    var _filterFeedbackDebounced = debounce(filterFeedbackAdmin, 280);
+    document.addEventListener("DOMContentLoaded", function () {
+      var fbSrch = document.getElementById("fbAdminSearch");
+      if (fbSrch) {
+        fbSrch.removeAttribute("onkeyup");
+        fbSrch.addEventListener("input", _filterFeedbackDebounced);
+      }
+    });
 
     try { init(); } catch (e) { console.warn('init() error:', e); }
 
@@ -9810,6 +9947,15 @@
       window._reqPage = 1;
       _renderReqPaged();
     }
+    /* debounce text search; status select calls renderContributionRequests() directly (instant) */
+    var _renderContribReqDebounced = debounce(renderContributionRequests, 280);
+    document.addEventListener("DOMContentLoaded", function () {
+      var reqSrch = document.getElementById("reqFilterSearch");
+      if (reqSrch) {
+        reqSrch.removeAttribute("onkeyup");
+        reqSrch.addEventListener("input", _renderContribReqDebounced);
+      }
+    });
 
     function _gotoReqPage(p) {
       const total = Math.ceil((window._reqList || []).length / PAGE_SIZE);
@@ -10485,6 +10631,16 @@
       dash_renderAll();
     }
 
+    /* attach debounced listeners for all inputs marked data-debounce="dash_applyFilter" */
+    (function () {
+      var _debouncedDashFilter = debounce(dash_applyFilter, 280);
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("[data-debounce='dash_applyFilter']").forEach(function (el) {
+          el.addEventListener("input", _debouncedDashFilter);
+        });
+      });
+    })();
+
     function dash_clearDates() {
       ["dash_startDate","dash_endDate"].forEach(id => {
         const el = document.getElementById(id);
@@ -10813,16 +10969,17 @@
       const endVal   = document.getElementById("dash_endDate")?.dataset.val || "";
       const g = document.getElementById("dash_calGrid");
       if (!g) return;
-      g.innerHTML = ["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => `<div style="text-align:center;font-size:10px;color:#aaa;font-weight:600;padding:4px 0;">${d}</div>`).join("");
-      for (let i = 0; i < firstDay; i++) g.innerHTML += `<div></div>`;
+      const _calParts = ["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => `<div style="text-align:center;font-size:10px;color:#aaa;font-weight:600;padding:4px 0;">${d}</div>`);
+      for (let i = 0; i < firstDay; i++) _calParts.push(`<div></div>`);
       for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = _dash_calYear + "-" + String(_dash_calMonth+1).padStart(2,"0") + "-" + String(d).padStart(2,"0");
         const isToday = d===today.getDate() && _dash_calMonth===today.getMonth() && _dash_calYear===today.getFullYear();
         const isSel   = dateStr===startVal || dateStr===endVal;
         const bg = isSel ? "#334155" : isToday ? "#f7a01a" : "transparent";
         const co = (isSel || isToday) ? "#fff" : "#333";
-        g.innerHTML += `<div onclick="dash_pickDate('${dateStr}')" style="text-align:center;font-size:12px;padding:5px 2px;border-radius:6px;cursor:pointer;background:${bg};color:${co};font-weight:${(isSel||isToday)?700:400};">${d}</div>`;
+        _calParts.push(`<div onclick="dash_pickDate('${dateStr}')" style="text-align:center;font-size:12px;padding:5px 2px;border-radius:6px;cursor:pointer;background:${bg};color:${co};font-weight:${(isSel||isToday)?700:400};">${d}</div>`);
       }
+      g.innerHTML = _calParts.join("");
     }
     function dash_pickDate(dateStr) {
       const parts = dateStr.split("-");

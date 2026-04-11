@@ -13,7 +13,7 @@
   <link rel="preload" href="config.js" as="script" />
   <link rel="preload" href="app.js" as="script" />
 
-  <title>My Dashboard — Mandir</title>
+  <title>My Dashboard</title><!-- Title is set dynamically via APP.name in _setUserVersion() -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -326,7 +326,7 @@
     }
 
     .hero::after {
-      content: '🕉️';
+      content: var(--hero-symbol, '🕉️'); /* set from APP.symbol via JS */
       position: absolute;
       bottom: 26px;
       right: 16px;
@@ -2497,8 +2497,7 @@
             <div class="f-grp"><label>Year</label><select id="filterYear" onchange="applyFilter()"></select></div>
             <div class="f-grp"><label>Month</label><select id="filterMonth" onchange="applyFilter()"></select></div>
             <div class="f-grp"><label>Type</label><select id="filterType" onchange="applyFilter()"></select></div>
-            <div class="f-grp"><label>Search</label><input type="text" id="searchInput" id="searchInput" <!-- set placeholder via JS: document.getElementById('searchInput').placeholder = `Amount, ${APP.receiptPrefix}-…` -->
-               onkeyup="searchData()" /></div>
+            <div class="f-grp"><label>Search</label><input type="text" id="searchInput" placeholder="Amount, …" onkeyup="searchData()" /></div><!-- placeholder set from APP.receiptPrefix in _setUserVersion() -->
           </div>
           <div class="f-actions">
             <button class="btn-secondary btn-sm" onclick="applyFilter()"><i class="fa-solid fa-magnifying-glass"></i> Apply</button>
@@ -3536,7 +3535,7 @@
           let oName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
           let uName = users.find(u => String(u.UserId) === String(c.UserId))?.Name || "Me";
           const rid = _storeReceipt(c, uName, type, oName);
-          let dRID = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
+          let dRID = (c.ReceiptID || "").replace(new RegExp("^" + APP.legacyReceiptPrefix + "-"), APP.receiptPrefix + "-");
           return `<tr onclick="showReceiptById('${rid}')" title="Click for receipt">
               <td style="color:var(--ink-faint);font-size:12px;">${globalIdx + 1}</td>
               <td class="amt-col">₹ ${fmt(c.Amount)}</td>
@@ -3559,7 +3558,7 @@
             let oName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
             let uName = users.find(u => String(u.UserId) === String(c.UserId))?.Name || "Me";
             const rid = _storeReceipt(c, uName, type, oName);
-            let dRID = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+            let dRID = (c.ReceiptID || "").replace(new RegExp("^" + APP.legacyReceiptPrefix + "-"), APP.receiptPrefix + "-");
             return `<div class="mob-c-card" onclick="showReceiptById('${rid}')">
                 <div class="mob-c-top">
                   <span class="mob-c-amt">₹ ${fmt(c.Amount)}</span>
@@ -3759,22 +3758,34 @@
         // Scroll the header into view smoothly
         setTimeout(function() {
           accBtn.scrollIntoView({ behavior: "smooth", block: "start" });
-          // Re-measure after lazy content may have loaded
+          // Re-measure after any synchronous layout shift
           accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
         }, 60);
 
         // Lazy load triggers — via shared helper
         _lazyLoadPanel(id);
 
-        // After data loads, re-measure height so content isn't clipped
-        setTimeout(function() {
-          if (_accActivePanel === id)
-            accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
-        }, 800);
-        setTimeout(function() {
-          if (_accActivePanel === id)
-            accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
-        }, 2000);
+        // ResizeObserver: auto-expand height whenever inner content grows (e.g. after async fetch)
+        if (window.ResizeObserver) {
+          if (accInner._roInstance) accInner._roInstance.disconnect();
+          const ro = new ResizeObserver(function() {
+            if (_accActivePanel === id) {
+              accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
+            } else {
+              ro.disconnect();
+            }
+          });
+          ro.observe(accInner);
+          accInner._roInstance = ro;
+        } else {
+          // Fallback for browsers without ResizeObserver
+          setTimeout(function() {
+            if (_accActivePanel === id) accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
+          }, 800);
+          setTimeout(function() {
+            if (_accActivePanel === id) accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
+          }, 2000);
+        }
       }
     }
 
@@ -4038,7 +4049,7 @@
       renderTable(data.filter(c => {
         if (y && String(c.Year) !== y) return false; if (m && c.ForMonth !== m) return false; if (t && String(c.TypeId) !== String(t)) return false;
         if (txt) {
-          let tn = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "", dR = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+          let tn = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "", dR = (c.ReceiptID || "").replace(new RegExp("^" + APP.legacyReceiptPrefix + "-"), APP.receiptPrefix + "-");
           return tn.toLowerCase().includes(txt) || (c.ForMonth || "").toLowerCase().includes(txt) || String(c.Amount).includes(txt) || (c.PaymentDate || "").toLowerCase().includes(txt) || String(c.Year || "").includes(txt) || dR.toLowerCase().includes(txt) || (c.ReceiptID || "").toLowerCase().includes(txt);
         }
         return true;
@@ -4130,14 +4141,14 @@
       doc.text(`Filter: ${fLbl}`, 14, Y + 8);
       doc.text(`Generated: ${new Date().toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" })}`, 14, Y + 13);
       doc.setFont(undefined, "italic");
-      doc.text("System Generated — Not Manually Signed", w - 14, Y + 13, { align: "right" });
+      doc.text(APP.footerNote, w - 14, Y + 13, { align: "right" });
 
       Y += 28;
 
       // ── Filtered data
       let filtered = data.filter(c => {
         let t = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "",
-            dR = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+            dR = (c.ReceiptID || "").replace(new RegExp("^" + APP.legacyReceiptPrefix + "-"), APP.receiptPrefix + "-");
         let base = (!fY || String(c.Year) === fY) && (!fM || c.ForMonth === fM) && (!fT || String(c.TypeId) === String(fT));
         if (!base) return false; if (!srch) return true;
         return t.toLowerCase().includes(srch) || String(c.Amount).includes(srch) ||
@@ -4157,7 +4168,7 @@
       // ── Table with brown/gold theme
       let rows = filtered.map((c, i) => {
         let tN = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "—",
-            dR = (c.ReceiptID || "").replace(/^TRX-/, "MNR-");
+            dR = (c.ReceiptID || "").replace(new RegExp("^" + APP.legacyReceiptPrefix + "-"), APP.receiptPrefix + "-");
         return [String(i + 1), "Rs." + Number(c.Amount || 0).toLocaleString("en-IN"),
           c.ForMonth || "—", String(c.Year || "—"), tN, dR, formatPaymentDate(c.PaymentDate)];
       });
@@ -4217,12 +4228,12 @@
         doc.setFillColor(247, 160, 26);
         doc.rect(0, ph - 10, w, 0.8, "F");
         doc.setFontSize(6.5); doc.setTextColor(180, 140, 80); doc.setFont(undefined, "normal");
-        doc.text((APP.name + ", " + APP.location + "  ·  System Generated").toUpperCase(), w / 2, ph - 4, { align: "center" });
+        doc.text((APP.name + ", " + APP.location + "  ·  " + APP.footerNote).toUpperCase(), w / 2, ph - 4, { align: "center" });
         doc.setTextColor(120, 100, 60);
         doc.text(`Page ${i} of ${pc}`, w - 10, ph - 4, { align: "right" });
       }
 
-      doc.save(`Mandir_Statement_${s.name.replace(/\s+/g, "_")}_${Date.now()}.pdf`);
+      doc.save(`${APP.shortName}_Statement_${s.name.replace(/\s+/g, "_")}_${Date.now()}.pdf`);
     }
 
     /* ═══ MEMBER ID CARD PDF ═════════════════════════════════════════
@@ -4474,7 +4485,7 @@
       window._generateQRDataUrl = async function(text, sizePx) {
         // text is displayRID — enrich it with user context
         const stored = window._rcptStore && Object.values(window._rcptStore).find(function(v) {
-          return v && v.c && ((v.c.ReceiptID || "").replace(/^TRX-/, "MNR-") === text || text === (v.c.ReceiptID || "").replace(/^TRX-/, "MNR-"));
+          return v && v.c && ((v.c.ReceiptID || "").replace(new RegExp("^" + APP.legacyReceiptPrefix + "-"), APP.receiptPrefix + "-") === text || text === (v.c.ReceiptID || "").replace(new RegExp("^" + APP.legacyReceiptPrefix + "-"), APP.receiptPrefix + "-"));
         });
         let richText = text;
         if (stored) {
@@ -4566,6 +4577,23 @@
       const el = document.getElementById("userVersionFooter");
       if (el) el.textContent = "v" + APP.version + " · " + APP.name;
       document.title = "My Dashboard — " + APP.name;
+      // Inject APP.symbol into hero ::after CSS variable
+      document.documentElement.style.setProperty("--hero-symbol", '"' + (APP.symbol || "🕉️") + '"');
+      // Inject APP.receiptPrefix into search placeholder
+      const si = document.getElementById("searchInput");
+      if (si) si.placeholder = "Amount, " + APP.receiptPrefix + "-…";
+    }
+
+    // ── Helper: re-measure accBody maxHeight after dynamic content loads
+    function _remeasureAccordion(panelId) {
+      const accBody  = document.getElementById("accBody-"  + panelId);
+      const accInner = document.getElementById("accInner-" + panelId);
+      if (!accBody || !accInner) return;
+      if (_accActivePanel !== panelId) return;
+      // Use requestAnimationFrame so browser has painted the new content first
+      requestAnimationFrame(function() {
+        accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
+      });
     }
 
     // ── M14: Load upcoming events for user portal
@@ -4583,6 +4611,7 @@
         });
         if (visible.length === 0) {
           container.innerHTML = '<div class="card" style="text-align:center;color:var(--ink-faint);padding:20px;font-size:13px;">No upcoming events at the moment.</div>';
+          _remeasureAccordion("panelEvents");
           return;
         }
         // Helper: format date nicely
@@ -4617,8 +4646,11 @@
             + (ev.Description ? '<div style="font-size:12px;color:var(--ink-soft);line-height:1.55;">' + escapeHtml(ev.Description) + '</div>' : "")
             + '</div></div></div>';
         }).join("");
+        // Re-measure accordion height now that real content has been injected
+        _remeasureAccordion("panelEvents");
       }).catch(function () {
         container.innerHTML = '<div class="card" style="text-align:center;color:var(--ink-faint);padding:16px;font-size:13px;">Could not load events.</div>';
+        _remeasureAccordion("panelEvents");
       });
     }
 
@@ -4723,7 +4755,7 @@
         // Gold stripe footer
         doc.setFillColor(247, 160, 26); doc.rect(0, 285, W, 2, "F");
         doc.setTextColor(148, 163, 184); doc.setFontSize(7);
-        doc.text("System-generated receipt. " + APP.tagline, W / 2, 292, { align: "center" });
+        doc.text(APP.footerNote + "  " + APP.tagline, W / 2, 292, { align: "center" });
 
         doc.save("YearStatement_" + s.name + "_" + yr + ".pdf");
         toast("✅ Year statement downloaded!");

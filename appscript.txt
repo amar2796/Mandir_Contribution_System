@@ -846,9 +846,9 @@ function doGet(e) {
 
   // ── READ DATA
   else if (action === "getUsers")         result = getSheetData(SHEETS.USERS);
-  else if (action === "getTypes")         result = _cachedSheet(SHEETS.TYPES,         "c_types",    600);
-  else if (action === "getExpenseTypes")  result = _cachedSheet(SHEETS.EXPENSE_TYPES, "c_exptypes", 600);
-  else if (action === "getOccasions")     result = _cachedSheet(SHEETS.OCCASIONS,     "c_occasions",600);
+  else if (action === "getTypes")         result = _cachedSheet(SHEETS.TYPES,         "c_types",    600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
+  else if (action === "getExpenseTypes")  result = _cachedSheet(SHEETS.EXPENSE_TYPES, "c_exptypes", 600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
+  else if (action === "getOccasions")     result = _cachedSheet(SHEETS.OCCASIONS,     "c_occasions",600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
   else if (action === "getContributions") result = getSheetData(SHEETS.CONTRIBUTIONS);
   else if (action === "getExpenses")      result = getSheetData(SHEETS.EXPENSES);
   else if (action === "getEventData")     { result = { events: getSheetData(SHEETS.EVENTS), eventExpenses: getSheetData(SHEETS.EVENT_EXPENSES) }; }
@@ -1072,11 +1072,16 @@ function doGet(e) {
 
   // ── GET ALL DATA
   else if (action === "getAllData") {
+    var _sortBySortOrder = function(arr) {
+      return arr.slice().sort(function(a, b) {
+        return (Number(a.SortOrder) || 0) - (Number(b.SortOrder) || 0);
+      });
+    };
     result = {
       users:         getSheetData(SHEETS.USERS),
-      types:         getSheetData(SHEETS.TYPES),
-      expenseTypes:  getSheetData(SHEETS.EXPENSE_TYPES),
-      occasions:     getSheetData(SHEETS.OCCASIONS),
+      types:         _sortBySortOrder(getSheetData(SHEETS.TYPES)),
+      expenseTypes:  _sortBySortOrder(getSheetData(SHEETS.EXPENSE_TYPES)),
+      occasions:     _sortBySortOrder(getSheetData(SHEETS.OCCASIONS)),
       contributions: getSheetData(SHEETS.CONTRIBUTIONS),
       expenses:      getSheetData(SHEETS.EXPENSES),
       yearConfig:    getSheetData("YEAR_CONFIG"),
@@ -1363,8 +1368,10 @@ function doGet(e) {
     if (result.status === "deleted") logAction("Admin", "Delete User", "UserId: " + id);
   }
   else if (action === "updateUser")      { result = updateUser(e.parameter); }
+  // ── CONTRIBUTION TYPES (with permanent SortOrder) ──────────────
   else if (action === "addType") {
-    addRow(SHEETS.TYPES, [generateId(), sanitize(e.parameter.TypeName, 100)]);
+    var nextSort = _getNextSortOrder(SHEETS.TYPES);
+    addRow(SHEETS.TYPES, [generateId(), sanitize(e.parameter.TypeName, 100), nextSort]);
     logAction("Admin", "Add Type", e.parameter.TypeName);
     _bustSheetCache("c_types");
     result = { status: "success" };
@@ -1375,11 +1382,34 @@ function doGet(e) {
     _bustSheetCache("c_types");
     if (result.status === "deleted") logAction("Admin", "Delete Type", "TypeId: " + id);
   }
-  else if (action === "updateType")      { result = updateSingle(SHEETS.TYPES, sanitize(e.parameter.TypeId,30), sanitize(e.parameter.TypeName,100)); _bustSheetCache("c_types");}
-  else if (action === "addOccasion")     { addRow(SHEETS.OCCASIONS,[generateId(),sanitize(e.parameter.OccasionName,100)]); _bustSheetCache("c_occasions"); result={status:"success"}; }
+  else if (action === "updateType") {
+    result = updateSingle(SHEETS.TYPES, sanitize(e.parameter.TypeId,30), sanitize(e.parameter.TypeName,100));
+    _bustSheetCache("c_types");
+  }
+  else if (action === "updateSortOrder") {
+    result = _updateSortOrder(
+      sanitize(e.parameter.sheet, 20),
+      JSON.parse(e.parameter.order || "[]")
+    );
+  }
+
+  // ── OCCASIONS (with permanent SortOrder) ────────────────────────
+  else if (action === "addOccasion") {
+    var nextSort = _getNextSortOrder(SHEETS.OCCASIONS);
+    addRow(SHEETS.OCCASIONS, [generateId(), sanitize(e.parameter.OccasionName, 100), nextSort]);
+    _bustSheetCache("c_occasions");
+    result = { status: "success" };
+  }
   else if (action === "deleteOccasion")  { result = deleteRow(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30)); _bustSheetCache("c_occasions");}
   else if (action === "updateOccasion")  { result = updateSingle(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30), sanitize(e.parameter.OccasionName,100)); _bustSheetCache("c_occasions");}
-  else if (action === "addExpenseType")  { addRow(SHEETS.EXPENSE_TYPES,[generateId(),sanitize(e.parameter.Name,100)]); _bustSheetCache("c_exptypes"); result={status:"success"}; }
+
+  // ── EXPENSE TYPES (with permanent SortOrder) ─────────────────────
+  else if (action === "addExpenseType") {
+    var nextSort = _getNextSortOrder(SHEETS.EXPENSE_TYPES);
+    addRow(SHEETS.EXPENSE_TYPES, [generateId(), sanitize(e.parameter.Name, 100), nextSort]);
+    _bustSheetCache("c_exptypes");
+    result = { status: "success" };
+  }
   else if (action === "deleteExpenseType"){ result=deleteRow(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30));  _bustSheetCache("c_exptypes");}
   else if (action === "updateExpenseType"){ result=updateSingle(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30),sanitize(e.parameter.Name,100)); _bustSheetCache("c_exptypes");}
 
@@ -2224,6 +2254,76 @@ function deleteRow(name, id) {
     if (String(data[i][0]) === String(id)) { sheet.deleteRow(i+1); return {status:"deleted"}; }
   }
   return { status: "not found" };
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PERMANENT SORT ORDER HELPERS
+//  _getNextSortOrder — returns max(SortOrder)+1 for a sheet
+//                      so newly added items go to the bottom.
+//  _updateSortOrder  — receives [{id, sort}] array, writes each
+//                      SortOrder value back to col 3 of the sheet.
+//                      Called by the ↑ ↓ buttons in admin panel.
+// ════════════════════════════════════════════════════════════════
+function _getNextSortOrder(sheetName) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) return 1;
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return 1;
+  var headers = data[0];
+  var sortCol = headers.indexOf("SortOrder");
+  if (sortCol === -1) return data.length; // no column yet — use row count as fallback
+  var max = 0;
+  for (var i = 1; i < data.length; i++) {
+    var v = Number(data[i][sortCol] || 0);
+    if (v > max) max = v;
+  }
+  return max + 1;
+}
+
+function _updateSortOrder(sheetName, orderArr) {
+  // orderArr: [{id: "...", sort: 1}, {id: "...", sort: 2}, ...]
+  // Writes the SortOrder value into column 3 (index 2) for each matching row.
+  if (!sheetName || !Array.isArray(orderArr) || orderArr.length === 0) {
+    return { status: "error", message: "Invalid parameters" };
+  }
+  var sheetMap = { types: SHEETS.TYPES, occasions: SHEETS.OCCASIONS, expenseTypes: SHEETS.EXPENSE_TYPES };
+  var target = sheetMap[sheetName] || sheetName;
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(target);
+  if (!sheet) return { status: "error", message: "Sheet not found: " + target };
+
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var idCol   = 0; // ID is always col 0 (TypeId / OccasionId / ExpenseTypeId)
+
+  // Find or create SortOrder column
+  var sortCol = headers.indexOf("SortOrder");
+  if (sortCol === -1) {
+    // Column missing — add header to row 1
+    sortCol = headers.length;
+    sheet.getRange(1, sortCol + 1).setValue("SortOrder");
+  }
+
+  // Build a lookup map id → sort value for O(1) access
+  var sortMap = {};
+  orderArr.forEach(function(item) { sortMap[String(item.id)] = Number(item.sort); });
+
+  // Write each SortOrder value in one pass
+  var updated = 0;
+  for (var i = 1; i < data.length; i++) {
+    var rowId = String(data[i][idCol] || "");
+    if (sortMap.hasOwnProperty(rowId)) {
+      sheet.getRange(i + 1, sortCol + 1).setValue(sortMap[rowId]);
+      updated++;
+    }
+  }
+  SpreadsheetApp.flush();
+
+  // Bust the relevant cache
+  var cacheKeyMap = { TYPES: "c_types", OCCASIONS: "c_occasions", EXPENSE_TYPES: "c_exptypes" };
+  if (cacheKeyMap[target]) _bustSheetCache(cacheKeyMap[target]);
+
+  logAction("Admin", "updateSortOrder", sheetName + " — " + updated + " rows updated");
+  return { status: "success", updated: updated };
 }
 
 function updateRow(name, body) {
