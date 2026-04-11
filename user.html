@@ -2432,6 +2432,361 @@
       color: var(--ink);
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       ██████╗  █████╗ ██████╗ ██╗  ██╗    ███████╗██╗██╗  ██╗███████╗███████╗
+       ██╔══██╗██╔══██╗██╔══██╗██║ ██╔╝    ██╔════╝██║╚██╗██╔╝██╔════╝██╔════╝
+       ██║  ██║███████║██████╔╝█████╔╝     █████╗  ██║ ╚███╔╝ █████╗  ███████╗
+       ██║  ██║██╔══██║██╔══██╗██╔═██╗     ██╔══╝  ██║ ██╔██╗ ██╔══╝  ╚════██║
+       ██████╔╝██║  ██║██║  ██║██║  ██╗    ██║     ██║██╔╝ ██╗███████╗███████║
+       ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝
+       — Comprehensive Dark Mode Gap Fixes — User Priority Edition —
+       ══════════════════════════════════════════════════════════════ */
+
+    /* ── Smooth transition when toggling dark mode ── */
+    body {
+      transition: background-color 0.28s ease, color 0.22s ease;
+    }
+    body * {
+      transition-property: background-color, color, border-color, box-shadow;
+      transition-duration: 0.18s;
+      transition-timing-function: ease;
+    }
+    /* Keep animation-heavy elements from inheriting transition override */
+    body .goal-fill,
+    body .skel,
+    body #page-progress,
+    body .bs-sheet,
+    body .acc-body {
+      transition: inherit;
+    }
+
+    /* ── Dark toggle & lang buttons in dark mode ── */
+    body.user-dark #userDarkBtn {
+      background: rgba(247,160,26,0.10) !important;
+      border-color: rgba(247,160,26,0.28) !important;
+      color: var(--gold) !important;
+    }
+    body.user-dark #userDarkBtn:hover {
+      background: rgba(247,160,26,0.20) !important;
+      border-color: var(--gold) !important;
+    }
+    body.user-dark #userLangBtn {
+      background: rgba(255,255,255,0.06) !important;
+      border-color: rgba(255,255,255,0.10) !important;
+      color: #94a3b8 !important;
+    }
+    body.user-dark #userLangBtn:hover {
+      background: rgba(247,160,26,0.10) !important;
+      border-color: rgba(247,160,26,0.3) !important;
+      color: var(--gold) !important;
+    }
+
+    /* ── Mobile contribution cards — completely missing dark overrides ── */
+    @media(max-width:600px) {
+      body.user-dark .mob-c-card {
+        border-bottom-color: rgba(247,160,26,0.08) !important;
+        background: transparent !important;
+      }
+      body.user-dark .mob-c-card:hover {
+        background: rgba(247,160,26,0.05) !important;
+      }
+      body.user-dark .mob-c-card:active {
+        background: rgba(247,160,26,0.09) !important;
+      }
+      body.user-dark .mob-c-month {
+        color: #cbd5e1 !important;
+      }
+      body.user-dark .mob-c-date {
+        color: #475569 !important;
+      }
+      body.user-dark .mob-c-amt {
+        color: #4ade80 !important;
+      }
+    }
+
+    /* ── Table horizontal scroll shadow — was showing white in dark ── */
+    body.user-dark .t-wrap::after {
+      background: linear-gradient(to left, rgba(17,24,39,0.9), transparent) !important;
+    }
+
+    /* ── Skeleton loader borders — were light in dark ── */
+    body.user-dark .skel-ra {
+      border-bottom-color: rgba(247,160,26,0.06) !important;
+    }
+
+    /* ── Recent activity focus rings — were showing light bg in dark ── */
+    body.user-dark .ra-item:focus-visible,
+    body.user-dark .ra-view-all:focus-visible {
+      background: rgba(247,160,26,0.06) !important;
+    }
+
+    /* ── Payment panel info banner — hardcoded light colors ── */
+    body.user-dark #panelPayment > div[style*="background:linear-gradient(135deg,#fffbf2"] {
+      background: linear-gradient(135deg, #1a1000, #1e1500) !important;
+      border-color: rgba(247,160,26,0.22) !important;
+    }
+    body.user-dark #panelPayment > div[style*="background:linear-gradient(135deg,#fffbf2"] div[style*="color:#78350f"] {
+      color: #fde68a !important;
+    }
+    body.user-dark #panelPayment > div[style*="background:linear-gradient(135deg,#fffbf2"] div[style*="color:#a16207"] {
+      color: #fbbf24 !important;
+    }
+    body.user-dark #panelPayment > div[style*="background:linear-gradient(135deg,#fffbf2"] div[style*="background:rgba(247,160,26,0.15)"] {
+      background: rgba(247,160,26,0.18) !important;
+    }
+
+    /* ── Payment form inputs (inline-styled, overridden here) ── */
+    body.user-dark #pr_month,
+    body.user-dark #pr_amount,
+    body.user-dark #pr_mode,
+    body.user-dark #pr_utr,
+    body.user-dark #pr_note,
+    body.user-dark #fb_message {
+      background: #0d1117 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3748 !important;
+    }
+    body.user-dark #pr_month:focus,
+    body.user-dark #pr_amount:focus,
+    body.user-dark #pr_mode:focus,
+    body.user-dark #pr_utr:focus,
+    body.user-dark #pr_note:focus,
+    body.user-dark #fb_message:focus {
+      background: #111827 !important;
+      border-color: var(--gold) !important;
+      box-shadow: 0 0 0 3px rgba(247,160,26,0.14) !important;
+    }
+
+    /* ── Payment form label colors ── */
+    body.user-dark #panelPayment label[style*="color:#64748b"],
+    body.user-dark #panelPayment label {
+      color: #64748b !important;
+    }
+
+    /* ── Payment rupee prefix ── */
+    body.user-dark #panelPayment span[style*="color:#78350f"] {
+      color: var(--gold) !important;
+    }
+
+    /* ── Feedback form card body ── */
+    body.user-dark #panelFeedback .card-body input,
+    body.user-dark #panelFeedback .card-body select,
+    body.user-dark #panelFeedback .card-body textarea {
+      background: #0d1117 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3748 !important;
+    }
+
+    /* ── Menu badges contrast in dark ── */
+    body.user-dark .mb-amber {
+      background: rgba(247,160,26,0.18) !important;
+      color: #fde68a !important;
+      border-color: rgba(247,160,26,0.28) !important;
+    }
+    body.user-dark .mb-green {
+      background: rgba(34,197,94,0.15) !important;
+      color: #86efac !important;
+      border-color: rgba(34,197,94,0.25) !important;
+    }
+    body.user-dark .mb-blue {
+      background: rgba(59,130,246,0.15) !important;
+      color: #93c5fd !important;
+      border-color: rgba(59,130,246,0.25) !important;
+    }
+
+    /* ── Consistent bottom sheet background (was #1e293b vs #111827) ── */
+    body.user-dark .bs-sheet,
+    body.user-dark .bs-body {
+      background: #111827 !important;
+    }
+
+    /* ── Section panel back button dark ── */
+    body.user-dark .sec-panel-back:hover {
+      color: var(--gold) !important;
+    }
+
+    /* ── Empty state icon in dark ── */
+    body.user-dark .empty i {
+      opacity: 0.25 !important;
+    }
+
+    /* ── Skel-ra in dark (used in recent activity loading) ── */
+    body.user-dark .skel {
+      background: linear-gradient(90deg,
+        rgba(247,160,26,0.04) 25%,
+        rgba(247,160,26,0.09) 50%,
+        rgba(247,160,26,0.04) 75%
+      ) !important;
+      background-size: 600px 100% !important;
+    }
+
+    /* ── System dark mode: auto-apply for first-time visitors ── */
+    @media (prefers-color-scheme: dark) {
+      body:not(.user-light) {
+        background: #08090f;
+        color: #e2e8f0;
+      }
+      body:not(.user-light):not(.user-dark) .header {
+        background: rgba(15, 18, 30, 0.96);
+        border-bottom-color: rgba(247, 160, 26, 0.55);
+      }
+    }
+
+    /* ══════════════════════════════════════════
+       ROUND 2 — JS-Generated Content Dark Fixes
+       ══════════════════════════════════════════ */
+
+    /* ── Payment slip upload drop zone ── */
+    body.user-dark #panelPayment [style*="background:#fffbf2"][style*="dashed"] {
+      background: rgba(247,160,26,0.05) !important;
+      border-color: rgba(247,160,26,0.28) !important;
+    }
+    body.user-dark #panelPayment [style*="background:#fffbf2"][style*="dashed"]:hover,
+    body.user-dark #panelPayment [style*="background:#fff8e8"] {
+      background: rgba(247,160,26,0.09) !important;
+    }
+    body.user-dark #pr_slip_name { color: #64748b !important; }
+    body.user-dark #pr_slip_preview { border-color: #2d3748 !important; }
+
+    /* ── Goal pills (JS-generated inline colors) ── */
+    body.user-dark .goal-pill[style*="#dcfce7"] {
+      background: rgba(34,197,94,0.18) !important;
+      color: #86efac !important;
+    }
+    body.user-dark .goal-pill[style*="#fef9ee"] {
+      background: rgba(247,160,26,0.15) !important;
+      color: var(--gold) !important;
+    }
+
+    /* ── Broadcast priority pills (JS-generated) ── */
+    body.user-dark .bc-pill[style*="#f1f5f9"] {
+      background: #1e293b !important;
+      color: #94a3b8 !important;
+    }
+    body.user-dark .bc-pill[style*="#fef9ee"] {
+      background: rgba(247,160,26,0.15) !important;
+      color: var(--gold) !important;
+    }
+    body.user-dark .bc-pill[style*="#fee2e2"] {
+      background: rgba(239,68,68,0.15) !important;
+      color: #fca5a5 !important;
+    }
+
+    /* ── Poll response chips (Yes / No / Suggestion) ── */
+    body.user-dark .bc-item [style*="background:#dcfce7"] {
+      background: rgba(34,197,94,0.15) !important;
+      color: #86efac !important;
+    }
+    body.user-dark .bc-item [style*="background:#fee2e2"] {
+      background: rgba(239,68,68,0.15) !important;
+      color: #fca5a5 !important;
+    }
+    body.user-dark .bc-item [style*="background:#fef9ee"] {
+      background: rgba(247,160,26,0.12) !important;
+      color: var(--gold) !important;
+    }
+
+    /* ── Payment request status inline boxes ── */
+    /* Approved (green) */
+    body.user-dark [style*="background:#f0fdf4"][style*="border-radius:6px"] {
+      background: rgba(5,46,22,0.55) !important;
+      color: #86efac !important;
+    }
+    /* Pending (amber) */
+    body.user-dark [style*="background:#fffbeb"][style*="border-radius:6px"] {
+      background: rgba(92,55,0,0.4) !important;
+      color: #fde68a !important;
+    }
+    /* Rejected (red) */
+    body.user-dark [style*="background:#fef2f2"][style*="border-radius:8px"] {
+      background: rgba(45,10,10,0.55) !important;
+      border-color: rgba(248,113,113,0.2) !important;
+    }
+    body.user-dark [style*="background:#fef2f2"][style*="border-radius:8px"] [style*="color:#991b1b"] {
+      color: #fca5a5 !important;
+    }
+    body.user-dark [style*="background:#fef2f2"][style*="border-radius:8px"] [style*="color:#b91c1c"] {
+      color: #f87171 !important;
+    }
+
+    /* ── Delete confirm "No" button ── */
+    body.user-dark [style*="background:#f1f5f9"][style*="border-radius:20px"],
+    body.user-dark #_mobileStep1 button[style*="background:#f1f5f9"] {
+      background: #1e293b !important;
+      color: #94a3b8 !important;
+    }
+
+    /* ── Mobile OTP overlay: inner content ── */
+    /* Modal inner white box — already covered by [id="_mobileConfirmOverlay"] > div */
+    /* Step 1 description text */
+    body.user-dark #_mobileStep1 [style*="color:#1e293b"] {
+      color: #f1f5f9 !important;
+    }
+    body.user-dark #_mobileStep1 [style*="color:#64748b"] {
+      color: #94a3b8 !important;
+    }
+    /* Step 2 pending indicator circle */
+    body.user-dark #_mobileStep2 [style*="background:#e2e8f0"] {
+      background: #2d3748 !important;
+      color: #64748b !important;
+    }
+    /* Step 3 verified circle */
+    body.user-dark #_mobileStep3 [style*="background:#dcfce7"] {
+      background: rgba(34,197,94,0.2) !important;
+      color: #4ade80 !important;
+    }
+    /* OTP email success banner */
+    body.user-dark #_mobileOtpEmailBanner {
+      background: rgba(5,46,22,0.5) !important;
+      border-color: rgba(74,222,128,0.2) !important;
+    }
+    body.user-dark #_mobileOtpEmailBanner * { color: #86efac !important; }
+    /* OTP input */
+    body.user-dark #_mobileOtpInput,
+    body.user-dark #_mobileNewInput {
+      background: #0d1117 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3748 !important;
+    }
+    /* Resend countdown */
+    body.user-dark #_mobileResendCountdown { color: #475569 !important; }
+
+    /* ── Password strength track ── */
+    body.user-dark #cp_strength {
+      background: #1e293b !important;
+    }
+
+    /* ── Edit profile: mobile & password display rows (light gray boxes) ── */
+    body.user-dark [style*="background:#f8f8f8"][style*="border:1.5px solid #eee"] {
+      background: #0d1117 !important;
+      border-color: #2d3748 !important;
+    }
+    body.user-dark [style*="background:#f8f8f8"][style*="border:1.5px solid #eee"] [style*="color:#555"],
+    body.user-dark [style*="background:#f8f8f8"][style*="border:1.5px solid #eee"] span {
+      color: #cbd5e1 !important;
+    }
+    /* Password masked dots */
+    body.user-dark [style*="color:#aaa"][style*="letter-spacing:2px"] {
+      color: #475569 !important;
+    }
+
+    /* ── Edit profile: address textarea explicit bg ── */
+    body.user-dark #ep_address {
+      background: #0d1117 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3748 !important;
+    }
+
+    /* ── Profile modal: row icon containers (light cream bg #fff7ed) ── */
+    body.user-dark ._mbdy [style*="background:#fff7ed"] {
+      background: rgba(247,160,26,0.12) !important;
+    }
+
+    /* ── Scroll-to-top button ring in dark ── */
+    body.user-dark #scrollTopBtn::before {
+      border-color: rgba(247,160,26,0.5) !important;
+    }
+
     /* ── PREFERS-REDUCED-MOTION: disable decorative animations for accessibility + perf ── */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -2854,7 +3209,7 @@
               <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
                 <i class="fa-solid fa-calendar-days" style="color:#f7a01a;font-size:10px;"></i> Month <span style="color:#ef4444;">*</span>
               </label>
-              <select id="pr_month" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e2e8f0'">
+              <select id="pr_month" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor=document.body.classList.contains('user-dark')?'#2d3748':'#e2e8f0'">
                 <option value="">Select Month</option>
               </select>
             </div>
@@ -5234,15 +5589,39 @@
     // ── L2: Dark mode
     function toggleUserDarkMode() {
       const isDark = document.body.classList.toggle("user-dark");
+      // Mark explicit user preference — prevents system-pref auto-apply from re-overriding
+      document.body.classList.toggle("user-light", !isDark);
       localStorage.setItem("mandir_user_dark", isDark ? "1" : "0");
       const btn = document.getElementById("userDarkBtn");
-      if (btn) btn.textContent = isDark ? "☀️" : "🌙";
+      if (btn) {
+        btn.textContent = isDark ? "☀️" : "🌙";
+        btn.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+        btn.setAttribute("title", isDark ? "Switch to light mode" : "Switch to dark mode");
+      }
     }
     (function () {
-      if (localStorage.getItem("mandir_user_dark") === "1") {
+      const stored = localStorage.getItem("mandir_user_dark");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const shouldBeDark = stored === "1" || (stored === null && prefersDark);
+      if (shouldBeDark) {
         document.body.classList.add("user-dark");
         const btn = document.getElementById("userDarkBtn");
-        if (btn) btn.textContent = "☀️";
+        if (btn) {
+          btn.textContent = "☀️";
+          btn.setAttribute("aria-label", "Switch to light mode");
+          btn.setAttribute("title", "Switch to light mode");
+        }
+      }
+      // Listen for system preference changes (e.g. user switches OS theme)
+      if (window.matchMedia) {
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(e) {
+          // Only auto-respond if user hasn't made an explicit choice
+          if (localStorage.getItem("mandir_user_dark") === null) {
+            document.body.classList.toggle("user-dark", e.matches);
+            const btn = document.getElementById("userDarkBtn");
+            if (btn) btn.textContent = e.matches ? "☀️" : "🌙";
+          }
+        });
       }
     })();
 
