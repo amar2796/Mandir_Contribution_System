@@ -1704,156 +1704,488 @@
     }
 
 
-    /* ── L2: Dark mode ── */
+    /* ══════════════════════════════════════════════════
+       DARK MODE — Enhanced & Comprehensive
+    ══════════════════════════════════════════════════ */
+
+    /* Smooth transition on toggle */
+    body { transition: background 0.3s ease, color 0.3s ease; }
+    body.dark-mode * { transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+
     body.dark-mode {
-      background: #0f172a !important;
+      background: #080f1e !important;
       color: #e2e8f0 !important;
     }
 
-    body.dark-mode .card,
-    body.dark-mode .card-box {
-      background: #1e293b !important;
-      border-color: #334155 !important;
-      color: #e2e8f0 !important;
-    }
-
-    body.dark-mode .card-box h4,
-    body.dark-mode .card-box h2 {
-      color: #e2e8f0 !important;
-    }
-
+    /* ── Main content area ── */
     body.dark-mode .main {
-      background: #0f172a !important;
-    }
-
-    body.dark-mode table {
-      color: #e2e8f0 !important;
-    }
-
-    body.dark-mode table thead th {
-      background: #1e293b !important;
-      color: #f7a01a !important;
-    }
-
-    body.dark-mode table tbody td {
-      border-color: #334155 !important;
-      color: #e2e8f0 !important;
-    }
-
-    body.dark-mode table tbody tr:hover td {
-      background: #253247 !important;
-    }
-
-    body.dark-mode input,
-    body.dark-mode select,
-    body.dark-mode textarea {
-      background: #1e293b !important;
-      color: #e2e8f0 !important;
-      border-color: #475569 !important;
-    }
-
-    body.dark-mode .header {
-      background: #1e293b !important;
-      border-color: #334155 !important;
+      background: #080f1e !important;
     }
 
     body.dark-mode .page {
       color: #e2e8f0 !important;
     }
 
+    /* ── Cards ── */
+    body.dark-mode .card {
+      background: #111827 !important;
+      border-color: #1e2d45 !important;
+      border-top-color: #f7a01a !important;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4) !important;
+      color: #e2e8f0 !important;
+    }
+
+    body.dark-mode .card:hover {
+      box-shadow: 0 8px 32px rgba(0,0,0,0.55) !important;
+    }
+
+    body.dark-mode .card h3 {
+      border-bottom-color: #1e2d45 !important;
+      color: #f1f5f9 !important;
+    }
+
+    body.dark-mode .card-box {
+      background: #111827 !important;
+      border-color: #1e2d45 !important;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4) !important;
+      color: #e2e8f0 !important;
+    }
+
+    body.dark-mode .card-box h4 { color: #94a3b8 !important; }
+    body.dark-mode .card-box h2 { color: #f1f5f9 !important; }
+
+    body.dark-mode .card-box::after {
+      background: rgba(247,160,26,0.05) !important;
+    }
+
+    /* ── Headings & labels ── */
     body.dark-mode h3,
     body.dark-mode h4,
-    body.dark-mode h5,
+    body.dark-mode h5 {
+      color: #f1f5f9 !important;
+    }
+
     body.dark-mode label {
-      color: #e2e8f0 !important;
-    }
-
-    body.dark-mode p,
-    body.dark-mode span:not(.nav-badge):not(.status-badge) {
-      color: #cbd5e1;
-    }
-
-    body.dark-mode .filter-row {
-      background: #1e293b !important;
-      border-color: #334155 !important;
-    }
-
-    body.dark-mode .search-bar {
-      background: #1e293b !important;
-      color: #e2e8f0 !important;
-      border-color: #475569 !important;
-    }
-
-    body.dark-mode .summary-grid .card-box {
-      background: #1e293b !important;
-      border-color: #334155 !important;
-    }
-
-    body.dark-mode .summary-grid .card-box div {
-      color: #e2e8f0 !important;
-    }
-
-    body.dark-mode .nav-section-label {
-      color: #64748b !important;
-    }
-
-    body.dark-mode .form-row>div {
-      background: transparent !important;
-    }
-
-    body.dark-mode .table-responsive {
-      background: #1e293b !important;
-      border-color: #334155 !important;
-    }
-
-    body.dark-mode button:not(.sidebar li button):not(._mbtn):not(#darkModeBtn):not(#langToggleBtn) {
-      filter: brightness(0.9);
-    }
-
-    body.dark-mode #darkModeBtn {
-      background: rgba(255, 255, 255, 0.08) !important;
-      color: #e2e8f0 !important;
-    }
-
-    body.dark-mode #langToggleBtn {
-      background: rgba(255, 255, 255, 0.08) !important;
-      color: #e2e8f0 !important;
-    }
-
-    body.dark-mode #welcomeUser,
-    body.dark-mode .header div {
-      color: #e2e8f0 !important;
-    }
-
-    body.dark-mode .status-badge.pending {
-      background: #854d0e !important;
-      color: #fef9c3 !important;
-    }
-
-    body.dark-mode .status-badge.approved,
-    body.dark-mode .status-badge.active {
-      background: #14532d !important;
-      color: #bbf7d0 !important;
-    }
-
-    body.dark-mode .status-badge.rejected,
-    body.dark-mode .status-badge.inactive {
-      background: #7f1d1d !important;
-      color: #fecaca !important;
-    }
-
-    body.dark-mode .req-card {
-      background: #1e293b !important;
-      border-color: #334155 !important;
-    }
-
-    body.dark-mode .req-card-label {
       color: #94a3b8 !important;
     }
 
-    body.dark-mode .req-card-val {
+    body.dark-mode p { color: #94a3b8 !important; }
+
+    body.dark-mode span:not(.nav-badge):not(.status-badge):not(.badge):not(.tab-ct):not(.amt-green):not(.amt-red):not(#hm_period_label):not(#hm_period_label_text):not(#hm_year_display):not(#hm_year_caret):not(#hm_live_clock) {
+      color: #cbd5e1;
+    }
+
+    /* ── Header ── */
+    body.dark-mode .header {
+      background: #0d1525 !important;
+      border-bottom: 2px solid #1e2d45 !important;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.4) !important;
+    }
+
+    body.dark-mode #welcomeUser { color: #f1f5f9 !important; }
+    body.dark-mode .header div  { color: #cbd5e1 !important; }
+
+    /* ── Inputs, selects, textareas ── */
+    body.dark-mode input,
+    body.dark-mode select,
+    body.dark-mode textarea {
+      background: #0d1525 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3f58 !important;
+    }
+
+    body.dark-mode input:focus,
+    body.dark-mode select:focus,
+    body.dark-mode textarea:focus {
+      border-color: #f7a01a !important;
+      background: #111827 !important;
+      box-shadow: 0 0 0 3px rgba(247,160,26,0.12) !important;
+    }
+
+    body.dark-mode input::placeholder,
+    body.dark-mode textarea::placeholder {
+      color: #475569 !important;
+    }
+
+    /* ── Tables ── */
+    body.dark-mode table {
+      background: #111827 !important;
       color: #e2e8f0 !important;
     }
+
+    body.dark-mode thead { background: #0d1525 !important; }
+
+    body.dark-mode table thead th {
+      background: #0d1525 !important;
+      color: #f7a01a !important;
+      border-bottom: 2px solid #1e2d45 !important;
+    }
+
+    body.dark-mode table tbody td {
+      border-color: #1e2d45 !important;
+      color: #cbd5e1 !important;
+    }
+
+    body.dark-mode tbody tr:hover {
+      background: #1a2540 !important;
+      box-shadow: inset 3px 0 0 #f7a01a !important;
+    }
+
+    body.dark-mode tr.row-pending td { background: #1a1f0e !important; }
+    body.dark-mode tr.row-rejected td { background: #1f0f0f !important; }
+
+    /* ── Filter rows & search ── */
+    body.dark-mode .filter-row {
+      background: transparent !important;
+    }
+
+    body.dark-mode .search-bar {
+      background: #0d1525 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3f58 !important;
+    }
+
+    body.dark-mode .search-bar:focus {
+      border-color: #f7a01a !important;
+    }
+
+    /* ── Table responsive wrapper ── */
+    body.dark-mode .table-responsive {
+      background: #111827 !important;
+      border-color: #1e2d45 !important;
+      border-radius: 10px;
+    }
+
+    /* ── Summary grid cards ── */
+    body.dark-mode .summary-grid .card-box { background: #111827 !important; border-color: #1e2d45 !important; }
+    body.dark-mode .summary-grid .card-box div { color: #e2e8f0 !important; }
+
+    /* ── Form rows ── */
+    body.dark-mode .form-row > div { background: transparent !important; }
+
+    /* ── Buttons ── */
+    body.dark-mode button:not(.sidebar li button):not(._mbtn):not(#darkModeBtn):not(#langToggleBtn):not(.pg-btn):not(.gcr-ratio-btn):not(.status-tab) {
+      filter: brightness(0.88) saturate(0.95);
+    }
+
+    body.dark-mode #darkModeBtn,
+    body.dark-mode #langToggleBtn {
+      background: rgba(255,255,255,0.07) !important;
+      color: #e2e8f0 !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+    }
+
+    body.dark-mode #darkModeBtn:hover,
+    body.dark-mode #langToggleBtn:hover {
+      background: rgba(247,160,26,0.15) !important;
+    }
+
+    /* ── Pagination ── */
+    body.dark-mode .pg-btn {
+      background: #111827 !important;
+      border-color: #2d3f58 !important;
+      color: #cbd5e1 !important;
+    }
+
+    body.dark-mode .pg-btn:hover:not(:disabled) {
+      background: #f7a01a !important;
+      border-color: #f7a01a !important;
+      color: #fff !important;
+    }
+
+    body.dark-mode .pg-btn.active {
+      background: #f7a01a !important;
+      border-color: #f7a01a !important;
+      color: #fff !important;
+    }
+
+    /* ── Status badges ── */
+    body.dark-mode .status-badge.pending  { background: #78350f !important; color: #fde68a !important; }
+    body.dark-mode .status-badge.approved,
+    body.dark-mode .status-badge.active   { background: #14532d !important; color: #86efac !important; }
+    body.dark-mode .status-badge.rejected,
+    body.dark-mode .status-badge.inactive { background: #7f1d1d !important; color: #fca5a5 !important; }
+
+    /* ── User status tabs ── */
+    body.dark-mode .status-tab {
+      background: #111827 !important;
+      border-color: #2d3f58 !important;
+      color: #94a3b8 !important;
+    }
+
+    body.dark-mode .status-tab:hover { border-color: #f7a01a !important; color: #f7a01a !important; }
+    body.dark-mode .status-tab.active { background: #f7a01a !important; border-color: #f7a01a !important; color: #fff !important; }
+    body.dark-mode .status-tab.tab-pending.active  { background: #e67e22 !important; border-color: #e67e22 !important; }
+    body.dark-mode .status-tab.tab-rejected.active { background: #e74c3c !important; border-color: #e74c3c !important; }
+    body.dark-mode .status-tab.tab-approved.active { background: #27ae60 !important; border-color: #27ae60 !important; }
+    body.dark-mode .status-tab:not(.active) .tab-ct { background: #1e2d45 !important; color: #64748b !important; }
+
+    /* ── Contribution request cards ── */
+    body.dark-mode .req-card       { background: #111827 !important; border-color: #1e2d45 !important; }
+    body.dark-mode .req-card-label { color: #64748b !important; }
+    body.dark-mode .req-card-val   { color: #e2e8f0 !important; }
+
+    /* ── Events cards ── */
+    body.dark-mode .ev-card {
+      background: #111827 !important;
+      border-color: #1e2d45 !important;
+    }
+
+    body.dark-mode .ev-card:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+    }
+
+    body.dark-mode .ev-card-title  { color: #f1f5f9 !important; }
+    body.dark-mode .ev-card-cat    { color: #64748b !important; }
+
+    body.dark-mode .ev-stat {
+      background: #0d1525 !important;
+    }
+
+    body.dark-mode .ev-stat-val { color: #f1f5f9 !important; }
+    body.dark-mode .ev-stat-lbl { color: #64748b !important; }
+
+    body.dark-mode .ev-card-footer { border-top-color: #1e2d45 !important; }
+
+    body.dark-mode .ev-budget-bar-bg { background: #1e2d45 !important; }
+
+    body.dark-mode .ev-status-upcoming  { background: #0c1e3c !important; color: #93c5fd !important; border-color: #1e3a6e !important; }
+    body.dark-mode .ev-status-active    { background: #052e16 !important; color: #86efac !important; border-color: #14532d !important; }
+    body.dark-mode .ev-status-completed { background: #1e2d45 !important; color: #94a3b8 !important; border-color: #334155 !important; }
+
+    /* ── Announcement history items ── */
+    body.dark-mode .ann-history-item {
+      background: #111827 !important;
+      border-color: #1e2d45 !important;
+    }
+
+    body.dark-mode .ann-history-item.active-ann {
+      background: #1a1509 !important;
+      border-color: rgba(247,160,26,0.3) !important;
+    }
+
+    /* ── Chatbot / cbot sections ── */
+    body.dark-mode .cbot-section h4 {
+      color: #f1f5f9 !important;
+      border-bottom-color: #1e2d45 !important;
+    }
+
+    body.dark-mode .cbot-input,
+    body.dark-mode .cbot-textarea {
+      background: #0d1525 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3f58 !important;
+    }
+
+    body.dark-mode .cbot-input:focus,
+    body.dark-mode .cbot-textarea:focus {
+      border-color: #f7a01a !important;
+      background: #111827 !important;
+    }
+
+    body.dark-mode .cbot-label { color: #64748b !important; }
+
+    body.dark-mode .cbot-save-bar {
+      background: #0d1525 !important;
+      border-top-color: #1e2d45 !important;
+    }
+
+    /* ── Gallery crop modal ── */
+    body.dark-mode #glryCropBox {
+      background: #111827 !important;
+    }
+
+    body.dark-mode #glryCropHeader {
+      border-bottom-color: #1e2d45 !important;
+    }
+
+    body.dark-mode #glryCropHeader h4 { color: #f7a01a !important; }
+
+    body.dark-mode #glryCropRatioBar {
+      border-bottom-color: #1e2d45 !important;
+    }
+
+    body.dark-mode #glryCropFooter { border-top-color: #1e2d45 !important; }
+
+    body.dark-mode #glryCropCancelBtn {
+      background: #1e2d45 !important;
+      color: #94a3b8 !important;
+    }
+
+    body.dark-mode #glryCropCancelBtn:hover { background: #2d3f58 !important; }
+
+    body.dark-mode .gcr-ratio-btn {
+      background: #0d1525 !important;
+      border-color: #2d3f58 !important;
+      color: #94a3b8 !important;
+    }
+
+    body.dark-mode .gcr-ratio-btn:hover { border-color: #f7a01a !important; color: #f7a01a !important; }
+
+    body.dark-mode #glryPhotoGrid .glry-card {
+      background: #111827 !important;
+      border-color: #1e2d45 !important;
+    }
+
+    /* ── Modals (generic modal overlay content) ── */
+    body.dark-mode [id$="Modal"] > div,
+    body.dark-mode .modal-box {
+      background: #111827 !important;
+      border-color: #1e2d45 !important;
+      color: #e2e8f0 !important;
+    }
+
+    /* ── Loading overlay ── */
+    body.dark-mode #loadingOverlay {
+      background: rgba(8,15,30,0.9) !important;
+    }
+
+    /* ── Shimmer rows in dark mode ── */
+    body.dark-mode .shimmer-row td {
+      background: linear-gradient(90deg, #1e2d45 25%, #253347 50%, #1e2d45 75%) !important;
+      background-size: 600px 100% !important;
+    }
+
+    /* ── Scrollbar in dark mode ── */
+    body.dark-mode ::-webkit-scrollbar-track { background: #0d1525; }
+    body.dark-mode ::-webkit-scrollbar-thumb { background: #2d3f58; }
+    body.dark-mode ::-webkit-scrollbar-thumb:hover { background: #f7a01a; }
+
+    /* ── Nav section label ── */
+    body.dark-mode .nav-section-label { color: #334155 !important; }
+
+    /* ── Year summary table footer ── */
+    body.dark-mode #ys_tfoot tr { background: #0d1525 !important; border-top-color: #1e2d45 !important; }
+
+    /* ── Badges ── */
+    body.dark-mode .badge-green { background: #052e16 !important; color: #86efac !important; }
+    body.dark-mode .badge-red   { background: #450a0a !important; color: #fca5a5 !important; }
+
+    /* ── Local download banner ── */
+    body.dark-mode #localDownloadBanner {
+      background: #1a1509 !important;
+      border-color: rgba(247,160,26,0.25) !important;
+    }
+
+    /* ══════════════════════════════════════════════════
+       MASTER PAGE inline card components
+    ══════════════════════════════════════════════════ */
+    body.dark-mode .md-card { background: #111827 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important; }
+    body.dark-mode .md-card-hdr { border-bottom-color: #1e2d45 !important; }
+    body.dark-mode .md-card-title { color: #f1f5f9 !important; }
+    body.dark-mode .md-card-sub { color: #64748b !important; }
+    body.dark-mode .md-add-row { border-bottom-color: #1e2d45 !important; }
+    body.dark-mode .md-row { border-bottom-color: #1a2540 !important; }
+    body.dark-mode .md-row:hover { background: #1a2540 !important; }
+    body.dark-mode .md-ibtn { border-color: #2d3f58 !important; color: #94a3b8 !important; background: transparent !important; }
+    body.dark-mode .md-ibtn:hover { background: #1e2d45 !important; color: #e2e8f0 !important; }
+    body.dark-mode .md-ibtn.del:hover { background: #450a0a !important; color: #fca5a5 !important; border-color: #7f1d1d !important; }
+    body.dark-mode .md-ibtn.save:hover { background: #052e16 !important; color: #86efac !important; border-color: #14532d !important; }
+    body.dark-mode .md-ibtn.cancel:hover { background: #1e2d45 !important; }
+    body.dark-mode .md-edit-input { background: #0d1525 !important; color: #e2e8f0 !important; border-color: #f7a01a !important; }
+    body.dark-mode .md-footer { border-top-color: #1e2d45 !important; }
+    body.dark-mode .md-empty { color: #475569 !important; }
+
+    /* ── Dashboard calendar popup ── */
+    body.dark-mode #dash_calPop { background: #111827 !important; box-shadow: 0 8px 32px rgba(0,0,0,0.55) !important; border: 1px solid #1e2d45 !important; }
+
+    /* ── Feedback confirm modal ── */
+    body.dark-mode #_fbModalBox { background: #111827 !important; box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px #1e2d45 !important; }
+    body.dark-mode #_fbModalTitle { color: #f1f5f9 !important; }
+    body.dark-mode #_fbModalMsg { color: #94a3b8 !important; }
+    body.dark-mode #_fbModalMsg strong { color: #e2e8f0 !important; }
+    body.dark-mode #_fbModalMeta { background: #0d1525 !important; border-color: #1e2d45 !important; color: #94a3b8 !important; }
+    body.dark-mode #_fbModalMeta span { color: #e2e8f0 !important; }
+    body.dark-mode #_fbModalCancel { background: #1e2d45 !important; color: #94a3b8 !important; }
+    body.dark-mode #_fbModalCancel:hover { background: #2d3f58 !important; }
+    body.dark-mode #_fbModalIcon.done { background: #052e16 !important; color: #34d399 !important; }
+    body.dark-mode #_fbModalIcon.del  { background: #450a0a !important; color: #f87171 !important; }
+
+    /* ── app.js modal system (_mbox, _movl, _mhdr, _mbdy, _mft, _mcls, _mbtn) ── */
+    body.dark-mode ._mbox { background: #111827 !important; border: 1px solid #1e2d45 !important; box-shadow: 0 24px 60px rgba(0,0,0,0.6) !important; }
+    body.dark-mode ._movl { background: rgba(0,0,0,0.75) !important; }
+    body.dark-mode ._mhdr { background: #0d1525 !important; border-bottom: 1px solid #1e2d45 !important; }
+    body.dark-mode ._mhdr h3 { color: #f1f5f9 !important; }
+    body.dark-mode ._mcls { color: #64748b !important; background: transparent !important; box-shadow: none !important; }
+    body.dark-mode ._mcls:hover { background: #1e2d45 !important; color: #f87171 !important; }
+    body.dark-mode ._mbdy { background: #111827 !important; color: #cbd5e1 !important; }
+    body.dark-mode ._mbdy label { color: #94a3b8 !important; }
+    body.dark-mode ._mbdy input, body.dark-mode ._mbdy select, body.dark-mode ._mbdy textarea { background: #0d1525 !important; border-color: #2d3f58 !important; color: #e2e8f0 !important; }
+    body.dark-mode ._mbdy input:focus, body.dark-mode ._mbdy select:focus, body.dark-mode ._mbdy textarea:focus { border-color: #f7a01a !important; box-shadow: 0 0 0 3px rgba(247,160,26,0.12) !important; }
+    body.dark-mode ._mft { background: #0d1525 !important; border-top: 1px solid #1e2d45 !important; }
+
+    /* ── Broadcast history ── */
+    body.dark-mode #broadcastHistory > div { background: #111827 !important; color: #cbd5e1 !important; }
+    body.dark-mode #broadcastHistory b { color: #f1f5f9 !important; }
+
+    /* ── Inline background overrides ── */
+    body.dark-mode [style*="background:#f8fafc"], body.dark-mode [style*="background: #f8fafc"],
+    body.dark-mode [style*="background:#f8f8f8"], body.dark-mode [style*="background:#f1f5f9"],
+    body.dark-mode [style*="background: #f1f5f9"] { background: #0d1525 !important; }
+    body.dark-mode [style*="background:#fffbeb"], body.dark-mode [style*="background: #fffbeb"],
+    body.dark-mode [style*="background:#fff8e8"], body.dark-mode [style*="background:#fef9ee"] {
+      background: #1a1509 !important; border-color: rgba(247,160,26,0.2) !important;
+    }
+    body.dark-mode [style*="background:#fff;"], body.dark-mode [style*="background: #fff;"],
+    body.dark-mode [style*="background:white;"] { background: #111827 !important; }
+
+    /* ── Inline colour overrides ── */
+    body.dark-mode [style*="color:#555"], body.dark-mode [style*="color: #555"],
+    body.dark-mode [style*="color:#666"], body.dark-mode [style*="color: #666"],
+    body.dark-mode [style*="color:#888"], body.dark-mode [style*="color: #888"],
+    body.dark-mode [style*="color:#333"], body.dark-mode [style*="color: #333"] { color: #cbd5e1 !important; }
+    body.dark-mode [style*="color:#aaa"], body.dark-mode [style*="color: #aaa"] { color: #475569 !important; }
+
+    /* ── Inline border dividers ── */
+    body.dark-mode [style*="border-top:1px solid #f1f5f9"], body.dark-mode [style*="border-top: 1px solid #f1f5f9"],
+    body.dark-mode [style*="border-bottom:1px solid #f1f5f9"], body.dark-mode [style*="border:1px solid #e2e8f0"],
+    body.dark-mode [style*="border: 1px solid #e2e8f0"] { border-color: #1e2d45 !important; }
+
+    /* ── KPI colour preservation ── */
+    body.dark-mode [style*="color:#27ae60"] { color: #4ade80 !important; }
+    body.dark-mode [style*="color:#e74c3c"] { color: #f87171 !important; }
+    body.dark-mode [style*="color:#d97706"] { color: #fbbf24 !important; }
+    body.dark-mode [style*="color:#6366f1"] { color: #a5b4fc !important; }
+
+    /* ── Audit action badges ── */
+    body.dark-mode #auditTableBody [style*="background:#dcfce7"] { background: #052e16 !important; color: #86efac !important; border-color: #14532d !important; }
+    body.dark-mode #auditTableBody [style*="background:#fef3c7"] { background: #1a1200 !important; color: #fde68a !important; border-color: #78350f !important; }
+    body.dark-mode #auditTableBody [style*="background:#ede9fe"] { background: #1e1040 !important; color: #c4b5fd !important; border-color: #4c1d95 !important; }
+    body.dark-mode #auditTableBody [style*="background:#fee2e2"] { background: #450a0a !important; color: #fca5a5 !important; border-color: #7f1d1d !important; }
+    body.dark-mode #auditTableBody [style*="background:#fff7ed"] { background: #1c1208 !important; color: #fed7aa !important; border-color: #78350f !important; }
+    body.dark-mode #auditTableBody [style*="background:#f0f4f8"] { background: #0d1525 !important; color: #94a3b8 !important; border-color: #2d3f58 !important; }
+    body.dark-mode #auditTableBody tr[style*="background:#f0fdf4"] td { background: #052e16 !important; }
+    body.dark-mode #auditTableBody tr[style*="background:#fefce8"] td { background: #1a1a05 !important; }
+    body.dark-mode #auditTableBody [style*="color:#334155"], body.dark-mode #auditTableBody [style*="color:#1e293b"] { color: #e2e8f0 !important; }
+    body.dark-mode #auditTableBody [style*="color:#475569"] { color: #94a3b8 !important; }
+
+    /* ── Gallery dashed upload zone ── */
+    body.dark-mode [style*="border:2px dashed"] { border-color: #2d3f58 !important; background: #0d1525 !important; }
+
+    /* ── Progress/balance bars ── */
+    body.dark-mode [style*="height:6px"][style*="background:#f1f5f9"],
+    body.dark-mode [style*="height:10px"][style*="background:#f1f5f9"] { background: #1e2d45 !important; }
+
+    /* ── Home member/walkin badge pills ── */
+    body.dark-mode #hm_member_badge { background: #1c1208 !important; border-color: rgba(194,65,12,0.3) !important; }
+    body.dark-mode #hm_walkin_badge { background: #1a1200 !important; border-color: rgba(253,211,77,0.25) !important; }
+
+    /* ── Dark scrollbar (Firefox) ── */
+    body.dark-mode { scrollbar-color: #2d3f58 #0d1525; }
+
+    /* ══════════════════════════════════════════════════
+       LIGHT MODE — Polish improvements
+    ══════════════════════════════════════════════════ */
+    body { background: #f0f4f8; }
+    body:not(.dark-mode) input:focus, body:not(.dark-mode) select:focus, body:not(.dark-mode) textarea:focus {
+      box-shadow: 0 0 0 3px rgba(247,160,26,0.15); border-color: #f7a01a !important;
+    }
+    tbody tr:nth-child(even) { background: #fafbfd; }
+    tbody tr:nth-child(odd)  { background: #ffffff; }
+    input::placeholder, textarea::placeholder { color: #b0bec5; }
+    button:focus-visible { outline: 2px solid #f7a01a; outline-offset: 2px; }
+    .card { transition: box-shadow 0.25s ease, transform 0.2s ease; }
+    .card:hover { transform: translateY(-1px); }
   </style>
 </head>
 
@@ -2189,7 +2521,7 @@
         <div style="position: relative;flex-shrink: 0; display: flex;justify-content: space-between;gap: 13px;">
           <div>
             <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark/light mode"
-              style="flex-shrink:0;background:rgba(0,0,0,0.06);border:none;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:14px;">
+              style="flex-shrink:0;background:rgba(0,0,0,0.06);border:none;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:14px;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1),background 0.2s;">
               🌙
             </button>
           </div>
@@ -2258,174 +2590,188 @@
       <!-- HOME — Redesigned Admin Dashboard -->
       <div id="home" class="page active">
 
-        <!-- ── Period Selector Bar ── -->
-        <div style="background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
-          <div>
-            <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#94a3b8;margin-bottom:5px;">Viewing Period</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <!-- Month pill scroll -->
-              <div id="hm_month_pills" style="display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;max-width:420px;"></div>
-              <!-- Hidden selects kept for JS compatibility -->
-              <select id="hm_sel_month" onchange="_hmOnPeriodChange()" style="display:none;"></select>
-              <select id="hm_sel_year" onchange="_hmOnPeriodChange()" style="width:auto;padding:4px 8px;margin:0;font-size:12px;font-weight:600;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#334155;cursor:pointer;outline:none;"></select>
-              <button onclick="_hmGoToCurrentMonth()" id="hm_btn_today" style="padding:4px 12px;font-size:11px;font-weight:600;background:transparent;color:#64748b;box-shadow:none;border:1px solid #e2e8f0;display:none;">↩ Today</button>
+        <!-- ── Viewing Period Bar ── -->
+        <div style="background:linear-gradient(120deg,#0f172a 0%,#1e293b 40%,#1a3050 70%,#0f2540 100%);border-radius:16px;padding:13px 20px 13px 20px;margin-bottom:14px;box-shadow:0 6px 28px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.06);position:relative;">
+          <!-- subtle shimmer accent -->
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(247,160,26,0.4),transparent);pointer-events:none;"></div>
+          <!-- Top row: label + current pill + live clock -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#64748b;">🗓 VIEWING PERIOD</span>
+              <span id="hm_period_label" style="font-size:12px;font-weight:700;color:#fff;background:linear-gradient(90deg,#f7a01a,#f59e0b);border-radius:20px;padding:3px 14px;letter-spacing:0.3px;box-shadow:0 2px 10px rgba(247,160,26,0.35);">● <span id="hm_period_label_text">Current — April 2026</span></span>
+            </div>
+            <div id="hm_live_clock" style="font-size:12px;font-weight:500;color:#64748b;letter-spacing:0.3px;font-variant-numeric:tabular-nums;"></div>
+          </div>
+          <!-- Month pills + Year row -->
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;">
+            <div id="hm_month_pills" style="display:flex;gap:5px;flex:1;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:1px;"></div>
+            <!-- Hidden selects kept for JS compatibility -->
+            <select id="hm_sel_month" onchange="_hmOnPeriodChange()" style="display:none;"></select>
+            <select id="hm_sel_year"  onchange="_hmOnPeriodChange()" style="display:none;"></select>
+            <button id="hm_btn_today" style="display:none;" onclick="_hmGoToCurrentMonth()">Current month</button>
+            <!-- Year pill — clickable dropdown -->
+            <div style="position:relative;flex-shrink:0;">
+              <div onclick="_hmToggleYearDropdown()" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.15);border-radius:20px;padding:6px 16px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:all 0.2s;user-select:none;" onmouseover="this.style.background='rgba(255,255,255,0.13)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+                <span id="hm_year_display" style="font-size:13px;font-weight:700;color:#e2e8f0;"></span>
+                <span id="hm_year_caret" style="color:#94a3b8;font-size:11px;transition:transform 0.2s;">▾</span>
+              </div>
+              <div id="hm_year_dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:#1e293b;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:99999;min-width:90px;overflow:hidden;"></div>
             </div>
           </div>
-          <div id="hm_period_label" style="font-size:12px;font-weight:700;color:#334155;background:#fef9ee;border:1px solid #fde68a;border-radius:20px;padding:4px 16px;"></div>
         </div>
 
         <!-- ── Section label ── -->
-        <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;">At a glance</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;">At a glance</div>
 
-        <!-- ── KPI Row: 4 compact stat cards ── -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;">
+        <!-- ── KPI Row: 4 stat cards ── -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px;">
 
           <!-- Month Collection -->
-          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e2e8f0;border-left:4px solid #22c55e;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-            <div style="width:36px;height:36px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💰</div>
-            <div style="min-width:0;">
-              <div style="font-size:11px;font-weight:600;color:#64748b;">Month Collection</div>
-              <div id="kpi_monthC" style="font-size:1.35rem;font-weight:700;color:#16a34a;line-height:1.2;letter-spacing:-0.3px;">₹0</div>
-              <div id="kpi_monthC_trend" style="font-size:10px;color:#94a3b8;margin-top:1px;">&nbsp;</div>
+          <div class="card-box" style="border-left-color:#27ae60;border-left-width:4px;padding:14px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <div style="font-size:12px;font-weight:600;color:#64748b;">Month Collection</div>
+              <span style="font-size:18px;">💰</span>
             </div>
+            <div id="kpi_monthC" style="font-size:1.5rem;font-weight:700;color:#27ae60;line-height:1.1;">₹0</div>
+            <div id="kpi_monthC_trend" style="font-size:11px;color:#94a3b8;margin-top:4px;">&nbsp;</div>
           </div>
 
           <!-- Walk-in This Month -->
-          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e2e8f0;border-left:4px solid #f59e0b;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-            <div style="width:36px;height:36px;border-radius:10px;background:#fffbeb;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🚶</div>
-            <div style="min-width:0;">
-              <div style="font-size:11px;font-weight:600;color:#64748b;">Walk-in This Month</div>
-              <div id="kpi_walkinC" style="font-size:1.35rem;font-weight:700;color:#d97706;line-height:1.2;letter-spacing:-0.3px;">₹0</div>
-              <div id="kpi_walkinC_sub" style="font-size:10px;color:#94a3b8;margin-top:1px;">0 entries</div>
+          <div class="card-box" style="border-left-color:#f59e0b;border-left-width:4px;padding:14px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <div style="font-size:12px;font-weight:600;color:#64748b;">Walk-in This Month</div>
+              <span style="font-size:18px;">🚶</span>
             </div>
+            <div id="kpi_walkinC" style="font-size:1.5rem;font-weight:700;color:#d97706;line-height:1.1;">₹0</div>
+            <div id="kpi_walkinC_sub" style="font-size:11px;color:#94a3b8;margin-top:4px;">0 entries</div>
           </div>
 
           <!-- Expenses This Month -->
-          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e2e8f0;border-left:4px solid #ef4444;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-            <div style="width:36px;height:36px;border-radius:10px;background:#fef2f2;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💸</div>
-            <div style="min-width:0;">
-              <div style="font-size:11px;font-weight:600;color:#64748b;">Expenses This Month</div>
-              <div id="kpi_monthE" style="font-size:1.35rem;font-weight:700;color:#dc2626;line-height:1.2;letter-spacing:-0.3px;">₹0</div>
-              <div id="kpi_monthE_trend" style="font-size:10px;color:#94a3b8;margin-top:1px;">&nbsp;</div>
+          <div class="card-box" style="border-left-color:#e74c3c;border-left-width:4px;padding:14px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <div style="font-size:12px;font-weight:600;color:#64748b;">Expenses This Month</div>
+              <span style="font-size:18px;">💸</span>
             </div>
+            <div id="kpi_monthE" style="font-size:1.5rem;font-weight:700;color:#e74c3c;line-height:1.1;">₹0</div>
+            <div id="kpi_monthE_trend" style="font-size:11px;color:#94a3b8;margin-top:4px;">&nbsp;</div>
           </div>
 
           <!-- Members Pending -->
-          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #e2e8f0;border-left:4px solid #6366f1;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:transform .15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-            <div style="width:36px;height:36px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">⏳</div>
-            <div style="min-width:0;">
-              <div style="font-size:11px;font-weight:600;color:#64748b;">Members Pending</div>
-              <div id="kpi_pending" style="font-size:1.35rem;font-weight:700;color:#4f46e5;line-height:1.2;letter-spacing:-0.3px;">0</div>
-              <div id="kpi_pending_sub" style="font-size:10px;color:#94a3b8;margin-top:1px;">of <span id="kpi_total_members">0</span> active members</div>
+          <div class="card-box" style="border-left-color:#6366f1;border-left-width:4px;padding:14px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <div style="font-size:12px;font-weight:600;color:#64748b;">Members Pending</div>
+              <span style="font-size:18px;">⏳</span>
             </div>
+            <div id="kpi_pending" style="font-size:1.5rem;font-weight:700;color:#6366f1;line-height:1.1;">0</div>
+            <div id="kpi_pending_sub" style="font-size:11px;color:#94a3b8;margin-top:4px;">of <span id="kpi_total_members">0</span> active members</div>
           </div>
 
         </div>
 
         <!-- ── Two-column: Member Status + Walk-in ── -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
 
           <!-- Member Contribution Status -->
-          <div class="card" style="margin-bottom:0;padding:14px 16px;">
-            <h3 style="margin-bottom:10px;font-size:13px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;">
+          <div class="card" style="margin-bottom:0;padding:16px 18px;">
+            <h3 style="margin-bottom:10px;font-size:13px;">
               <i class="fa-solid fa-users"></i> Member Contribution Status
               <span id="hm_member_badge" style="margin-left:auto;background:#fff7ed;color:#c2410c;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;border:1px solid #fed7aa;">loading...</span>
             </h3>
             <!-- Tabs -->
-            <div style="display:flex;gap:5px;margin-bottom:8px;" id="hm_member_tabs">
-              <button onclick="_hmMemberTab('all',this)" class="btn-sm" id="hm_tab_all" style="background:#334155;font-size:11px;padding:3px 11px;border-radius:20px;box-shadow:none;">All</button>
-              <button onclick="_hmMemberTab('paid',this)" id="hm_tab_paid" class="btn-sm" style="background:#eafaf1;color:#16a34a;border:1px solid #a7f3d0;font-size:11px;padding:3px 11px;border-radius:20px;box-shadow:none;">Paid</button>
-              <button onclick="_hmMemberTab('pending',this)" id="hm_tab_pending" class="btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;font-size:11px;padding:3px 11px;border-radius:20px;box-shadow:none;">Pending</button>
+            <div style="display:flex;gap:6px;margin-bottom:10px;" id="hm_member_tabs">
+              <button onclick="_hmMemberTab('all',this)" class="btn-sm" id="hm_tab_all" style="background:#334155;font-size:11px;padding:4px 12px;border-radius:20px;box-shadow:none;">All</button>
+              <button onclick="_hmMemberTab('paid',this)" id="hm_tab_paid" class="btn-sm" style="background:#eafaf1;color:#27ae60;border:1px solid #a7f3d0;font-size:11px;padding:4px 12px;border-radius:20px;box-shadow:none;">Paid</button>
+              <button onclick="_hmMemberTab('pending',this)" id="hm_tab_pending" class="btn-sm" style="background:#fef2f2;color:#e74c3c;border:1px solid #fca5a5;font-size:11px;padding:4px 12px;border-radius:20px;box-shadow:none;">Pending</button>
             </div>
             <!-- Member list -->
-            <div id="hm_member_list" style="max-height:200px;overflow-y:auto;">
+            <div id="hm_member_list" style="max-height:220px;overflow-y:auto;">
               <div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
             </div>
             <!-- Footer -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">
-              <div id="hm_member_summary" style="font-size:10px;color:#94a3b8;"></div>
-              <button onclick="showPage('trackerPage',document.querySelector('[onclick*=trackerPage]'))" style="background:#334155;font-size:11px;padding:4px 11px;box-shadow:none;">View Tracker →</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9;">
+              <div id="hm_member_summary" style="font-size:11px;color:#94a3b8;"></div>
+              <button onclick="showPage('trackerPage',document.querySelector('[onclick*=trackerPage]'))" style="background:#334155;font-size:11px;padding:5px 12px;box-shadow:none;">View Tracker →</button>
             </div>
           </div>
 
           <!-- Walk-in Entries -->
-          <div class="card" style="margin-bottom:0;padding:14px 16px;">
-            <h3 style="margin-bottom:10px;font-size:13px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;">
+          <div class="card" style="margin-bottom:0;padding:16px 18px;">
+            <h3 style="margin-bottom:12px;font-size:13px;">
               <i class="fa-solid fa-person-walking"></i> Walk-in Entries
               <span id="hm_walkin_badge" style="margin-left:auto;background:#fffbeb;color:#92400e;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;border:1px solid #fde68a;">this month</span>
             </h3>
-            <div id="hm_walkin_list" style="max-height:200px;overflow-y:auto;">
+            <div id="hm_walkin_list" style="max-height:220px;overflow-y:auto;">
               <div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
             </div>
             <!-- Footer -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">
-              <div id="hm_walkin_summary" style="font-size:10px;color:#94a3b8;"></div>
-              <button onclick="showPage('contributionPage',document.querySelector('[onclick*=contributionPage]'))" style="background:#f59e0b;font-size:11px;padding:4px 11px;box-shadow:none;color:#fff;">+ Add Walk-in</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9;">
+              <div id="hm_walkin_summary" style="font-size:11px;color:#94a3b8;"></div>
+              <button onclick="showPage('contributionPage',document.querySelector('[onclick*=contributionPage]'))" style="background:#f59e0b;font-size:11px;padding:5px 12px;box-shadow:none;color:#fff;">+ Add Walk-in</button>
             </div>
           </div>
 
         </div>
 
         <!-- ── Three-column: Chart + Smart Alerts + Quick Actions ── -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
 
           <!-- Monthly Bar Chart -->
-          <div class="card" style="margin-bottom:0;padding:14px 16px;">
-            <h3 style="margin-bottom:10px;font-size:13px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;"><i class="fa-solid fa-chart-bar"></i> Monthly Income vs Expense</h3>
-            <div id="hm_bar_chart" style="display:flex;align-items:flex-end;gap:6px;height:72px;overflow-x:auto;">
+          <div class="card" style="margin-bottom:0;padding:16px 18px;">
+            <h3 style="margin-bottom:12px;font-size:13px;"><i class="fa-solid fa-chart-bar"></i> Monthly Income vs Expense</h3>
+            <div id="hm_bar_chart" style="display:flex;align-items:flex-end;gap:4px;height:90px;overflow-x:auto;">
               <div style="color:#aaa;font-size:12px;">Loading...</div>
             </div>
-            <div style="display:flex;gap:12px;margin-top:7px;font-size:10px;font-weight:600;color:#64748b;">
-              <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Income</span>
-              <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:#f97316;border-radius:2px;display:inline-block;"></span>Expense</span>
+            <div style="display:flex;gap:14px;margin-top:8px;font-size:10px;font-weight:600;color:#64748b;">
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Income</span>
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;background:#f97316;border-radius:2px;display:inline-block;"></span>Expense</span>
             </div>
           </div>
 
           <!-- Smart Alerts -->
-          <div class="card" style="margin-bottom:0;padding:14px 16px;">
-            <h3 style="margin-bottom:10px;font-size:13px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;"><i class="fa-solid fa-bell"></i> Smart Alerts <span id="hm_alert_badge" style="background:#fef2f2;color:#dc2626;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #fca5a5;margin-left:4px;"></span></h3>
+          <div class="card" style="margin-bottom:0;padding:16px 18px;">
+            <h3 style="margin-bottom:12px;font-size:13px;"><i class="fa-solid fa-bell"></i> Smart Alerts <span id="hm_alert_badge" style="background:#fef2f2;color:#e74c3c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #fca5a5;"></span></h3>
             <div id="hm_alerts_list">
               <div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> Checking...</div>
             </div>
           </div>
 
           <!-- Quick Actions -->
-          <div class="card" style="margin-bottom:0;padding:14px 16px;">
-            <h3 style="margin-bottom:10px;font-size:13px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;"><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
-            <div style="display:flex;flex-direction:column;gap:6px;">
-              <button onclick="showPage('contributionPage',document.querySelector('[onclick*=contributionPage]'))" style="background:#16a34a;text-align:left;padding:8px 13px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;border-radius:9px;"><i class="fa-solid fa-plus"></i> Add Contribution</button>
-              <button onclick="showPage('expensePage',document.querySelector('[onclick*=expensePage]'))" style="background:#dc2626;text-align:left;padding:8px 13px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;border-radius:9px;"><i class="fa-solid fa-receipt"></i> Add Expense</button>
-              <button onclick="showPage('trackerPage',document.querySelector('[onclick*=trackerPage]'))" style="background:#334155;text-align:left;padding:8px 13px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;border-radius:9px;"><i class="fa-solid fa-chart-line"></i> Tracker / Reminders</button>
-              <button onclick="openDashboard(document.querySelector('[onclick*=openDashboard]'))" style="background:#6366f1;text-align:left;padding:8px 13px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;border-radius:9px;"><i class="fa-solid fa-chart-pie"></i> Full Dashboard & Reports</button>
+          <div class="card" style="margin-bottom:0;padding:16px 18px;">
+            <h3 style="margin-bottom:12px;font-size:13px;"><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <button onclick="_quickNav('contributionPage','[onclick*=contributionPage]')" style="background:#27ae60;text-align:left;padding:9px 14px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;"><i class="fa-solid fa-plus"></i> Add Contribution</button>
+              <button onclick="_quickNav('expensePage','[onclick*=expensePage]')" style="background:#e74c3c;text-align:left;padding:9px 14px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;"><i class="fa-solid fa-receipt"></i> Add Expense</button>
+              <button onclick="_quickNav('trackerPage','[onclick*=trackerPage]')" style="background:#334155;text-align:left;padding:9px 14px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;"><i class="fa-solid fa-chart-line"></i> Tracker / Reminders</button>
+              <button onclick="openDashboard(document.querySelector('[onclick*=openDashboard]'))" style="background:#6366f1;text-align:left;padding:9px 14px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:none;"><i class="fa-solid fa-chart-pie"></i> Full Dashboard & Reports</button>
             </div>
           </div>
 
         </div>
 
         <!-- ── Year Balance Tracker ── -->
-        <div class="card" style="margin-bottom:14px;padding:14px 16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #f1f5f9;">
+        <div class="card" style="margin-bottom:14px;padding:16px 18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
             <h3 style="margin:0;font-size:13px;"><i class="fa-solid fa-scale-balanced"></i> Year Balance — <span id="hm_yr_label">2025</span></h3>
             <span id="hm_yr_status_badge" style="font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;"></span>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px;">
-            <div style="background:#f8fafc;border-radius:10px;padding:10px 12px;border-left:3px solid #22c55e;">
-              <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">All-time Contributions</div>
-              <div id="totalContribution" style="font-size:1.1rem;font-weight:700;color:#16a34a;">₹0</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:14px;">
+            <div style="background:#f8fafc;border-radius:8px;padding:10px 12px;">
+              <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">All-time Contributions</div>
+              <div id="totalContribution" style="font-size:1.1rem;font-weight:700;color:#27ae60;">₹0</div>
               <div id="trendContrib" style="font-size:10px;color:#94a3b8;margin-top:2px;">&nbsp;</div>
             </div>
-            <div style="background:#f8fafc;border-radius:10px;padding:10px 12px;border-left:3px solid #ef4444;">
-              <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">All-time Expenses</div>
-              <div id="totalExpense" style="font-size:1.1rem;font-weight:700;color:#dc2626;">₹0</div>
+            <div style="background:#f8fafc;border-radius:8px;padding:10px 12px;">
+              <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">All-time Expenses</div>
+              <div id="totalExpense" style="font-size:1.1rem;font-weight:700;color:#e74c3c;">₹0</div>
               <div id="trendExpense" style="font-size:10px;color:#94a3b8;margin-top:2px;">&nbsp;</div>
             </div>
-            <div style="background:#f8fafc;border-radius:10px;padding:10px 12px;border-left:3px solid #6366f1;">
-              <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">Total Members</div>
-              <div id="totalUsers" style="font-size:1.1rem;font-weight:700;color:#4f46e5;">0</div>
+            <div style="background:#f8fafc;border-radius:8px;padding:10px 12px;">
+              <div style="font-size:10px;color:#64748b;font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Total Members</div>
+              <div id="totalUsers" style="font-size:1.1rem;font-weight:700;color:#6366f1;">0</div>
               <div id="trendUsers" style="font-size:10px;color:#94a3b8;margin-top:2px;">Active members</div>
             </div>
-            <div style="background:#1e293b;border-radius:10px;padding:10px 12px;border-left:3px solid #f7a01a;">
-              <div style="font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">Net Balance</div>
+            <div style="background:linear-gradient(135deg,#1e293b,#334155);border-radius:8px;padding:10px 12px;">
+              <div style="font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Net Balance</div>
               <div id="netBalance" style="font-size:1.1rem;font-weight:700;color:#f7a01a;">₹0</div>
               <div id="netBalanceBreakdown" style="font-size:10px;color:#64748b;margin-top:2px;">&nbsp;</div>
             </div>
@@ -2434,10 +2780,10 @@
           <div>
             <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px;">
               <span>Year collection progress (<span id="hm_yr_months_done">0</span> of 12 months)</span>
-              <span id="hm_yr_pct" style="font-weight:700;color:#334155;">0%</span>
+              <span id="hm_yr_pct">0%</span>
             </div>
-            <div style="height:5px;background:#f1f5f9;border-radius:4px;overflow:hidden;">
-              <div id="hm_yr_progress_fill" style="height:100%;border-radius:4px;background:#22c55e;width:0%;transition:width .7s ease;"></div>
+            <div style="height:6px;background:#f1f5f9;border-radius:4px;overflow:hidden;">
+              <div id="hm_yr_progress_fill" style="height:100%;border-radius:4px;background:#27ae60;width:0%;transition:width .6s ease;"></div>
             </div>
           </div>
         </div>
@@ -4645,6 +4991,15 @@
         ? "hidden"
         : "auto";
     }
+    function _quickNav(pageId, navSelector) {
+      showPage(pageId, document.querySelector(navSelector));
+      setTimeout(function() {
+        var pg = document.getElementById(pageId);
+        if (pg) pg.scrollIntoView({ behavior: "smooth", block: "start" });
+        else window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 140);
+    }
+
     function showPage(id, el) {
       const current = document.querySelector(".page.active");
       const next = document.getElementById(id);
@@ -5521,7 +5876,12 @@
     ═══════════════════════════════════════════════════════════ */
     var _hmMemberFilter = "all";
 
-    /* ── Init the month/year dropdowns once data is loaded ── */
+    /* ══════════════════════════════════════════════════
+       VIEWING PERIOD BAR — fully interactive
+    ══════════════════════════════════════════════════ */
+    var _hmSelMonth = MONTHS[new Date().getMonth()];
+    var _hmSelYear  = new Date().getFullYear();
+
     function _hmInitSelectors() {
       var mSel = document.getElementById("hm_sel_month");
       var ySel = document.getElementById("hm_sel_year");
@@ -5540,84 +5900,146 @@
       expenses.forEach(function(e) { var y = Number(e.Year); if (!isNaN(y) && y > 2000) years.add(y); });
       var cur = new Date().getFullYear();
       for (var y = 2023; y <= cur; y++) years.add(y);
-      var prev = ySel.value;
-      ySel.innerHTML = Array.from(years).sort(function(a,b){ return b-a; }).map(function(y) {
+      var sortedYears = Array.from(years).sort(function(a,b){ return b-a; });
+
+      // Populate visible year dropdown
+      var ydrop = document.getElementById("hm_year_dropdown");
+      if (ydrop) {
+        ydrop.innerHTML = sortedYears.map(function(y) {
+          return '<div onclick="_hmSelectYear(' + y + ')" style="padding:8px 16px;font-size:13px;font-weight:600;color:#e2e8f0;cursor:pointer;transition:background 0.15s;white-space:nowrap;" onmouseover="this.style.background=\'rgba(247,160,26,0.15)\'" onmouseout="this.style.background=\'\'">' + y + '</div>';
+        }).join("");
+      }
+
+      // Populate hidden select
+      ySel.innerHTML = sortedYears.map(function(y) {
         return '<option value="' + y + '">' + y + '</option>';
       }).join("");
-      if (prev && ySel.querySelector('option[value="'+prev+'"]')) ySel.value = prev;
-      else ySel.value = String(cur);
-
-      // Set month to current only on first load
-      if (!mSel.value) mSel.value = MONTHS[new Date().getMonth()];
-
-      // Render pill row
-      _hmRenderMonthPills();
+      ySel.value = String(_hmSelYear);
+      mSel.value = _hmSelMonth;
     }
 
-    /* ── Render month pill buttons ── */
-    function _hmRenderMonthPills() {
+    function _hmSelectMonth(monthName) {
+      _hmSelMonth = monthName;
       var mSel = document.getElementById("hm_sel_month");
-      var pillRow = document.getElementById("hm_month_pills");
-      if (!pillRow || !mSel) return;
-      var active = mSel.value || MONTHS[new Date().getMonth()];
-      pillRow.innerHTML = MONTHS.map(function(m) {
-        var isActive = m === active;
-        return '<div onclick="_hmPickMonthPill(\'' + m + '\')" style="' +
-          'border:1px solid ' + (isActive ? '#f7a01a' : '#e2e8f0') + ';' +
-          'border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600;' +
-          'color:' + (isActive ? '#fff' : '#64748b') + ';' +
-          'background:' + (isActive ? '#f7a01a' : '#fff') + ';' +
-          'cursor:pointer;white-space:nowrap;transition:all .15s;' +
-          '">' + m.slice(0,3) + '</div>';
-      }).join("");
-      // Scroll active pill into view
-      setTimeout(function() {
-        var pills = pillRow.querySelectorAll("div");
-        var idx = MONTHS.indexOf(active);
-        if (pills[idx]) pills[idx].scrollIntoView({inline:"center", behavior:"smooth"});
-      }, 60);
+      if (mSel) mSel.value = monthName;
+      _hmRefreshBar();
+      _hmRenderDashboard(_hmSelMonth, _hmSelYear);
     }
 
-    /* ── Click a month pill ── */
-    function _hmPickMonthPill(month) {
-      var mSel = document.getElementById("hm_sel_month");
-      if (mSel) mSel.value = month;
-      _hmRenderMonthPills();
-      _hmOnPeriodChange();
+    function _hmSelectYear(y) {
+      _hmSelYear = y;
+      var ySel = document.getElementById("hm_sel_year");
+      if (ySel) ySel.value = String(y);
+      _hmToggleYearDropdown(false);
+      _hmRefreshBar();
+      _hmRenderDashboard(_hmSelMonth, _hmSelYear);
+    }
+
+    function _hmToggleYearDropdown(forceClose) {
+      var drop = document.getElementById("hm_year_dropdown");
+      var caret = document.getElementById("hm_year_caret");
+      if (!drop) return;
+      var open = forceClose === false ? false : (drop.style.display === "none" || drop.style.display === "");
+      drop.style.display = open ? "block" : "none";
+      if (caret) caret.style.transform = open ? "rotate(180deg)" : "";
+      if (open) {
+        // Highlight active year
+        Array.from(drop.children).forEach(function(el) {
+          el.style.color = el.textContent.trim() === String(_hmSelYear) ? "#f7a01a" : "#e2e8f0";
+          el.style.fontWeight = el.textContent.trim() === String(_hmSelYear) ? "700" : "600";
+        });
+        setTimeout(function() {
+          document.addEventListener("click", function _closeYearDrop(e) {
+            var d = document.getElementById("hm_year_dropdown");
+            if (d && !d.contains(e.target) && !e.target.closest("#hm_year_dropdown")) {
+              _hmToggleYearDropdown(false);
+            }
+            document.removeEventListener("click", _closeYearDrop);
+          });
+        }, 10);
+      }
+    }
+
+    /* ── Refresh bar label + pills + year display (no data reload) ── */
+    function _hmRefreshBar() {
+      var now = new Date();
+      var isCurrent = _hmSelMonth === MONTHS[now.getMonth()] && _hmSelYear === now.getFullYear();
+
+      var lblText = document.getElementById("hm_period_label_text");
+      var lbl = document.getElementById("hm_period_label");
+      if (lblText) lblText.textContent = (isCurrent ? "Current — " : "") + _hmSelMonth + " " + _hmSelYear;
+      if (lbl) {
+        lbl.style.background = isCurrent
+          ? "linear-gradient(90deg,#f7a01a,#f59e0b)"
+          : "linear-gradient(90deg,#6366f1,#4f46e5)";
+      }
+
+      var yrDisp = document.getElementById("hm_year_display");
+      if (yrDisp) yrDisp.textContent = _hmSelYear;
+
+      _hmRenderMonthPills(_hmSelMonth);
     }
 
     function _hmOnPeriodChange() {
+      // Called on init — reset to current month/year
       var now = new Date();
+      _hmSelMonth = MONTHS[now.getMonth()];
+      _hmSelYear  = now.getFullYear();
       var mSel = document.getElementById("hm_sel_month");
       var ySel = document.getElementById("hm_sel_year");
-      var selMonth = mSel ? mSel.value : MONTHS[now.getMonth()];
-      var selYear  = ySel ? Number(ySel.value) : now.getFullYear();
-
-      // Show/hide "Today" restore button
-      var btn = document.getElementById("hm_btn_today");
-      var isCurrent = selMonth === MONTHS[now.getMonth()] && selYear === now.getFullYear();
-      if (btn) btn.style.display = isCurrent ? "none" : "inline-block";
-
-      // Period label pill
-      var lbl = document.getElementById("hm_period_label");
-      if (lbl) lbl.textContent = isCurrent
-        ? ("Current — " + selMonth + " " + selYear)
-        : (selMonth + " " + selYear);
-
-      // Re-render pills to reflect new selection
-      _hmRenderMonthPills();
-
-      _hmRenderDashboard(selMonth, selYear);
+      if (mSel) mSel.value = _hmSelMonth;
+      if (ySel) ySel.value = String(_hmSelYear);
+      _hmRefreshBar();
+      _hmRenderDashboard(_hmSelMonth, _hmSelYear);
     }
+
+    /* ── Render clickable month pills ── */
+    var _hmShortMonths = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    function _hmRenderMonthPills(activeMonth) {
+      var container = document.getElementById("hm_month_pills");
+      if (!container) return;
+      container.innerHTML = _hmShortMonths.map(function(m, i) {
+        var fullName = MONTHS[i];
+        var isActive = fullName === activeMonth;
+        return '<div onclick="_hmSelectMonth(\'' + fullName + '\')" style="' +
+          'padding:6px 15px;border-radius:20px;font-size:12px;font-weight:' + (isActive ? '700' : '500') + ';' +
+          'background:' + (isActive ? 'linear-gradient(135deg,#f7a01a,#f59e0b)' : 'rgba(255,255,255,0.06)') + ';' +
+          'color:' + (isActive ? '#fff' : '#94a3b8') + ';' +
+          'border:1.5px solid ' + (isActive ? 'rgba(247,160,26,0.6)' : 'rgba(255,255,255,0.09)') + ';' +
+          'cursor:pointer;user-select:none;transition:all 0.18s;white-space:nowrap;' +
+          'box-shadow:' + (isActive ? '0 2px 12px rgba(247,160,26,0.35)' : 'none') + ';' +
+          '" onmouseover="if(this.dataset.active!==\'1\'){this.style.background=\'rgba(255,255,255,0.12)\';this.style.color=\'#e2e8f0\';}" ' +
+          'onmouseout="if(this.dataset.active!==\'1\'){this.style.background=\'rgba(255,255,255,0.06)\';this.style.color=\'#94a3b8\';}" ' +
+          'data-active="' + (isActive ? '1' : '0') + '">' + m + '</div>';
+      }).join("");
+    }
+
+    /* ── Live clock ── */
+    (function _startLiveClock() {
+      var _days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      var _mos  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      function _tick() {
+        var el = document.getElementById("hm_live_clock");
+        if (!el) return;
+        var n = new Date();
+        var d = _days[n.getDay()];
+        var dt = n.getDate();
+        var mo = _mos[n.getMonth()];
+        var h = n.getHours(), mi = String(n.getMinutes()).padStart(2,"0");
+        var ampm = h >= 12 ? "PM" : "AM";
+        h = h % 12 || 12;
+        el.textContent = d + " " + dt + " " + mo + " — " + h + ":" + mi + " " + ampm;
+      }
+      _tick();
+      setInterval(_tick, 1000);
+    })();
 
     function _hmGoToCurrentMonth() {
       var now = new Date();
-      var mSel = document.getElementById("hm_sel_month");
-      var ySel = document.getElementById("hm_sel_year");
-      if (mSel) mSel.value = MONTHS[now.getMonth()];
-      if (ySel) ySel.value = String(now.getFullYear());
-      _hmRenderMonthPills();
-      _hmOnPeriodChange();
+      _hmSelMonth = MONTHS[now.getMonth()];
+      _hmSelYear  = now.getFullYear();
+      _hmRefreshBar();
+      _hmRenderDashboard(_hmSelMonth, _hmSelYear);
     }
 
     function _hmRenderDashboard(overrideMonth, overrideYear) {
@@ -11285,7 +11707,11 @@
       const isDark = document.body.classList.toggle("dark-mode");
       localStorage.setItem("mandir_dark_mode", isDark ? "1" : "0");
       const btn = document.getElementById("darkModeBtn");
-      if (btn) btn.textContent = isDark ? "☀️" : "🌙";
+      if (btn) {
+        btn.textContent = isDark ? "☀️" : "🌙";
+        btn.style.transform = "scale(1.3) rotate(20deg)";
+        setTimeout(function(){ btn.style.transform = "scale(1) rotate(0deg)"; }, 250);
+      }
     }
     // Apply saved preference on load
     (function () {

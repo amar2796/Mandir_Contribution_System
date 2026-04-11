@@ -45,6 +45,8 @@
       --blue: #3b82f6;
       --brown-grad: linear-gradient(135deg, #2a0f00 0%, #3c1a00 60%, #2a0f00 100%);
       --brown-border: rgba(247, 160, 26, 0.35);
+      --brown-dark: #2a0f00;
+      --brown-mid: #3c1a00;
       --rad-xl: 22px;
       --rad-lg: 16px;
       --rad-md: 12px;
@@ -104,12 +106,10 @@
       height: 34px;
       border-radius: 10px;
       flex-shrink: 0;
-      /* background: linear-gradient(135deg,var(--ink) 0%,var(--ink-mid) 100%); */
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 16px;
-      /* box-shadow:0 3px 10px rgba(0,0,0,0.18); */
     }
 
     .header-logo {
@@ -143,7 +143,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 190px;
+      max-width: clamp(100px, 30vw, 190px);
       line-height: 1.25;
       display: block;
     }
@@ -209,7 +209,6 @@
     }
 
     .hdr-drop-head {
-      /* background:linear-gradient(135deg,var(--ink),var(--ink-mid)); */
       background: linear-gradient(135deg, #2a0f00 0%, #3c1a00 60%, #2a0f00 100%);
       padding: 13px 16px;
       display: flex;
@@ -527,10 +526,6 @@
       transition: box-shadow var(--t), transform var(--t), border-color var(--t);
       overflow: hidden;
     }
-    .card:hover {
-      will-change: transform;
-    }
-
     .card:hover {
       box-shadow: var(--sh-md);
       border-color: rgba(247, 160, 26, 0.2);
@@ -1523,218 +1518,490 @@
     .skel-ra        { height: 52px; border-radius: 0; margin: 0; border-bottom: 1px solid #f2f4fa; }
     .skel-ra:last-child { border-bottom: none; }
 
-    /* ── L2: User dark mode ── */
+    /* ══════════════════════════════════════════════════════════════════
+       ██████╗  █████╗ ██████╗ ██╗  ██╗    ███╗   ███╗ ██████╗ ██████╗ ███████╗
+       ██╔══██╗██╔══██╗██╔══██╗██║ ██╔╝    ████╗ ████║██╔═══██╗██╔══██╗██╔════╝
+       ██║  ██║███████║██████╔╝█████╔╝     ██╔████╔██║██║   ██║██║  ██║█████╗
+       ██║  ██║██╔══██║██╔══██╗██╔═██╗     ██║╚██╔╝██║██║   ██║██║  ██║██╔══╝
+       ██████╔╝██║  ██║██║  ██║██║  ██╗    ██║ ╚═╝ ██║╚██████╔╝██████╔╝███████╗
+       ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝
+       — Premium Dark Theme — User Edition —
+       ══════════════════════════════════════════════════════════════════ */
+
+    /* ── Base: Deep space background with subtle warm undertone ── */
     body.user-dark {
-      background: #0f172a !important;
+      background: #08090f !important;
       color: #e2e8f0 !important;
     }
 
-    body.user-dark .card {
-      background: #1e293b !important;
-      border-color: #334155 !important;
-      color: #e2e8f0 !important;
+    /* ── Ambient gold glow behind the whole page ── */
+    body.user-dark::before {
+      content: '';
+      position: fixed;
+      top: -20vh; left: 50%;
+      transform: translateX(-50%);
+      width: 120vw; height: 60vh;
+      background: radial-gradient(ellipse at center, rgba(247,160,26,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
     }
 
+    /* ── Header: rich dark glass with gold underline ── */
     body.user-dark .header {
-      background: #1e293b !important;
+      background: rgba(15, 18, 30, 0.96) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border-bottom-color: rgba(247, 160, 26, 0.55) !important;
+      box-shadow: 0 2px 24px rgba(0,0,0,0.5), 0 1px 0 rgba(247,160,26,0.12) !important;
     }
+    body.user-dark .hdr-name { color: #f1f5f9 !important; }
+    body.user-dark .hdr-welcome { color: #64748b !important; }
 
+    /* ── Hero: rich deep gold-gradient dark ── */
     body.user-dark .hero {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+      background: linear-gradient(160deg, #0f1218 0%, #1a1205 40%, #0d1420 100%) !important;
+      border: 1px solid rgba(247,160,26,0.18) !important;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(247,160,26,0.08) !important;
     }
+    body.user-dark .hero::before {
+      background: radial-gradient(circle, rgba(247,160,26,0.12) 0%, transparent 65%) !important;
+    }
+    body.user-dark .hero-amount { color: #fff !important; }
+    body.user-dark .hero-label  { color: #64748b !important; }
+    body.user-dark .hero-stat {
+      background: rgba(247,160,26,0.055) !important;
+      border-color: rgba(247,160,26,0.14) !important;
+    }
+    body.user-dark .hero-stat:hover {
+      background: rgba(247,160,26,0.11) !important;
+      border-color: rgba(247,160,26,0.28) !important;
+    }
+    body.user-dark .hero-stat-v { color: #f1f5f9 !important; }
+    body.user-dark .hero-stat-l { color: #64748b !important; }
+    body.user-dark .hero-stat:hover .hero-stat-v { color: var(--gold) !important; }
 
-    body.user-dark table {
+    /* ── Cards: layered dark surfaces ── */
+    body.user-dark .card {
+      background: #111827 !important;
+      border-color: rgba(247,160,26,0.10) !important;
       color: #e2e8f0 !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35) !important;
     }
-
-    body.user-dark table thead {
-      background: linear-gradient(135deg, #1e293b 0%, #2a1500 60%, #1e293b 100%) !important;
+    body.user-dark .card:hover {
+      border-color: rgba(247,160,26,0.28) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(247,160,26,0.12) !important;
     }
-
-    body.user-dark table thead th {
-      color: var(--gold) !important;
-    }
-
-    body.user-dark td {
-      border-bottom-color: #334155 !important;
-    }
-
     body.user-dark .card-hdr {
-      background: rgba(255, 255, 255, 0.03) !important;
-      border-bottom-color: rgba(247, 160, 26, 0.1) !important;
+      background: linear-gradient(90deg, rgba(247,160,26,0.06) 0%, transparent 100%) !important;
+      border-bottom-color: rgba(247,160,26,0.12) !important;
+    }
+    body.user-dark .card-title { color: #f1f5f9 !important; }
+    body.user-dark .c-badge {
+      background: rgba(247,160,26,0.14) !important;
+      border-color: rgba(247,160,26,0.22) !important;
+      color: #fbbf24 !important;
     }
 
+    /* ── Section labels ── */
     body.user-dark .sec-lbl {
-      color: #c08040 !important;
+      color: #b8762a !important;
+      text-shadow: 0 0 20px rgba(247,160,26,0.2);
+    }
+    body.user-dark .sec-lbl::after {
+      background: linear-gradient(90deg, rgba(247,160,26,0.25), transparent) !important;
     }
 
+    /* ── Table ── */
+    body.user-dark table { color: #e2e8f0 !important; }
+    body.user-dark table thead {
+      background: linear-gradient(135deg, #0f172a 0%, #1c1000 60%, #0f172a 100%) !important;
+    }
+    body.user-dark table thead th { color: var(--gold) !important; }
+    body.user-dark td { border-bottom-color: rgba(247,160,26,0.07) !important; }
+    body.user-dark tbody tr:hover {
+      background: rgba(247,160,26,0.05) !important;
+    }
+    body.user-dark tbody tr:hover td:first-child {
+      box-shadow: inset 3px 0 0 rgba(247,160,26,0.6) !important;
+    }
+    body.user-dark .amt-col { color: #4ade80 !important; }
+    body.user-dark .type-chip {
+      background: rgba(247,160,26,0.10) !important;
+      border-color: rgba(247,160,26,0.18) !important;
+      color: #fbbf24 !important;
+    }
+    body.user-dark .rid-mono { color: #64748b !important; }
+
+    /* ── Inputs, selects, textareas ── */
     body.user-dark input,
     body.user-dark select,
     body.user-dark textarea {
-      background: #1e293b !important;
+      background: #0d1117 !important;
       color: #e2e8f0 !important;
-      border-color: #475569 !important;
+      border-color: #2d3748 !important;
     }
-
-    /* ── Dark mode: JS-generated elements ── */
-    body.user-dark .bc-item,
-    body.user-dark .goal-item {
-      background: #1e293b !important;
-      border-color: #334155 !important;
-      color: #e2e8f0 !important;
+    body.user-dark input:focus,
+    body.user-dark select:focus,
+    body.user-dark textarea:focus {
+      background: #111827 !important;
+      border-color: var(--gold) !important;
+      box-shadow: 0 0 0 3px rgba(247,160,26,0.14) !important;
     }
-    body.user-dark .bc-title,
-    body.user-dark .goal-name {
-      color: #e2e8f0 !important;
-    }
-    body.user-dark .bc-msg {
-      color: #94a3b8 !important;
-    }
-    body.user-dark .goal-track {
-      background: #334155 !important;
-    }
-    body.user-dark .s-item {
-      border-bottom-color: #334155 !important;
-    }
-    body.user-dark .s-lbl {
-      color: #94a3b8 !important;
-    }
-    body.user-dark .empty {
-      color: #64748b !important;
-    }
-    /* Payment request cards rendered by JS */
-    body.user-dark #myContribRequestsList .card,
-    body.user-dark #eventsContainer .card,
-    body.user-dark #goalsContainer .goal-item,
-    body.user-dark #broadcastContainer .bc-item {
-      background: #1e293b !important;
-    }
-    body.user-dark #myContribRequestsList .card-body > div {
-      color: #e2e8f0 !important;
-    }
-    /* Modals generated by JS */
-    body.user-dark [id="_editContribModal"] > div,
-    body.user-dark [id="_slipPreviewModal"] > div {
-      background: #1e293b !important;
-      color: #e2e8f0 !important;
-    }
-    body.user-dark [id="_editContribModal"] input,
-    body.user-dark [id="_editContribModal"] select {
-      background: #0f172a !important;
-      color: #e2e8f0 !important;
-      border-color: #475569 !important;
-    }
-    body.user-dark [id="_editContribModal"] label {
-      color: #94a3b8 !important;
-    }
-    body.user-dark [id="_editContribModal"] > div > div:first-child,
-    body.user-dark [id="_slipPreviewModal"] > div > div:first-child {
-      background: #0f172a !important;
-      border-bottom-color: #334155 !important;
-    }
-    body.user-dark [id="_editContribModal"] > div > div:last-child,
-    body.user-dark [id="_slipPreviewModal"] > div > div:last-child {
-      background: #1e293b !important;
-      border-top-color: #334155 !important;
-    }
-    /* App modal (_modal overlay) */
-    body.user-dark ._modal > div {
-      background: #1e293b !important;
-      color: #e2e8f0 !important;
-    }
-    body.user-dark ._mbdy {
-      background: #1e293b !important;
-      color: #e2e8f0 !important;
-    }
-    body.user-dark ._mft {
-      background: #0f172a !important;
-      border-top-color: #334155 !important;
-    }
-    body.user-dark ._row {
-      border-bottom-color: #334155 !important;
-    }
-    body.user-dark ._rl { color: #94a3b8 !important; }
-    body.user-dark ._rv { color: #e2e8f0 !important; }
-    body.user-dark ._fi {
-      background: #0f172a !important;
-      color: #e2e8f0 !important;
-      border-color: #475569 !important;
-    }
-    body.user-dark ._fl { color: #94a3b8 !important; }
-    /* Pending/approved/rejected note boxes in dark */
-    body.user-dark #myContribRequestsList [style*="background:#fffbeb"] {
-      background: #2d2200 !important;
-      color: #fde68a !important;
-    }
-    body.user-dark #myContribRequestsList [style*="background:#f0fdf4"] {
-      background: #052e16 !important;
-      color: #86efac !important;
-    }
-    body.user-dark #myContribRequestsList [style*="background:#fef2f2"] {
-      background: #2d0a0a !important;
-      color: #fca5a5 !important;
-    }
-    /* Month summary bar chart in dark */
-    body.user-dark .s-item [style*="background:var(--bg2)"] {
-      background: #334155 !important;
-    }
-    /* Req delete/edit buttons in dark */
-    body.user-dark .req-del-btn {
-      background: #2d0a0a !important;
-      color: #f87171 !important;
-    }
-    body.user-dark .req-edit-btn {
-      background: #1e293b !important;
-      color: #94a3b8 !important;
-      border-color: #475569 !important;
-    }
-    /* Scroll-to-top in dark */
-    body.user-dark #scrollTopBtn {
-      box-shadow: 0 4px 18px rgba(0,0,0,0.5);
-    }
-    /* Filter inputs */
     body.user-dark .f-grp input,
     body.user-dark .f-grp select {
-      background: #1e293b !important;
+      background: #0d1117 !important;
       color: #e2e8f0 !important;
-      border-color: #475569 !important;
+      border-color: #2d3748 !important;
     }
+    body.user-dark .f-grp label { color: #64748b !important; }
     body.user-dark .inl-sel {
-      background: #1e293b !important;
+      background: #111827 !important;
       color: #e2e8f0 !important;
-      border-color: #475569 !important;
+      border-color: #2d3748 !important;
     }
-    body.user-dark tbody tr:hover {
-      background: #1e293b !important;
+
+    /* ── Quick action ghost buttons in dark ── */
+    body.user-dark .qa-ghost {
+      background: rgba(255,255,255,0.04) !important;
+      border-color: rgba(247,160,26,0.22) !important;
+      color: #cbd5e1 !important;
     }
-    body.user-dark .pg-btn {
-      background: #1e293b !important;
-      color: #94a3b8 !important;
-      border-color: #334155 !important;
-    }
-    body.user-dark .pg-btn.active {
-      background: linear-gradient(135deg,#1e293b,#2a1500) !important;
+    body.user-dark .qa-ghost:hover {
+      background: rgba(247,160,26,0.08) !important;
+      border-color: var(--gold) !important;
       color: var(--gold) !important;
     }
-    body.user-dark .hdr-dropdown {
+    body.user-dark .qa-dark {
       background: #1e293b !important;
+    }
+
+    /* ── Pagination ── */
+    body.user-dark .pg-btn {
+      background: #111827 !important;
+      color: #64748b !important;
+      border-color: #2d3748 !important;
+    }
+    body.user-dark .pg-btn:hover:not(:disabled) {
+      background: rgba(247,160,26,0.08) !important;
+      border-color: var(--gold) !important;
+      color: var(--gold) !important;
+    }
+    body.user-dark .pg-btn.active {
+      background: linear-gradient(135deg, #1c1000, #2a1800) !important;
+      color: var(--gold) !important;
+      border-color: rgba(247,160,26,0.4) !important;
+      box-shadow: 0 0 0 2px rgba(247,160,26,0.18), 0 0 12px rgba(247,160,26,0.15) !important;
+    }
+    body.user-dark .pg-info { color: #475569 !important; }
+
+    /* ── Recent activity ── */
+    body.user-dark .ra-item { border-bottom-color: rgba(247,160,26,0.06) !important; }
+    body.user-dark .ra-item:hover { background: rgba(247,160,26,0.04) !important; }
+    body.user-dark .ra-month { color: #f1f5f9 !important; }
+    body.user-dark .ra-type  { color: #64748b !important; }
+    body.user-dark .ra-amt   { color: #4ade80 !important; }
+    body.user-dark .ra-view-all {
+      border-top-color: rgba(247,160,26,0.10) !important;
+      color: var(--gold) !important;
+    }
+    body.user-dark .ra-view-all:hover {
+      background: rgba(247,160,26,0.05) !important;
+    }
+
+    /* ── Menu accordion items ── */
+    body.user-dark .menu-acc-wrap {
+      background: linear-gradient(135deg, #111827 0%, #0f1520 100%) !important;
+      border-color: rgba(247,160,26,0.12) !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
+    }
+    body.user-dark .menu-acc-wrap:hover {
+      border-color: rgba(247,160,26,0.32) !important;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(247,160,26,0.08) !important;
+    }
+    body.user-dark .menu-acc-wrap:has(.acc-open) {
+      border-color: rgba(247,160,26,0.55) !important;
+      box-shadow: 0 4px 24px rgba(247,160,26,0.10), 0 0 0 1px rgba(247,160,26,0.10), 0 2px 12px rgba(0,0,0,0.4) !important;
+    }
+    body.user-dark .menu-item {
+      background: transparent !important;
+      border-color: transparent !important;
+    }
+    body.user-dark .menu-item:hover { background: rgba(247,160,26,0.04) !important; }
+    body.user-dark .menu-item.acc-open {
+      background: linear-gradient(90deg, rgba(247,160,26,0.09) 0%, rgba(247,160,26,0.02) 70%, transparent 100%) !important;
+      border-bottom-color: rgba(247,160,26,0.22) !important;
+    }
+    body.user-dark .menu-item.acc-open .menu-title { color: var(--gold) !important; }
+    body.user-dark .menu-title { color: #f1f5f9 !important; }
+    body.user-dark .menu-desc  { color: #475569 !important; }
+    body.user-dark .menu-arrow { color: #475569 !important; }
+    body.user-dark .menu-acc-wrap:hover .menu-arrow { color: var(--gold) !important; }
+    body.user-dark .menu-acc-wrap:hover .menu-icon {
+      box-shadow: 0 2px 14px rgba(247,160,26,0.22) !important;
+    }
+
+    /* ── Accordion body ── */
+    body.user-dark .acc-body {
+      background: #0d1117 !important;
+      border-color: transparent !important;
+    }
+    body.user-dark .acc-body.acc-open {
+      background: #0d1117 !important;
+    }
+
+    /* ── Bottom sheet ── */
+    body.user-dark .bs-sheet {
+      background: #111827 !important;
+      box-shadow: 0 -12px 60px rgba(0,0,0,0.7), 0 -1px 0 rgba(247,160,26,0.15) !important;
+    }
+    body.user-dark .bs-header {
+      border-bottom-color: rgba(247,160,26,0.12) !important;
+      background: linear-gradient(90deg, rgba(247,160,26,0.05) 0%, transparent 100%) !important;
+    }
+    body.user-dark .bs-title { color: #f1f5f9 !important; }
+    body.user-dark .bs-handle-bar { background: rgba(247,160,26,0.3) !important; }
+    body.user-dark .bs-sheet:hover .bs-handle-bar,
+    body.user-dark .bs-handle-bar:hover {
+      background: var(--gold) !important;
+    }
+    body.user-dark .bs-close {
+      background: rgba(247,160,26,0.08) !important;
+      color: #94a3b8 !important;
+      border: 1px solid rgba(247,160,26,0.12) !important;
+    }
+    body.user-dark .bs-close:hover {
+      background: rgba(247,160,26,0.16) !important;
+      color: var(--gold) !important;
+    }
+    body.user-dark .bs-body { background: #111827 !important; }
+
+    /* ── Dropdown ── */
+    body.user-dark .hdr-dropdown {
+      background: #111827 !important;
+      border-color: rgba(247,160,26,0.18) !important;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.7) !important;
     }
     body.user-dark .hdr-drop-item {
       color: #cbd5e1 !important;
-      border-bottom-color: #334155 !important;
+      border-bottom-color: rgba(247,160,26,0.07) !important;
     }
     body.user-dark .hdr-drop-item:hover {
-      background: #0f172a !important;
+      background: rgba(247,160,26,0.07) !important;
+      color: var(--gold) !important;
     }
-    body.user-dark .c-badge {
+    body.user-dark .hdr-drop-item i { color: var(--gold) !important; }
+    body.user-dark .hdr-drop-item.danger { color: #f87171 !important; }
+    body.user-dark .hdr-drop-item.danger i { color: #f87171 !important; }
+    body.user-dark .hdr-drop-item.danger:hover { background: rgba(239,68,68,0.08) !important; }
+    body.user-dark .hdr-drop-head-sub { color: #64748b !important; }
+
+    /* ── Goals ── */
+    body.user-dark .goal-item {
+      background: #111827 !important;
+      border-color: rgba(247,160,26,0.10) !important;
+      color: #e2e8f0 !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important;
+    }
+    body.user-dark .goal-item:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(247,160,26,0.12) !important;
+    }
+    body.user-dark .goal-name   { color: #f1f5f9 !important; }
+    body.user-dark .goal-track  { background: #1e293b !important; }
+    body.user-dark .goal-nums   { color: #64748b !important; }
+    body.user-dark #goalsContainer .goal-item { background: #111827 !important; }
+
+    /* ── Broadcasts ── */
+    body.user-dark .bc-item {
+      background: #111827 !important;
+      border-color: rgba(247,160,26,0.10) !important;
+      color: #e2e8f0 !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important;
+    }
+    body.user-dark .bc-item:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+    }
+    body.user-dark .bc-title { color: #f1f5f9 !important; }
+    body.user-dark .bc-msg   { color: #94a3b8 !important; }
+    body.user-dark .bc-time  { color: #475569 !important; }
+    body.user-dark #broadcastContainer .bc-item { background: #111827 !important; }
+
+    /* ── Summary items (stats panel) ── */
+    body.user-dark .s-item { border-bottom-color: rgba(247,160,26,0.07) !important; }
+    body.user-dark .s-lbl  { color: #64748b !important; }
+    body.user-dark .s-val  { color: #4ade80 !important; }
+    body.user-dark .s-item [style*="background:var(--bg2)"] { background: #1e293b !important; }
+
+    /* ── Empty states ── */
+    body.user-dark .empty { color: #475569 !important; }
+
+    /* ── App modal ── */
+    body.user-dark ._modal > div {
+      background: #111827 !important;
+      color: #e2e8f0 !important;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(247,160,26,0.12) !important;
+    }
+    body.user-dark ._mbdy {
+      background: #111827 !important;
+      color: #e2e8f0 !important;
+    }
+    body.user-dark ._mft {
+      background: #0d1117 !important;
+      border-top-color: rgba(247,160,26,0.12) !important;
+    }
+    body.user-dark ._row { border-bottom-color: rgba(247,160,26,0.07) !important; }
+    body.user-dark ._rl  { color: #64748b !important; }
+    body.user-dark ._rv  { color: #f1f5f9 !important; }
+    body.user-dark ._fi {
+      background: #0d1117 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3748 !important;
+    }
+    body.user-dark ._fl { color: #64748b !important; }
+
+    /* ── Edit contrib modal ── */
+    body.user-dark [id="_editContribModal"] > div {
+      background: #111827 !important;
+      color: #e2e8f0 !important;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(247,160,26,0.12) !important;
+    }
+    body.user-dark [id="_editContribModal"] input,
+    body.user-dark [id="_editContribModal"] select {
+      background: #0d1117 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3748 !important;
+    }
+    body.user-dark [id="_editContribModal"] label { color: #64748b !important; }
+    body.user-dark [id="_editContribModal"] > div > div:first-child {
+      background: #0d1117 !important;
+      border-bottom-color: rgba(247,160,26,0.22) !important;
+    }
+    body.user-dark [id="_editContribModal"] > div > div:last-child {
+      background: #0d1117 !important;
+      border-top-color: rgba(247,160,26,0.10) !important;
+    }
+
+    /* ── Slip preview modal ── */
+    body.user-dark [id="_slipPreviewModal"] > div {
+      background: #111827 !important;
+      color: #e2e8f0 !important;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(247,160,26,0.12) !important;
+    }
+    body.user-dark [id="_slipPreviewModal"] > div > div:first-child {
+      background: #0d1117 !important;
+      border-bottom-color: rgba(247,160,26,0.18) !important;
+    }
+    body.user-dark [id="_slipPreviewModal"] > div > div:last-child {
+      background: #0d1117 !important;
+      border-top-color: rgba(247,160,26,0.10) !important;
+    }
+
+    /* ── Mobile confirm overlay ── */
+    body.user-dark [id="_mobileConfirmOverlay"] > div {
+      background: #111827 !important;
+      color: #e2e8f0 !important;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(247,160,26,0.12) !important;
+    }
+
+    /* ── Payment request cards ── */
+    body.user-dark #myContribRequestsList .card { background: #111827 !important; }
+    body.user-dark #myContribRequestsList .card-body > div { color: #e2e8f0 !important; }
+    body.user-dark #eventsContainer .card { background: #111827 !important; }
+
+    /* ── Status note boxes (pending/approved/rejected) ── */
+    body.user-dark #myContribRequestsList [style*="background:#fffbeb"] {
+      background: rgba(120,70,0,0.25) !important;
+      color: #fde68a !important;
+      border-color: rgba(251,191,36,0.2) !important;
+    }
+    body.user-dark #myContribRequestsList [style*="background:#f0fdf4"] {
+      background: rgba(5,46,22,0.6) !important;
+      color: #86efac !important;
+      border-color: rgba(74,222,128,0.2) !important;
+    }
+    body.user-dark #myContribRequestsList [style*="background:#fef2f2"] {
+      background: rgba(45,10,10,0.7) !important;
+      color: #fca5a5 !important;
+      border-color: rgba(248,113,113,0.2) !important;
+    }
+
+    /* ── Request action buttons ── */
+    body.user-dark .req-del-btn {
+      background: rgba(45,10,10,0.6) !important;
+      color: #f87171 !important;
+      border: 1px solid rgba(239,68,68,0.2) !important;
+    }
+    body.user-dark .req-del-btn:hover {
+      background: #ef4444 !important;
+      color: #fff !important;
+    }
+    body.user-dark .req-edit-btn {
+      background: rgba(30,20,0,0.6) !important;
+      color: #fbbf24 !important;
+      border-color: rgba(247,160,26,0.30) !important;
+    }
+    body.user-dark .req-edit-btn:hover {
       background: rgba(247,160,26,0.15) !important;
+      border-color: var(--gold) !important;
+      color: var(--gold) !important;
     }
-    body.user-dark .type-chip {
-      background: rgba(247,160,26,0.12) !important;
-    }
+
+    /* ── Scroll to top button ── */
     body.user-dark #scrollTopBtn {
       background: var(--gold) !important;
+      box-shadow: 0 4px 20px rgba(247,160,26,0.4), 0 0 0 1px rgba(247,160,26,0.2) !important;
     }
+    body.user-dark #scrollTopBtn:hover {
+      box-shadow: 0 6px 28px rgba(247,160,26,0.55) !important;
+    }
+
+    /* ── PTR indicator ── */
+    body.user-dark #ptr-indicator {
+      background: #111827 !important;
+      border-color: rgba(247,160,26,0.25) !important;
+      color: #94a3b8 !important;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5) !important;
+    }
+
+    /* ── Focus ring in dark ── */
+    body.user-dark button:focus-visible,
+    body.user-dark select:focus-visible,
+    body.user-dark input:focus-visible,
+    body.user-dark textarea:focus-visible,
+    body.user-dark [tabindex]:focus-visible {
+      outline-color: var(--gold) !important;
+      box-shadow: 0 0 0 4px rgba(247,160,26,0.20) !important;
+    }
+
+    /* ── Scrollbar in dark ── */
+    body.user-dark ::-webkit-scrollbar-track { background: rgba(247,160,26,0.03); }
+    body.user-dark ::-webkit-scrollbar-thumb { background: rgba(247,160,26,0.18); }
+    body.user-dark ::-webkit-scrollbar-thumb:hover { background: rgba(247,160,26,0.45); }
+
+    /* ── Selection in dark ── */
+    body.user-dark ::selection {
+      background: rgba(247,160,26,0.28);
+      color: #fff;
+    }
+
+    /* ── Ghost button in dark ── */
+    body.user-dark .btn-ghost {
+      background: rgba(255,255,255,0.04) !important;
+      border-color: #2d3748 !important;
+      color: #94a3b8 !important;
+    }
+    body.user-dark .btn-ghost:hover {
+      border-color: var(--gold) !important;
+      color: var(--gold) !important;
+      background: rgba(247,160,26,0.06) !important;
+    }
+
+    /* ── Secondary button in dark ── */
+    body.user-dark .btn-secondary {
+      background: #1e293b !important;
+    }
+
+    /* ── Inline select in dark ── */
+    body.user-dark .inl-sel:focus { border-color: var(--gold) !important; }
 
     /* ─── MENU ITEMS ─── */
     .menu-grid {
@@ -1874,6 +2141,7 @@
       margin: 10px auto 0;
       flex-shrink: 0;
       cursor: grab;
+      touch-action: none;
     }
     .bs-header {
       display: flex;
@@ -1959,6 +2227,8 @@
     }
     .ra-item:last-child { border-bottom: none; }
     .ra-item:hover { background: #fffbf2; }
+    .ra-item:focus-visible { outline: 2.5px solid var(--gold); outline-offset: -2px; background: #fffbf2; }
+    .ra-view-all:focus-visible { outline: 2.5px solid var(--gold); outline-offset: -2px; background: #fffbf2; }
     .ra-dot {
       width: 8px; height: 8px; border-radius: 50%;
       flex-shrink: 0; margin-top: 1px;
@@ -1980,42 +2250,9 @@
     }
     .ra-view-all:hover { background: #fffbf2; }
 
-    /* ─── DARK MODE: new elements ─── */
-    body.user-dark .menu-acc-wrap {
-      background: #1e293b !important;
-      border-color: #334155 !important;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
-    }
-    body.user-dark .menu-acc-wrap:hover {
-      border-color: rgba(247,160,26,0.3) !important;
-    }
-    body.user-dark .menu-acc-wrap:has(.acc-open) {
-      border-color: var(--gold) !important;
-      box-shadow: 0 4px 20px rgba(247,160,26,0.12), 0 2px 12px rgba(0,0,0,0.3) !important;
-    }
-    body.user-dark .menu-item {
-      background: transparent !important;
-      border-color: transparent !important;
-    }
-    body.user-dark .menu-item.acc-open {
-      background: linear-gradient(90deg, rgba(247,160,26,0.10) 0%, rgba(247,160,26,0.03) 70%, transparent 100%) !important;
-      border-bottom-color: rgba(247,160,26,0.25) !important;
-    }
-    body.user-dark .menu-item.acc-open .menu-title {
-      color: var(--gold) !important;
-    }
-    body.user-dark .acc-body {
-      background: #192030 !important;
-      border-color: transparent !important;
-    }
-    body.user-dark .menu-title { color: #e2e8f0 !important; }
-    body.user-dark .menu-desc { color: #64748b !important; }
-    body.user-dark .ra-item:hover { background: #1e293b !important; }
-    body.user-dark .ra-item { border-bottom-color: #334155 !important; }
-    body.user-dark .ra-month { color: #e2e8f0 !important; }
-    body.user-dark .ra-view-all { border-top-color: #334155 !important; }
-    body.user-dark .ra-view-all:hover { background: #1e293b !important; }
-    body.user-dark .sec-panel-back { color: #94a3b8 !important; }
+    /* ─── DARK MODE: supplemental overrides ─── */
+    body.user-dark .sec-panel-back { color: #64748b !important; }
+    body.user-dark .acc-body.acc-open { background: #0d1117 !important; }
 
     /* ══════════════════════════════════════════════
        SAFE VISUAL IMPROVEMENTS — no logic impact
@@ -2034,9 +2271,9 @@
     /* 2. Smoother hero skeleton shimmer in dark mode */
     body.user-dark .skel {
       background: linear-gradient(90deg,
-        rgba(255,255,255,0.04) 25%,
-        rgba(255,255,255,0.09) 50%,
-        rgba(255,255,255,0.04) 75%
+        rgba(247,160,26,0.03) 25%,
+        rgba(247,160,26,0.08) 50%,
+        rgba(247,160,26,0.03) 75%
       ) !important;
       background-size: 600px 100% !important;
     }
@@ -2216,11 +2453,14 @@
 
 <body>
 
+  <!-- TOAST (pre-rendered so aria-live is registered before first message) -->
+  <div id="toast" role="status" aria-live="polite" aria-atomic="true" style="display:none;"></div>
+
   <!-- PAGE SCROLL PROGRESS BAR -->
-  <div id="page-progress"></div>
+  <div id="page-progress" aria-hidden="true"></div>
 
   <!-- HEADER -->
-  <header class="header">
+  <header class="header" role="banner">
     <div class="header-left">
       <div class="hdr-icon" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" style="cursor:pointer;">
         <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo"
@@ -2234,34 +2474,34 @@
       </div>
     </div>
     <div class="header-right">
-      <button id="userDarkBtn" onclick="toggleUserDarkMode()" title="Toggle dark mode"
+      <button id="userDarkBtn" onclick="toggleUserDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"
         style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:6px 10px;cursor:pointer;font-size:14px;line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;">🌙</button>
-      <button id="userLangBtn" onclick="toggleUserLang()" title="Toggle Hindi/English"
+      <button id="userLangBtn" onclick="toggleUserLang()" title="Toggle Hindi/English" aria-label="Toggle language between Hindi and English"
         style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:700;color:var(--ink-mid);line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;min-width:36px;">EN</button>
       <div class="hdr-avatar-wrap">
         <img id="hdr_photo" class="hdr-avatar" src=""
           onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',40);"
-          onclick="toggleUserDropdown()" title="Account" />
-        <div id="userDropdown" class="hdr-dropdown">
+          onclick="toggleUserDropdown()" title="Account" alt="User avatar" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleUserDropdown();}" />
+        <div id="userDropdown" class="hdr-dropdown" role="menu" aria-label="Account menu">
           <div class="hdr-drop-head">
             <img id="hdr_drop_photo" src=""
               onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',34);"
               alt="" />
             <div>
               <div class="hdr-drop-head-name" id="hdr_drop_name">—</div>
-              <div class="hdr-drop-head-sub">Member</div>
+              <div class="hdr-drop-head-sub" id="hdr_drop_role">Member</div>
             </div>
           </div>
-          <div class="hdr-drop-item" onclick="closeDropdown();openMyProfile()">
+          <div class="hdr-drop-item" onclick="closeDropdown();openMyProfile()" role="menuitem" tabindex="0" onkeydown="if(event.key==='Enter'){closeDropdown();openMyProfile();}">
             <i class="fa-solid fa-id-card"></i> My Profile
           </div>
-          <div class="hdr-drop-item" onclick="closeDropdown();openEditProfileDirect()">
+          <div class="hdr-drop-item" onclick="closeDropdown();openEditProfileDirect()" role="menuitem" tabindex="0" onkeydown="if(event.key==='Enter'){closeDropdown();openEditProfileDirect();}">
             <i class="fa-solid fa-pen-to-square"></i> Edit Profile
           </div>
-          <div class="hdr-drop-item " onclick="closeDropdown();downloadMemberIDCard()">
+          <div class="hdr-drop-item " onclick="closeDropdown();downloadMemberIDCard()" role="menuitem" tabindex="0" onkeydown="if(event.key==='Enter'){closeDropdown();downloadMemberIDCard();}">
             <i class="fa-solid fa-address-card"></i> ID Card
           </div>
-          <div class="hdr-drop-item danger" onclick="logout()">
+          <div class="hdr-drop-item danger" onclick="logout()" role="menuitem" tabindex="0" onkeydown="if(event.key==='Enter'){logout();}">
             <i class="fa-solid fa-power-off"></i> Logout
           </div>
         </div>
@@ -2269,12 +2509,12 @@
     </div>
   </header>
 
-  <div class="main">
+  <div class="main" role="main">
 
     <!-- HERO -->
     <div class="hero">
-      <!-- Skeleton shown while data loads -->
-      <div id="heroSkeleton">
+    <!-- Skeleton shown while data loads -->
+    <div id="heroSkeleton" aria-hidden="true">
         <div class="hero-row">
           <div>
             <!-- label line -->
@@ -2299,7 +2539,7 @@
         </div>
       </div>
       <!-- Real content hidden until data arrives -->
-      <div id="heroContent" style="display:none;">
+      <div id="heroContent" style="display:none;" role="region" aria-label="Your contribution summary">
         <div class="hero-row">
           <div>
             <div class="hero-label">Donated This Year (<span id="heroYearLabel">2025</span>)</div>
@@ -2325,19 +2565,19 @@
     <div class="qa-row-wrap">
     <div class="qa-row">
       <button class="qa-btn qa-gold" id="btnAnnualReceipt"
-        onclick="_btnLoad(this);exportYearStatementPDF().finally(()=>_btnDone(document.getElementById('btnAnnualReceipt')))" title="Download your annual receipt — useful for tax records">
+        onclick="_btnLoad(this);exportYearStatementPDF().finally(()=>_btnDone(document.getElementById('btnAnnualReceipt')))" title="Download your annual receipt — useful for tax records" aria-label="Download annual receipt PDF">
         <i class="fa-solid fa-file-invoice"></i> Annual Receipt
       </button>
       <button class="qa-btn qa-dark" id="btnNewPayment"
-        onclick="_openMenuSection('panelPayment')">
+        onclick="_openMenuSection('panelPayment')" aria-label="Open submit payment form">
         <i class="fa-solid fa-hand-holding-dollar"></i> New Payment
       </button>
       <button class="qa-btn qa-ghost" id="btnFullPDF"
-        onclick="_btnLoad(this);exportPDF().finally(()=>_btnDone(document.getElementById('btnFullPDF')))">
+        onclick="_btnLoad(this);exportPDF().finally(()=>_btnDone(document.getElementById('btnFullPDF')))" aria-label="Download full contributions PDF">
         <i class="fa-solid fa-file-pdf"></i> Full PDF
       </button>
       <button class="qa-btn qa-ghost"
-        onclick="_openMenuSection('panelRecords')">
+        onclick="_openMenuSection('panelRecords')" aria-label="Open search and filter records">
         <i class="fa-solid fa-magnifying-glass"></i> Search
       </button>
     </div><!-- /.qa-row -->
@@ -2350,26 +2590,26 @@
     <div id="broadcastContainer"></div>
 
     <!-- RECENT ACTIVITY -->
-    <div class="sec-lbl"><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</div>
-    <div class="card" style="margin-bottom:14px;overflow:hidden;">
+    <div class="sec-lbl"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Recent Activity</div>
+    <div class="card" style="margin-bottom:14px;overflow:hidden;" role="region" aria-label="Recent activity">
       <div class="ra-list" id="recentActivityList">
         <div style="padding:28px 20px;text-align:center;">
           <div style="width:36px;height:36px;border:3px solid var(--gold-dim);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px;"></div>
           <div style="font-size:12px;color:var(--ink-faint);font-weight:500;">Loading activity…</div>
         </div>
       </div>
-      <div class="ra-view-all" onclick="_openMenuSection('panelRecords')">
+      <div class="ra-view-all" onclick="_openMenuSection('panelRecords')" tabindex="0" role="button" aria-label="View all contribution records" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_openMenuSection('panelRecords');}">
         View all records <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>
       </div>
     </div>
 
     <!-- MENU -->
-    <div class="sec-lbl"><i class="fa-solid fa-list-ul"></i> Menu</div>
+    <div class="sec-lbl"><i class="fa-solid fa-list-ul" aria-hidden="true"></i> Menu</div>
     <div class="menu-grid" id="mainMenu">
 
       <!-- My Contributions -->
       <div class="menu-acc-wrap">
-        <div class="menu-item" id="accBtn-panelRecords" onclick="_toggleAccordion('panelRecords')">
+        <div class="menu-item" id="accBtn-panelRecords" onclick="_toggleAccordion('panelRecords')" tabindex="0" role="button" aria-expanded="false" aria-controls="accBody-panelRecords" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_toggleAccordion('panelRecords');}"  >
           <div class="menu-item-left">
             <div class="menu-icon" style="background:rgba(34,197,94,0.12);">💳</div>
             <div>
@@ -2389,7 +2629,7 @@
 
       <!-- Submit Payment -->
       <div class="menu-acc-wrap">
-        <div class="menu-item" id="accBtn-panelPayment" onclick="_toggleAccordion('panelPayment')">
+        <div class="menu-item" id="accBtn-panelPayment" onclick="_toggleAccordion('panelPayment')" tabindex="0" role="button" aria-expanded="false" aria-controls="accBody-panelPayment" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_toggleAccordion('panelPayment');}" >
           <div class="menu-item-left">
             <div class="menu-icon" style="background:rgba(247,160,26,0.12);">📋</div>
             <div>
@@ -2409,7 +2649,7 @@
 
       <!-- Statistics -->
       <div class="menu-acc-wrap">
-        <div class="menu-item" id="accBtn-panelStats" onclick="_toggleAccordion('panelStats')">
+        <div class="menu-item" id="accBtn-panelStats" onclick="_toggleAccordion('panelStats')" tabindex="0" role="button" aria-expanded="false" aria-controls="accBody-panelStats" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_toggleAccordion('panelStats');}" >
           <div class="menu-item-left">
             <div class="menu-icon" style="background:rgba(99,102,241,0.1);">📊</div>
             <div>
@@ -2426,7 +2666,7 @@
 
       <!-- Events & Festivals -->
       <div class="menu-acc-wrap">
-        <div class="menu-item" id="accBtn-panelEvents" onclick="_toggleAccordion('panelEvents')">
+        <div class="menu-item" id="accBtn-panelEvents" onclick="_toggleAccordion('panelEvents')" tabindex="0" role="button" aria-expanded="false" aria-controls="accBody-panelEvents" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_toggleAccordion('panelEvents');}" >
           <div class="menu-item-left">
             <div class="menu-icon" style="background:rgba(247,160,26,0.1);">📅</div>
             <div>
@@ -2446,7 +2686,7 @@
 
       <!-- Feedback -->
       <div class="menu-acc-wrap">
-        <div class="menu-item" id="accBtn-panelFeedback" onclick="_toggleAccordion('panelFeedback')">
+        <div class="menu-item" id="accBtn-panelFeedback" onclick="_toggleAccordion('panelFeedback')" tabindex="0" role="button" aria-expanded="false" aria-controls="accBody-panelFeedback" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_toggleAccordion('panelFeedback');}" >
           <div class="menu-item-left">
             <div class="menu-icon" style="background:rgba(59,130,246,0.1);">💬</div>
             <div>
@@ -2463,7 +2703,7 @@
 
       <!-- Temple Contact -->
       <div class="menu-acc-wrap">
-        <div class="menu-item" id="accBtn-panelContact" onclick="_toggleAccordion('panelContact')">
+        <div class="menu-item" id="accBtn-panelContact" onclick="_toggleAccordion('panelContact')" tabindex="0" role="button" aria-expanded="false" aria-controls="accBody-panelContact" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_toggleAccordion('panelContact');}" >
           <div class="menu-item-left">
             <div class="menu-icon" style="background:rgba(34,197,94,0.1);">📞</div>
             <div>
@@ -2780,12 +3020,12 @@
   </div><!-- /main -->
 
   <!-- ═══ BOTTOM SHEET ═══ -->
-  <div class="bs-overlay" id="bsOverlay" onclick="_closeSheet()"></div>
-  <div class="bs-sheet" id="bsSheet">
-    <div class="bs-handle-bar" id="bsHandle"></div>
+  <div class="bs-overlay" id="bsOverlay" onclick="_closeSheet()" aria-hidden="true"></div>
+  <div class="bs-sheet" id="bsSheet" role="dialog" aria-modal="true" aria-labelledby="bsTitle">
+    <div class="bs-handle-bar" id="bsHandle" aria-hidden="true"></div>
     <div class="bs-header">
       <div class="bs-title" id="bsTitle"><i class="fa-solid fa-list-ul"></i> Menu</div>
-      <button class="bs-close" onclick="_closeSheet()" title="Close">✕</button>
+      <button class="bs-close" onclick="_closeSheet()" title="Close" aria-label="Close panel">✕</button>
     </div>
     <div class="bs-body" id="bsBody">
       <!-- panel content injected here dynamically -->
@@ -2793,13 +3033,13 @@
   </div>
 
   <!-- Pull to refresh indicator -->
-  <div id="ptr-indicator">
+  <div id="ptr-indicator" aria-hidden="true">
     <div class="ptr-spin" id="ptrSpinner"></div>
     <span id="ptrText">Pull to refresh</span>
   </div>
 
   <!-- Scroll to top button -->
-  <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">
+  <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Scroll back to top">
     <i class="fa-solid fa-chevron-up"></i>
   </button>
 
@@ -2852,11 +3092,11 @@
       } catch(e) {}
     })();
     window.addEventListener("pageshow", () => {
-      let s = JSON.parse(localStorage.getItem("session"));
+      let s = JSON.parse(localStorage.getItem("session") || "null");
       if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null, "", "login.html"); location.replace("login.html"); }
     });
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) { let s = JSON.parse(localStorage.getItem("session")); if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null, "", "login.html"); location.replace("login.html"); } }
+      if (!document.hidden) { let s = JSON.parse(localStorage.getItem("session") || "null"); if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null, "", "login.html"); location.replace("login.html"); } }
     });
 
     // ── Device info collector (for audit logging — works on all mobile browsers)
@@ -2882,7 +3122,7 @@
 
     function logout() {
       try {
-        const s = JSON.parse(localStorage.getItem("session") || "{}");
+        const s = JSON.parse(localStorage.getItem("session") || "null");
         if (s && s.userId) {
           const devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
           const p = new URLSearchParams({
@@ -2903,8 +3143,17 @@
       localStorage.clear(); sessionStorage.clear(); setTimeout(() => { history.replaceState(null, "", "login.html"); location.replace("login.html"); }, 150);
     }
 
-    function toggleUserDropdown() { document.getElementById("userDropdown").classList.toggle("open"); }
-    function closeDropdown() { document.getElementById("userDropdown").classList.remove("open"); }
+    function toggleUserDropdown() {
+      const dd = document.getElementById("userDropdown");
+      const isOpen = dd.classList.toggle("open");
+      const avatar = document.getElementById("hdr_photo");
+      if (avatar) avatar.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+    function closeDropdown() {
+      document.getElementById("userDropdown").classList.remove("open");
+      const avatar = document.getElementById("hdr_photo");
+      if (avatar) avatar.setAttribute("aria-expanded", "false");
+    }
     document.addEventListener("click", (e) => { if (!e.target.closest(".hdr-avatar-wrap")) closeDropdown(); });
 
     let users = [], types = [], occasions = [], data = [], allContributions = [], allGoals = [];
@@ -2952,6 +3201,8 @@
       const name = myProfile?.Name || s.name;
       document.getElementById("hdr_name").innerText = name;
       document.getElementById("hdr_drop_name").innerText = name;
+      const roleEl = document.getElementById("hdr_drop_role");
+      if (roleEl) roleEl.textContent = myProfile?.Role || s.role || "Member";
       const rawUrl = myProfile?.PhotoURL || s.photoURL || "";
       const url = _fixDrivePhotoUrl(rawUrl);
       _loadPhotoSmooth(document.getElementById("hdr_photo"), url, name, 40);
@@ -2961,7 +3212,8 @@
     let _pendingCroppedB64 = "";
 
     function openMyProfile() {
-      let s = JSON.parse(localStorage.getItem("session"));
+      let s = JSON.parse(localStorage.getItem("session") || "null");
+      if (!s) { toast("Session expired. Please log in again.", "error"); return; }
       let myProfile = users.find(u => String(u.UserId) === String(s.userId));
       if (!myProfile) { toast("Profile data not loaded yet.", "warn"); return; }
       let photoSrc = _fixDrivePhotoUrl(myProfile.PhotoURL || "");
@@ -3012,7 +3264,8 @@
     }
 
     function openEditProfile(previewB64, prefillName, prefillEmail, prefillVillage, prefillAddress) {
-      let s = JSON.parse(localStorage.getItem("session"));
+      let s = JSON.parse(localStorage.getItem("session") || "null");
+      if (!s) { toast("Session expired. Please log in again.", "error"); return; }
       let myProfile = users.find(u => String(u.UserId) === String(s.userId));
       let dN = prefillName !== undefined ? prefillName : myProfile?.Name || s.name || "";
       let dE = prefillEmail !== undefined ? prefillEmail : myProfile?.Email || s.email || "";
@@ -3519,7 +3772,12 @@
       if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...'; }
 
       try {
-        var s = JSON.parse(localStorage.getItem("session") || "{}");
+        var s = JSON.parse(localStorage.getItem("session") || "null");
+        if (!s) {
+          _cpMsg("Session expired. Please log in again.");
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-key"></i> Update Password'; }
+          return;
+        }
         var myProfile = (typeof users !== "undefined" ? users : [])
           .find(function (u) { return String(u.UserId) === String(s.userId); });
 
@@ -3576,7 +3834,8 @@
     async function init() {
       try {
         let allData = (await getCached("getAllData")) || {};
-        let s = JSON.parse(localStorage.getItem("session"));
+        let s = JSON.parse(localStorage.getItem("session") || "null");
+        if (!s) { location.replace("login.html"); return; }
         users = allData.users || []; types = allData.types || []; occasions = allData.occasions || [];
         allContributions = allData.contributions || []; allGoals = allData.goals || [];
         data = allContributions.filter(c => String(c.UserId) === String(s.userId));
@@ -3599,7 +3858,7 @@
 
         // ── Everything else is deferred to panel open (records, stats, filters)
 
-      } catch (err) { toast("Failed to load: " + err.message, "error"); }
+      } catch (err) { console.error("[init] Failed to load dashboard data:", err); toast("Failed to load your data. Please refresh the page.", "error"); }
     }
 
     function renderGoals(goals) {
@@ -3622,10 +3881,16 @@
 
     async function renderBroadcasts() {
       const c = document.getElementById("broadcastContainer"); if (!c) return;
-      let bs = []; try { const r = await getData("getBroadcasts"); bs = Array.isArray(r) ? r : []; } catch (e) { bs = []; }
-      if (!bs || bs.length === 0) { c.innerHTML = ""; return; }
-      // Filter out items with no title and no message to avoid blank/undefined entries
-      bs = bs.filter(function (b) { return (b.title || "").trim() || (b.message || "").trim(); });
+      // Use cached data if available and not requesting a re-fetch
+      let bs = [];
+      if (c.dataset.bsCached) {
+        try { bs = JSON.parse(c.dataset.bsCached); } catch(e) { bs = []; }
+      } else {
+        try { const r = await getData("getBroadcasts"); bs = Array.isArray(r) ? r : []; } catch (e) { console.error("[renderBroadcasts] Fetch error:", e); bs = []; }
+        // Filter out blank entries before caching
+        bs = bs.filter(function (b) { return (b.title || "").trim() || (b.message || "").trim(); });
+        c.dataset.bsCached = JSON.stringify(bs);
+      }
       if (bs.length === 0) { c.innerHTML = ""; return; }
       const showAll = c.dataset.showAll === "1";
       const recent = showAll ? bs : bs.slice(0, 5);
@@ -3879,17 +4144,17 @@
       if (id === "panelRecords") {
         if (!_recordsLoaded) { loadFilters(); _recordsLoaded = true; }
         _initFilterState();
-        try { renderTable(data); } catch(e) {}
+        try { renderTable(data); } catch(e) { console.error("[panelRecords] renderTable failed:", e); }
       }
       if (id === "panelStats") {
         if (!_statsLoaded) { loadSummaryYears(); _statsLoaded = true; }
-        try { renderSummaries(); } catch(e) {}
+        try { renderSummaries(); } catch(e) { console.error("[panelStats] renderSummaries failed:", e); }
       }
       if (id === "panelEvents" && !_eventsLoaded) {
         _loadUserEvents(); _eventsLoaded = true;
       }
       if (id === "panelPayment") {
-        try { _loadUserContribRequests(); } catch(e) {}
+        try { _loadUserContribRequests(); } catch(e) { console.error("[panelPayment] _loadUserContribRequests failed:", e); }
       }
     }
 
@@ -3907,7 +4172,7 @@
         const prevBtn   = document.getElementById("accBtn-"  + _accActivePanel);
         const prevBody  = document.getElementById("accBody-" + _accActivePanel);
         const prevInner = document.getElementById("accInner-"+ _accActivePanel);
-        if (prevBtn)   prevBtn.classList.remove("acc-open");
+        if (prevBtn)   { prevBtn.classList.remove("acc-open"); prevBtn.setAttribute("aria-expanded", "false"); }
         if (prevBody)  { prevBody.style.maxHeight = "0"; prevBody.classList.remove("acc-open"); }
         if (prevInner) {
           // Put the panel back in its hidden holding spot
@@ -3926,6 +4191,7 @@
       if (isOpen) {
         // Close this one
         accBtn.classList.remove("acc-open");
+        accBtn.setAttribute("aria-expanded", "false");
         accBody.style.maxHeight = "0";
         accBody.classList.remove("acc-open");
         // Move panel back to hidden area
@@ -3941,6 +4207,7 @@
         accInner.appendChild(panel);
         panel.style.display = "block";
         accBtn.classList.add("acc-open");
+        accBtn.setAttribute("aria-expanded", "true");
         accBody.classList.add("acc-open");
         // Animate to content height
         accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
@@ -4001,7 +4268,7 @@
       const titleEl = document.getElementById("bsTitle");
       const meta = _bsPanelMeta[id] || { icon: "fa-list-ul", title: "Menu" };
 
-      titleEl.innerHTML = `<i class="fa-solid ${meta.icon}"></i> ${meta.title}`;
+      titleEl.innerHTML = `<i class="fa-solid ${meta.icon}"></i> <span>${meta.title}</span>`;
       body.innerHTML = "";
       body.appendChild(panel);
       panel.style.display = "block";
@@ -4011,6 +4278,7 @@
       const overlay = document.getElementById("bsOverlay");
       const sheet = document.getElementById("bsSheet");
       overlay.classList.add("open");
+      overlay.removeAttribute("aria-hidden");
       // force reflow so transition plays
       sheet.offsetHeight;
       sheet.classList.add("open");
@@ -4029,6 +4297,7 @@
       const overlay = document.getElementById("bsOverlay");
       sheet.classList.remove("open");
       overlay.classList.remove("open");
+      overlay.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
 
       // After animation ends, move panel back to main and hide it
@@ -4218,7 +4487,9 @@
       var recent = sorted.slice(0, 5);
       el.innerHTML = recent.map(function(c) {
         var type = (types.find(function(t) { return String(t.TypeId) === String(c.TypeId); }) || {}).TypeName || "Contribution";
-        return '<div class="ra-item" onclick="_openMenuSection(\'panelRecords\')">'
+        var status = String(c.Status || "Approved");
+        var statusColor = status.toLowerCase() === "approved" ? "var(--green)" : status.toLowerCase() === "pending" ? "#f59e0b" : "var(--red)";
+        return '<div class="ra-item" onclick="_openMenuSection(\'panelRecords\')" tabindex="0" role="button" aria-label="View contribution of ₹' + fmt(c.Amount) + ' for ' + escapeHtml(c.ForMonth || '') + '">'
           + '<div class="ra-dot ra-dot-gold"></div>'
           + '<div style="flex:1;min-width:0;">'
           + '<div class="ra-month">' + escapeHtml(c.ForMonth || "—") + " " + (c.Year || "") + '</div>'
@@ -4226,7 +4497,7 @@
           + '</div>'
           + '<div class="ra-right">'
           + '<div class="ra-amt">₹ ' + fmt(c.Amount) + '</div>'
-          + '<div class="ra-status" style="color:var(--green);font-size:10px;">Approved</div>'
+          + '<div class="ra-status" style="color:' + statusColor + ';font-size:10px;">' + escapeHtml(status) + '</div>'
           + '</div>'
           + '</div>';
       }).join("");
@@ -4385,9 +4656,14 @@
       try {
         if (window.QRCode) {
           const qrText = `Member: ${s.name} | Total: Rs.${tot.toLocaleString("en-IN")} | Records: ${filtered.length} | Date: ${new Date().toLocaleDateString("en-IN")} | Mandir: ${APP.name}, ${APP.location}`;
-          const qrDiv = document.createElement("div");
-          qrDiv.style.cssText = "position:absolute;left:-9999px;top:0;";
-          document.body.appendChild(qrDiv);
+          let qrDiv = document.getElementById("_qrOffscreen");
+          if (!qrDiv) {
+            qrDiv = document.createElement("div");
+            qrDiv.id = "_qrOffscreen";
+            qrDiv.style.cssText = "position:fixed;left:-9999px;top:0;visibility:hidden;pointer-events:none;";
+            document.body.appendChild(qrDiv);
+          }
+          qrDiv.innerHTML = "";
           new window.QRCode(qrDiv, { text: qrText, width: 80, height: 80, colorDark: "#2a0f00", colorLight: "#ffffff" });
           await new Promise(r => setTimeout(r, 300));
           const qrCanvas = qrDiv.querySelector("canvas");
@@ -4405,7 +4681,7 @@
             doc.setFontSize(6); doc.setTextColor(100, 116, 139);
             doc.text("Scan to verify", w - 20, lastY + 34, { align: "center" });
           }
-          document.body.removeChild(qrDiv);
+          // _qrOffscreen element is reused — no removal needed
         }
       } catch(e) { /* QR optional */ }
 
@@ -4985,6 +5261,7 @@
       localStorage.setItem("mandir_lang", _ULANG.current);
       const btn = document.getElementById("userLangBtn");
       if (btn) btn.textContent = _ULANG.current === "EN" ? "EN" : "हिं";
+      document.documentElement.lang = _ULANG.current === "HI" ? "hi" : "en";
       _applyUserLang(_ULANG.current);
     }
     function _applyUserLang(lang) {
@@ -5000,6 +5277,7 @@
       });
     }
     if (_ULANG.current === "HI") {
+      document.documentElement.lang = "hi";
       document.addEventListener("DOMContentLoaded", function () { _applyUserLang("HI"); const b = document.getElementById("userLangBtn"); if (b) b.textContent = "हिं"; });
     }
 
@@ -5112,7 +5390,7 @@
           });
           const slipData = await slipRes.json();
           if (slipData && slipData.status === "success") slipUrl = slipData.slipUrl || "";
-        } catch (e) { /* slip upload failed, continue without it */ }
+        } catch (e) { console.error("[submitPaymentRequest] Slip upload error:", e); /* slip upload failed, continue without it */ }
       }
 
       try {
@@ -5226,7 +5504,7 @@
               </div>
             </div>`;
         }).join("");
-      } catch (e) { section.style.display = "none"; }
+      } catch (e) { console.error("[loadUserContribRequests] Error:", e); section.style.display = "none"; }
       _contribReqsLoaded = true;
     }
 
@@ -5254,7 +5532,7 @@
         } else {
           toast("Could not delete: " + (res?.message || "Unknown error"), "error");
         }
-      } catch (err) { toast("Error: " + err.message, "error"); }
+      } catch (err) { console.error("[deleteContribRequest] Error:", err); toast("Error deleting request. Please try again.", "error"); }
     }
 
     // ── Preview slip in fullscreen modal — handles Google Drive thumbnail URLs
@@ -5430,7 +5708,7 @@
           });
           const slipData = await slipRes.json();
           if (slipData && slipData.status === "success") slipUrl = slipData.slipUrl || slipUrl;
-        } catch (e) { /* keep existing slip url */ }
+        } catch (e) { console.error("[saveEditContribRequest] Slip upload error:", e); /* keep existing slip url */ }
       }
 
       try {
