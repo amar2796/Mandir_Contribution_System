@@ -179,6 +179,76 @@
       background: #1a6fa0;
     }
 
+    /* ── Admin Avatar Dropdown ── */
+    .adm-hdr-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 50px;
+      background: #fff;
+      border-radius: 14px;
+      min-width: 200px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.16);
+      border: 1px solid rgba(0,0,0,0.07);
+      z-index: 999;
+      overflow: hidden;
+      animation: admDropFade .18s ease;
+    }
+    @keyframes admDropFade {
+      from { opacity:0; transform:translateY(-5px) scale(.98); }
+      to   { opacity:1; transform:translateY(0) scale(1); }
+    }
+    .adm-hdr-dropdown.open { display: block; }
+    .adm-drop-head {
+      background: linear-gradient(135deg, #141b2d 0%, #2a0f00 60%, #3c1a00 100%);
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid rgba(247,160,26,0.5);
+    }
+    .adm-drop-head img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid #f7a01a;
+      object-fit: cover;
+      background: #faeeda;
+      flex-shrink: 0;
+    }
+    .adm-drop-head-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+    }
+    .adm-drop-head-sub {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 1px;
+    }
+    .adm-drop-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #334155;
+      cursor: pointer;
+      transition: background .15s;
+      border-bottom: 1px solid #f4f5f8;
+    }
+    .adm-drop-item:last-child { border-bottom: none; }
+    .adm-drop-item:hover { background: #fdf8f0; color: #f7a01a; }
+    .adm-drop-item i { width: 16px; text-align: center; color: #f7a01a; font-size: 13px; }
+    .adm-drop-item.danger { color: #e74c3c; }
+    .adm-drop-item.danger i { color: #e74c3c; }
+    .adm-drop-item.danger:hover { background: #fff5f5; color: #e74c3c; }
+
     .btn-green {
       background: #27ae60;
       box-shadow: none;
@@ -2540,47 +2610,27 @@
                 display: block;
                 transition: transform 0.2s;
               " onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'" />
-            <div id="adminDropdown" style="
-                display: none;
-                position: absolute;
-                right: 0;
-                top: 50px;
-                background: #fff;
-                border-radius: 12px;
-                min-width: 132px;
-                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-                border: 1px solid #f0f0f0;
-                z-index: 999;
-                overflow: hidden;
-              ">
-              <div onclick="closeAdminDropdown();openAdminEditProfile()" style="
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
-                  padding: 12px 16px;
-                  font-size: 13px;
-                  font-weight: 600;
-                  color: #334155;
-                  cursor: pointer;
-                  border-bottom: 1px solid #f5f5f5;
-                  transition: background 0.15s;
-                " onmouseover="this.style.background='#fafaf5'" onmouseout="this.style.background=''">
-                <i class="fa-solid fa-user-pen" style="color: #f7a01a; width: 16px; text-align: center"></i>
-                My Profile
+            <div id="adminDropdown" class="adm-hdr-dropdown">
+              <div class="adm-drop-head">
+                <img id="adminDropAvatar" src=""
+                  onerror="this.onerror=null;this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'34\' height=\'34\'><circle cx=\'17\' cy=\'17\' r=\'17\' fill=\'%23f7a01a\'/><text x=\'17\' y=\'23\' text-anchor=\'middle\' fill=\'white\' font-size=\'15\' font-family=\'Arial\'>&#128100;</text></svg>'"
+                  alt="Admin avatar" />
+                <div>
+                  <div class="adm-drop-head-name" id="adminDropName">Admin</div>
+                  <div class="adm-drop-head-sub" id="adminDropRole">Admin</div>
+                </div>
               </div>
-              <div onclick="logout()" style="
-                  display: flex;
-                  align-items: center;
-                  gap: 10px;
-                  padding: 12px 16px;
-                  font-size: 13px;
-                  font-weight: 600;
-                  color: #e74c3c;
-                  cursor: pointer;
-                  transition: background 0.15s;
-                " onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
-                <i class="fa-solid fa-power-off" style="color: #e74c3c; width: 16px; text-align: center"></i>
-                Logout
+              <div class="adm-drop-item" onclick="closeAdminDropdown();openAdminMyProfile()">
+                <i class="fa-solid fa-id-card"></i> My Profile
+              </div>
+              <div class="adm-drop-item" onclick="closeAdminDropdown();openAdminEditProfileForm()">
+                <i class="fa-solid fa-pen-to-square"></i> Edit Profile
+              </div>
+              <div class="adm-drop-item" onclick="closeAdminDropdown();openAdminChangePassword()">
+                <i class="fa-solid fa-key"></i> Change Password
+              </div>
+              <div class="adm-drop-item danger" onclick="logout()">
+                <i class="fa-solid fa-power-off"></i> Logout
               </div>
             </div>
           </div>
@@ -4812,115 +4862,272 @@
 
     function toggleAdminDropdown() {
       let d = document.getElementById("adminDropdown");
-      d.style.display = d.style.display === "none" ? "block" : "none";
+      if (!d.classList.contains("open")) {
+        try {
+          let s = JSON.parse(localStorage.getItem("session") || "{}");
+          let nameEl = document.getElementById("adminDropName");
+          let roleEl = document.getElementById("adminDropRole");
+          let avEl   = document.getElementById("adminDropAvatar");
+          if (nameEl) nameEl.textContent = s.name || "Admin";
+          if (roleEl) roleEl.textContent = s.role || "Admin";
+          if (avEl)   avEl.src = document.getElementById("adminAvatar")?.src || "";
+        } catch(e) {}
+        d.classList.add("open");
+      } else {
+        d.classList.remove("open");
+      }
     }
     function closeAdminDropdown() {
-      document.getElementById("adminDropdown").style.display = "none";
+      document.getElementById("adminDropdown").classList.remove("open");
     }
     document.addEventListener("click", (e) => {
-      if (
-        !e.target.closest("#adminAvatar") &&
-        !e.target.closest("#adminDropdown")
-      ) {
+      if (!e.target.closest("#adminAvatar") && !e.target.closest("#adminDropdown")) {
         closeAdminDropdown();
       }
     });
     let _adminSelfCroppedB64 = "";
 
-    function openAdminEditProfile() {
-      let s = JSON.parse(localStorage.getItem("session"));
+    /* ── My Profile modal (view-only with action buttons) ── */
+    function openAdminMyProfile() {
+      let s = JSON.parse(localStorage.getItem("session") || "null");
+      if (!s) { toast("Session expired.", "error"); return; }
       let myProfile = users.find((u) => String(u.UserId) === String(s.userId));
       if (!myProfile) { toast("Profile data not loaded yet.", "warn"); return; }
       let photoSrc = myProfile.PhotoURL || "";
-      let fb = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
       if (photoSrc.includes("drive.google.com/uc")) { let m = photoSrc.match(/[?&]id=([^&]+)/); if (m) photoSrc = "https://lh3.googleusercontent.com/d/" + m[1]; }
+      let fb = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
       let st = String(myProfile.Status || "Active");
       let stC = st.toLowerCase() === "active" ? "#22c55e" : st.toLowerCase() === "pending" ? "#f59e0b" : "#ef4444";
+      let rowStyle = "border-bottom:1px solid #fef3e2;";
+      let rlStyle = "color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;";
+      let iconBox = (icon) => `<span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="${icon}" style="color:#f7a01a;font-size:11px;"></i></span>`;
       let html = `
-          <div class="_mhdr"><h3><i class="fa-solid fa-user-shield"></i> Admin Profile</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-          <div class="_mbdy" style="padding:0;">
-            <div style="background:linear-gradient(135deg,#141b2d,#334155);padding:26px 20px 20px;text-align:center;">
-              <img src="${escapeHtml(photoSrc)}" onerror="this.src='${fb}'"
-                style="width:82px;height:82px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#eee;display:block;margin:0 auto 10px;box-shadow:0 4px 16px rgba(247,160,26,.35);"/>
-              <div style="color:#f7a01a;font-size:1.05rem;font-weight:700;margin-bottom:8px;">${escapeHtml(myProfile.Name || "—")}</div>
-              <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
-                <span style="background:${stC};color:#fff;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:700;">${escapeHtml(st)}</span>
-                <span style="background:rgba(255,255,255,.12);color:#94a3b8;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:600;">${escapeHtml(myProfile.Role || "Admin")}</span>
-              </div>
-            </div>
-            <div style="padding:8px 20px 14px;">
-              <div class="_row"><span class="_rl"><i class="fa-solid fa-mobile-screen" style="width:14px;color:#f7a01a;"></i> Mobile</span><span class="_rv">${escapeHtml(String(myProfile.Mobile || "—"))}</span></div>
-              <div class="_row"><span class="_rl"><i class="fa-solid fa-envelope" style="width:14px;color:#f7a01a;"></i> Email</span><span class="_rv" style="word-break:break-all;">${escapeHtml(myProfile.Email || "—")}</span></div>
-              <div class="_row"><span class="_rl"><i class="fa-regular fa-id-badge" style="width:14px;color:#f7a01a;"></i> Admin ID</span><span class="_rv" style="font-family:monospace;font-size:12px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
+        <div class="_mhdr" style="background:linear-gradient(135deg,#141b2d 0%,#2a0f00 60%,#3c1a00 100%);border-bottom:2px solid rgba(247,160,26,0.35);">
+          <h3 style="color:#fff;display:flex;align-items:center;gap:8px;">
+            <span style="width:28px;height:28px;background:rgba(247,160,26,0.18);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-id-card" style="color:#f7a01a;font-size:13px;"></i></span> My Profile
+          </h3>
+          <button class="_mcls" onclick="closeModal()" style="color:rgba(255,255,255,0.6);font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:0;">×</button>
+        </div>
+        <div class="_mbdy" style="padding:0;">
+          <div style="background:linear-gradient(180deg,#141b2d 0%,#2a0f00 60%,#3c1a00 100%);padding:26px 20px 20px;text-align:center;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(247,160,26,0.15),transparent 70%);border-radius:50%;pointer-events:none;"></div>
+            <div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(247,160,26,0.4),transparent);"></div>
+            <img src="${escapeHtml(photoSrc)}" onerror="this.src='${fb}'"
+              style="width:82px;height:82px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#eee;display:block;margin:0 auto 10px;box-shadow:0 4px 20px rgba(247,160,26,0.45);"/>
+            <div style="color:#f7a01a;font-size:1.05rem;font-weight:700;margin-bottom:8px;">${escapeHtml(myProfile.Name || "—")}</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+              <span style="background:${stC};color:#fff;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.2);">${escapeHtml(st)}</span>
+              <span style="background:rgba(255,255,255,.1);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:3px 14px;font-size:11px;font-weight:600;">${escapeHtml(myProfile.Role || "Admin")}</span>
             </div>
           </div>
-          <div class="_mft">
-            <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>
-            <button class="_mbtn" style="background:#f7a01a;" onclick="closeModal();openAdminEditProfileForm()"><i class="fa-solid fa-user-pen"></i> Edit Profile</button>
-          </div>`;
+          <div style="padding:10px 20px 16px;background:#fff;">
+            <div class="_row" style="${rowStyle}"><span class="_rl" style="${rlStyle}">${iconBox("fa-solid fa-mobile-screen")} Mobile</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(String(myProfile.Mobile || "—"))}</span></div>
+            <div class="_row" style="${rowStyle}"><span class="_rl" style="${rlStyle}">${iconBox("fa-solid fa-envelope")} Email</span><span class="_rv" style="word-break:break-all;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Email || "—")}</span></div>
+            ${myProfile.Village ? `<div class="_row" style="${rowStyle}"><span class="_rl" style="${rlStyle}">${iconBox("fa-solid fa-map-pin")} Village</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Village)}</span></div>` : ""}
+            ${myProfile.Address ? `<div class="_row" style="${rowStyle}"><span class="_rl" style="${rlStyle}">${iconBox("fa-solid fa-location-dot")} Address</span><span class="_rv" style="white-space:pre-wrap;text-align:right;max-width:220px;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Address)}</span></div>` : ""}
+            <div class="_row"><span class="_rl" style="${rlStyle}">${iconBox("fa-solid fa-id-card")} Admin ID</span><span class="_rv" style="font-family:monospace;font-size:12px;font-weight:700;color:#3c1a00;letter-spacing:.5px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
+          </div>
+        </div>
+        <div class="_mft" style="flex-wrap:wrap;gap:8px;border-top:2px solid rgba(247,160,26,0.15);background:linear-gradient(90deg,rgba(247,160,26,0.04),transparent);">
+          <button class="_mbtn" style="background:#64748b;box-shadow:none;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>
+          <button class="_mbtn" style="background:linear-gradient(135deg,#2a0f00,#3c1a00);box-shadow:0 3px 10px rgba(42,15,0,0.3);" onclick="closeModal();openAdminChangePassword()"><i class="fa-solid fa-key" style="color:#f7a01a;"></i> Change Password</button>
+          <button class="_mbtn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);box-shadow:0 3px 10px rgba(247,160,26,0.35);" onclick="closeModal();openAdminEditProfileForm()"><i class="fa-solid fa-user-pen"></i> Edit Profile</button>
+        </div>`;
       openModal(html, "460px");
     }
 
-    function openAdminEditProfileForm(previewB64, prefillName, prefillEmail) {
-      let s = JSON.parse(localStorage.getItem("session"));
+    /* ── Edit Profile modal ── */
+    function openAdminEditProfileForm(previewB64, prefillName, prefillEmail, prefillVillage, prefillAddress) {
+      let s = JSON.parse(localStorage.getItem("session") || "null");
+      if (!s) { toast("Session expired.", "error"); return; }
       let myProfile = users.find((u) => String(u.UserId) === String(s.userId));
-      let displayName = prefillName !== undefined ? prefillName : myProfile?.Name || s.name || "";
-      let displayEmail = prefillEmail !== undefined ? prefillEmail : myProfile?.Email || s.email || "";
       let photoSrc = previewB64 || myProfile?.PhotoURL || "";
-      let fallbackSvg = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
+      if (!previewB64 && photoSrc.includes("drive.google.com/uc")) { let m = photoSrc.match(/[?&]id=([^&]+)/); if (m) photoSrc = "https://lh3.googleusercontent.com/d/" + m[1]; }
+      let dN = prefillName     !== undefined ? prefillName     : myProfile?.Name    || s.name  || "";
+      let dE = prefillEmail    !== undefined ? prefillEmail    : myProfile?.Email   || s.email || "";
+      let dV = prefillVillage  !== undefined ? prefillVillage  : myProfile?.Village || "";
+      let dA = prefillAddress  !== undefined ? prefillAddress  : myProfile?.Address || "";
+      let fb = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
       let html = `
-          <div class="_mhdr"><h3><i class="fa-solid fa-user-shield"></i> Edit Admin Profile</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-          <div class="_mbdy" style="text-align:center;">
-            <div style="position:relative;width:88px;margin:0 auto 10px;">
-              <img id="adminPhotoPreview" src="${escapeHtml(photoSrc)}" onerror="this.src='${fallbackSvg}'"
-                style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#faeeda;display:block;margin-bottom:0;box-shadow:0 4px 14px rgba(247,160,26,0.25);"/>
-              <div onclick="document.getElementById('adminPhotoFile').click()" style="position:absolute;bottom:2px;right:2px;width:26px;height:26px;background:#f7a01a;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.2);border:2px solid white;" title="Change Photo">
-                <i class="fa-solid fa-camera" style="color:white;font-size:11px;"></i>
-              </div>
-            </div>
-            <input type="file" id="adminPhotoFile" accept="image/*" style="display:none;" onchange="handleAdminSelfPhotoSelected(this)"/>
-            <div style="text-align:left;margin-top:6px;">
-              <label class="_fl">Full Name</label>
-              <input class="_fi" id="asp_name" value="${escapeHtml(displayName)}" placeholder="Your name"/>
-              <label class="_fl">Email</label>
-              <input class="_fi" id="asp_email" type="email" value="${escapeHtml(displayEmail)}" placeholder="your@email.com"/>
-              <label class="_fl">Mobile <span style="color:#bbb;font-weight:400;font-size:10px;">(read-only)</span></label>
-              <input class="_fi" value="${escapeHtml(String(myProfile?.Mobile || ""))}" readonly style="background:#f8f8f8;color:#aaa;cursor:not-allowed;"/>
+        <div class="_mhdr" style="background:linear-gradient(135deg,#141b2d 0%,#2a0f00 60%,#3c1a00 100%);border-bottom:2px solid rgba(247,160,26,0.35);">
+          <h3 style="color:#fff;display:flex;align-items:center;gap:8px;">
+            <span style="width:28px;height:28px;background:rgba(247,160,26,0.18);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-user-pen" style="color:#f7a01a;font-size:13px;"></i></span> Edit Profile
+          </h3>
+          <button class="_mcls" onclick="closeModal()" style="color:rgba(255,255,255,0.6);font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:0;">×</button>
+        </div>
+        <div class="_mbdy" style="text-align:center;">
+          <div style="position:relative;width:88px;margin:0 auto 10px;">
+            <img id="adminPhotoPreview" src="${escapeHtml(photoSrc)}" onerror="this.src='${fb}'"
+              style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#faeeda;display:block;margin-bottom:0;box-shadow:0 4px 14px rgba(247,160,26,0.25);"/>
+            <div onclick="document.getElementById('adminPhotoFile').click()" style="position:absolute;bottom:2px;right:2px;width:28px;height:28px;background:#f7a01a;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);border:2.5px solid white;" title="Change Photo">
+              <i class="fa-solid fa-camera" style="color:white;font-size:11px;"></i>
             </div>
           </div>
-          <div class="_mft">
-            <button class="_mbtn" style="background:#999;" onclick="closeModal();_adminSelfCroppedB64='';">Cancel</button>
-            <button class="_mbtn" style="background:#f7a01a;" onclick="saveAdminProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
-          </div>`;
+          <p style="font-size:11px;color:#aaa;margin:0 0 14px;">Tap the camera icon to change photo</p>
+          <input type="file" id="adminPhotoFile" accept="image/*" style="display:none;" onchange="handleAdminSelfPhotoSelected(this)"/>
+          <div style="text-align:left;">
+            <label class="_fl">Full Name</label>
+            <input class="_fi" id="asp_name" value="${escapeHtml(dN)}" placeholder="Your name"/>
+            <label class="_fl">Email</label>
+            <input class="_fi" id="asp_email" type="email" value="${escapeHtml(dE)}" placeholder="your@email.com"/>
+            <label class="_fl">Mobile Number</label>
+            <div style="background:#f8f8f8;border:1.5px solid #eee;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i class="fa-solid fa-mobile-screen" style="color:#f7a01a;font-size:13px;"></i>
+                <span style="color:#555;font-size:13px;font-weight:600;letter-spacing:1px;">${escapeHtml(String(myProfile?.Mobile || "—"))}</span>
+              </div>
+              <span style="color:#aaa;font-size:11px;font-weight:500;">(read-only)</span>
+            </div>
+            <label class="_fl">Village</label>
+            <input class="_fi" id="asp_village" value="${escapeHtml(dV)}" placeholder="Village name"/>
+            <label class="_fl">Address</label>
+            <textarea class="_fi" id="asp_address" rows="2" placeholder="Full address" style="resize:vertical;min-height:52px;display:block;background:#fafafa;color:#333;cursor:text;">${escapeHtml(dA)}</textarea>
+            <label class="_fl">Password</label>
+            <div style="background:#f8f8f8;border:1.5px solid #eee;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <span style="color:#aaa;letter-spacing:2px;font-size:14px;">••••••••</span>
+              <span onclick="closeModal();openAdminChangePassword()" style="color:#3b82f6;font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap;">
+                <i class="fa-solid fa-key" style="margin-right:3px;"></i>Change
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="_mft" style="border-top:2px solid rgba(247,160,26,0.15);background:linear-gradient(90deg,rgba(247,160,26,0.04),transparent);">
+          <button class="_mbtn" style="background:#64748b;box-shadow:none;" onclick="closeModal();_adminSelfCroppedB64='';">Cancel</button>
+          <button class="_mbtn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);box-shadow:0 3px 10px rgba(247,160,26,0.35);" onclick="saveAdminProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
+        </div>`;
       openModal(html, "460px");
     }
 
     function handleAdminSelfPhotoSelected(input) {
       let file = input.files[0];
       if (!file) return;
-      if (file.size > 5 * 1024 * 1024) {
-        toast("Photo must be under 5MB.", "error");
-        return;
-      }
-      let savedName = document.getElementById("asp_name")?.value || "";
-      let savedEmail = document.getElementById("asp_email")?.value || "";
+      if (file.size > 5 * 1024 * 1024) { toast("Photo must be under 5MB.", "error"); return; }
+      let savedName    = document.getElementById("asp_name")?.value    || "";
+      let savedEmail   = document.getElementById("asp_email")?.value   || "";
+      let savedVillage = document.getElementById("asp_village")?.value || "";
+      let savedAddress = document.getElementById("asp_address")?.value || "";
       openCropModal(file, function (base64) {
         _adminSelfCroppedB64 = base64;
-        openAdminEditProfileForm(base64, savedName, savedEmail);
+        openAdminEditProfileForm(base64, savedName, savedEmail, savedVillage, savedAddress);
       });
+    }
+
+    /* ── Change Password modal ── */
+    function openAdminChangePassword() {
+      const html = `
+        <div class="_mhdr" style="background:linear-gradient(135deg,#141b2d 0%,#2a0f00 60%,#3c1a00 100%);border-bottom:2px solid rgba(247,160,26,0.35);">
+          <h3 style="color:#fff;display:flex;align-items:center;gap:8px;">
+            <span style="width:28px;height:28px;background:rgba(247,160,26,0.18);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-key" style="color:#f7a01a;font-size:13px;"></i></span> Change Password
+          </h3>
+          <button class="_mcls" onclick="closeModal()" style="color:rgba(255,255,255,0.6);font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:0;">×</button>
+        </div>
+        <div class="_mbdy">
+          <p style="font-size:12.5px;color:#64748b;margin:0 0 16px;line-height:1.6;">
+            Enter your current password to verify, then set a new one.<br>Minimum 6 characters.
+          </p>
+          <label class="_fl">Current Password</label>
+          <div style="position:relative;margin-bottom:14px;">
+            <input class="_fi" type="password" id="adm_cp_current" placeholder="Your current password" style="margin-bottom:0;padding-right:54px;"/>
+            <span onclick="_admCpToggle('adm_cp_current',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
+          </div>
+          <label class="_fl">New Password</label>
+          <div style="position:relative;margin-bottom:6px;">
+            <input class="_fi" type="password" id="adm_cp_new" placeholder="New password (min 6 chars)" style="margin-bottom:0;padding-right:54px;" oninput="_admCpStrength(this.value)"/>
+            <span onclick="_admCpToggle('adm_cp_new',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
+          </div>
+          <div id="adm_cp_strength" style="height:4px;border-radius:2px;background:#f1f5f9;margin:4px 0 12px;overflow:hidden;">
+            <div id="adm_cp_strength_bar" style="height:100%;width:0%;border-radius:2px;transition:width .3s,background .3s;"></div>
+          </div>
+          <label class="_fl">Confirm New Password</label>
+          <div style="position:relative;margin-bottom:6px;">
+            <input class="_fi" type="password" id="adm_cp_confirm" placeholder="Repeat new password" style="margin-bottom:0;padding-right:54px;"/>
+            <span onclick="_admCpToggle('adm_cp_confirm',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
+          </div>
+          <div id="adm_cp_msg" style="font-size:12px;min-height:18px;margin-bottom:4px;"></div>
+        </div>
+        <div class="_mft" style="border-top:2px solid rgba(247,160,26,0.15);background:linear-gradient(90deg,rgba(247,160,26,0.04),transparent);">
+          <button class="_mbtn" style="background:#64748b;box-shadow:none;" onclick="closeModal()">Cancel</button>
+          <button class="_mbtn" id="adm_cp_save_btn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);box-shadow:0 3px 10px rgba(247,160,26,0.35);" onclick="saveAdminNewPassword()">
+            <i class="fa-solid fa-key"></i> Update Password
+          </button>
+        </div>`;
+      openModal(html, "420px");
+      setTimeout(() => { let el = document.getElementById("adm_cp_current"); if (el) el.focus(); }, 120);
+    }
+
+    function _admCpToggle(inputId, btn) {
+      let inp = document.getElementById(inputId);
+      if (!inp) return;
+      inp.type = inp.type === "password" ? "text" : "password";
+      btn.textContent = inp.type === "text" ? "Hide" : "Show";
+    }
+
+    function _admCpStrength(val) {
+      let bar = document.getElementById("adm_cp_strength_bar");
+      if (!bar) return;
+      let score = 0;
+      if (val.length >= 6)           score++;
+      if (val.length >= 10)          score++;
+      if (/[A-Z]/.test(val))         score++;
+      if (/[0-9]/.test(val))         score++;
+      if (/[^A-Za-z0-9]/.test(val))  score++;
+      let pct   = [0,25,50,70,85,100][Math.min(score,5)];
+      let color = score<=1?"#ef4444":score<=2?"#f59e0b":score<=3?"#3b82f6":"#22c55e";
+      bar.style.width = pct + "%";
+      bar.style.background = color;
+    }
+
+    function _admCpMsg(msg, color) {
+      let el = document.getElementById("adm_cp_msg");
+      if (el) { el.textContent = msg; el.style.color = color || "#ef4444"; }
+    }
+
+    async function saveAdminNewPassword() {
+      let currentVal = document.getElementById("adm_cp_current")?.value || "";
+      let newVal     = document.getElementById("adm_cp_new")?.value     || "";
+      let confirmVal = document.getElementById("adm_cp_confirm")?.value || "";
+      if (!currentVal)            { _admCpMsg("Please enter your current password."); return; }
+      if (newVal.length < 6)      { _admCpMsg("New password must be at least 6 characters."); return; }
+      if (newVal !== confirmVal)  { _admCpMsg("New passwords do not match."); return; }
+      if (newVal === currentVal)  { _admCpMsg("New password must be different from current."); return; }
+      let btn = document.getElementById("adm_cp_save_btn");
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...'; }
+      try {
+        let s = JSON.parse(localStorage.getItem("session") || "null");
+        if (!s) { _admCpMsg("Session expired."); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-key"></i> Update Password'; } return; }
+        let myProfile = users.find(u => String(u.UserId) === String(s.userId));
+        if (!myProfile) { _admCpMsg("Profile not loaded. Please refresh."); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-key"></i> Update Password'; } return; }
+        let currentHash = await sha256(currentVal);
+        let storedHash  = String(myProfile.Password || "").toLowerCase();
+        if (storedHash && storedHash.length === 64 && currentHash !== storedHash) {
+          _admCpMsg("Current password is incorrect.");
+          if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-key"></i> Update Password'; }
+          return;
+        }
+        let newHash = await sha256(newVal);
+        let res = await postData({ action: "changePassword", UserId: s.userId, OldPassword: currentHash, NewPassword: newHash });
+        if (res && res.status === "success") {
+          closeModal();
+          toast("✅ Password updated successfully!", "");
+        } else {
+          _admCpMsg(res?.message || "Current password is incorrect or update failed.");
+          if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-key"></i> Update Password'; }
+        }
+      } catch(err) {
+        _admCpMsg("Error: " + err.message);
+        let b = document.getElementById("adm_cp_save_btn");
+        if (b) { b.disabled=false; b.innerHTML='<i class="fa-solid fa-key"></i> Update Password'; }
+      }
     }
 
     async function saveAdminProfile() {
       let s = JSON.parse(localStorage.getItem("session"));
-      let myProfile = users.find(
-        (u) => String(u.UserId) === String(s.userId)
-      );
-      let name = document.getElementById("asp_name").value.trim();
-      let email = document.getElementById("asp_email").value.trim();
-      if (!name) {
-        toast("Name cannot be empty.", "error");
-        return;
-      }
+      let myProfile = users.find((u) => String(u.UserId) === String(s.userId));
+      let name    = (document.getElementById("asp_name")?.value    || "").trim();
+      let email   = (document.getElementById("asp_email")?.value   || "").trim();
+      let village = (document.getElementById("asp_village")?.value || "").trim();
+      let address = (document.getElementById("asp_address")?.value || "").trim();
+      if (!name) { toast("Name cannot be empty.", "error"); return; }
       let photoURL = myProfile?.PhotoURL || "";
       if (_adminSelfCroppedB64) {
         toast("Uploading photo...", "warn");
@@ -4929,13 +5136,11 @@
             method: "POST",
             body: JSON.stringify({
               action: "uploadAndSaveProfile",
-              UserId: s.userId,
-              Name: name,
-              Mobile: myProfile?.Mobile || "",
-              Role: s.role,
-              Password: "",
-              Email: email,
-              Status: "Active",
+              UserId: s.userId, Name: name,
+              Mobile: myProfile?.Mobile || "", Role: s.role,
+              Password: "", Email: email,
+              Village: village, Address: address,
+              Status: myProfile?.Status || "Active",
               AdminName: name,
               base64: _adminSelfCroppedB64,
               fileName: "Admin_" + s.userId + "_" + Date.now() + ".jpg",
@@ -4943,31 +5148,21 @@
             }),
           });
           let res = await response.json();
-          if (res.status === "success") {
-            photoURL = res.photoUrl;
-            toast("✅ Photo uploaded!");
-          } else
-            toast("Photo upload failed, profile still updating.", "warn");
-        } catch (e) {
-          toast("Photo upload error: " + e.message, "warn");
-        }
+          if (res.status === "success") { photoURL = res.photoUrl; toast("✅ Photo uploaded!"); }
+          else toast("Photo upload failed, profile still updating.", "warn");
+        } catch (e) { toast("Photo upload error: " + e.message, "warn"); }
       }
       try {
         let res = await postData({
           action: "updateUser",
-          UserId: s.userId,
-          Name: name,
-          Mobile: myProfile?.Mobile || "",
-          Role: s.role,
+          UserId: s.userId, Name: name,
+          Mobile: myProfile?.Mobile || "", Role: s.role,
           Status: myProfile?.Status || "Active",
-          Email: email,
-          Password: "",
-          PhotoURL: photoURL,
-          AdminName: name,
+          Email: email, Village: village, Address: address,
+          Password: "", PhotoURL: photoURL, AdminName: name,
         });
         if (res.status === "updated") {
-          s.name = name;
-          s.email = email;
+          s.name = name; s.email = email;
           s.expiry = Date.now() + 30 * 60 * 1000;
           localStorage.setItem("session", JSON.stringify(s));
           _adminSelfCroppedB64 = "";
