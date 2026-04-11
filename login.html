@@ -310,6 +310,18 @@
           <i class="icon fa-solid fa-map-pin" style="top:18px;transform:none;"></i>
           <input type="text" id="reg_address" placeholder="Street, locality, district..." maxlength="300" style="padding-left:44px;"/>
         </div>
+
+        <!-- Terms & Condition mandatory checkbox -->
+        <div id="tcRow" style="display:flex;align-items:flex-start;gap:9px;margin-bottom:16px;background:#fffbf5;border:1.5px solid #fde68a;border-radius:10px;padding:10px 12px;">
+          <input type="checkbox" id="reg_tc" style="width:16px;height:16px;accent-color:#f7a01a;cursor:pointer;flex-shrink:0;margin-top:2px;" disabled/>
+          <span style="font-size:12px;color:#78350f;line-height:1.55;">
+            I have read and agree to the
+            <span onclick="openTCModal()" style="color:#f7a01a;font-weight:700;cursor:pointer;text-decoration:underline;">Terms &amp; Conditions</span>
+            <span style="color:#e74c3c;"> *</span>
+          </span>
+        </div>
+        <div id="tcErrMsg" style="display:none;font-size:11px;color:#e74c3c;margin:-10px 0 12px;text-align:left;">Please read and accept the Terms &amp; Conditions to continue.</div>
+
         <button class="main-btn" id="regBtn" onclick="submitRegistration()">
           <i class="fa-solid fa-paper-plane"></i> Submit Registration
         </button>
@@ -335,6 +347,65 @@
     </div>
   </div>
 </div>
+
+<!-- ══ TERMS & CONDITIONS MODAL ══ -->
+<div id="tcModal" class="modal-overlay" style="display:none;">
+  <div class="modal-card" style="max-width:420px;">
+    <div class="modal-header">
+      <button class="close-btn" onclick="closeTCModal()">×</button>
+      <div class="modal-icon"><i class="fa-solid fa-file-shield" style="color:#f7a01a;"></i></div>
+      <h2>Terms &amp; Conditions</h2>
+      <span class="card-subtitle">Please read carefully before registering</span>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <!-- Scrollable content -->
+      <div id="tcScrollArea" style="max-height:300px;overflow-y:auto;padding:20px 24px 12px;border-bottom:1px solid #fef3c7;" onscroll="checkTCScroll()">
+        <div style="display:flex;align-items:center;gap:9px;background:#fff8ee;border:1.5px solid #fde68a;border-radius:10px;padding:11px 14px;margin-bottom:16px;">
+          <i class="fa-solid fa-shield-halved" style="color:#f7a01a;font-size:1.1rem;"></i>
+          <span style="font-size:12.5px;font-weight:700;color:#78350f;">Shree Hanuman Mandir — Privacy &amp; Usage Policy</span>
+        </div>
+        <div style="font-size:13px;color:#444;line-height:1.75;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-weight:700;color:#78350f;margin-bottom:4px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-user-shield" style="color:#f7a01a;"></i> Your Personal Data</div>
+            <p style="margin:0;">Your personal information (name, mobile, email, address) is collected <b>only</b> for temple record-keeping and communication. We do <b>not</b> share, sell, or disclose your personal details to any third party outside the temple trust.</p>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#78350f;margin-bottom:4px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-lock" style="color:#f7a01a;"></i> Password Security</div>
+            <p style="margin:0;">Your password is stored in <b>encrypted form</b> (SHA-256 hash). It is never stored or transmitted as plain text. No admin or staff member can view your password. Keep your password private.</p>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#78350f;margin-bottom:4px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-people-arrows" style="color:#f7a01a;"></i> Member Privacy</div>
+            <p style="margin:0;">Member details are <b>not shared</b> between members. You can only see your own contribution history and profile. Other members' personal or financial details are strictly confidential.</p>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#78350f;margin-bottom:4px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-envelope-open-text" style="color:#f7a01a;"></i> Communication</div>
+            <p style="margin:0;">Your email may be used to send you receipts, OTP verification codes, and important temple announcements. You will not receive spam or unrelated messages.</p>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#78350f;margin-bottom:4px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-circle-check" style="color:#f7a01a;"></i> Account Approval</div>
+            <p style="margin:0;">Registration requests are reviewed by the temple admin. Accounts are activated only after approval. The temple trust reserves the right to approve or decline any registration request.</p>
+          </div>
+          <div style="background:#fef3c7;border-radius:9px;padding:10px 13px;font-size:12px;color:#92400e;font-weight:600;margin-top:4px;">
+            🙏 By accepting, you confirm you have read, understood, and agree to these terms. — Jai Shree Ram
+          </div>
+        </div>
+      </div>
+      <!-- Scroll hint -->
+      <div id="tcScrollHint" style="text-align:center;font-size:11px;color:#a16207;padding:8px 0 4px;background:#fffbf5;display:flex;align-items:center;justify-content:center;gap:5px;">
+        <i class="fa-solid fa-angles-down" style="animation:tcBounce 1.2s ease-in-out infinite;"></i> Scroll down to read all terms
+      </div>
+      <!-- Accept button — hidden until scrolled to bottom -->
+      <div id="tcAcceptArea" style="display:none;padding:14px 24px 18px;text-align:center;">
+        <button onclick="acceptTC()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;border:none;border-radius:10px;font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(247,160,26,0.35);">
+          <i class="fa-solid fa-circle-check"></i> I Accept the Terms &amp; Conditions
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes tcBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+</style>
 
 <div id="_tw"></div>
 
@@ -534,9 +605,37 @@ async function doLogin(){
     }else if(res.status==="pending"){
       setMsg("loginMsg","Your account is awaiting approval. You'll receive an email once the temple admin reviews your request.","pending");
     }else if(res.status==="error"){
-      setMsg("loginMsg","❌ "+(res.message||"Account issue."),"error");_loginFail();
+      // Show specific hint: was mobile not found, or password wrong?
+      const errMsg = (res.message||"").toLowerCase();
+      if(errMsg.includes("mobile") || errMsg.includes("not found") || errMsg.includes("no user") || errMsg.includes("not exist")){
+        setMsg("loginMsg","❌ Mobile number not registered. Please check your number.","error");
+        document.getElementById("mobile").classList.add("field-err");
+      } else if(errMsg.includes("password") || errMsg.includes("incorrect") || errMsg.includes("wrong")){
+        setMsg("loginMsg","❌ Incorrect password. Please check your password.","error");
+        document.getElementById("password").classList.add("field-err");
+      } else {
+        // Generic — highlight both fields with different hints
+        const mobVal = document.getElementById("mobile").value.trim();
+        if(!mobVal || !/^[6-9]\d{9}$/.test(mobVal)){
+          setMsg("loginMsg","❌ Please check your Mobile Number — it may be incorrect.","error");
+          document.getElementById("mobile").classList.add("field-err");
+        } else {
+          setMsg("loginMsg","❌ Incorrect password. Please check your password.","error");
+          document.getElementById("password").classList.add("field-err");
+        }
+      }
+      _loginFail();
     }else{
-      setMsg("loginMsg","❌ Invalid mobile number or password.","error");_loginFail();
+      // Fallback: guess based on field content
+      const mobVal = document.getElementById("mobile").value.trim();
+      if(!mobVal || !/^[6-9]\d{9}$/.test(mobVal)){
+        setMsg("loginMsg","❌ Please check your Mobile Number.","error");
+        document.getElementById("mobile").classList.add("field-err");
+      } else {
+        setMsg("loginMsg","❌ Incorrect password. Please check your password.","error");
+        document.getElementById("password").classList.add("field-err");
+      }
+      _loginFail();
     }
   }catch(err){
     setMsg("loginMsg","❌ "+(err.message||"Connection error."),"error");
@@ -548,6 +647,11 @@ async function doLogin(){
   }
 }
 document.addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
+// Clear field-err highlight when user edits login fields
+["mobile","password"].forEach(function(id){
+  const el=document.getElementById(id);
+  if(el)el.addEventListener("input",function(){el.classList.remove("field-err");});
+});
 
 // ══════════════════════════════════════════════════════════════════
 //  FORGOT PASSWORD — OTP FLOW
@@ -670,6 +774,11 @@ function openRegisterModal(){
   document.getElementById("regOtpEmail").value="";
   document.getElementById("regOtpCode") && (document.getElementById("regOtpCode").value="");
   document.getElementById("regOtpInputRow").style.display="none";
+  // Reset T&C checkbox and resend row
+  const tcCb=document.getElementById("reg_tc");
+  if(tcCb){tcCb.checked=false;tcCb.disabled=true;}
+  const tcErr=document.getElementById("tcErrMsg");if(tcErr)tcErr.style.display="none";
+  const resendRow=document.getElementById("resendOtpRow");if(resendRow)resendRow.style.display="none";
   window._regEmailVerified=false;window._regVerifiedEmail="";
   document.getElementById("registerModal").style.display="flex";
 }
@@ -684,6 +793,22 @@ async function submitRegistration(){
   const confirm=document.getElementById("reg_confirm").value;
   const village=document.getElementById("reg_village").value.trim();
   const address=document.getElementById("reg_address").value.trim();
+
+  // T&C must be accepted
+  const tcCb=document.getElementById("reg_tc");
+  if(!tcCb||!tcCb.checked){
+    const tcErr=document.getElementById("tcErrMsg");
+    if(tcErr){tcErr.style.display="block";}
+    // Shake the T&C row for attention
+    const tcRow=document.getElementById("tcRow");
+    if(tcRow){
+      tcRow.style.transition="transform .1s";
+      tcRow.style.transform="translateX(-4px)";
+      setTimeout(()=>{tcRow.style.transform="translateX(4px)";setTimeout(()=>{tcRow.style.transform="translateX(0)";},80);},80);
+    }
+    return;
+  }
+  const tcErr=document.getElementById("tcErrMsg");if(tcErr)tcErr.style.display="none";
 
   // Field-level validation
   let hasErr=false;
@@ -748,6 +873,33 @@ function _setForgotHeader(step){
 
 // ══ Y1: Registration email OTP verification ══
 let _regOtpTargetUserId = null;
+
+// ══ TERMS & CONDITIONS ══
+function openTCModal(){
+  document.getElementById("tcModal").style.display="flex";
+  // Reset scroll area
+  const sa=document.getElementById("tcScrollArea");
+  if(sa)sa.scrollTop=0;
+  document.getElementById("tcScrollHint").style.display="flex";
+  document.getElementById("tcAcceptArea").style.display="none";
+}
+function closeTCModal(){document.getElementById("tcModal").style.display="none";}
+function checkTCScroll(){
+  const sa=document.getElementById("tcScrollArea");
+  if(!sa)return;
+  // Show accept button when user has scrolled at least 85% of the content
+  if(sa.scrollTop+sa.clientHeight >= sa.scrollHeight*0.85){
+    document.getElementById("tcScrollHint").style.display="none";
+    document.getElementById("tcAcceptArea").style.display="block";
+  }
+}
+function acceptTC(){
+  const cb=document.getElementById("reg_tc");
+  if(cb){cb.checked=true;cb.disabled=false;}
+  const err=document.getElementById("tcErrMsg");if(err)err.style.display="none";
+  closeTCModal();
+  toast("✅ Terms accepted!");
+}
 
 async function sendRegistrationOTP() {
   const email = (document.getElementById("regOtpEmail")||{}).value.trim();

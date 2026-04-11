@@ -199,23 +199,28 @@
     .page {
       display: none;
       padding: 20px;
+      opacity: 0;
     }
 
     .page.active {
       display: block;
-      animation: fadeIn 0.4s ease;
+      animation: fadeIn 0.18s ease forwards;
+    }
+
+    .page.page-exit {
+      display: block;
+      animation: fadeOut 0.12s ease forwards;
+      pointer-events: none;
     }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-4px); }
     }
 
     .grid-layout {
@@ -862,6 +867,11 @@
     tbody tr:hover {
       background: #fffbf2 !important;
       box-shadow: inset 3px 0 0 #f7a01a;
+      cursor: default;
+    }
+
+    tbody tr.clickable-row:hover {
+      cursor: pointer;
     }
 
     .card:hover {
@@ -1701,6 +1711,11 @@
       color: #e2e8f0 !important;
     }
 
+    body.dark-mode .card-box h4,
+    body.dark-mode .card-box h2 {
+      color: #e2e8f0 !important;
+    }
+
     body.dark-mode .main {
       background: #0f172a !important;
     }
@@ -2237,37 +2252,41 @@
       <!-- HOME -->
       <div id="home" class="page active">
         <div class="grid-layout">
-          <div class="card-box">
-            <h4>Total Members</h4>
-            <h2 id="totalUsers" style="color: #334155">0</h2>
+          <!-- card: members -->
+          <div class="card-box" style="border-left-color:#6366f1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <h4 style="margin:0;">Total Members</h4>
+              <span style="width:34px;height:34px;border-radius:10px;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">👥</span>
+            </div>
+            <h2 id="totalUsers" style="color:#6366f1;margin:0;">0</h2>
+            <div id="trendUsers" style="font-size:11px;color:#94a3b8;margin-top:5px;">&nbsp;</div>
           </div>
-          <div class="card-box">
-            <h4>
-              Total Contributions
-              <span style="font-size: 11px; font-weight: 400; color: #aaa">(All Time)</span>
-            </h4>
-            <h2 id="totalContribution" style="color: #27ae60; font-size: 1.5rem">
-              ₹0
-            </h2>
+          <!-- card: contributions -->
+          <div class="card-box" style="border-left-color:#27ae60;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <h4 style="margin:0;">Total Contributions <span style="font-size:11px;font-weight:400;color:#aaa;">(All Time)</span></h4>
+              <span style="width:34px;height:34px;border-radius:10px;background:rgba(39,174,96,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">💰</span>
+            </div>
+            <h2 id="totalContribution" style="color:#27ae60;font-size:1.5rem;margin:0;">₹0</h2>
+            <div id="trendContrib" style="font-size:11px;color:#94a3b8;margin-top:5px;">&nbsp;</div>
           </div>
-          <div class="card-box">
-            <h4>
-              Total Expenses
-              <span style="font-size: 11px; font-weight: 400; color: #aaa">(All Time)</span>
-            </h4>
-            <h2 id="totalExpense" style="color: #e74c3c; font-size: 1.5rem">
-              ₹0
-            </h2>
+          <!-- card: expenses -->
+          <div class="card-box" style="border-left-color:#e74c3c;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <h4 style="margin:0;">Total Expenses <span style="font-size:11px;font-weight:400;color:#aaa;">(All Time)</span></h4>
+              <span style="width:34px;height:34px;border-radius:10px;background:rgba(231,76,60,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">💸</span>
+            </div>
+            <h2 id="totalExpense" style="color:#e74c3c;font-size:1.5rem;margin:0;">₹0</h2>
+            <div id="trendExpense" style="font-size:11px;color:#94a3b8;margin-top:5px;">&nbsp;</div>
           </div>
-          <div class="card-box">
-            <h4>
-              Overall Net Balance
-              <span style="font-size: 11px; font-weight: 400; color: #aaa">(All Time)</span>
-            </h4>
-            <h2 id="netBalance" style="color: #f7a01a; font-size: 1.5rem">
-              ₹0
-            </h2>
-            <div id="netBalanceBreakdown" style="margin-top:6px;min-height:16px;"></div>
+          <!-- card: net balance -->
+          <div class="card-box" style="border-left-color:#f7a01a;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <h4 style="margin:0;">Overall Net Balance <span style="font-size:11px;font-weight:400;color:#aaa;">(All Time)</span></h4>
+              <span style="width:34px;height:34px;border-radius:10px;background:rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">⚖️</span>
+            </div>
+            <h2 id="netBalance" style="color:#f7a01a;font-size:1.5rem;margin:0;">₹0</h2>
+            <div id="netBalanceBreakdown" style="margin-top:5px;min-height:16px;"></div>
           </div>
         </div>
       </div>
@@ -4470,14 +4489,20 @@
         : "auto";
     }
     function showPage(id, el) {
-      document
-        .querySelectorAll(".page")
-        .forEach((p) => p.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
+      const current = document.querySelector(".page.active");
+      const next = document.getElementById(id);
+      if (current && current !== next) {
+        current.classList.add("page-exit");
+        setTimeout(function () {
+          current.classList.remove("active", "page-exit");
+          next.classList.add("active");
+        }, 120);
+      } else {
+        document.querySelectorAll(".page").forEach(function (p) { p.classList.remove("active", "page-exit"); });
+        next.classList.add("active");
+      }
       if (el) {
-        document
-          .querySelectorAll(".sidebar li")
-          .forEach((l) => l.classList.remove("active-nav"));
+        document.querySelectorAll(".sidebar li").forEach(function (l) { l.classList.remove("active-nav"); });
         el.classList.add("active-nav");
       }
       if (window.innerWidth < 768) {
@@ -4485,9 +4510,7 @@
         document.querySelector(".overlay").classList.remove("active");
         document.body.style.overflow = "auto";
       }
-      // Load gallery when that page is opened
       if (id === "galleryAdminPage") loadGalleryAdmin();
-      // Load announcement history when that page is opened
       if (id === "announcementPage") loadAnnouncementAdmin();
     }
 
@@ -5083,7 +5106,7 @@
           9
         )}</tr>`.repeat(4);
       if (show) {
-        ["tb", "expenseRecordsBody", "userTable"].forEach((id) => {
+        ["tb", "expenseRecordsBody", "userTable", "goalTableBody", "reqTbody", "ys_tbody"].forEach((id) => {
           let el = document.getElementById(id);
           if (el && el.innerHTML.trim() === "") el.innerHTML = shimmerRow;
         });
@@ -5228,20 +5251,84 @@
       if (show) show.style.display = visibleId === "ys_table_card" ? "block" : (visibleId === "ys_loading" || visibleId === "ys_error" || visibleId === "ys_empty" ? "block" : "block");
     }
 
+    /* ── countUp: animates a numeric string from 0 to target over ~600ms ── */
+    function _countUp(el, targetText, color) {
+      if (!el) return;
+      const prefix = targetText.replace(/[\d,]+/, "").split(/\d/)[0] || "";
+      const numStr = targetText.replace(/[^0-9]/g, "");
+      const target = parseInt(numStr, 10);
+      if (isNaN(target) || target === 0) { el.innerText = targetText; return; }
+      const duration = 600;
+      const start = performance.now();
+      function step(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(eased * target);
+        el.innerText = prefix + current.toLocaleString("en-IN");
+        if (progress < 1) requestAnimationFrame(step);
+        else el.innerText = targetText;
+      }
+      requestAnimationFrame(step);
+      if (color) el.style.color = color;
+    }
+
     function loadSummary() {
       // Total Members = ACTIVE users only (not Admins, not Pending, not Inactive)
       let memberCount = users.filter(
         (u) => u.Role !== "Admin" && String(u.Status || "Active").toLowerCase() === "active"
       ).length;
-      document.getElementById("totalUsers").innerText = memberCount;
+
+      // This-month vs last-month trend
+      const now = new Date();
+      const MOS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      const curMonth = MOS[now.getMonth()];
+      const curYear = now.getFullYear();
+      const lastMonthIdx = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+      const lastMonth = MOS[lastMonthIdx];
+      const lastMonthYear = now.getMonth() === 0 ? curYear - 1 : curYear;
+
+      const thisMonthC = data.filter(c => String(c.Year) === String(curYear) && c.ForMonth === curMonth)
+        .reduce((a, b) => a + Number(b.Amount || 0), 0);
+      const lastMonthC = data.filter(c => String(c.Year) === String(lastMonthYear) && c.ForMonth === lastMonth)
+        .reduce((a, b) => a + Number(b.Amount || 0), 0);
+      const thisMonthE = expenses.filter(e => String(e.Year) === String(curYear) && e.ForMonth === curMonth)
+        .reduce((a, b) => a + Number(b.Amount || 0), 0);
+      const lastMonthE = expenses.filter(e => String(e.Year) === String(lastMonthYear) && e.ForMonth === lastMonth)
+        .reduce((a, b) => a + Number(b.Amount || 0), 0);
+
+      function _trendHTML(cur, prev, invertColor) {
+        if (prev === 0 && cur === 0) return '<span style="color:#94a3b8;">— No data</span>';
+        if (prev === 0) return '<span style="color:#27ae60;">▲ New this month</span>';
+        const diff = cur - prev;
+        const pct = Math.abs(Math.round((diff / prev) * 100));
+        const up = diff >= 0;
+        const good = invertColor ? !up : up;
+        const color = diff === 0 ? "#94a3b8" : good ? "#27ae60" : "#e74c3c";
+        const arrow = diff === 0 ? "—" : (up ? "▲" : "▼");
+        return `<span style="color:${color};">${arrow} ${pct}% vs ${lastMonth}</span>`;
+      }
+
       // FIX #5 & #14: Include walk-in entries in all totals
       let totalC = data.reduce((a, b) => a + Number(b.Amount || 0), 0);
       let totalE = expenses.reduce((a, b) => a + Number(b.Amount || 0), 0);
-      document.getElementById("totalContribution").innerText =
-        "₹" + fmt(totalC);
-      document.getElementById("totalExpense").innerText = "₹" + fmt(totalE);
 
-      // Sum all opening balances from YEAR_CONFIG (supports OpeningBalance / Opening_Balance / Balance column names)
+      _countUp(document.getElementById("totalUsers"), String(memberCount), "#6366f1");
+      _countUp(document.getElementById("totalContribution"), "₹" + fmt(totalC), "#27ae60");
+      _countUp(document.getElementById("totalExpense"), "₹" + fmt(totalE), "#e74c3c");
+
+      // Trends
+      const tU = document.getElementById("trendUsers");
+      if (tU) {
+        const thisM = users.filter(u => u.Role !== "Admin" && String(u.Status||"").toLowerCase() === "active").length;
+        tU.innerHTML = '<span style="color:#94a3b8;">Active members</span>';
+      }
+      const tC = document.getElementById("trendContrib");
+      if (tC) tC.innerHTML = _trendHTML(thisMonthC, lastMonthC, false);
+      const tE = document.getElementById("trendExpense");
+      if (tE) tE.innerHTML = _trendHTML(thisMonthE, lastMonthE, true);
+
+      // Sum all opening balances from YEAR_CONFIG
       let totalOpening = yearConfig.reduce((sum, row) => {
         const val = Number(
           row.OpeningBalance || row.Opening_Balance || row.opening_balance ||
@@ -5251,12 +5338,9 @@
       }, 0);
 
       let net = totalOpening + totalC - totalE;
-      document.getElementById("netBalance").innerText =
-        (net < 0 ? "−" : "") + "₹" + fmt(Math.abs(net));
-      document.getElementById("netBalance").style.color =
-        net >= 0 ? "#27ae60" : "#e74c3c";
+      const netEl = document.getElementById("netBalance");
+      _countUp(netEl, (net < 0 ? "−" : "") + "₹" + fmt(Math.abs(net)), net >= 0 ? "#27ae60" : "#e74c3c");
 
-      // Show opening balance breakdown hint under the card
       const breakdownEl = document.getElementById("netBalanceBreakdown");
       if (breakdownEl) {
         if (totalOpening > 0) {
@@ -5859,7 +5943,16 @@
       var start = (page - 1) * _PG;
       var items = _contribList.slice(start, start + _PG);
       var n = start;
-      document.getElementById("tb").innerHTML = items
+      document.getElementById("tb").innerHTML = items.length === 0
+        ? `<tr><td colspan="9" style="text-align:center;padding:36px 20px;">
+            <div style="font-size:2rem;margin-bottom:8px;">🤲</div>
+            <div style="font-weight:600;color:#334155;font-size:14px;margin-bottom:4px;">No contributions yet</div>
+            <div style="color:#94a3b8;font-size:12px;margin-bottom:14px;">Add the first contribution using the form above</div>
+            <button onclick="document.getElementById('user').focus()" style="background:#f7a01a;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;">
+              <i class="fa-solid fa-plus"></i> Add First Contribution
+            </button>
+          </td></tr>`
+        : items
         .map((c) => {
           n++;
           let isWalkIn = String(c.UserId).startsWith("WALKIN_");
@@ -5878,7 +5971,7 @@
               (o) => String(o.OccasionId) === String(c.OccasionId)
             )?.OccasionName || "";
           const _rid = _storeReceipt(c, name, tName, oName);
-          let displayRID = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
+          let displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
           let walkInBadge = String(c.UserId).startsWith("WALKIN_")
             ? `<span style="font-size:9px;background:#946c44;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">WALK-IN</span>`
             : "";
@@ -6048,7 +6141,7 @@
       const end = document.getElementById("contribEnd").value;
       const filtered = data.filter((c) => {
         const user = users.find((u) => String(u.UserId) === String(c.UserId));
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
+        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
         const walkInName = String(c.UserId).startsWith("WALKIN_")
           ? (
             String(c.Note || "")
@@ -6103,7 +6196,16 @@
       var start = (page - 1) * _PG;
       var items = _expenseList.slice(start, start + _PG);
       var n = start;
-      document.getElementById("expenseRecordsBody").innerHTML = items
+      document.getElementById("expenseRecordsBody").innerHTML = items.length === 0
+        ? `<tr><td colspan="8" style="text-align:center;padding:36px 20px;">
+            <div style="font-size:2rem;margin-bottom:8px;">📋</div>
+            <div style="font-weight:600;color:#334155;font-size:14px;margin-bottom:4px;">No expenses yet</div>
+            <div style="color:#94a3b8;font-size:12px;margin-bottom:14px;">Add an expense using the form above</div>
+            <button onclick="document.getElementById('title').focus()" style="background:#f7a01a;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;">
+              <i class="fa-solid fa-plus"></i> Add First Expense
+            </button>
+          </td></tr>`
+        : items
         .map((e) => {
           n++;
           let tName =
@@ -6111,7 +6213,7 @@
               (t) => String(t.ExpenseTypeId) === String(e.ExpenseTypeId)
             )?.Name || "—";
           let mn = e.ForMonth || e.Note || "—";
-          return `<tr onclick="viewExpense('${e.Id
+          return `<tr class="clickable-row" onclick="viewExpense('${e.Id
             }')" title="Click to view details">
         <td>${n}</td>
         <td><b>${escapeHtml(e.Title || "")}</b></td>
@@ -6927,16 +7029,27 @@
       const totalAmt = rows.reduce((s, r) => s + Number(r.amount), 0);
 
       const previewRows = rows.map((r, i) =>
-        `<tr style="border-bottom:1px solid #f0f0f0;">
+        `<tr style="border-bottom:1px solid #f0f0f0;" data-bk-idx="${i}">
             <td style="padding:6px 10px;font-size:12px;color:#64748b;">${i + 1}</td>
             <td style="padding:6px 10px;font-size:12px;font-weight:600;">${escapeHtml(r.month)}</td>
-            <td style="padding:6px 10px;font-size:12px;color:#15803d;font-weight:700;">&#8377;${Number(r.amount).toLocaleString("en-IN")}</td>
+            <td style="padding:4px 8px;font-size:12px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="color:#64748b;font-weight:600;">₹</span>
+                <input type="number" min="1" class="bkprev-amt" data-idx="${i}" value="${Number(r.amount)}"
+                  style="width:90px;border:1.5px solid #e2e8f0;border-radius:6px;padding:4px 7px;font-size:12px;font-weight:700;color:#15803d;font-family:inherit;"
+                  oninput="_bkPrevUpdateTotal()" />
+                <button onclick="this.closest('tr').remove();_bkPrevUpdateTotal();" style="background:#fef2f2;border:1px solid #fca5a5;color:#e74c3c;padding:3px 8px;font-size:11px;border-radius:5px;box-shadow:none;transform:none;" title="Remove row">✕</button>
+              </div>
+            </td>
           </tr>`
       ).join("");
 
       const previewHtml = `
-          <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Confirm Bulk Insert</h3><button class="_mcls" onclick="closeModal()">&#xd7;</button></div>
+          <div class="_mhdr"><h3><i class="fa-solid fa-eye" style="color:#f7a01a;margin-right:6px;"></i> Preview & Confirm Bulk Insert</h3><button class="_mcls" onclick="closeModal()">&#xd7;</button></div>
           <div class="_mbdy">
+            <div style="background:linear-gradient(135deg,#fef9ee,#fff8e1);border:1.5px solid #f7a01a44;border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:12.5px;color:#946c44;">
+              <i class="fa-solid fa-circle-info"></i> Review details below. <b>Edit amounts inline</b> or remove a row before confirming.
+            </div>
             <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12.5px;">
               <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 16px;">
                 <span style="color:#64748b;">Member</span><strong style="color:#15803d;">${memberName}</strong>
@@ -6945,35 +7058,76 @@
                 ${note ? `<span style="color:#64748b;">Note</span><strong>${escapeHtml(note)}</strong>` : ""}
               </div>
             </div>
-            <table style="width:100%;border-collapse:collapse;">
+            <table style="width:100%;border-collapse:collapse;" id="bkprev_table">
               <thead><tr style="background:#f1f5f9;">
                 <th style="padding:7px 10px;font-size:11px;text-align:left;color:#64748b;">#</th>
                 <th style="padding:7px 10px;font-size:11px;text-align:left;color:#64748b;">Month</th>
-                <th style="padding:7px 10px;font-size:11px;text-align:left;color:#64748b;">Amount</th>
+                <th style="padding:7px 10px;font-size:11px;text-align:left;color:#64748b;">Amount (editable)</th>
               </tr></thead>
               <tbody>${previewRows}</tbody>
               <tfoot><tr style="background:#fef9ee;">
-                <td colspan="2" style="padding:8px 10px;font-size:13px;font-weight:700;color:#78350f;">Total (${rows.length} entr${rows.length === 1 ? "y" : "ies"})</td>
-                <td style="padding:8px 10px;font-size:13px;font-weight:700;color:#15803d;">&#8377;${totalAmt.toLocaleString("en-IN")}</td>
+                <td colspan="2" style="padding:8px 10px;font-size:13px;font-weight:700;color:#78350f;" id="bkprev_countLabel">Total (${rows.length} entr${rows.length === 1 ? "y" : "ies"})</td>
+                <td style="padding:8px 10px;font-size:13px;font-weight:700;color:#15803d;" id="bkprev_total">&#8377;${totalAmt.toLocaleString("en-IN")}</td>
               </tr></tfoot>
             </table>
             <p style="font-size:11.5px;color:#94a3b8;margin:10px 0 0;">Each entry generates a separate receipt. This cannot be undone.</p>
           </div>
           <div class="_mft">
             <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal();openBulkInsert()"><i class="fa-solid fa-arrow-left"></i> Back &amp; Edit</button>
-            <button class="_mbtn" style="background:#22c55e;" onclick="_executeBulkInsert()"><i class="fa-solid fa-check"></i> Confirm &amp; Insert All</button>
+            <button class="_mbtn" id="bkprev_confirmBtn" style="background:#22c55e;" onclick="_executeBulkInsert()"><i class="fa-solid fa-check"></i> Confirm &amp; Insert All</button>
           </div>`;
       window._pendingBulkRows = { rows, userId, year, typeId, note };
-      openModal(previewHtml, "500px");
+      openModal(previewHtml, "520px");
     }
+    function _bkPrevUpdateTotal() {
+      const inputs = document.querySelectorAll(".bkprev-amt");
+      const rows = document.querySelectorAll("#bkprev_table tbody tr");
+      let total = 0, count = 0;
+      inputs.forEach(inp => { const v = Number(inp.value); if(v>0){total+=v;count++;} });
+      const totEl = document.getElementById("bkprev_total");
+      const lblEl = document.getElementById("bkprev_countLabel");
+      if (totEl) totEl.innerHTML = `&#8377;${total.toLocaleString("en-IN")}`;
+      if (lblEl) lblEl.textContent = `Total (${rows.length} entr${rows.length===1?"y":"ies"})`;
+    }
+
     async function _executeBulkInsert() {
-      const { rows, userId, year, typeId, note } = window._pendingBulkRows || {};
-      if (!rows || !userId) { toast("No pending bulk data.", "error"); return; }
+      const btn = document.getElementById("bkprev_confirmBtn");
+      if (btn) { btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Inserting...'; }
+
+      // Read from editable preview if open, otherwise fall back to stored data
+      const tableRows = document.querySelectorAll("#bkprev_table tbody tr");
+      let finalRows, userId, year, typeId, note;
+      if (tableRows.length > 0) {
+        // Read live data from the preview table
+        const monthCells = document.querySelectorAll("#bkprev_table tbody tr td:nth-child(2)");
+        const amtInputs  = document.querySelectorAll("#bkprev_table tbody .bkprev-amt");
+        finalRows = [];
+        monthCells.forEach((cell, i) => {
+          const amt = amtInputs[i] ? Number(amtInputs[i].value) : 0;
+          if (cell.textContent.trim() && amt > 0) {
+            finalRows.push({ month: cell.textContent.trim(), amount: amt });
+          }
+        });
+        const stored = window._pendingBulkRows || {};
+        userId = stored.userId; year = stored.year; typeId = stored.typeId; note = stored.note;
+      } else {
+        const stored = window._pendingBulkRows || {};
+        finalRows = stored.rows; userId = stored.userId; year = stored.year; typeId = stored.typeId; note = stored.note;
+      }
+
+      if (!finalRows || !userId) {
+        if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm &amp; Insert All';}
+        return toast("No pending bulk data.", "error");
+      }
+      if (finalRows.length === 0) {
+        if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm &amp; Insert All';}
+        return toast("No valid entries to insert.", "error");
+      }
       closeModal();
       const s = JSON.parse(localStorage.getItem("session") || "{}");
       let done = 0, failed = 0;
-      toast("Inserting " + rows.length + " entries...", "warn");
-      for (let r of rows) {
+      toast("Inserting " + finalRows.length + " entries...", "warn");
+      for (let r of finalRows) {
         try {
           let res = await postData({
             action: "addContribution",
@@ -7012,39 +7166,136 @@
 
     async function addContribution() {
       if (!checkSession()) return;
-      let s = JSON.parse(localStorage.getItem("session"));
       let userId = document.getElementById("user").value;
-      // Prevent admin from contributing as themselves — admin manages only
-      let selectedUser = users.find(
-        (u) => String(u.UserId) === String(userId)
-      );
+      let selectedUser = users.find((u) => String(u.UserId) === String(userId));
       if (selectedUser && selectedUser.Role === "Admin") {
-        return toast(
-          "⚠️ Admin accounts cannot make contributions. Select a member.",
-          "warn"
-        );
+        return toast("⚠️ Admin accounts cannot make contributions. Select a member.", "warn");
       }
-      let amount = document.getElementById("amount").value,
-        year = document.getElementById("contribYear").value;
+      let amount = document.getElementById("amount").value;
+      let year = document.getElementById("contribYear").value;
       if (!userId || !amount || amount <= 0)
-        return toast(
-          "Please select a user and enter a valid amount.",
-          "error"
-        );
+        return toast("Please select a user and enter a valid amount.", "error");
+
+      // Collect all values for preview
+      const forMonth = document.getElementById("month").value;
+      const typeId = document.getElementById("type").value;
+      const occasionId = document.getElementById("occasion").value;
+      const note = document.getElementById("note").value;
+      const paymentMode = document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "UPI";
+
+      const memberName = selectedUser ? escapeHtml(selectedUser.Name) : userId;
+      const typeObj = types.find(t => String(t.TypeId) === typeId);
+      const typeName = escapeHtml(typeObj?.TypeName || "—");
+      const occasionObj = occasions.find(o => String(o.OccasionId) === occasionId);
+      const occasionName = escapeHtml(occasionObj?.OccasionName || "— None —");
+
+      // Build month options
+      const MOS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      const monthOpts = MOS.map(m => `<option value="${m}"${m===forMonth?" selected":""}>${m}</option>`).join("");
+      const curY = new Date().getFullYear();
+      let yearOptsP = "";
+      for (let y = curY+1; y >= 2023; y--) yearOptsP += `<option value="${y}"${y===Number(year)?" selected":""}>${y}</option>`;
+      const typeOptsP = types.map(t => `<option value="${t.TypeId}"${String(t.TypeId)===typeId?" selected":""}>${escapeHtml(t.TypeName)}</option>`).join("");
+      const occasionOptsP = `<option value="">— None —</option>` + occasions.map(o => `<option value="${o.OccasionId}"${String(o.OccasionId)===occasionId?" selected":""}>${escapeHtml(o.OccasionName)}</option>`).join("");
+      const modeOpts = ["UPI","Cash","Cheque","Online Transfer"].map(m => `<option value="${m}"${m===paymentMode?" selected":""}>${m}</option>`).join("");
+      const userOptsP = users.filter(u=>u.Role!=="Admin").map(u=>`<option value="${u.UserId}"${String(u.UserId)===userId?" selected":""}>${escapeHtml(u.Name)}</option>`).join("");
+
+      const previewHtml = `
+        <div class="_mhdr">
+          <h3><i class="fa-solid fa-eye" style="color:#f7a01a;margin-right:8px;"></i> Preview & Confirm Contribution</h3>
+          <button class="_mcls" onclick="closeModal()">×</button>
+        </div>
+        <div class="_mbdy">
+          <div style="background:linear-gradient(135deg,#fef9ee,#fff8e1);border:1.5px solid #f7a01a44;border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;color:#946c44;">
+            <i class="fa-solid fa-circle-info"></i> Review the details below. You can <b>edit any field inline</b> before submitting.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label class="_fl">Member</label>
+              <select class="_fi" id="prev_user" style="margin-bottom:0;">${userOptsP}</select>
+            </div>
+            <div>
+              <label class="_fl">Amount (₹)</label>
+              <input class="_fi" id="prev_amount" type="number" min="1" value="${escapeHtml(amount)}" style="margin-bottom:0;" />
+            </div>
+            <div>
+              <label class="_fl">Month</label>
+              <select class="_fi" id="prev_month" style="margin-bottom:0;"><option value="">— General —</option>${monthOpts}</select>
+            </div>
+            <div>
+              <label class="_fl">Year</label>
+              <select class="_fi" id="prev_year" style="margin-bottom:0;">${yearOptsP}</select>
+            </div>
+            <div>
+              <label class="_fl">Contribution Type</label>
+              <select class="_fi" id="prev_type" style="margin-bottom:0;">${typeOptsP}</select>
+            </div>
+            <div>
+              <label class="_fl">Payment Mode</label>
+              <select class="_fi" id="prev_mode" style="margin-bottom:0;">${modeOpts}</select>
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            <label class="_fl">Occasion</label>
+            <select class="_fi" id="prev_occasion" style="margin-bottom:0;">${occasionOptsP}</select>
+          </div>
+          <div style="margin-top:12px;">
+            <label class="_fl">Note</label>
+            <input class="_fi" id="prev_note" value="${escapeHtml(note)}" placeholder="Optional note" style="margin-bottom:0;" />
+          </div>
+          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-top:14px;font-size:12px;color:#15803d;">
+            <i class="fa-solid fa-circle-check"></i> <b>Summary:</b> <span id="prev_summary">${memberName} · ₹${Number(amount).toLocaleString("en-IN")} · ${forMonth||"General"} ${year}</span>
+          </div>
+        </div>
+        <div class="_mft">
+          <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()"><i class="fa-solid fa-arrow-left"></i> Back & Edit</button>
+          <button class="_mbtn" id="prev_submitBtn" style="background:#22c55e;" onclick="_submitContributionFromPreview()"><i class="fa-solid fa-check"></i> Confirm & Submit</button>
+        </div>`;
+
+      openModal(previewHtml, "560px");
+
+      // Live summary update
+      function _updatePrevSummary() {
+        const u = users.find(x=>String(x.UserId)===document.getElementById("prev_user")?.value);
+        const nm = u ? u.Name : document.getElementById("prev_user")?.value || "";
+        const amt = document.getElementById("prev_amount")?.value || "0";
+        const mo = document.getElementById("prev_month")?.value || "General";
+        const yr = document.getElementById("prev_year")?.value || "";
+        const el = document.getElementById("prev_summary");
+        if (el) el.textContent = `${nm} · ₹${Number(amt).toLocaleString("en-IN")} · ${mo} ${yr}`;
+      }
+      ["prev_user","prev_amount","prev_month","prev_year","prev_type","prev_mode","prev_occasion"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("change", _updatePrevSummary);
+        if (el && el.tagName==="INPUT") el.addEventListener("input", _updatePrevSummary);
+      });
+    }
+
+    async function _submitContributionFromPreview() {
+      const btn = document.getElementById("prev_submitBtn");
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; }
+      const userId = document.getElementById("prev_user").value;
+      const amount = document.getElementById("prev_amount").value;
+      const year = document.getElementById("prev_year").value;
+      if (!userId || !amount || amount <= 0) {
+        if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
+        return toast("Please select a user and enter a valid amount.", "error");
+      }
       try {
         let res = await postData({
           action: "addContribution",
           Id: Date.now(),
           UserId: userId,
           Amount: amount,
-          ForMonth: document.getElementById("month").value,
+          ForMonth: document.getElementById("prev_month").value,
           Year: year,
-          TypeId: document.getElementById("type").value,
-          OccasionId: document.getElementById("occasion").value,
-          Note: document.getElementById("note").value,
-          PaymentMode: document.getElementById("paymentMode") ? document.getElementById("paymentMode").value : "UPI",
+          TypeId: document.getElementById("prev_type").value,
+          OccasionId: document.getElementById("prev_occasion").value,
+          Note: document.getElementById("prev_note").value,
+          PaymentMode: document.getElementById("prev_mode").value,
         });
         if (res.status === "success") {
+          closeModal();
           const rid = res.receiptId;
           let msg = "✅ Contribution saved! Receipt: " + rid;
           if (res.emailSent) msg += " · 📧 Receipt email sent";
@@ -7053,11 +7304,14 @@
           document.getElementById("amount").value = "";
           document.getElementById("note").value = "";
           smartRefresh("contributions");
-          // Sync inline dashboard so totals stay in sync without extra API call
           _dashSyncFromAdmin();
-        } else toast("❌ Failed to add.", "error");
+        } else {
+          toast("❌ Failed to add.", "error");
+          if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
+        }
       } catch (err) {
         toast("❌ " + err.message, "error");
+        if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
       }
     }
     async function del(id) {
@@ -7579,7 +7833,14 @@
       const total = Math.ceil(list.length / PAGE_SIZE);
       document.getElementById("goalTableBody").innerHTML =
         list.length === 0
-          ? `<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No goals yet</td></tr>`
+          ? `<tr><td colspan="7" style="text-align:center;padding:36px 20px;">
+              <div style="font-size:2rem;margin-bottom:8px;">🎯</div>
+              <div style="font-weight:600;color:#334155;font-size:14px;margin-bottom:4px;">No goals yet</div>
+              <div style="color:#94a3b8;font-size:12px;margin-bottom:14px;">Set a fundraising target to track progress</div>
+              <button onclick="document.getElementById('g_name').focus()" style="background:#f7a01a;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;">
+                <i class="fa-solid fa-plus"></i> Add First Goal
+              </button>
+            </td></tr>`
           : items
             .map((g, idx) => {
               const i = start + idx;
@@ -8191,7 +8452,7 @@
       const d = window._rcptStore ? window._rcptStore[rid] : null;
       if (!d) { showReceiptById(rid); return; }
       const { c, userName, typeName, occasionName } = d;
-      const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, APP.receiptPrefix + "-");
+      const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
       const html = `
         <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Contribution Details</h3><button class="_mcls" onclick="closeModal()">×</button></div>
         <div class="_mbdy">
@@ -8432,7 +8693,11 @@
       if (badge) { badge.textContent = list.length + " entries"; badge.style.display = "inline-block"; }
       const d = new Date();
       const todayFmt = String(d.getDate()).padStart(2, "0") + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + d.getFullYear();
-      const todayE = list.filter(r => String(r.Timestamp || "").startsWith(todayFmt));
+      const todayISO = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+      const todayE = list.filter(r => {
+        const ts = String(r.Timestamp || "");
+        return ts.startsWith(todayFmt) || ts.startsWith(todayISO);
+      });
       const logins = todayE.filter(r => /login/i.test(r.Action || "") && !/logout/i.test(r.Action || "")).length;
       const actions = todayE.filter(r => !/login/i.test(r.Action || "") && !/logout/i.test(r.Action || "")).length;
       const uniqueU = new Set(list.map(r => String(r.UserAdmin || ""))).size;
@@ -8472,17 +8737,39 @@
       const items = list.slice(start, start + AUDIT_PAGE_SIZE);
       tbody.innerHTML = items.map((row, i) => {
         const idx = start + i + 1;
-        // ── Format timestamp: "11-Apr-2025 10:32 AM" → two-line display
+        // ── Format timestamp → two-line human-readable display
+        // Handles both:
+        //   "11-Apr-2026 09:03 AM"      (Apps Script formatDate output)
+        //   "2026-04-11T09:03:00.000Z"  (ISO — Google Sheets auto-converts date cells)
         const tsRaw = String(row.Timestamp || "—");
         let tsHtml = `<span style="font-family:monospace;font-size:11px;color:#64748b;">${escapeHtml(tsRaw)}</span>`;
         try {
-          // Parses "dd-MMM-yyyy hh:mm a" e.g. "11-Apr-2025 10:32 AM"
+          const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+          // Case 1: already formatted "dd-MMM-yyyy hh:mm a"
           const tsParts = tsRaw.match(/^(\d{2}-\w{3}-\d{4})\s+(.+)$/);
           if (tsParts) {
             tsHtml = `<div style="line-height:1.5;">
               <div style="font-weight:600;font-size:11.5px;color:#334155;">${escapeHtml(tsParts[1])}</div>
               <div style="font-size:10.5px;color:#94a3b8;">${escapeHtml(tsParts[2])}</div>
             </div>`;
+          } else {
+            // Case 2: ISO "2026-04-11T09:03:00.000Z" — convert to IST (+5:30)
+            const isoMatch = tsRaw.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
+            if (isoMatch) {
+              const d = new Date(tsRaw);
+              const ist = new Date(d.getTime() + (5 * 60 + 30) * 60000);
+              const dd   = String(ist.getUTCDate()).padStart(2, "0");
+              const mm   = MON[ist.getUTCMonth()];
+              const yyyy = ist.getUTCFullYear();
+              let   hh   = ist.getUTCHours();
+              const min  = String(ist.getUTCMinutes()).padStart(2, "0");
+              const ampm = hh >= 12 ? "PM" : "AM";
+              hh = hh % 12 || 12;
+              tsHtml = `<div style="line-height:1.5;">
+                <div style="font-weight:600;font-size:11.5px;color:#334155;">${dd}-${mm}-${yyyy}</div>
+                <div style="font-size:10.5px;color:#94a3b8;">${hh}:${min} ${ampm}</div>
+              </div>`;
+            }
           }
         } catch(e2){}
         const user    = String(row.UserAdmin || "—");
@@ -8596,7 +8883,7 @@
 
       const list = data.filter(function (c) {
         const user = users.find(u => String(u.UserId) === String(c.UserId));
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
+        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
         const walkInName = String(c.UserId).startsWith("WALKIN_")
           ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "").toLowerCase()
           : "";
@@ -8640,7 +8927,7 @@
         const mobile = user?.Mobile || (isWalkIn ? (String(c.Note || "").match(/\|\s*(\d+)/)?.[1] || "") : "");
         const typeName = types.find(t => String(t.TypeId) === String(c.TypeId))?.TypeName || "";
         const occName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "";
-        const rid = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
+        const rid = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
         const pDate = formatPaymentDate(c.PaymentDate);
 
         return [
@@ -9141,15 +9428,109 @@
       const occasionId = document.getElementById("wi_occasion").value;
       const note = document.getElementById("wi_note").value.trim();
       if (!name) return toast("Please enter donor name.", "error");
-      if (!amount || Number(amount) <= 0)
-        return toast("Please enter a valid amount.", "error");
-      // Use WALKIN_ prefix as UserId so it's clearly a manual entry
-      const walkInUserId = "WALKIN_" + Date.now();
-      const btn = document.querySelector("#_uniModal ._mbtn:last-child");
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = "Saving...";
+      if (!amount || Number(amount) <= 0) return toast("Please enter a valid amount.", "error");
+
+      // Build options for inline editing in preview
+      const MOS2 = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      const monthOptsWI = `<option value="">— All / General —</option>` + MOS2.map(m=>`<option value="${m}"${m===month?" selected":""}>${m}</option>`).join("");
+      const curY2 = new Date().getFullYear();
+      let yearOptsWI = "";
+      for (let y=curY2+1;y>=2023;y--) yearOptsWI+=`<option value="${y}"${y===Number(year)?" selected":""}>${y}</option>`;
+      const typeOptsWI = types.map(t=>`<option value="${t.TypeId}"${String(t.TypeId)===typeId?" selected":""}>${escapeHtml(t.TypeName)}</option>`).join("");
+      const occasionOptsWI = `<option value="">— None —</option>`+occasions.map(o=>`<option value="${o.OccasionId}"${String(o.OccasionId)===occasionId?" selected":""}>${escapeHtml(o.OccasionName)}</option>`).join("");
+      const typeNameWI = types.find(t=>String(t.TypeId)===typeId)?.TypeName || "Contribution";
+
+      const previewHtml = `
+        <div class="_mhdr">
+          <h3><i class="fa-solid fa-eye" style="color:#946c44;margin-right:8px;"></i> Preview Walk-in Entry</h3>
+          <button class="_mcls" onclick="closeModal()">×</button>
+        </div>
+        <div class="_mbdy">
+          <div style="background:linear-gradient(135deg,#fff8e8,#fef3cd);border:1.5px solid #f7a01a44;border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:#946c44;">
+            <i class="fa-solid fa-circle-info"></i> Review all details. <b>Edit any field inline</b> before confirming.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label class="_fl">Donor Full Name <span style="color:#e74c3c">*</span></label>
+              <input class="_fi" id="wprev_name" value="${escapeHtml(name)}" placeholder="Donor name" style="margin-bottom:0;" />
+            </div>
+            <div>
+              <label class="_fl">Mobile</label>
+              <input class="_fi" id="wprev_mobile" value="${escapeHtml(mobile)}" placeholder="Mobile number" style="margin-bottom:0;" />
+            </div>
+            <div>
+              <label class="_fl">Email <span style="font-size:10px;color:#888;font-weight:400;">(optional)</span></label>
+              <input class="_fi" id="wprev_email" type="email" value="${escapeHtml(email)}" placeholder="donor@email.com" style="margin-bottom:0;" />
+            </div>
+            <div>
+              <label class="_fl">Amount (₹) <span style="color:#e74c3c">*</span></label>
+              <input class="_fi" id="wprev_amount" type="number" min="1" value="${escapeHtml(amount)}" style="margin-bottom:0;" />
+            </div>
+            <div>
+              <label class="_fl">Month</label>
+              <select class="_fi" id="wprev_month" style="margin-bottom:0;">${monthOptsWI}</select>
+            </div>
+            <div>
+              <label class="_fl">Year</label>
+              <select class="_fi" id="wprev_year" style="margin-bottom:0;">${yearOptsWI}</select>
+            </div>
+            <div>
+              <label class="_fl">Type</label>
+              <select class="_fi" id="wprev_type" style="margin-bottom:0;">${typeOptsWI}</select>
+            </div>
+            <div>
+              <label class="_fl">Occasion</label>
+              <select class="_fi" id="wprev_occasion" style="margin-bottom:0;">${occasionOptsWI}</select>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <label class="_fl">Note / Purpose</label>
+            <input class="_fi" id="wprev_note" value="${escapeHtml(note)}" placeholder="e.g. Prasad, Pooja, Birthday" style="margin-bottom:0;" />
+          </div>
+          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-top:14px;font-size:12px;color:#15803d;">
+            <i class="fa-solid fa-circle-check"></i> <b>Summary:</b>
+            <span id="wprev_summary">${escapeHtml(name)} · ₹${Number(amount).toLocaleString("en-IN")} · ${month||"General"} ${year} · ${typeNameWI}</span>
+          </div>
+        </div>
+        <div class="_mft">
+          <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal();openWalkInContribution()"><i class="fa-solid fa-arrow-left"></i> Back & Edit</button>
+          <button class="_mbtn" id="wprev_submitBtn" style="background:#946c44;" onclick="_submitWalkInFromPreview()"><i class="fa-solid fa-check"></i> Confirm & Save</button>
+        </div>`;
+      openModal(previewHtml, "560px");
+
+      // Live summary updater
+      function _updateWISummary() {
+        const nm = document.getElementById("wprev_name")?.value||"";
+        const amt = document.getElementById("wprev_amount")?.value||"0";
+        const mo = document.getElementById("wprev_month")?.value||"General";
+        const yr = document.getElementById("wprev_year")?.value||"";
+        const tid = document.getElementById("wprev_type")?.value;
+        const tn = types.find(t=>String(t.TypeId)===tid)?.TypeName||"";
+        const el = document.getElementById("wprev_summary");
+        if (el) el.textContent = `${nm} · ₹${Number(amt).toLocaleString("en-IN")} · ${mo} ${yr} · ${tn}`;
       }
+      ["wprev_name","wprev_amount","wprev_month","wprev_year","wprev_type","wprev_occasion"].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.addEventListener("change",_updateWISummary);
+        if(el&&el.tagName==="INPUT") el.addEventListener("input",_updateWISummary);
+      });
+    }
+
+    async function _submitWalkInFromPreview() {
+      const btn = document.getElementById("wprev_submitBtn");
+      if (btn) { btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; }
+      const name = (document.getElementById("wprev_name")?.value||"").trim();
+      const mobile = (document.getElementById("wprev_mobile")?.value||"").trim();
+      const email = (document.getElementById("wprev_email")?.value||"").trim();
+      const amount = document.getElementById("wprev_amount")?.value;
+      const year = document.getElementById("wprev_year")?.value;
+      const month = document.getElementById("wprev_month")?.value;
+      const typeId = document.getElementById("wprev_type")?.value;
+      const occasionId = document.getElementById("wprev_occasion")?.value;
+      const note = (document.getElementById("wprev_note")?.value||"").trim();
+      if (!name) { if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter donor name.", "error"); }
+      if (!amount || Number(amount) <= 0) { if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter a valid amount.", "error"); }
+      const walkInUserId = "WALKIN_" + Date.now();
       try {
         let payload = {
           action: "addContribution",
@@ -9160,13 +9541,8 @@
           Year: year,
           TypeId: typeId,
           OccasionId: occasionId,
-          Note:
-            (note ? note + " | " : "") +
-            "Walk-in: " +
-            name +
-            (mobile ? " | " + mobile : ""),
+          Note: (note ? note + " | " : "") + "Walk-in: " + name + (mobile ? " | " + mobile : ""),
         };
-        // Only pass email if provided — backend sends receipt only when email present
         if (email) payload.WalkInEmail = email;
         let res = await postData(payload);
         if (res.status === "success") {
@@ -9176,47 +9552,27 @@
             else if (res.emailSkipped) msg += " · ⚠️ Email quota reached";
           }
           toast(msg);
-          // Build a mock contribution object for the on-screen receipt
           const mockC = {
             ReceiptID: res.receiptId || "TRX-wi" + Date.now(),
             Amount: amount,
             ForMonth: month || "General",
             Year: year,
             Note: note || "",
-            PaymentDate:
-              new Date().toLocaleDateString("en-IN") +
-              " " +
-              new Date().toLocaleTimeString("en-IN"),
+            PaymentDate: new Date().toLocaleDateString("en-IN") + " " + new Date().toLocaleTimeString("en-IN"),
           };
-          const tName = types.find(
-            (t) => String(t.TypeId) === String(typeId)
-          );
-          const oName = occasions.find(
-            (o) => String(o.OccasionId) === String(occasionId)
-          );
+          const tName = types.find(t => String(t.TypeId) === String(typeId));
+          const oName = occasions.find(o => String(o.OccasionId) === String(occasionId));
           closeModal();
           smartRefresh("contributions");
-          // Sync dashboard data so it reflects the new walk-in entry without API call
           _dashSyncFromAdmin();
-          setTimeout(
-            () =>
-              showReceipt(
-                mockC,
-                name,
-                tName?.TypeName || "Contribution",
-                oName?.OccasionName || "—",
-                true
-              ),
-            400
-          );
-        } else toast("❌ Failed: " + (res.message || ""), "error");
+          setTimeout(() => showReceipt(mockC, name, tName?.TypeName || "Contribution", oName?.OccasionName || "—", true), 400);
+        } else {
+          toast("❌ Failed: " + (res.message || ""), "error");
+          if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save'; }
+        }
       } catch (e) {
         toast("❌ " + e.message, "error");
-      }
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML =
-          '<i class="fa-solid fa-check"></i> Save & Get Receipt';
+        if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save'; }
       }
     }
 
@@ -10087,7 +10443,7 @@
       const total = Math.ceil(list.length / PAGE_SIZE);
 
       if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#aaa;padding:28px;">No requests found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:36px 20px;"><div style="font-size:2rem;margin-bottom:8px;">📭</div><div style="font-weight:600;color:#334155;font-size:14px;margin-bottom:4px;">No requests found</div><div style="color:#94a3b8;font-size:12px;">Member contribution requests will appear here once submitted</div></td></tr>';
         _buildPagination("req_pagination", 1, 0, "_gotoReqPage");
         return;
       }
@@ -10412,6 +10768,19 @@
         };
       }
 
+      // Debounced wrapper for min/max amount inputs (New B fix)
+      var _extraFilterDebounced = debounce(function () {
+        if (typeof filterContributions === "function") filterContributions();
+      }, 280);
+      ["filterContribMin", "filterContribMax"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.removeAttribute("onkeyup");
+          el.removeAttribute("oninput");
+          el.addEventListener("input", _extraFilterDebounced);
+        }
+      });
+
       // Populate type filter dropdown when types load
       const _origLoadTypes = window.loadTypes || window.loadMasterData;
 
@@ -10536,18 +10905,60 @@
       });
     }
 
-    // ── L7: Type merge tool
     // ── M10: Drag reorder for Types, Occasions, Expense Types
     let _dragReorderSrc = null;
+    let _dragReorderListId = null;
     function _initTypeReorder(listId) {
       const list = document.getElementById(listId);
       if (!list) return;
       list.querySelectorAll("[data-sortable]").forEach(item => {
         item.setAttribute("draggable", "true");
-        item.addEventListener("dragstart", e => { _dragReorderSrc = item; item.style.opacity = "0.5"; });
-        item.addEventListener("dragend", e => { item.style.opacity = ""; });
-        item.addEventListener("dragover", e => { e.preventDefault(); const after = _getDragAfterElement(list, e.clientY); if (after) list.insertBefore(_dragReorderSrc, after); else list.appendChild(_dragReorderSrc); });
+        item.addEventListener("dragstart", e => {
+          _dragReorderSrc = item;
+          _dragReorderListId = listId;
+          item.style.opacity = "0.5";
+        });
+        item.addEventListener("dragend", e => {
+          item.style.opacity = "";
+          _saveDragOrder(listId);
+        });
+        item.addEventListener("dragover", e => {
+          e.preventDefault();
+          const after = _getDragAfterElement(list, e.clientY);
+          if (after) list.insertBefore(_dragReorderSrc, after);
+          else list.appendChild(_dragReorderSrc);
+        });
       });
+    }
+    function _saveDragOrder(listId) {
+      const list = document.getElementById(listId);
+      if (!list) return;
+      const sheetMap = { typeList: "types", occasionList: "occasions", expenseList: "expenseTypes" };
+      const sheet = sheetMap[listId];
+      if (!sheet) return;
+      const items = list.querySelectorAll("[data-sortable]");
+      const orderArr = [];
+      items.forEach(function (item, i) {
+        const id = item.dataset.id || item.getAttribute("data-id");
+        if (id) orderArr.push({ id: id, sort: i + 1 });
+      });
+      if (!orderArr.length) return;
+      const savedEl = document.getElementById({ typeList: "md_typesSaved", occasionList: "md_occasionsSaved", expenseList: "md_expSaved" }[listId]);
+      if (savedEl) { savedEl.textContent = "⏳ Saving…"; savedEl.style.opacity = "1"; savedEl.style.color = "#f7a01a"; }
+      postData({ action: "updateSortOrder", sheet: sheet, order: JSON.stringify(orderArr) })
+        .then(function (res) {
+          if (res && res.status === "success") {
+            if (savedEl) { savedEl.textContent = "✓ Saved"; savedEl.style.color = "#27ae60"; setTimeout(function () { savedEl.style.opacity = "0"; }, 2200); }
+            mandirCacheBust("getAllData");
+          } else {
+            if (savedEl) savedEl.style.opacity = "0";
+            toast("⚠️ Drag order not saved — try again.", "warn");
+          }
+        })
+        .catch(function () {
+          if (savedEl) savedEl.style.opacity = "0";
+          toast("⚠️ Could not save drag order. Check connection.", "warn");
+        });
     }
     function _getDragAfterElement(container, y) {
       const els = [...container.querySelectorAll("[data-sortable]:not(.dragging)")];
@@ -10571,7 +10982,7 @@
       const queue = JSON.parse(localStorage.getItem("mandir_bc_queue") || "[]");
       queue.push({ title, message, type, priority, scheduled: scheduled.toISOString(), adminName: s.name || "Admin" });
       localStorage.setItem("mandir_bc_queue", JSON.stringify(queue));
-      toast("📅 Broadcast scheduled for " + scheduled.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) + ". It will send when quota resets.");
+      toast("⚠️ Broadcast saved locally only. Auto-send is not yet implemented — please send manually using the Send Now button.", "warn");
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -10665,7 +11076,7 @@
         const uMatch = !txt ||
           (user?.Name.toLowerCase() || "").includes(txt) ||
           String(user?.Mobile || "").includes(txt);
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, APP.receiptPrefix + "-");
+        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
         const trkMatch = !trackTxt ||
           (c.ReceiptID || "").toLowerCase().includes(trackTxt) ||
           displayRID.toLowerCase().includes(trackTxt);
@@ -10825,7 +11236,7 @@
         const _drid  = _storeReceipt(c, uName, tName, oName);
         rows.push({
           date: c.PaymentDate || "0",
-          html: `<tr style="cursor:pointer;" onclick="viewDashboardEntry('${_drid}')">
+          html: `<tr class="clickable-row" style="cursor:pointer;" onclick="viewDashboardEntry('${_drid}')">
             <td>${escapeHtml(String(c.PaymentDate || "N/A"))}</td>
             <td><i class="fa-solid fa-user" style="color:#aaa;margin-right:4px;font-size:11px;"></i>${uHTML}</td>
             <td><span class="badge badge-green">${escapeHtml(tName)}</span></td>

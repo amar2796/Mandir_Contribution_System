@@ -200,8 +200,10 @@ const _CACHE_TTL = {
    Key = write action name, Value = array of cache keys to clear */
 const _CACHE_BUST_ON_WRITE = {
   addContribution:    ["getAllData", "getYearlySummary"],
+  updateContribution: ["getAllData", "getYearlySummary"],
   deleteContribution: ["getAllData", "getYearlySummary"],
   addExpense:         ["getAllData", "getYearlySummary"],
+  updateExpense:      ["getAllData", "getYearlySummary"],
   deleteExpense:      ["getAllData", "getYearlySummary"],
   addUser:            ["getAllData"],
   deleteUser:         ["getAllData"],
@@ -223,6 +225,7 @@ const _CACHE_BUST_ON_WRITE = {
   deleteEvent:        ["getEventData"],
   addEventExpense:    ["getEventData"],
   deleteGalleryPhoto: ["getGallery"],
+  sendReceiptEmail:   ["getEmailSettings"],
   saveChatbotConfig:  ["getChatbotConfig"],
   saveEmailSettings:  ["getEmailSettings"],
 };
@@ -334,7 +337,6 @@ function mandirCacheBust(action) {
           if (typeof render          === "function") render();
           if (typeof loadSummary     === "function") loadSummary();
           if (typeof loadYears       === "function") loadYears();
-          if (typeof loadExpenseFilters === "function") loadExpenseFilters();
           break;
    
         case "expenses":
@@ -546,6 +548,8 @@ function setSessionTokenOnServer(userId, token){
 
 /* ── Shared forced-logout helper ── */
 function _forceLogout(message, logoutReason){
+  // Stop session poll immediately so no further API calls fire after logout
+  if(window._pollInterval){ clearInterval(window._pollInterval); window._pollInterval = null; }
   const s = JSON.parse(localStorage.getItem("session") || "null");
   try {
     if(s && s.userId){
@@ -651,7 +655,7 @@ function updateLocalData(category,id,newData){
 function loadYearDropdown(){
   const yearSelect=document.getElementById("yearSelect"); if(!yearSelect)return;
   let years=new Set();
-  if(typeof contributions!=="undefined")contributions.forEach(c=>{let y=Number(c.Year);if(!isNaN(y)&&y>2000)years.add(y);});
+  if(typeof data!=="undefined")data.forEach(c=>{let y=Number(c.Year);if(!isNaN(y)&&y>2000)years.add(y);});
   if(typeof expenses!=="undefined")expenses.forEach(e=>{let y=Number(e.Year);if(!isNaN(y)&&y>2000)years.add(y);});
   let curY=new Date().getFullYear();
   for(let y=2023;y<=curY+1;y++) years.add(y);
@@ -916,7 +920,7 @@ setTimeout(function(){ _getLogoB64(function(){}); }, 500);
 /* ═══ RECEIPT POPUP — Enhanced with logo, improved design ═══ */
 function showReceipt(c, userName, typeName, occasionName, isAdmin){
   const rid        = _storeReceipt(c, userName, typeName, occasionName);
-  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
   const payMode    = c.PaymentMode || "—";
   const payIcon    = payMode==="Cash" ? "money-bill-wave" : payMode==="Cheque" ? "file-invoice" : "mobile-screen-button";
   const shareButtons = isAdmin ? `
@@ -1004,7 +1008,7 @@ function sendReceiptWhatsApp(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
-  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
   const genDate    = new Date().toLocaleDateString("en-IN");
   const payMode    = c.PaymentMode || "—";
   const msg =
@@ -1031,7 +1035,7 @@ function exportReceiptPDFForWhatsApp(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
-  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
   const genDate    = new Date().toLocaleDateString("en-IN");
   const payMode    = c.PaymentMode || "—";
   const msg =
@@ -1064,7 +1068,7 @@ async function sendReceiptEmailDirect(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
-  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
   toast("📧 Sending receipt email...","");
   try {
     const res = await postData({
@@ -1098,7 +1102,7 @@ function printReceipt(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
-  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
   const payMode    = c.PaymentMode||"—";
   const logoTag    = window._logoB64
     ? `<img src="${window._logoB64}" alt="Logo" style="width:60px;height:60px;border-radius:50%;border:3px solid rgba(247,160,26,0.7);object-fit:cover;display:block;margin:0 auto 10px;">`
@@ -1179,7 +1183,7 @@ async function exportReceiptPDF(rid){
       .replace(/\s+/g," ").trim();
   }
 
-  const displayRID  = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+  const displayRID  = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
   const payMode     = _pdf(c.PaymentMode || "—");
   const {jsPDF}     = window.jspdf;
   const pdfName     = _pdf(APP.name);

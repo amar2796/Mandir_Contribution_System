@@ -2222,13 +2222,13 @@
   <!-- HEADER -->
   <header class="header">
     <div class="header-left">
-      <div class="hdr-icon">
+      <div class="hdr-icon" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" style="cursor:pointer;">
         <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo"
           onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
         <i id="hdrIcon" class="fa-solid fa-place-of-worship"
           style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
       </div>
-      <div class="hdr-text">
+      <div class="hdr-text" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" style="cursor:pointer;">
         <div class="hdr-welcome">Welcome back,</div>
         <span class="hdr-name" id="hdr_name">Loading…</span>
       </div>
@@ -2580,56 +2580,125 @@
       <button class="sec-panel-back" onclick="_closeMenuSection('panelPayment')">
         <i class="fa-solid fa-arrow-left"></i> Back
       </button>
-      <div class="sec-lbl" id="submitPaymentSection"><i class="fa-solid fa-hand-holding-dollar"></i> Submit Payment / Request Entry</div>
-      <div class="card" style="margin-bottom:14px;">
-        <div class="card-body">
-          <div style="font-size:12px;color:var(--ink-soft);margin-bottom:12px;">
-            Already paid via UPI or Cash? Submit your payment details here — temple admin will verify and record it officially.
+
+      <!-- Section header -->
+      <div class="sec-lbl" id="submitPaymentSection"><i class="fa-solid fa-hand-holding-dollar"></i> Submit Payment Request</div>
+
+      <!-- Info banner -->
+      <div style="background:linear-gradient(135deg,#fffbf2,#fff8e8);border:1.5px solid rgba(247,160,26,0.28);border-radius:14px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:flex-start;gap:11px;">
+        <div style="width:34px;height:34px;background:rgba(247,160,26,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+          <i class="fa-solid fa-circle-info" style="color:#f7a01a;font-size:0.95rem;"></i>
+        </div>
+        <div>
+          <div style="font-size:12.5px;font-weight:700;color:#78350f;margin-bottom:2px;">Already paid? Submit for verification</div>
+          <div style="font-size:11.5px;color:#a16207;line-height:1.55;">Paid via UPI or Cash? Submit your payment details below — temple admin will verify and record it officially.</div>
+        </div>
+      </div>
+
+      <!-- Payment form card -->
+      <div class="card" style="margin-bottom:14px;border-radius:16px;overflow:hidden;box-shadow:var(--sh-md);">
+
+        <!-- Card gradient header -->
+        <div style="background:linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:2px solid rgba(247,160,26,0.35);">
+          <div style="width:30px;height:30px;background:rgba(247,160,26,0.18);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-receipt" style="color:#f7a01a;font-size:0.85rem;"></i>
           </div>
-          <div class="f-grid" style="gap:10px;">
-            <div class="f-grp">
-              <label>Month *</label>
-              <select id="pr_month" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;">
+          <span style="font-family:var(--font-h);font-weight:700;font-size:14px;color:#fff;">Payment Details</span>
+        </div>
+
+        <div class="card-body" style="padding:16px;">
+
+          <!-- Row 1: Month + Amount side by side -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
+                <i class="fa-solid fa-calendar-days" style="color:#f7a01a;font-size:10px;"></i> Month <span style="color:#ef4444;">*</span>
+              </label>
+              <select id="pr_month" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e2e8f0'">
                 <option value="">Select Month</option>
               </select>
             </div>
-            <div class="f-grp">
-              <label>Amount (₹) *</label>
-              <input type="number" id="pr_amount" placeholder="e.g. 500" min="1" style="width:100%;" />
-            </div>
-            <div class="f-grp">
-              <label>Payment Mode</label>
-              <select id="pr_mode" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;">
-              </select>
-            </div>
-            <div class="f-grp" style="grid-column:1/-1;">
-              <label>UTR / Reference Number (optional)</label>
-              <input type="text" id="pr_utr" placeholder="UPI transaction ID or cheque number" style="width:100%;" />
-            </div>
-            <div class="f-grp" style="grid-column:1/-1;">
-              <label>Note (optional)</label>
-              <input type="text" id="pr_note" placeholder="Any additional info for admin..." maxlength="200" style="width:100%;" />
-            </div>
-            <div class="f-grp" style="grid-column:1/-1;">
-              <label>Payment Slip / Screenshot (optional)</label>
-              <div style="border:1.5px dashed #e2e8f0;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px;background:#fafafa;cursor:pointer;" onclick="document.getElementById('pr_slip').click()">
-                <i class="fa-solid fa-image" style="color:var(--gold);font-size:1.2rem;"></i>
-                <div style="flex:1;">
-                  <div id="pr_slip_name" style="font-size:13px;color:var(--ink-soft);">Tap to attach payment slip or screenshot</div>
-                  <div id="pr_slip_preview_wrap" style="display:none;margin-top:6px;">
-                    <img id="pr_slip_preview" style="max-height:60px;border-radius:6px;border:1px solid #e2e8f0;" src="" />
-                  </div>
-                </div>
-                <input type="file" id="pr_slip" accept="image/*" style="display:none;" onchange="handlePrSlip(this)" />
+            <div>
+              <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
+                <i class="fa-solid fa-indian-rupee-sign" style="color:#f7a01a;font-size:10px;"></i> Amount <span style="color:#ef4444;">*</span>
+              </label>
+              <div style="position:relative;">
+                <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#78350f;">₹</span>
+                <input type="number" id="pr_amount" placeholder="0" min="1"
+                  style="width:100%;padding:10px 12px 10px 26px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
+                  onfocus="this.style.borderColor='var(--gold)';this.style.background='#fff'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'"/>
               </div>
             </div>
           </div>
-          <button id="btnSubmitPayment" onclick="_btnLoad(this);submitPaymentRequest().finally(()=>_btnDone(document.getElementById('btnSubmitPayment')))" style="background:var(--gold);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;">
-            <i class="fa-solid fa-paper-plane"></i> Submit Request to Admin
+
+          <!-- Row 2: Payment Mode — pill selector -->
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:8px;">
+              <i class="fa-solid fa-wallet" style="color:#f7a01a;font-size:10px;"></i> Payment Mode
+            </label>
+            <select id="pr_mode" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e2e8f0'">
+            </select>
+          </div>
+
+          <!-- Row 3: UTR Reference -->
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
+              <i class="fa-solid fa-hashtag" style="color:#f7a01a;font-size:10px;"></i> UTR / Reference No.
+              <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
+            </label>
+            <input type="text" id="pr_utr" placeholder="UPI transaction ID or cheque number"
+              style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
+              onfocus="this.style.borderColor='var(--gold)';this.style.background='#fff'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'"/>
+          </div>
+
+          <!-- Row 4: Note -->
+          <div style="margin-bottom:14px;">
+            <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
+              <i class="fa-solid fa-pen-to-square" style="color:#f7a01a;font-size:10px;"></i> Note
+              <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
+            </label>
+            <input type="text" id="pr_note" placeholder="Any additional info for admin..." maxlength="200"
+              style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
+              onfocus="this.style.borderColor='var(--gold)';this.style.background='#fff'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'"/>
+          </div>
+
+          <!-- Row 5: Payment Slip upload -->
+          <div style="margin-bottom:16px;">
+            <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+              <i class="fa-solid fa-image" style="color:#f7a01a;font-size:10px;"></i> Payment Slip / Screenshot
+              <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
+            </label>
+            <div onclick="document.getElementById('pr_slip').click()"
+              style="border:2px dashed rgba(247,160,26,0.4);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;background:#fffbf2;cursor:pointer;transition:border-color .2s,background .2s;"
+              onmouseover="this.style.borderColor='var(--gold)';this.style.background='#fff8e8'" onmouseout="this.style.borderColor='rgba(247,160,26,0.4)';this.style.background='#fffbf2'">
+              <div style="width:38px;height:38px;background:rgba(247,160,26,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fa-solid fa-cloud-arrow-up" style="color:#f7a01a;font-size:1.1rem;"></i>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div id="pr_slip_name" style="font-size:13px;color:#64748b;font-weight:500;">Tap to attach payment slip</div>
+                <div style="font-size:10.5px;color:#94a3b8;margin-top:1px;">JPG, PNG · Max 5 MB</div>
+                <div id="pr_slip_preview_wrap" style="display:none;margin-top:6px;">
+                  <img id="pr_slip_preview" style="max-height:60px;border-radius:6px;border:1px solid #e2e8f0;" src="" />
+                </div>
+              </div>
+              <input type="file" id="pr_slip" accept="image/*" style="display:none;" onchange="handlePrSlip(this)" />
+            </div>
+          </div>
+
+          <!-- Submit button -->
+          <button id="btnSubmitPayment"
+            onclick="_btnLoad(this);submitPaymentRequest().finally(()=>_btnDone(document.getElementById('btnSubmitPayment')))"
+            style="width:100%;padding:13px;background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;border:none;border-radius:11px;font-family:var(--font-b);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(247,160,26,0.4);transition:opacity .2s,transform .2s;letter-spacing:.2px;">
+            <i class="fa-solid fa-paper-plane"></i> Submit to Admin for Verification
           </button>
-          <div id="prMsg" style="font-size:12px;margin:10px 0 0;display:none;padding:10px 14px;border-radius:8px;border-left:3px solid;"></div>
+
+          <!-- Status message -->
+          <div id="prMsg" style="font-size:12.5px;margin:10px 0 0;display:none;padding:11px 14px;border-radius:9px;border-left:3px solid;font-weight:600;"></div>
+
         </div>
       </div>
+
+      <!-- My Requests section -->
       <div id="myContribRequestsSection" style="display:none;">
         <div class="sec-lbl"><i class="fa-solid fa-clock-rotate-left"></i> My Payment Requests</div>
         <div id="myContribRequestsList"></div>
@@ -2690,7 +2759,14 @@
               <i class="fa-solid fa-location-dot" style="color:var(--gold);font-size:1.2rem;width:22px;text-align:center;"></i>
               <div>
                 <div style="font-size:11px;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Address</div>
-                <div id="templeAddress" style="font-size:13px;color:var(--ink-mid);"></div>
+                <a id="templeAddress" href="#" target="_blank" rel="noopener"
+                  style="font-size:13px;color:var(--ink-mid);text-decoration:none;display:flex;align-items:center;gap:5px;cursor:pointer;transition:color .2s;"
+                  onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--ink-mid)'">
+                  <span id="templeAddressText"></span>
+                  <span style="font-size:10px;background:var(--gold);color:#fff;border-radius:4px;padding:1px 5px;font-weight:700;white-space:nowrap;flex-shrink:0;">
+                    <i class="fa-solid fa-map-location-dot" style="font-size:9px;"></i> Open Map
+                  </span>
+                </a>
               </div>
             </div>
           </div>
@@ -3099,6 +3175,14 @@
                   <span style="width:22px;height:22px;background:linear-gradient(135deg,#f7a01a,#e8920a);border-radius:50%;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">2</span>
                   <span style="font-size:11.5px;font-weight:600;color:#f7a01a;">Verify OTP</span>
                 </div>
+                <!-- Email sent-to banner -->
+                <div id="_mobileOtpEmailBanner" style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:9px;padding:9px 13px;display:flex;align-items:center;gap:9px;margin-bottom:12px;">
+                  <i class="fa-solid fa-envelope-circle-check" style="color:#16a34a;font-size:1rem;flex-shrink:0;"></i>
+                  <div>
+                    <div style="font-size:11px;color:#15803d;font-weight:700;">OTP sent to your email</div>
+                    <div id="_mobileOtpEmailDisplay" style="font-size:12.5px;color:#166534;font-weight:600;"></div>
+                  </div>
+                </div>
                 <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Enter OTP from your email</label>
                 <!-- OTP input full width -->
                 <input id="_mobileOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="— — — — — —"
@@ -3109,6 +3193,13 @@
                 <button id="_mobileVerifyBtn" onclick="_mobileVerifyOTP()" style="width:100%;padding:11px;background:linear-gradient(135deg,#27ae60,#1e9e52);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(39,174,96,0.3);display:flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box;margin-bottom:10px;">
                   <i class="fa-solid fa-check-circle"></i> Verify & Update Mobile
                 </button>
+                <!-- Resend row: countdown then resend button -->
+                <div style="text-align:center;margin-bottom:4px;">
+                  <span id="_mobileResendCountdown" style="font-size:12px;color:#94a3b8;"></span>
+                  <button id="_mobileResendBtn" onclick="_mobileResendOTP()" style="display:none;padding:5px 14px;background:none;color:#f7a01a;border:1.5px solid #f7a01a;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:none;transition:background .2s;">
+                    <i class="fa-solid fa-rotate-right" style="font-size:10px;"></i> Resend OTP
+                  </button>
+                </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <button onclick="_mobileGoToStep2()" style="padding:6px 12px;background:none;color:#3b82f6;border:none;font-size:12px;cursor:pointer;box-shadow:none;text-decoration:underline;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-arrow-left" style="font-size:10px;"></i> Change number</button>
                   <button onclick="document.getElementById('_mobileConfirmOverlay').remove()" style="padding:6px 12px;background:none;color:#94a3b8;border:none;font-size:12px;cursor:pointer;box-shadow:none;text-decoration:underline;">Cancel</button>
@@ -3172,8 +3263,22 @@
           const s3 = document.getElementById("_mobileStep3");
           if (s2) s2.style.display = "none";
           if (s3) s3.style.display = "block";
+          // Show masked email address in banner
+          const emailDisplay = document.getElementById("_mobileOtpEmailDisplay");
+          if (emailDisplay) {
+            const userEmail = mp?.Email || s.email || "";
+            if (userEmail) {
+              const parts = userEmail.split("@");
+              const masked = parts[0].slice(0,2) + "*".repeat(Math.max(2, parts[0].length-2)) + "@" + parts[1];
+              emailDisplay.textContent = masked;
+            } else {
+              emailDisplay.textContent = "your registered email";
+            }
+          }
           _mobilePopupMsg("✅ OTP sent to your registered email.", true);
           setTimeout(() => { const inp = document.getElementById("_mobileOtpInput"); if (inp) inp.focus(); }, 100);
+          // Start 5-minute resend countdown
+          _startMobileOtpCountdown(5 * 60);
         } else {
           _mobilePopupMsg("❌ " + (res?.message || "Failed to send OTP."), false);
           if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-envelope"></i> Send OTP'; }
@@ -3222,6 +3327,55 @@
     // Legacy stubs kept so any old references don't break
     async function requestMobileChangeOTP() { openUpdateMobileConfirm(); }
     async function verifyMobileOTP() { _mobileVerifyOTP(); }
+
+    // ── Resend OTP: 5-minute countdown then show resend button
+    let _mobileOtpCountdownTimer = null;
+    function _startMobileOtpCountdown(totalSec) {
+      if (_mobileOtpCountdownTimer) clearInterval(_mobileOtpCountdownTimer);
+      const countdownEl = document.getElementById("_mobileResendCountdown");
+      const resendBtn = document.getElementById("_mobileResendBtn");
+      if (!countdownEl || !resendBtn) return;
+      resendBtn.style.display = "none";
+      let remaining = totalSec;
+      function _tick() {
+        if (!document.getElementById("_mobileResendCountdown")) { clearInterval(_mobileOtpCountdownTimer); return; }
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
+        countdownEl.textContent = "Resend OTP in " + m + ":" + (s < 10 ? "0" : "") + s;
+        if (remaining <= 0) {
+          clearInterval(_mobileOtpCountdownTimer);
+          countdownEl.style.display = "none";
+          resendBtn.style.display = "inline-block";
+        }
+        remaining--;
+      }
+      _tick();
+      _mobileOtpCountdownTimer = setInterval(_tick, 1000);
+    }
+    async function _mobileResendOTP() {
+      const resendBtn = document.getElementById("_mobileResendBtn");
+      const countdownEl = document.getElementById("_mobileResendCountdown");
+      if (resendBtn) { resendBtn.style.display = "none"; }
+      if (countdownEl) { countdownEl.style.display = ""; }
+      // Go back to step 2 state briefly, then re-trigger send
+      const newMobile = (document.getElementById("_mobileNewInput") || {}).value || "";
+      if (!newMobile) { _mobilePopupMsg("Please go back and re-enter mobile number.", false); return; }
+      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      _mobilePopupMsg("", true);
+      try {
+        const res = await getData("sendMobileChangeOTP&userId=" + encodeURIComponent(s.userId) + "&newMobile=" + encodeURIComponent(newMobile));
+        if (res && res.status === "success") {
+          _mobilePopupMsg("✅ OTP resent to your registered email.", true);
+          _startMobileOtpCountdown(5 * 60);
+        } else {
+          _mobilePopupMsg("❌ " + (res?.message || "Failed to resend OTP."), false);
+          if (resendBtn) resendBtn.style.display = "inline-block";
+        }
+      } catch(e) {
+        _mobilePopupMsg("❌ " + e.message, false);
+        if (resendBtn) resendBtn.style.display = "inline-block";
+      }
+    }
 
     async function saveProfile() {
       let s = JSON.parse(localStorage.getItem("session"));
@@ -4884,7 +5038,11 @@
       const ad = document.getElementById("templeAddress");
       if (ph && APP.phone) { ph.textContent = APP.phone; ph.href = "tel:" + APP.phone; }
       if (em && APP.email) { em.textContent = APP.email; em.href = "mailto:" + APP.email; }
-      if (ad && APP.address) ad.textContent = APP.address;
+      if (ad && APP.address) {
+        const adText = document.getElementById("templeAddressText");
+        if (adText) adText.textContent = APP.address;
+        ad.href = "https://www.google.com/maps/search/" + encodeURIComponent(APP.address);
+      }
       // Also populate payment request month dropdown
       // Populate payment month dropdown
       const prMonth = document.getElementById("pr_month");
