@@ -2390,6 +2390,29 @@
     button:focus-visible { outline: 2px solid #f7a01a; outline-offset: 2px; }
     .card { transition: box-shadow 0.25s ease, transform 0.2s ease; }
     .card:hover { transform: translateY(-1px); }
+
+    /* ── Dashboard tab active state ── */
+    .dash-tab-active {
+      background: #fff !important;
+      color: #1e293b !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
+    }
+
+    /* ── Dashboard mobile improvements ── */
+    @media (max-width: 600px) {
+      /* Tracker header: stack title+tabs above export buttons */
+      #dash-tracker-hdr { flex-direction: column !important; align-items: flex-start !important; }
+      #dash-export-btns { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 6px !important; width: 100%; }
+      #dash-export-btns button { font-size: 10px !important; padding: 7px 4px !important; justify-content: center !important; }
+      /* Stat cards: 2 col */
+      #dashboardPage .ct-sum6,
+      #dash_panel_expense .ct-sum6 { grid-template-columns: repeat(2,1fr) !important; }
+      /* Power filter grids */
+      .ct-pf-g5 { grid-template-columns: 1fr 1fr !important; }
+      /* View toggle row */
+      .ct-view-bar { flex-direction: column !important; align-items: flex-start !important; }
+      .ct-vtoggle { overflow-x: auto; width: 100%; }
+    }
   </style>
 </head>
 
@@ -2974,70 +2997,72 @@
 
       </div>
 
-      <!-- DASHBOARD — merged inline (no iframe, reuses admin data) -->
+      <!-- DASHBOARD — Financial Tracker (Contributions + Expenses) -->
       <div id="dashboardPage" class="page">
 
-        <!-- ── Ghost elements: JS writes to these; not shown in UI ── -->
+        <!-- Ghost elements: JS writes to these; hidden from UI -->
         <div style="display:none;" aria-hidden="true">
-          <span id="dash_yearTitle"></span>
-          <span id="dash_opening"></span>
-          <span id="dash_yearFullC"></span>
-          <span id="dash_yearTotalC"></span>
-          <span id="dash_yearTotalE"></span>
-          <span id="dash_closing"></span>
-          <span id="dash_grandTotal"></span>
-          <span id="dash_filteredCountLabel"></span>
+          <span id="dash_yearTitle"></span><span id="dash_opening"></span>
+          <span id="dash_yearFullC"></span><span id="dash_yearTotalC"></span>
+          <span id="dash_yearTotalE"></span><span id="dash_closing"></span>
+          <span id="dash_grandTotal"></span><span id="dash_filteredCountLabel"></span>
           <div id="dash_monthlyBarChart"></div>
           <select id="dash_yearSelect" onchange="dash_applyFilter()"></select>
-          <input type="text" id="dash_userSearch" />
-          <input type="text" id="dash_trackingSearch" />
-          <input type="text" id="dash_startDate" readonly />
-          <input type="text" id="dash_endDate" readonly />
-          <tbody id="dash_monthWiseBody"></tbody>
-          <tbody id="dash_userWiseBody"></tbody>
-          <tbody id="dash_detailBody"></tbody>
-          <div id="dash_txnPagination"></div>
+          <input id="dash_userSearch" data-debounce="dash_applyFilter" />
+          <input id="dash_trackingSearch" data-debounce="dash_applyFilter" />
+          <input id="dash_startDate" readonly /><input id="dash_endDate" readonly />
+          <tbody id="dash_monthWiseBody"></tbody><tbody id="dash_userWiseBody"></tbody>
+          <tbody id="dash_detailBody"></tbody><div id="dash_txnPagination"></div>
           <div id="dash_loadingMsg"></div>
         </div>
 
         <!-- ── Row 1: Top bar — Backup + Refresh ── -->
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;background:#fff;border-radius:12px;padding:10px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border:1px solid #f1f5f9;flex-wrap:wrap;">
-          <!-- Backup left side -->
-          <div id="localDownloadBanner" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+        <div id="dash-topbar" style="margin-bottom:16px;background:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border:1px solid #f1f5f9;">
+          <!-- Row A: Backup icon + title + Download button -->
+          <div id="localDownloadBanner" style="display:flex;align-items:center;gap:10px;">
             <div style="width:32px;height:32px;border-radius:8px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <i class="fa-solid fa-hard-drive" style="color:#d97706;font-size:14px;"></i>
             </div>
-            <div style="min-width:0;">
-              <div style="font-size:12px;font-weight:700;color:#78350f;white-space:nowrap;">Monthly Backup</div>
-              <div id="lastDownloadMsg" style="font-size:11px;color:#92400e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:700;color:#78350f;">Monthly Backup</div>
+              <div id="lastDownloadMsg" style="font-size:11px;color:#92400e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
             </div>
-            <button onclick="downloadLocalBackup()" style="background:#f7a01a;box-shadow:none;padding:6px 13px;font-size:11px;font-weight:600;border-radius:7px;white-space:nowrap;flex-shrink:0;">
+            <button onclick="downloadLocalBackup()" style="background:#f7a01a;box-shadow:none;padding:6px 12px;font-size:11px;font-weight:600;border-radius:7px;white-space:nowrap;flex-shrink:0;">
               <i class="fa-solid fa-download"></i> Download
             </button>
           </div>
-          <!-- Divider -->
-          <div style="width:1px;height:32px;background:#e2e8f0;flex-shrink:0;"></div>
-          <!-- Refresh right side -->
-          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-            <div style="font-size:11px;color:#94a3b8;" id="dash_lastLoaded">Loaded at page start</div>
-            <button onclick="refreshDashboardData()" style="background:#334155;box-shadow:none;padding:6px 13px;font-size:11px;font-weight:600;border-radius:7px;white-space:nowrap;">
+          <!-- Row B: Refresh bar — always on its own line -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">
+            <span style="font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;" id="dash_lastLoaded">Loaded at start</span>
+            <button onclick="refreshDashboardData()" style="background:#334155;box-shadow:none;padding:5px 11px;font-size:11px;border-radius:7px;white-space:nowrap;flex-shrink:0;">
               <i class="fa-solid fa-rotate-right"></i> Refresh
             </button>
           </div>
         </div>
 
-        <!-- ── Row 2: Tracker Header + Export Actions ── -->
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f7a01a,#f59e0b);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(247,160,26,0.35);">
-              <i class="fa-solid fa-bolt" style="color:#fff;font-size:16px;"></i>
+        <!-- ── Row 2: Tracker header + Tab switcher + Export ── -->
+        <div id="dash-tracker-hdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+          <!-- Left: icon + title + tabs -->
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f7a01a,#f59e0b);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(247,160,26,0.35);flex-shrink:0;">
+              <i class="fa-solid fa-chart-line" style="color:#fff;font-size:15px;"></i>
             </div>
             <div>
-              <div style="font-size:15px;font-weight:700;color:#1e293b;">Contribution Tracker</div>
-              <div style="font-size:11px;color:#94a3b8;margin-top:1px;">Full Track — Power Filtered</div>
+              <div style="font-size:15px;font-weight:700;color:#1e293b;">Financial Tracker</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:1px;">Power Filtered — Full Track</div>
+            </div>
+            <!-- Tab pills -->
+            <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:10px;padding:3px;">
+              <button id="dash_tab_contrib" onclick="dash_switchTab('contrib')" class="dash-tab-active" style="padding:6px 14px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;background:#fff;color:#1e293b;box-shadow:0 1px 4px rgba(0,0,0,0.1);">
+                <i class="fa-solid fa-hand-holding-dollar" style="color:#22c55e;"></i> Contributions
+              </button>
+              <button id="dash_tab_expense" onclick="dash_switchTab('expense')" style="padding:6px 14px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;background:transparent;color:#64748b;box-shadow:none;">
+                <i class="fa-solid fa-file-invoice-dollar" style="color:#ef4444;"></i> Expenses
+              </button>
             </div>
           </div>
-          <div style="display:flex;gap:7px;flex-wrap:wrap;">
+          <!-- Right: Export buttons -->
+          <div id="dash-export-btns" style="display:flex;gap:7px;flex-wrap:wrap;">
             <button onclick="dash_whatsApp()" style="background:#25d366;box-shadow:none;padding:7px 13px;font-size:11px;font-weight:600;border-radius:8px;display:flex;align-items:center;gap:6px;">
               <i class="fa-brands fa-whatsapp"></i> WhatsApp
             </button>
@@ -3045,10 +3070,20 @@
               <i class="fa-solid fa-envelope"></i> Email
             </button>
             <button onclick="dash_exportPDF()" style="background:#e74c3c;box-shadow:none;padding:7px 13px;font-size:11px;font-weight:600;border-radius:8px;display:flex;align-items:center;gap:6px;">
-              <i class="fa-solid fa-file-pdf"></i> Export PDF
+              <i class="fa-solid fa-file-pdf"></i> PDF
             </button>
           </div>
         </div>
+
+        <!-- ══ CONTRIBUTION PANEL ══ -->
+        <div id="dash_panel_contrib">
+          <!-- Section divider -->
+          <div class="ct-sec-divider" style="margin-bottom:14px;">
+            <span></span>
+            <i class="fa-solid fa-hand-holding-dollar" style="color:#22c55e;"></i>
+            Contribution Tracker — Full Track
+            <span></span>
+          </div>
 
         <!-- Summary strip -->
         <div class="ct-sum6">
@@ -3246,6 +3281,145 @@
             </div>
           </div>
         </div>
+
+        </div><!-- end #dash_panel_contrib -->
+
+        <!-- ══ EXPENSE PANEL ══ -->
+        <div id="dash_panel_expense" style="display:none;">
+
+          <div class="ct-sec-divider" style="margin-bottom:14px;">
+            <span></span>
+            <i class="fa-solid fa-file-invoice-dollar" style="color:#ef4444;"></i>
+            Expense Tracker — Power Filtered
+            <span></span>
+          </div>
+
+          <!-- Expense 5 stat cards -->
+          <div class="ct-sum6" style="grid-template-columns:repeat(5,1fr);">
+            <div class="ct-scard sc-r">
+              <div class="sc-lbl">Total Expenses</div>
+              <div class="sc-val" id="et_totalExpense">₹0</div>
+              <div class="sc-sub" id="et_count">0 entries</div>
+            </div>
+            <div class="ct-scard sc-o">
+              <div class="sc-lbl">Avg per Entry</div>
+              <div class="sc-val" id="et_avgExpense">₹0</div>
+              <div class="sc-sub">Filtered period</div>
+            </div>
+            <div class="ct-scard sc-b">
+              <div class="sc-lbl">Highest Month</div>
+              <div class="sc-val" id="et_highMonth">—</div>
+              <div class="sc-sub" id="et_highMonthAmt"></div>
+            </div>
+            <div class="ct-scard sc-t">
+              <div class="sc-lbl">Top Category</div>
+              <div class="sc-val" id="et_topType" style="font-size:12px;">—</div>
+              <div class="sc-sub" id="et_topTypeAmt"></div>
+            </div>
+            <div class="ct-scard sc-a">
+              <div class="sc-lbl">Records</div>
+              <div class="sc-val" id="et_filterCount">0</div>
+              <div class="sc-sub">Matching filters</div>
+            </div>
+          </div>
+
+          <!-- Expense Power Filter panel -->
+          <div class="ct-pf-panel">
+            <div class="ct-pf-header">
+              <div class="ct-pf-title">
+                <i class="fa-solid fa-sliders" style="color:#ef4444;"></i>
+                Power Filters
+                <span style="font-size:10px;font-weight:400;color:#94a3b8;" id="et_filterCount2"></span>
+              </div>
+              <div class="ct-pf-hint">All filters combine together</div>
+            </div>
+            <div class="ct-pf-g5">
+              <div>
+                <span class="ct-pf-lbl">Year</span>
+                <select class="ct-pf-sel" id="et_filterYear"></select>
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Month</span>
+                <select class="ct-pf-sel" id="et_filterMonth" onchange="_et_applyFilter()">
+                  <option value="">All Months</option>
+                  <option>January</option><option>February</option><option>March</option>
+                  <option>April</option><option>May</option><option>June</option>
+                  <option>July</option><option>August</option><option>September</option>
+                  <option>October</option><option>November</option><option>December</option>
+                </select>
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Title / Search</span>
+                <input class="ct-pf-inp" id="et_filterTitle" placeholder="Search title…" oninput="_et_debounceFilter()" />
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Expense Type</span>
+                <select class="ct-pf-sel" id="et_filterType" onchange="_et_applyFilter()">
+                  <option value="">All Types</option>
+                </select>
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Amount Range</span>
+                <div class="ct-amt-range">
+                  <input class="ct-pf-inp" id="et_filterAmtMin" placeholder="₹ Min" type="number" min="0" oninput="_et_debounceFilter()" />
+                  <span>–</span>
+                  <input class="ct-pf-inp" id="et_filterAmtMax" placeholder="₹ Max" type="number" min="0" oninput="_et_debounceFilter()" />
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;">
+              <button onclick="_et_applyFilter()" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">
+                <i class="fa-solid fa-filter"></i> Filter
+              </button>
+              <button onclick="_et_clearFilter()" style="background:transparent;border:1px solid #cbd5e1;color:#475569;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">
+                Clear All
+              </button>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;" id="et_activeTags"></div>
+            </div>
+          </div>
+
+          <!-- View toggle + sort -->
+          <div class="ct-view-bar" style="margin-bottom:10px;">
+            <div style="font-size:12px;font-weight:600;color:#475569;">
+              <i class="fa-solid fa-table-list" style="color:#ef4444;"></i> Expense Records
+            </div>
+            <div class="ct-sort-row">
+              Sort by:
+              <select class="ct-sort-sel" id="et_sortBy" onchange="_et_applyFilter()">
+                <option value="date_desc">Date (Newest)</option>
+                <option value="date_asc">Date (Oldest)</option>
+                <option value="amount_desc">Amount (High→Low)</option>
+                <option value="amount_asc">Amount (Low→High)</option>
+                <option value="title_asc">Title A→Z</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Expense Table -->
+          <div class="card" style="padding:0;">
+            <div class="ct-tbl-wrap">
+              <table class="ct-tbl">
+                <thead>
+                  <tr>
+                    <th onclick="_et_applyFilter()" title="Sort by date">Date</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Month</th>
+                    <th>Year</th>
+                    <th onclick="document.getElementById('et_sortBy').value='amount_desc';_et_applyFilter();" title="Sort by amount">Amount ↕</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="et_tableBody"></tbody>
+              </table>
+            </div>
+            <div class="ct-tbl-footer">
+              <span id="et_pageInfo"></span>
+              <div class="ct-pg-btns" id="et_pagination"></div>
+            </div>
+          </div>
+
+        </div><!-- end #dash_panel_expense -->
 
         <!-- Custom Calendar Popup (dashboard date picker) -->
         <div id="dash_calPop" style="display:none;position:fixed;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:77777;padding:16px;min-width:260px;font-family:Poppins,sans-serif;">
@@ -6022,7 +6196,7 @@
       if (!window._dashInitialized) return;
       dash_contributions = data.slice();
       dash_expenses      = expenses.slice();
-      dash_users         = users.slice();
+      dash_users         = users.filter(u => (u.Role || "").toLowerCase() !== "admin");
       dash_types         = types.slice();
       dash_expenseTypes  = expenseTypes.slice();
       dash_occasions     = occasions.slice();
@@ -12574,10 +12748,10 @@
 
     // ── Called once when admin first opens Dashboard page
     function initDashboardView() {
-      // Copy from admin globals
+      // Copy from admin globals — exclude Admin role so dashboard only counts members
       dash_contributions = data.slice();
       dash_expenses      = expenses.slice();
-      dash_users         = users.slice();
+      dash_users         = users.filter(u => (u.Role || "").toLowerCase() !== "admin");
       dash_types         = types.slice();
       dash_expenseTypes  = expenseTypes.slice();
       dash_occasions     = occasions.slice();
@@ -12885,86 +13059,329 @@
       }).join("");
     }
 
-    // ── PDF export (same logic as dashboard.html exportDashboardPDF)
+
+    // ── Active tab: "contrib" or "expense"
+    var _dash_activeTab = "contrib";
+
+    function dash_switchTab(tab) {
+      _dash_activeTab = tab;
+      // Toggle tab button styles
+      document.getElementById("dash_tab_contrib").classList.toggle("dash-tab-active", tab === "contrib");
+      document.getElementById("dash_tab_expense").classList.toggle("dash-tab-active", tab === "expense");
+      // Show/hide panels
+      document.getElementById("dash_panel_contrib").style.display = tab === "contrib" ? "" : "none";
+      document.getElementById("dash_panel_expense").style.display = tab === "expense" ? "" : "none";
+      // Re-render active tab
+      if (tab === "contrib") ct_applyFilter();
+      else                   _et_applyFilter();
+    }
+
+    // ── WhatsApp — active tab data
+    function dash_whatsApp() {
+      const genDate = new Date().toLocaleDateString("en-IN");
+      const fYear   = _dash_activeTab === "contrib"
+        ? (document.getElementById("ct_filterYear")?.value  || dash_selectedYear)
+        : (document.getElementById("et_filterYear")?.value  || dash_selectedYear);
+      const fMonth  = _dash_activeTab === "contrib"
+        ? (document.getElementById("ct_filterMonth")?.value || "")
+        : (document.getElementById("et_filterMonth")?.value || "");
+      const period  = fMonth ? `${_cap(fMonth)} ${fYear}` : String(fYear);
+
+      if (_dash_activeTab === "contrib") {
+        const paidRows = _ct_filtered.filter(r => r._type === "paid");
+        const totalC   = paidRows.reduce((s,r) => s + Number(r._data.Amount||0), 0);
+        const walkinC  = paidRows.filter(r => String(r._data.UserId).startsWith("WALKIN_"))
+                                 .reduce((s,r) => s + Number(r._data.Amount||0), 0);
+        const map = {}, noteMap = {};
+        paidRows.forEach(r => {
+          const uid = r._data.UserId;
+          map[uid] = (map[uid]||0) + Number(r._data.Amount||0);
+          if (!noteMap[uid]) noteMap[uid] = r._data.Note || "";
+        });
+        const lines = Object.keys(map).map(uid => {
+          const name  = dash_getDisplayName(uid, noteMap[uid]);
+          const label = String(uid).startsWith("WALKIN_") ? `${name} (Walk-In)` : name;
+          return `  ✅ ${label}: ₹${Number(map[uid]).toLocaleString("en-IN")}`;
+        }).join("\n") || "  No contributions found";
+        const msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📊 *Contribution Report — ${period}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Total: ₹${Number(totalC).toLocaleString("en-IN")}\n🚶 Walk-in: ₹${Number(walkinC).toLocaleString("en-IN")}\n━━━━━━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━━━━━━\n_Generated — ${genDate}_`;
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+      } else {
+        const rows  = _et_filtered;
+        const totalE = rows.reduce((s,e) => s + Number(e.Amount||0), 0);
+        const lines  = rows.map(e => {
+          const tName = dash_expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
+          return `  💸 ${escapeHtml(e.Title||"—")} (${tName}): ₹${Number(e.Amount||0).toLocaleString("en-IN")}`;
+        }).join("\n") || "  No expenses found";
+        const msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📋 *Expense Report — ${period}*\n━━━━━━━━━━━━━━━━━━━━\n💸 Total: ₹${Number(totalE).toLocaleString("en-IN")}\n━━━━━━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━━━━━━\n_Generated — ${genDate}_`;
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+      }
+    }
+
+    // ── Email — active tab data
+    function dash_email() {
+      const genDate = new Date().toLocaleDateString("en-IN");
+      const fYear   = _dash_activeTab === "contrib"
+        ? (document.getElementById("ct_filterYear")?.value  || dash_selectedYear)
+        : (document.getElementById("et_filterYear")?.value  || dash_selectedYear);
+      const fMonth  = _dash_activeTab === "contrib"
+        ? (document.getElementById("ct_filterMonth")?.value || "")
+        : (document.getElementById("et_filterMonth")?.value || "");
+      const period  = fMonth ? `${_cap(fMonth)} ${fYear}` : String(fYear);
+
+      if (_dash_activeTab === "contrib") {
+        const paidRows = _ct_filtered.filter(r => r._type === "paid");
+        const totalC   = paidRows.reduce((s,r) => s + Number(r._data.Amount||0), 0);
+        const map = {}, noteMap = {};
+        paidRows.forEach(r => {
+          const uid = r._data.UserId; map[uid] = (map[uid]||0) + Number(r._data.Amount||0);
+          if (!noteMap[uid]) noteMap[uid] = r._data.Note || "";
+        });
+        const lines = Object.keys(map).map(uid => {
+          const name = dash_getDisplayName(uid, noteMap[uid]);
+          return `  ${String(uid).startsWith("WALKIN_") ? name+" (Walk-In)" : name}: Rs.${Number(map[uid]).toLocaleString("en-IN")}`;
+        }).join("\n") || "  No contributions found";
+        const subject = encodeURIComponent(`Contribution Report ${period} — ${APP.name}`);
+        const body    = encodeURIComponent(`${APP.name.toUpperCase()} — CONTRIBUTION REPORT ${period}\n${APP.location}\n\nTotal: Rs.${Number(totalC).toLocaleString("en-IN")}\n\nDETAILS:\n${lines}\n\nGenerated — ${genDate}`);
+        window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+      } else {
+        const rows   = _et_filtered;
+        const totalE = rows.reduce((s,e) => s + Number(e.Amount||0), 0);
+        const lines  = rows.map(e => {
+          const tName = dash_expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
+          return `  ${e.Title||"—"} (${tName}): Rs.${Number(e.Amount||0).toLocaleString("en-IN")}`;
+        }).join("\n") || "  No expenses found";
+        const subject = encodeURIComponent(`Expense Report ${period} — ${APP.name}`);
+        const body    = encodeURIComponent(`${APP.name.toUpperCase()} — EXPENSE REPORT ${period}\n${APP.location}\n\nTotal: Rs.${Number(totalE).toLocaleString("en-IN")}\n\nDETAILS:\n${lines}\n\nGenerated — ${genDate}`);
+        window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+      }
+    }
+
+    // ── PDF export — active tab data
     function dash_exportPDF() {
       if (typeof window.jspdf === "undefined") { toast("PDF library not loaded.", "error"); return; }
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF("p","mm","a4");
-      const w = doc.internal.pageSize.getWidth();
+      const doc  = new jsPDF("p","mm","a4");
+      const w    = doc.internal.pageSize.getWidth();
+      const fYear  = _dash_activeTab === "contrib"
+        ? (document.getElementById("ct_filterYear")?.value  || dash_selectedYear)
+        : (document.getElementById("et_filterYear")?.value  || dash_selectedYear);
+      const fMonth = _dash_activeTab === "contrib"
+        ? (document.getElementById("ct_filterMonth")?.value || "")
+        : (document.getElementById("et_filterMonth")?.value || "");
+      const period = fMonth ? `${_cap(fMonth)} ${fYear}` : String(fYear);
+      const label  = _dash_activeTab === "contrib" ? "CONTRIBUTION" : "EXPENSE";
+
       doc.setFillColor(51,65,85); doc.rect(0,0,w,22,"F");
       doc.setTextColor(247,160,26); doc.setFontSize(14); doc.setFont(undefined,"bold");
-      doc.text(APP.name.toUpperCase() + " — FINANCIAL REPORT " + dash_selectedYear, w/2, 13, {align:"center"});
-      const totalC = document.getElementById("dash_yearTotalC")?.innerText || "0";
-      const totalE = document.getElementById("dash_yearTotalE")?.innerText || "0";
-      doc.setFontSize(8); doc.setTextColor(50,50,50); doc.setFont(undefined,"normal");
-      doc.text(`Contributions: Rs. ${totalC}   |   Expenses: Rs. ${totalE}   |   Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 30);
+      doc.text(`${APP.name.toUpperCase()} — ${label} REPORT ${period}`, w/2, 13, {align:"center"});
 
-      const rows = [];
-      const sortedC = [...dash_filteredC].sort((a,b) => _dash_parseDateSort(b.PaymentDate).localeCompare(_dash_parseDateSort(a.PaymentDate)));
-      sortedC.forEach(c => {
-        const rawName  = dash_getDisplayName(c.UserId, c.Note);
-        const isWalkIn = String(c.UserId).startsWith("WALKIN_");
-        const tName    = dash_types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
-        const oName    = dash_occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
-        rows.push([c.PaymentDate||"N/A", isWalkIn ? rawName+" (Walk-In)" : rawName, tName, c.ForMonth||"—", oName, "+ Rs."+Number(c.Amount||0).toLocaleString("en-IN")]);
-      });
-      const sortedE = [...dash_filteredE].sort((a,b) => _dash_parseDateSort(b.PaymentDate).localeCompare(_dash_parseDateSort(a.PaymentDate)));
-      sortedE.forEach(e => {
-        const tName = dash_expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
-        rows.push([e.PaymentDate||"N/A", e.Title||"—", tName, e.ForMonth||"—", "—", "- Rs."+Number(e.Amount||0).toLocaleString("en-IN")]);
-      });
-      doc.autoTable({ head:[["Date","Name / Title","Type","Month","Occasion","Amount"]], body:rows, startY:35, theme:"grid",
-        headStyles:{fillColor:[51,65,85],fontStyle:"bold"}, styles:{fontSize:8}, alternateRowStyles:{fillColor:[253,251,247]} });
+      let rows = [];
+      if (_dash_activeTab === "contrib") {
+        const paidRows = _ct_filtered.filter(r => r._type === "paid");
+        const totalC   = paidRows.reduce((s,r) => s + Number(r._data.Amount||0), 0);
+        doc.setFontSize(8); doc.setTextColor(50,50,50); doc.setFont(undefined,"normal");
+        doc.text(`Total: Rs.${Number(totalC).toLocaleString("en-IN")}  |  Records: ${paidRows.length}  |  Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 30);
+        rows = paidRows.map(r => {
+          const c = r._data;
+          const name  = dash_getDisplayName(c.UserId, c.Note);
+          const wk    = String(c.UserId).startsWith("WALKIN_");
+          const tName = dash_types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
+          const oName = dash_occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
+          return [_ct_fmtDate(c.PaymentDate), wk ? name+" (Walk-In)" : name, tName, c.ForMonth||"—", oName, `+Rs.${Number(c.Amount||0).toLocaleString("en-IN")}`];
+        });
+        doc.autoTable({ head:[["Date","Name","Type","Month","Occasion","Amount"]], body:rows, startY:35, theme:"grid", headStyles:{fillColor:[51,65,85],fontStyle:"bold"}, styles:{fontSize:8}, alternateRowStyles:{fillColor:[253,251,247]} });
+      } else {
+        const totalE = _et_filtered.reduce((s,e) => s + Number(e.Amount||0), 0);
+        doc.setFontSize(8); doc.setTextColor(50,50,50); doc.setFont(undefined,"normal");
+        doc.text(`Total: Rs.${Number(totalE).toLocaleString("en-IN")}  |  Records: ${_et_filtered.length}  |  Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 30);
+        rows = _et_filtered.map(e => {
+          const tName = dash_expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
+          return [_ct_fmtDate(e.PaymentDate), e.Title||"—", tName, e.ForMonth||"—", `-Rs.${Number(e.Amount||0).toLocaleString("en-IN")}`];
+        });
+        doc.autoTable({ head:[["Date","Title","Type","Month","Amount"]], body:rows, startY:35, theme:"grid", headStyles:{fillColor:[231,76,60],fontStyle:"bold"}, styles:{fontSize:8}, alternateRowStyles:{fillColor:[255,250,250]} });
+      }
+
       const pageCount = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         const ph = doc.internal.pageSize.getHeight();
         doc.setFontSize(7); doc.setTextColor(170,170,170);
-        doc.text(APP.name.toUpperCase() + ", " + APP.address.toUpperCase() + "  |  System Generated — Not Manually Signed", w/2, ph-5, {align:"center"});
+        doc.text(`${APP.name.toUpperCase()}, ${APP.address.toUpperCase()}  |  System Generated`, w/2, ph-5, {align:"center"});
         doc.text(`Page ${i} of ${pageCount}`, w-14, ph-5, {align:"right"});
       }
-      doc.save(`Mandir_Report_${dash_selectedYear}_${Date.now()}.pdf`);
+      doc.save(`Mandir_${label}_${period.replace(/ /g,"_")}_${Date.now()}.pdf`);
     }
 
-    // ── Shared helper: builds per-member contribution map from dash_filteredC
-    function _dash_buildMemberMap() {
-      const map = {}, noteMap = {};
-      dash_filteredC.forEach(c => {
-        map[c.UserId] = (map[c.UserId] || 0) + Number(c.Amount || 0);
-        if (!noteMap[c.UserId]) noteMap[c.UserId] = c.Note || "";
+    // ═══════════════════════════════════════════════════════════
+    // 💸 EXPENSE TRACKER — Power Filter (mirrors Contribution Tracker)
+    // ═══════════════════════════════════════════════════════════
+    var _et_filtered  = [];
+    var _et_page      = 1;
+    var _et_perPage   = 15;
+    var _et_sortBy    = "date_desc";
+    var _et_debTimer  = null;
+
+    function _et_init() {
+      _et_buildYearSelect();
+      _et_buildTypeSelect();
+      _et_applyFilter();
+    }
+
+    function _et_buildYearSelect() {
+      const sel = document.getElementById("et_filterYear");
+      if (!sel) return;
+      const years = new Set();
+      dash_expenses.forEach(e => { const y = Number(e.Year); if (y > 2000) years.add(y); });
+      const sorted = [...years].sort((a,b) => b-a);
+      sel.innerHTML = '<option value="">All Years</option>' +
+        sorted.map(y => `<option value="${y}"${y === dash_selectedYear ? " selected" : ""}>${y}</option>`).join("");
+      sel.onchange = _et_applyFilter;
+    }
+
+    function _et_buildTypeSelect() {
+      const sel = document.getElementById("et_filterType");
+      if (!sel || !dash_expenseTypes.length) return;
+      sel.innerHTML = '<option value="">All Types</option>' +
+        dash_expenseTypes.map(t => `<option value="${t.ExpenseTypeId}">${escapeHtml(t.Name)}</option>`).join("");
+    }
+
+    function _et_debounceFilter() {
+      clearTimeout(_et_debTimer);
+      _et_debTimer = setTimeout(_et_applyFilter, 280);
+    }
+
+    function _et_applyFilter() {
+      _et_sortBy = document.getElementById("et_sortBy")?.value || "date_desc";
+      const fYear   = document.getElementById("et_filterYear")?.value   || "";
+      const fMonth  = (document.getElementById("et_filterMonth")?.value  || "").toLowerCase();
+      const fTitle  = (document.getElementById("et_filterTitle")?.value  || "").toLowerCase();
+      const fType   = document.getElementById("et_filterType")?.value   || "";
+      const fAmtMin = parseFloat(document.getElementById("et_filterAmtMin")?.value) || 0;
+      const fAmtMax = parseFloat(document.getElementById("et_filterAmtMax")?.value) || Infinity;
+
+      _et_filtered = dash_expenses.filter(e => {
+        if (fYear  && Number(e.Year) !== Number(fYear)) return false;
+        if (fMonth && (e.ForMonth||"").toLowerCase() !== fMonth) return false;
+        if (fTitle && !(e.Title||"").toLowerCase().includes(fTitle)) return false;
+        if (fType  && String(e.ExpenseTypeId) !== String(fType)) return false;
+        const amt = Number(e.Amount||0);
+        if (amt < fAmtMin || amt > fAmtMax) return false;
+        return true;
       });
-      return { map, noteMap };
+
+      // Sort
+      _et_filtered.sort((a,b) => {
+        const da = _ct_fmtDate(a.PaymentDate), db = _ct_fmtDate(b.PaymentDate);
+        if (_et_sortBy === "date_desc")   return db < da ? -1 : 1;
+        if (_et_sortBy === "date_asc")    return da < db ? -1 : 1;
+        if (_et_sortBy === "amount_desc") return Number(b.Amount||0) - Number(a.Amount||0);
+        if (_et_sortBy === "amount_asc")  return Number(a.Amount||0) - Number(b.Amount||0);
+        if (_et_sortBy === "title_asc")   return (a.Title||"").localeCompare(b.Title||"");
+        return 0;
+      });
+
+      _et_page = 1;
+      _et_renderSummary();
+      _et_renderTable();
+      _et_renderActiveTags(fYear, fMonth, fTitle, fType, fAmtMin, fAmtMax);
     }
 
-    // ── WhatsApp share
-    function dash_whatsApp() {
-      const genDate = new Date().toLocaleDateString("en-IN");
-      const totalC  = document.getElementById("dash_yearFullC")?.innerText || "0";
-      const totalE  = document.getElementById("dash_yearTotalE")?.innerText || "0";
-      const { map, noteMap } = _dash_buildMemberMap();
-      const memberLines = Object.keys(map).map(uid => {
-        const name  = dash_getDisplayName(uid, noteMap[uid]);
-        const label = String(uid).startsWith("WALKIN_") ? `${name} (Walk-In)` : name;
-        return `  ✅ ${label}: ₹${Number(map[uid]).toLocaleString("en-IN")}`;
-      }).join("\n") || "  No contributions found";
-      const msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📊 *Financial Report — ${dash_selectedYear}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Year Collection: ₹${totalC}\n💸 Expenses: ₹${totalE}\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n━━━━━━━━━━━━━━━━━━━━\n_System Generated — ${genDate}_`;
-      window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+    function _et_renderSummary() {
+      const total    = _et_filtered.reduce((s,e) => s + Number(e.Amount||0), 0);
+      const count    = _et_filtered.length;
+      const avg      = count > 0 ? Math.round(total / count) : 0;
+      // highest month
+      const monthMap = {};
+      _et_filtered.forEach(e => { const m = e.ForMonth||""; if(m) monthMap[m]=(monthMap[m]||0)+Number(e.Amount||0); });
+      const highEntry = Object.entries(monthMap).sort((a,b)=>b[1]-a[1])[0];
+      // by type
+      const typeMap = {};
+      _et_filtered.forEach(e => {
+        const t = dash_expenseTypes.find(x => String(x.ExpenseTypeId)===String(e.ExpenseTypeId))?.Name||"Other";
+        typeMap[t] = (typeMap[t]||0) + Number(e.Amount||0);
+      });
+      const topType = Object.entries(typeMap).sort((a,b)=>b[1]-a[1])[0];
+
+      _setTxt("et_totalExpense",  "₹"+fmt(total));
+      _setTxt("et_count",         count+" entries");
+      _setTxt("et_avgExpense",    "₹"+fmt(avg));
+      _setTxt("et_highMonth",     highEntry ? highEntry[0].slice(0,3) : "—");
+      _setTxt("et_highMonthAmt",  highEntry ? "₹"+fmt(highEntry[1]) : "");
+      _setTxt("et_topType",       topType   ? topType[0] : "—");
+      _setTxt("et_topTypeAmt",    topType   ? "₹"+fmt(topType[1]) : "");
+      _setTxt("et_filterCount",   count+" records");
     }
 
-    // ── Email share
-    function dash_email() {
-      const genDate = new Date().toLocaleDateString("en-IN");
-      const totalC  = document.getElementById("dash_yearFullC")?.innerText || "0";
-      const totalE  = document.getElementById("dash_yearTotalE")?.innerText || "0";
-      const { map, noteMap } = _dash_buildMemberMap();
-      const subject = encodeURIComponent(`Financial Report ${dash_selectedYear} — ${APP.name}`);
-      const memberLines = Object.keys(map).map(uid => {
-        const name  = dash_getDisplayName(uid, noteMap[uid]);
-        const label = String(uid).startsWith("WALKIN_") ? `${name} (Walk-In)` : name;
-        return `  ${label}: Rs.${Number(map[uid]).toLocaleString("en-IN")}`;
-      }).join("\n") || "  No contributions found";
-      const body = encodeURIComponent(`${APP.name.toUpperCase()} — FINANCIAL REPORT ${dash_selectedYear}\n${APP.location}\n\nYear Collection : Rs.${totalC}\nExpenses        : Rs.${totalE}\n\nMEMBER-WISE CONTRIBUTIONS:\n${memberLines}\n\nSystem Generated — ${genDate}\nNot Manually Signed`);
-      window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+    function _et_renderTable() {
+      const total = _et_filtered.length;
+      const pages = Math.ceil(total / _et_perPage) || 1;
+      _et_page    = Math.min(_et_page, pages);
+      const slice = _et_filtered.slice((_et_page-1)*_et_perPage, _et_page*_et_perPage);
+      const tbody = document.getElementById("et_tableBody");
+      if (!tbody) return;
+      if (!slice.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">No expenses match the current filters.</td></tr>';
+      } else {
+        tbody.innerHTML = slice.map(e => {
+          const tName = dash_expenseTypes.find(x => String(x.ExpenseTypeId)===String(e.ExpenseTypeId))?.Name || "Expense";
+          return `<tr>
+            <td>${escapeHtml(_ct_fmtDate(e.PaymentDate))}</td>
+            <td><b>${escapeHtml(e.Title||"—")}</b></td>
+            <td><span class="ct-badge" style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;">${escapeHtml(tName)}</span></td>
+            <td>${escapeHtml(e.ForMonth||"—")}</td>
+            <td>${escapeHtml(String(e.Year||"—"))}</td>
+            <td style="font-weight:600;color:#dc2626;">−₹${fmt(e.Amount)}</td>
+            <td><span class="ct-badge ct-b-paid" style="background:#fff1f2;color:#dc2626;">Expense</span></td>
+          </tr>`;
+        }).join("");
+      }
+      // pagination
+      const pgEl = document.getElementById("et_pagination");
+      const piEl = document.getElementById("et_pageInfo");
+      if (piEl) piEl.textContent = total ? `Showing ${Math.min((_et_page-1)*_et_perPage+1,total)}–${Math.min(_et_page*_et_perPage,total)} of ${total}` : "No records";
+      if (!pgEl) return;
+      if (pages <= 1) { pgEl.innerHTML = ""; return; }
+      let ph = `<button class="pg-btn" onclick="_et_goPage(${_et_page-1})" ${_et_page<=1?"disabled":""}>&#8249; Prev</button>`;
+      const s2=Math.max(1,_et_page-2), e2=Math.min(pages,_et_page+2);
+      if(s2>1){ph+=`<button class="pg-btn" onclick="_et_goPage(1)">1</button>`;if(s2>2)ph+=`<span style="font-size:11px;color:#94a3b8;">…</span>`;}
+      for(let p=s2;p<=e2;p++) ph+=`<button class="pg-btn${p===_et_page?" active":""}" onclick="_et_goPage(${p})">${p}</button>`;
+      if(e2<pages){if(e2<pages-1)ph+=`<span style="font-size:11px;color:#94a3b8;">…</span>`;ph+=`<button class="pg-btn" onclick="_et_goPage(${pages})">${pages}</button>`;}
+      ph+=`<button class="pg-btn" onclick="_et_goPage(${_et_page+1})" ${_et_page>=pages?"disabled":""}>Next &#8250;</button>`;
+      pgEl.innerHTML = ph;
+    }
+
+    function _et_goPage(p) {
+      const pages = Math.ceil(_et_filtered.length / _et_perPage);
+      _et_page = Math.max(1, Math.min(p, pages));
+      _et_renderTable();
+    }
+
+    function _et_renderActiveTags(fYear, fMonth, fTitle, fType, fAmtMin, fAmtMax) {
+      const tags = [];
+      if (fYear)  tags.push({label:"Year: "+fYear,   clear:()=>{document.getElementById("et_filterYear").value="";_et_applyFilter();}});
+      if (fMonth) tags.push({label:"Month: "+_cap(fMonth), clear:()=>{document.getElementById("et_filterMonth").value="";_et_applyFilter();}});
+      if (fTitle) tags.push({label:"Title: "+fTitle, clear:()=>{document.getElementById("et_filterTitle").value="";_et_applyFilter();}});
+      if (fType)  {
+        const tn = dash_expenseTypes.find(t=>String(t.ExpenseTypeId)===fType)?.Name||fType;
+        tags.push({label:"Type: "+tn, clear:()=>{document.getElementById("et_filterType").value="";_et_applyFilter();}});
+      }
+      if (fAmtMin) tags.push({label:"Min ₹"+fAmtMin, clear:()=>{document.getElementById("et_filterAmtMin").value="";_et_applyFilter();}});
+      if (fAmtMax!==Infinity) tags.push({label:"Max ₹"+fAmtMax, clear:()=>{document.getElementById("et_filterAmtMax").value="";_et_applyFilter();}});
+      const el = document.getElementById("et_activeTags");
+      if (!el) return;
+      el.innerHTML = tags.map((t,i)=>`<span class="ct-tag">${escapeHtml(t.label)} <span class="ct-tag-x" onclick="_et_removeTag(${i})">✕</span></span>`).join("");
+      el._tagClears = tags.map(t=>t.clear);
+    }
+
+    function _et_removeTag(i) {
+      const el = document.getElementById("et_activeTags");
+      if (el && el._tagClears && el._tagClears[i]) el._tagClears[i]();
+    }
+
+    function _et_clearFilter() {
+      ["et_filterYear","et_filterMonth","et_filterType"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+      ["et_filterTitle","et_filterAmtMin","et_filterAmtMax"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+      _et_applyFilter();
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -13170,6 +13587,17 @@
 
     function _cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ""; }
 
+    /* ── Date formatter: ISO "2026-03-04T06:00:46.000Z" → "04-03-2026" ── */
+    function _ct_fmtDate(raw) {
+      if (!raw) return "N/A";
+      const s = String(raw).trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        const p = s.substring(0,10).split("-");
+        return p[2]+"-"+p[1]+"-"+p[0];
+      }
+      return s.split(" ")[0].split("T")[0];
+    }
+
     function ct_clearFilter() {
       ["ct_filterYear","ct_filterMonth","ct_filterType","ct_filterOccasion","ct_filterMemberType","ct_filterStatus"]
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
@@ -13248,7 +13676,7 @@
               ? `<div class="ct-streak" style="opacity:.25;">${"<div class='ct-sd ct-sd-off'></div>".repeat(12)}</div>`
               : `<div class="ct-streak">${_ct_streak(c.UserId)}</div>`;
             return `<tr class="clickable-row" style="cursor:pointer;" onclick="viewDashboardEntry('${_drid}')">
-              <td>${escapeHtml(String(c.PaymentDate||"N/A"))}</td>
+              <td>${escapeHtml(_ct_fmtDate(c.PaymentDate))}</td>
               <td><span style="background:#eff6ff;color:#1d4ed8;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;font-family:monospace;">${escapeHtml(rid||"—")}</span></td>
               <td><b>${escapeHtml(name)}</b></td>
               <td>${escapeHtml(tName)}</td>
@@ -13360,11 +13788,12 @@
       tbl.innerHTML = hdr + `<tbody>${rows}</tbody>`;
     }
 
-    /* Hook into existing dash_renderAll so tracker auto-refreshes with dashboard */
+    /* Hook into existing dash_renderAll so both trackers auto-refresh with dashboard */
     const _orig_dash_renderAll = dash_renderAll;
     dash_renderAll = function() {
       _orig_dash_renderAll();
       if (dash_contributions.length || dash_users.length) ct_init();
+      if (dash_expenses.length || dash_contributions.length) _et_init();
     };
 
     // ── Calendar picker (all prefixed dash_ to avoid collision with any other cal)

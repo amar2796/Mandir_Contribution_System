@@ -59,7 +59,7 @@
     designation:   "Authorized Signatory",
   
     /* ── Branding / Messages ── */
-    tagline:       "Jai Shree Ram 🙏",
+    tagline:       "Jai Shree Ram",
     thankYouMsg:   "Thank you for your generous contribution",
     footerNote:    "This is a system-generated receipt.",
     symbol:        "🕉️",
