@@ -1231,6 +1231,10 @@
         font-size: 12px;
         border-radius: 14px;
       }
+      /* 3rd button spans full width so it doesn't stretch lopsided */
+      .qa-row .qa-btn:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+      }
 
       /* ── 2. Bottom sheet taller on mobile ── */
       .bs-sheet {
@@ -1350,15 +1354,6 @@
     .qa-row-wrap {
       position: relative;
     }
-    /* .qa-row-wrap::after {
-      content: '';
-      position: absolute;
-      right: 0; top: 0; bottom: 2px;
-      width: 32px;
-      background: linear-gradient(to left, #eef1f8, transparent);
-      pointer-events: none;
-      border-radius: 0 30px 30px 0;
-    } */
     body.user-dark .qa-row-wrap::after {
       background: linear-gradient(to left, #0f172a, transparent);
     }
@@ -3239,21 +3234,17 @@
     <!-- QUICK ACTIONS -->
     <div class="qa-row-wrap">
     <div class="qa-row">
-      <button class="qa-btn qa-gold" id="btnAnnualReceipt"
-        onclick="_btnLoad(this);exportYearStatementPDF().finally(()=>_btnDone(document.getElementById('btnAnnualReceipt')))" title="Download your annual receipt — useful for tax records" aria-label="Download annual receipt PDF">
-        <i class="fa-solid fa-file-invoice"></i> Annual Receipt
+      <button class="qa-btn qa-green" id="btnSubmitNewPayment"
+        onclick="_toggleAccordion('panelPayment');setTimeout(function(){var el=document.getElementById('accBtn-panelPayment');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},120);" aria-label="Submit new payment">
+        <i class="fa-solid fa-hand-holding-dollar"></i> Submit Payment
       </button>
-      <button class="qa-btn qa-dark" id="btnNewPayment"
-        onclick="_openMenuSection('panelPayment')" aria-label="Open submit payment form">
-        <i class="fa-solid fa-hand-holding-dollar"></i> New Payment
+      <button class="qa-btn qa-gold" id="btnAnnualReceipt"
+        onclick="_confirmPdfDownload('annual')" title="Download your annual contribution statement — useful for tax records" aria-label="Download annual receipt PDF">
+        <i class="fa-solid fa-file-invoice"></i> Annual Contribution Statement
       </button>
       <button class="qa-btn qa-ghost" id="btnFullPDF"
-        onclick="_btnLoad(this);exportPDF().finally(()=>_btnDone(document.getElementById('btnFullPDF')))" aria-label="Download full contributions PDF">
-        <i class="fa-solid fa-file-pdf"></i> Full PDF
-      </button>
-      <button class="qa-btn qa-ghost"
-        onclick="_openMenuSection('panelRecords')" aria-label="Open search and filter records">
-        <i class="fa-solid fa-magnifying-glass"></i> Search
+        onclick="_confirmPdfDownload('full')" aria-label="Download full contributions PDF">
+        <i class="fa-solid fa-file-pdf"></i> Full Contribution History PDF
       </button>
     </div><!-- /.qa-row -->
     </div><!-- /.qa-row-wrap -->
@@ -5882,71 +5873,231 @@
     }
 
     // ── H6: Export Year Statement PDF
+    // ── PDF Download Confirmation dialog
+    function _confirmPdfDownload(type) {
+      const existing = document.getElementById("_pdfConfirmOverlay");
+      if (existing) existing.remove();
+
+      const isDark = document.body.classList.contains("user-dark");
+      const bgCard = isDark ? "#111827" : "#ffffff";
+      const bgPage = isDark ? "rgba(0,0,0,0.75)" : "rgba(0,0,0,0.55)";
+      const txtSub  = isDark ? "#94a3b8" : "#64748b";
+      const txtMain = isDark ? "#f1f5f9" : "#141b2d";
+      const borderC = isDark ? "rgba(247,160,26,0.22)" : "rgba(247,160,26,0.18)";
+      const dividerC = isDark ? "rgba(255,255,255,0.07)" : "#f1f5f9";
+      const isAnnual = type === "annual";
+      const iconClass = isAnnual ? "fa-file-invoice" : "fa-file-pdf";
+      const title = isAnnual ? "Annual Contribution Statement" : "Full Contribution History";
+
+      const ov = document.createElement("div");
+      ov.id = "_pdfConfirmOverlay";
+      ov.style.cssText = "position:fixed;inset:0;z-index:9999;background:" + bgPage + ";display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);";
+      ov.innerHTML = `
+        <div style="background:${bgCard};border-radius:20px;max-width:370px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.45);border:1.5px solid ${borderC};overflow:hidden;animation:dropFade .2s ease;">
+
+          <!-- Header -->
+          <div style="background:linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);padding:16px 18px;display:flex;align-items:center;gap:11px;border-bottom:2px solid rgba(247,160,26,0.35);">
+            <div style="width:38px;height:38px;background:rgba(247,160,26,0.18);border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fa-solid ${iconClass}" style="color:#f7a01a;font-size:1rem;"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:13.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
+              <div style="font-size:10px;color:rgba(247,160,26,0.65);margin-top:1px;">Download confirmation</div>
+            </div>
+            <button onclick="document.getElementById('_pdfConfirmOverlay').remove()" style="background:none;border:none;color:rgba(255,255,255,0.45);font-size:17px;cursor:pointer;padding:0;margin-left:4px;box-shadow:none;line-height:1;flex-shrink:0;">✕</button>
+          </div>
+
+          <!-- Confirmation message -->
+          <div style="padding:20px 18px 6px;text-align:center;">
+            <div style="width:52px;height:52px;background:rgba(247,160,26,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+              <i class="fa-solid fa-file-arrow-down" style="color:#f7a01a;font-size:1.4rem;"></i>
+            </div>
+            <div style="font-size:15px;font-weight:700;color:${txtMain};margin-bottom:6px;">Download PDF?</div>
+            <div style="font-size:12.5px;color:${txtSub};line-height:1.6;">Your <strong style="color:${txtMain};">${title}</strong> will be saved to your device automatically.</div>
+          </div>
+
+          <!-- Yes / No buttons -->
+          <div style="padding:16px 18px 20px;display:flex;gap:10px;">
+            <button onclick="document.getElementById('_pdfConfirmOverlay').remove()"
+              style="flex:1;padding:12px;background:${isDark ? "#1e293b" : "#f1f5f9"};color:${txtSub};border:1.5px solid ${isDark ? "#334155" : "#e2e8f0"};border-radius:11px;font-family:var(--font-b);font-size:14px;font-weight:700;cursor:pointer;box-shadow:none;">
+              No
+            </button>
+            <button id="_pdfConfirmBtn" onclick="_doPdfDownload('${type}')"
+              style="flex:1;padding:12px;background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;border:none;border-radius:11px;font-family:var(--font-b);font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(247,160,26,0.38);">
+              Yes
+            </button>
+          </div>
+
+        </div>`;
+      ov.addEventListener("click", function(e) { if (e.target === ov) ov.remove(); });
+      document.body.appendChild(ov);
+    }
+
+    function _doPdfDownload(type) {
+      const ov = document.getElementById("_pdfConfirmOverlay");
+      const btn = document.getElementById("_pdfConfirmBtn");
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating…'; }
+      if (type === "annual") {
+        exportYearStatementPDF().finally(function() {
+          if (ov) ov.remove();
+          _btnDone(document.getElementById("btnAnnualReceipt"));
+        });
+        _btnLoad(document.getElementById("btnAnnualReceipt"));
+      } else {
+        exportPDF().finally(function() {
+          if (ov) ov.remove();
+          _btnDone(document.getElementById("btnFullPDF"));
+        });
+        _btnLoad(document.getElementById("btnFullPDF"));
+      }
+    }
+
     async function exportYearStatementPDF() {
-      const s = JSON.parse(localStorage.getItem("session") || "null");
+      await _loadJsPDF();
+      if (!window.QRCode) {
+        await new Promise(function(res) {
+          const s = document.createElement("script");
+          s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+          s.onload = res; s.onerror = res;
+          document.head.appendChild(s);
+        });
+      }
+
+      const { jsPDF } = window.jspdf;
+      let s = JSON.parse(localStorage.getItem("session"));
       if (!s) { toast("Not logged in.", "error"); return; }
+
       const yr = String(new Date().getFullYear());
-      // data is in outer scope from init()
       const allData = typeof data !== "undefined" ? data : [];
-      const yearData = allData.filter(c => String(c.Year) === yr);
-      if (yearData.length === 0) { toast("No records for " + yr, "warn"); return; }
+      // Filter to current year only — same as exportPDF but year-locked
+      let filtered = allData.filter(c => String(c.Year) === yr);
+      if (filtered.length === 0) { toast("No records for " + yr, "warn"); return; }
 
       try {
-        await _loadJsPDF();
-        const { jsPDF } = window.jspdf || window;
-        const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-        const W = 210, M = 14;
-        let Y = 14;
+        let doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+        let w = doc.internal.pageSize.getWidth();
 
-        // Header bar
-        doc.setFillColor(30, 41, 64); doc.rect(0, 0, W, 26, "F");
-        doc.setTextColor(247, 160, 26); doc.setFontSize(13); doc.setFont(undefined, "bold");
-        doc.text(APP.name.toUpperCase(), W / 2, 10, { align: "center" });
-        doc.setTextColor(148, 163, 184); doc.setFontSize(8); doc.setFont(undefined, "normal");
-        doc.text("Annual Contribution Statement — " + yr, W / 2, 18, { align: "center" });
+        // ── EXACT SAME header as exportPDF ──
+        doc.setFillColor(42, 15, 0);
+        doc.rect(0, 0, w, 32, "F");
+        doc.setFillColor(247, 160, 26);
+        doc.rect(0, 32, w, 1.2, "F");
 
-        Y = 34;
-        // Member info
-        doc.setTextColor(30, 41, 64); doc.setFontSize(10); doc.setFont(undefined, "bold");
-        doc.text("Member: " + s.name, M, Y); Y += 7;
-        doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(100, 116, 139);
-        doc.text("Statement generated on " + new Date().toLocaleDateString("en-IN"), M, Y); Y += 8;
+        doc.setTextColor(247, 160, 26);
+        doc.setFontSize(15); doc.setFont(undefined, "bold");
+        doc.text(APP.name.toUpperCase(), w / 2, 10, { align: "center" });
 
-        // Table
-        const rows = yearData.map(c => [
-          c.ForMonth || "—",
-          c.Year || yr,
-          "₹" + Number(c.Amount || 0).toLocaleString("en-IN"),
-          c.ReceiptID || "—",
-          c.PaymentMode || "—",
-          String(c.PaymentDate || "").split(" ")[0] || "—"
-        ]);
-        const total = yearData.reduce((s, c) => s + Number(c.Amount || 0), 0);
-        rows.push(["", "TOTAL", "₹" + total.toLocaleString("en-IN"), "", "", ""]);
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8.5); doc.setFont(undefined, "normal");
+        doc.text(APP.address, w / 2, 16, { align: "center" });
+        doc.text("ANNUAL CONTRIBUTION STATEMENT — " + yr + " — OFFICIAL DOCUMENT", w / 2, 21, { align: "center" });
 
-        if (typeof doc.autoTable === "function") {
+        doc.setTextColor(247, 160, 26);
+        doc.setFontSize(18);
+        doc.text("ॐ", w - 10, 18, { align: "right" });
+
+        // ── EXACT SAME member info block as exportPDF ──
+        let Y = 40;
+        doc.setFillColor(253, 248, 240);
+        doc.rect(10, Y - 5, w - 20, 22, "F");
+        doc.setDrawColor(247, 160, 26);
+        doc.setLineWidth(0.4);
+        doc.rect(10, Y - 5, w - 20, 22);
+
+        doc.setTextColor(42, 15, 0);
+        doc.setFontSize(10); doc.setFont(undefined, "bold");
+        doc.text("Member:", 14, Y + 2);
+        doc.setFont(undefined, "normal");
+        doc.setTextColor(30, 41, 59);
+        doc.text(s.name.toUpperCase(), 38, Y + 2);
+
+        doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+        doc.text("Period: January " + yr + " – December " + yr, 14, Y + 8);
+        doc.text("Generated: " + new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }), 14, Y + 13);
+        doc.setFont(undefined, "italic");
+        doc.text(APP.footerNote, w - 14, Y + 13, { align: "right" });
+
+        Y += 28;
+
+        let tot = filtered.reduce((acc, c) => acc + Number(c.Amount || 0), 0);
+
+        // ── EXACT SAME total summary pill as exportPDF ──
+        doc.setFillColor(42, 15, 0);
+        doc.roundedRect(14, Y - 4, 80, 10, 2, 2, "F");
+        doc.setTextColor(247, 160, 26);
+        doc.setFontSize(9); doc.setFont(undefined, "bold");
+        doc.text(`Total: Rs. ${tot.toLocaleString("en-IN")}  (${filtered.length} record${filtered.length !== 1 ? "s" : ""})`, 18, Y + 2.5);
+
+        Y += 10;
+
+        // ── EXACT SAME table columns as exportPDF ──
+        let rows = filtered.map((c, i) => {
+          let tN = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "—",
+              dR = (c.ReceiptID || "").replace(new RegExp("^" + APP.legacyReceiptPrefix + "-"), APP.receiptPrefix + "-");
+          return [String(i + 1), "Rs." + Number(c.Amount || 0).toLocaleString("en-IN"),
+            c.ForMonth || "—", String(c.Year || yr), tN, dR, formatPaymentDate(c.PaymentDate)];
+        });
+
+        if (rows.length > 0) {
           doc.autoTable({
-            head: [["Month", "Year", "Amount", "Receipt", "Mode", "Date"]],
-            body: rows, startY: Y, margin: { left: M, right: M },
-            headStyles: { fillColor: [30, 41, 64], textColor: [247, 160, 26], fontSize: 8 },
-            bodyStyles: { fontSize: 8 },
-            alternateRowStyles: { fillColor: [250, 248, 243] },
-            didParseCell: function (data) {
-              if (data.row.index === rows.length - 1) {
-                data.cell.styles.fontStyle = "bold";
-                data.cell.styles.fillColor = [254, 243, 199];
-              }
-            }
+            head: [["#", "Amount (Rs.)", "Month", "Year", "Type", "Tracking ID", "Date"]],
+            body: rows, startY: Y,
+            theme: "grid",
+            headStyles: { fillColor: [42, 15, 0], textColor: [247, 160, 26], fontStyle: "bold", fontSize: 9 },
+            styles: { fontSize: 8.5, cellPadding: 3, textColor: [30, 41, 59] },
+            columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 26 }, 5: { cellWidth: 36 } },
+            alternateRowStyles: { fillColor: [253, 248, 240] },
+            rowPageBreak: "auto",
           });
         }
 
-        // Gold stripe footer
-        doc.setFillColor(247, 160, 26); doc.rect(0, 285, W, 2, "F");
-        doc.setTextColor(148, 163, 184); doc.setFontSize(7);
-        doc.text(APP.footerNote + "  " + APP.tagline, W / 2, 292, { align: "center" });
+        // ── EXACT SAME QR code block as exportPDF ──
+        try {
+          if (window.QRCode) {
+            const qrText = `Member: ${s.name} | Year: ${yr} | Total: Rs.${tot.toLocaleString("en-IN")} | Records: ${filtered.length} | Date: ${new Date().toLocaleDateString("en-IN")} | Mandir: ${APP.name}, ${APP.location}`;
+            let qrDiv = document.getElementById("_qrOffscreen");
+            if (!qrDiv) {
+              qrDiv = document.createElement("div");
+              qrDiv.id = "_qrOffscreen";
+              qrDiv.style.cssText = "position:fixed;left:-9999px;top:0;visibility:hidden;pointer-events:none;";
+              document.body.appendChild(qrDiv);
+            }
+            qrDiv.innerHTML = "";
+            new window.QRCode(qrDiv, { text: qrText, width: 80, height: 80, colorDark: "#2a0f00", colorLight: "#ffffff" });
+            await new Promise(r => setTimeout(r, 300));
+            const qrCanvas = qrDiv.querySelector("canvas");
+            if (qrCanvas) {
+              const qrData = qrCanvas.toDataURL("image/png");
+              const lastY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : Y + 20;
+              doc.setFillColor(253, 248, 240);
+              doc.rect(w - 36, lastY, 32, 32, "F");
+              doc.setDrawColor(247, 160, 26);
+              doc.setLineWidth(0.4);
+              doc.rect(w - 36, lastY, 32, 32);
+              doc.addImage(qrData, "PNG", w - 35, lastY + 1, 30, 30);
+              doc.setFontSize(6); doc.setTextColor(100, 116, 139);
+              doc.text("Scan to verify", w - 20, lastY + 34, { align: "center" });
+            }
+          }
+        } catch(e) { /* QR optional */ }
 
-        doc.save("YearStatement_" + s.name + "_" + yr + ".pdf");
-        toast("✅ Year statement downloaded!");
+        // ── EXACT SAME footer as exportPDF ──
+        let pc = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pc; i++) {
+          doc.setPage(i);
+          let ph = doc.internal.pageSize.getHeight();
+          doc.setFillColor(42, 15, 0);
+          doc.rect(0, ph - 10, w, 10, "F");
+          doc.setFillColor(247, 160, 26);
+          doc.rect(0, ph - 10, w, 0.8, "F");
+          doc.setFontSize(6.5); doc.setTextColor(180, 140, 80); doc.setFont(undefined, "normal");
+          doc.text((APP.name + ", " + APP.location + "  ·  " + APP.footerNote).toUpperCase(), w / 2, ph - 4, { align: "center" });
+          doc.setTextColor(120, 100, 60);
+          doc.text(`Page ${i} of ${pc}`, w - 10, ph - 4, { align: "right" });
+        }
+
+        doc.save("AnnualStatement_" + yr + "_" + s.name.replace(/\s+/g, "_") + ".pdf");
+        toast("✅ Annual statement downloaded!");
       } catch (err) {
         toast("❌ PDF error: " + err.message, "error");
       }
@@ -6014,9 +6165,8 @@
       // Hero
       [".hero-label",                          null,                         null], // dynamic, handled separately
       // Quick action buttons
-      ["#btnAnnualReceipt",                   "Annual Receipt",             "वार्षिक रसीद"],
-      ["#btnNewPayment",                      "New Payment",                "नया भुगतान"],
-      ["#btnFullPDF",                         "Full PDF",                   "पूरी PDF"],
+      ["#btnAnnualReceipt",                   "Annual Contribution Statement",  "वार्षिक योगदान विवरण"],
+      ["#btnFullPDF",                         "Full Contribution History PDF",   "पूर्ण योगदान इतिहास PDF"],
       // Recent Activity
       ["#recentActivitySection",              "Recent Activity",            "हाल की गतिविधि"],
       // RA hint text
@@ -6076,9 +6226,8 @@
       // Hero
       "All time":                 "अब तक",
       // Buttons
-      "Annual Receipt":           "वार्षिक रसीद",
-      "New Payment":              "नया भुगतान",
-      "Full PDF":                 "पूरी PDF",
+      "Annual Contribution Statement":  "वार्षिक योगदान विवरण",
+      "Full Contribution History PDF":  "पूर्ण योगदान इतिहास PDF",
       "Submit to Admin for Verification": "व्यवस्थापक को सत्यापन हेतु भेजें",
       "Submit Feedback":          "सुझाव भेजें",
       // Form labels
@@ -6186,11 +6335,9 @@
 
       // ── 3. Translate title / aria-label on key buttons
       const btnMap = {
-        "btnAnnualReceipt": ["Download your annual receipt — useful for tax records", "वार्षिक रसीद डाउनलोड करें"],
-        "btnNewPayment":    ["Open submit payment form", "भुगतान फॉर्म खोलें"],
-        "btnFullPDF":       ["Download full contributions PDF", "पूरी योगदान PDF डाउनलोड करें"],
+        "btnAnnualReceipt": ["Download your annual contribution statement — useful for tax records", "वार्षिक योगदान विवरण डाउनलोड करें"],
+        "btnFullPDF":       ["Download full contributions PDF", "पूर्ण योगदान इतिहास PDF डाउनलोड करें"],
         "userDarkBtn":      ["Toggle dark mode", "डार्क मोड बदलें"],
-        "userLangBtn":      ["Toggle language between Hindi and English", "हिंदी और अंग्रेज़ी के बीच बदलें"],
       };
       Object.keys(btnMap).forEach(function(id) {
         const el = document.getElementById(id);
