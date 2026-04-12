@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- DNS prefetch for external resources -->
   <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
   <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
   <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
   <!-- Preload local JS files so browser fetches them early while HTML parses -->
@@ -13,7 +14,10 @@
   <link rel="preload" href="config.js" as="script" />
   <link rel="preload" href="app.js" as="script" />
 
-  <title>My Dashboard</title><!-- Title is set dynamically via APP.name in _setUserVersion() -->
+  <title>My Dashboard</title>
+  <!-- Browser chrome color matches app theme -->
+  <meta name="theme-color" content="#ffffff" id="metaThemeColor">
+  <meta name="color-scheme" content="light dark"><!-- Title is set dynamically via APP.name in _setUserVersion() -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -441,7 +445,7 @@
       cursor: pointer;
       border: none;
       white-space: nowrap;
-      transition: all var(--t);
+      transition: background-color var(--t), box-shadow var(--t), transform var(--t), filter var(--t);
       flex-shrink: 0;
       box-shadow: var(--sh-sm);
     }
@@ -525,6 +529,7 @@
       border: 1px solid rgba(247, 160, 26, 0.1);
       transition: box-shadow var(--t), transform var(--t), border-color var(--t);
       overflow: hidden;
+      contain: layout style;
     }
     .card:hover {
       box-shadow: var(--sh-md);
@@ -836,6 +841,7 @@
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       border-radius: var(--rad-lg);
+      touch-action: pan-x;
     }
 
     table {
@@ -929,7 +935,7 @@
       border: none;
       border-radius: var(--rad-sm);
       cursor: pointer;
-      transition: all var(--t);
+      transition: background-color var(--t), box-shadow var(--t), transform var(--t), filter var(--t), opacity var(--t);
       white-space: nowrap;
       background: var(--gold);
       color: #fff;
@@ -1368,6 +1374,7 @@
       z-index: 9999;
       transition: transform 0.1s linear;
       pointer-events: none;
+      will-change: transform;
     }
 
     /* ── SECTION ANCHOR HIGHLIGHT ── */
@@ -1529,9 +1536,26 @@
        ══════════════════════════════════════════════════════════════════ */
 
     /* ── Base: Deep space background with subtle warm undertone ── */
+    /* ── CSS VARIABLE OVERRIDE — fixes ALL var(--x) usages at once ── */
     body.user-dark {
       background: #08090f !important;
       color: #e2e8f0 !important;
+
+      /* Surface overrides */
+      --white:     #111827;
+      --bg:        #0d1117;
+      --bg2:       #1e293b;
+
+      /* Text overrides */
+      --ink:       #f1f5f9;
+      --ink-mid:   #cbd5e1;
+      --ink-soft:  #94a3b8;
+      --ink-faint: #475569;
+
+      /* Shadow overrides — heavier in dark for depth */
+      --sh-sm: 0 2px 8px rgba(0, 0, 0, 0.30);
+      --sh-md: 0 6px 24px rgba(0, 0, 0, 0.50);
+      --sh-lg: 0 14px 44px rgba(0, 0, 0, 0.65);
     }
 
     /* ── Ambient gold glow behind the whole page ── */
@@ -2010,6 +2034,10 @@
       gap: 10px;
       margin-bottom: 14px;
     }
+    /* Off-screen accordion bodies skip paint until visible */
+    .acc-body:not(.acc-open) {
+      content-visibility: hidden;
+    }
     /* Each accordion wrap is the card — uniform border + shadow here */
     .menu-acc-wrap {
       display: flex;
@@ -2020,6 +2048,7 @@
       box-shadow: var(--sh-sm);
       overflow: hidden;
       transition: border-color var(--t), box-shadow var(--t), transform var(--t);
+      contain: layout style;
     }
     .menu-acc-wrap:hover {
       border-color: rgba(247,160,26,0.35);
@@ -2095,6 +2124,7 @@
       transition: max-height 0.38s cubic-bezier(.4,0,.2,1), opacity 0.28s ease;
       opacity: 0;
       padding: 12px;
+      will-change: max-height, opacity;
     }
     .acc-body.acc-open {
       opacity: 1;
@@ -2181,6 +2211,7 @@
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       padding: 16px 14px 32px;
       padding-bottom: max(32px, calc(16px + env(safe-area-inset-bottom)));
       flex: 1;
@@ -2443,21 +2474,20 @@
        ══════════════════════════════════════════════════════════════ */
 
     /* ── Smooth transition when toggling dark mode ── */
-    body {
-      transition: background-color 0.28s ease, color 0.22s ease;
-    }
-    body * {
-      transition-property: background-color, color, border-color, box-shadow;
-      transition-duration: 0.18s;
-      transition-timing-function: ease;
-    }
-    /* Keep animation-heavy elements from inheriting transition override */
-    body .goal-fill,
-    body .skel,
-    body #page-progress,
-    body .bs-sheet,
-    body .acc-body {
-      transition: inherit;
+    /* Smooth dark mode toggle — TARGETED only, NOT body * (which forces recalc on all elements) */
+    body,
+    .header, .card, .card-hdr, .card-body,
+    .hero, .hero-stat, .goal-item, .bc-item,
+    .menu-acc-wrap, .menu-item, .acc-body,
+    .hdr-dropdown, .hdr-drop-item,
+    .bs-sheet, .bs-header, .bs-body, .bs-close,
+    .ra-item, .ra-view-all,
+    .pg-btn, .btn-ghost, .qa-ghost,
+    .s-item, .sec-lbl,
+    input, select, textarea, .inl-sel,
+    .mob-c-card, td, tbody tr {
+      transition: background-color 0.22s ease, color 0.18s ease,
+                  border-color 0.18s ease, box-shadow 0.18s ease;
     }
 
     /* ── Dark toggle & lang buttons in dark mode ── */
@@ -2787,6 +2817,177 @@
       border-color: rgba(247,160,26,0.5) !important;
     }
 
+    /* ══════════════════════════════════════════════════════
+       ROUND 3 — Final Polish: Light + Dark Mode Completeness
+       ══════════════════════════════════════════════════════ */
+
+    /* ─── LIGHT MODE QUALITY IMPROVEMENTS ─── */
+
+    /* 1. Body background — use CSS var so it's always correct */
+    body { background: var(--bg, #eef1f8); }
+
+    /* 2. Input/select/textarea — unified with CSS vars */
+    .f-grp input, .f-grp select,
+    .inl-sel {
+      background: var(--bg);
+      color: var(--ink);
+      border-color: #e4e9f4;
+    }
+
+    /* 3. Inline select hover state */
+    .inl-sel:hover { border-color: var(--gold-dim); }
+
+    /* 4. Pagination button — use CSS vars */
+    .pg-btn {
+      background: var(--white);
+      color: var(--ink-mid);
+    }
+
+    /* 5. Ghost button — use CSS vars */
+    .btn-ghost {
+      background: var(--white);
+      color: var(--ink-mid);
+    }
+
+    /* 6. Card hover lift — smoother on all devices */
+    @media (hover: hover) {
+      .card:hover { transform: translateY(-2px); }
+    }
+    @media (hover: none) {
+      .card:hover { transform: none; }
+    }
+
+    /* 7. Filter inputs placeholder */
+    .f-grp input::placeholder { color: var(--ink-faint); opacity: 0.7; }
+
+    /* ─── DARK MODE REMAINING GAPS ─── */
+
+    /* Slip preview modal & edit contrib modal — header bg via var */
+    body.user-dark [id="_slipPreviewModal"] > div > div:nth-child(2),
+    body.user-dark [id="_editContribModal"] > div > div:nth-child(2) {
+      background: var(--white) !important;
+    }
+
+    /* Edit contrib modal — slip upload zone dashed border */
+    body.user-dark [id="_editContribModal"] [style*="dashed"] {
+      border-color: rgba(247,160,26,0.3) !important;
+      background: rgba(247,160,26,0.04) !important;
+    }
+
+    /* Payment request slip preview image border */
+    body.user-dark #_ecr_slip_preview {
+      border-color: #2d3748 !important;
+    }
+
+    /* Profile modal: row icon containers */
+    body.user-dark [style*="background:#fff7ed"] {
+      background: rgba(247,160,26,0.12) !important;
+    }
+
+    /* Profile _rv values using hardcoded #1e293b */
+    body.user-dark ._rv { color: var(--ink) !important; }
+    body.user-dark ._rl { color: var(--ink-soft) !important; }
+
+    /* Profile modal Member ID color */
+    body.user-dark [style*="color:#3c1a00"] { color: var(--gold) !important; }
+
+    /* Address hover link in contact panel */
+    body.user-dark #templeAddress { color: var(--ink-mid) !important; }
+
+    /* Mobile number display in edit profile */
+    body.user-dark [style*="color:#555"] { color: var(--ink-mid) !important; }
+
+    /* Edit profile hint text */
+    body.user-dark [style*="color:#aaa"] { color: var(--ink-faint) !important; }
+
+    /* Verification required heading in OTP modal */
+    body.user-dark #_mobileStep1 [style*="color:#1e293b"],
+    body.user-dark [style*="color:#1e293b"] { color: var(--ink) !important; }
+
+    /* OTP step 2 label */
+    body.user-dark [style*="color:#334155"] { color: var(--ink-mid) !important; }
+
+    /* Pending req amber text */
+    body.user-dark [style*="color:#92400e"] { color: #fde68a !important; }
+
+    /* Rejected box text */
+    body.user-dark [style*="color:#991b1b"],
+    body.user-dark [style*="color:#b91c1c"] { color: #fca5a5 !important; }
+
+    /* Approved box text */
+    body.user-dark [style*="color:#166534"],
+    body.user-dark [style*="color:#15803d"] { color: #86efac !important; }
+
+    /* Info banner text in payment panel */
+    body.user-dark [style*="color:#78350f"] { color: #fde68a !important; }
+    body.user-dark [style*="color:#a16207"] { color: #fbbf24 !important; }
+
+    /* Focus-visible input ring for filter inputs in dark */
+    body.user-dark .f-grp input:focus,
+    body.user-dark .f-grp select:focus {
+      background: #111827 !important;
+      border-color: var(--gold) !important;
+      box-shadow: 0 0 0 3px rgba(247,160,26,0.14) !important;
+    }
+
+    /* Version footer */
+    body.user-dark #userVersionFooter { color: #2d3748 !important; }
+
+    /* Scroll progress bar (remains gold in both modes) */
+    #page-progress { background: linear-gradient(90deg, var(--gold), #e8920a); }
+
+    /* Receipt modal — uses openModal which targets ._modal */
+    body.user-dark ._modal input,
+    body.user-dark ._modal select,
+    body.user-dark ._modal textarea {
+      background: #0d1117 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3748 !important;
+    }
+
+    /* Broadcast view all / show less button */
+    body.user-dark .bc-item ~ button,
+    body.user-dark [onclick*="renderBroadcasts"] {
+      background: transparent !important;
+      color: var(--gold) !important;
+      border-color: rgba(247,160,26,0.4) !important;
+    }
+
+    /* Mobile OTP step indicator pending circle */
+    body.user-dark [style*="background:#e2e8f0"][style*="border-radius:50%"] {
+      background: #2d3748 !important;
+      color: #64748b !important;
+    }
+
+    /* ─── INPUT PLACEHOLDER IN DARK ─── */
+    body.user-dark input::placeholder,
+    body.user-dark textarea::placeholder,
+    body.user-dark select::placeholder {
+      color: #475569 !important;
+      opacity: 1 !important;
+    }
+
+    /* ─── ACTIVE / PRESSED STATES IN DARK ─── */
+    body.user-dark button:active:not(.btn-loading) {
+      filter: brightness(0.88);
+    }
+
+    /* ─── LINK COLORS IN DARK ─── */
+    body.user-dark a:not([style]) { color: var(--gold); }
+    body.user-dark a:not([style]):hover { color: #fbbf24; }
+
+    /* ─── TABLE ROW ODD STRIPE (light mode subtle, dark adjusted) ─── */
+    body.user-dark tbody tr:nth-child(even) {
+      background: rgba(247,160,26,0.018);
+    }
+
+    /* ─── SCROLLBAR — gold accent both modes ─── */
+    ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+    body.user-dark ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+
+    /* ─── REDUCE FLICKER — dark mode applies before paint ─── */
+    html.user-dark-init body { background: #08090f; }
+
     /* ── PREFERS-REDUCED-MOTION: disable decorative animations for accessibility + perf ── */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -2804,6 +3005,24 @@
       .ptr-spin { animation: none !important; }
     }
   </style>
+  <!-- ── Anti-FOUC: apply dark class BEFORE first paint to prevent white flash ── -->
+  <script>
+    (function() {
+      try {
+        var stored = localStorage.getItem('mandir_user_dark');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (stored === '1' || (stored === null && prefersDark)) {
+          document.documentElement.classList.add('user-dark-init');
+          document.body && document.body.classList.add('user-dark');
+          // Also set body style directly as body may not exist yet
+          var s = document.createElement('style');
+          s.textContent = 'body{background:#08090f!important;color:#e2e8f0!important;}';
+          s.id = '_dark_fouc';
+          document.head.appendChild(s);
+        }
+      } catch(e) {}
+    })();
+  </script>
 </head>
 
 <body>
@@ -2818,7 +3037,7 @@
   <header class="header" role="banner">
     <div class="header-left">
       <div class="hdr-icon" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" style="cursor:pointer;">
-        <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo"
+        <img src="Image/logo.PNG" alt="Mandir Logo" class="header-logo" fetchpriority="high" decoding="async" width="40" height="40"
           onerror="this.style.display='none';document.getElementById('hdrIcon').style.display='inline';">
         <i id="hdrIcon" class="fa-solid fa-place-of-worship"
           style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
@@ -2830,16 +3049,16 @@
     </div>
     <div class="header-right">
       <button id="userDarkBtn" onclick="toggleUserDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"
-        style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:6px 10px;cursor:pointer;font-size:14px;line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;min-width:36px;height:34px;">🌙</button>
+        style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:6px 10px;cursor:pointer;font-size:14px;line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;">🌙</button>
       <button id="userLangBtn" onclick="toggleUserLang()" title="Toggle Hindi/English" aria-label="Toggle language between Hindi and English"
-        style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:6px 10px;cursor:pointer;font-size:11px;font-weight:700;color:var(--ink-mid);line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;min-width:36px;height:34px;">EN</button>
+        style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:700;color:var(--ink-mid);line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;min-width:36px;">EN</button>
       <div class="hdr-avatar-wrap">
-        <img id="hdr_photo" class="hdr-avatar" src=""
+        <img id="hdr_photo" class="hdr-avatar" src="" loading="lazy" decoding="async"
           onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',40);"
           onclick="toggleUserDropdown()" title="Account" alt="User avatar" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleUserDropdown();}" />
         <div id="userDropdown" class="hdr-dropdown" role="menu" aria-label="Account menu">
           <div class="hdr-drop-head">
-            <img id="hdr_drop_photo" src=""
+            <img id="hdr_drop_photo" src="" loading="lazy" decoding="async"
               onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',34);"
               alt="" />
             <div>
@@ -3209,7 +3428,7 @@
               <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
                 <i class="fa-solid fa-calendar-days" style="color:#f7a01a;font-size:10px;"></i> Month <span style="color:#ef4444;">*</span>
               </label>
-              <select id="pr_month" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor=document.body.classList.contains('user-dark')?'#2d3748':'#e2e8f0'">
+              <select id="pr_month" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor=document.body.classList.contains('user-dark')?'#2d3748':'#e2e8f0'">
                 <option value="">Select Month</option>
               </select>
             </div>
@@ -3220,7 +3439,7 @@
               <div style="position:relative;">
                 <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#78350f;">₹</span>
                 <input type="number" id="pr_amount" placeholder="0" min="1"
-                  style="width:100%;padding:10px 12px 10px 26px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
+                  style="width:100%;padding:10px 12px 10px 26px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
                   onfocus="this.style.borderColor='var(--gold)';this.style.background='#fff'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'"/>
               </div>
             </div>
@@ -3231,7 +3450,7 @@
             <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:8px;">
               <i class="fa-solid fa-wallet" style="color:#f7a01a;font-size:10px;"></i> Payment Mode
             </label>
-            <select id="pr_mode" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e2e8f0'">
+            <select id="pr_mode" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e2e8f0'">
             </select>
           </div>
 
@@ -3242,7 +3461,7 @@
               <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
             </label>
             <input type="text" id="pr_utr" placeholder="UPI transaction ID or cheque number"
-              style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
+              style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
               onfocus="this.style.borderColor='var(--gold)';this.style.background='#fff'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'"/>
           </div>
 
@@ -3253,7 +3472,7 @@
               <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
             </label>
             <input type="text" id="pr_note" placeholder="Any additional info for admin..." maxlength="200"
-              style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:#fafafa;color:#334155;font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
+              style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
               onfocus="this.style.borderColor='var(--gold)';this.style.background='#fff'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'"/>
           </div>
 
@@ -3264,8 +3483,8 @@
               <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
             </label>
             <div onclick="document.getElementById('pr_slip').click()"
-              style="border:2px dashed rgba(247,160,26,0.4);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;background:#fffbf2;cursor:pointer;transition:border-color .2s,background .2s;"
-              onmouseover="this.style.borderColor='var(--gold)';this.style.background='#fff8e8'" onmouseout="this.style.borderColor='rgba(247,160,26,0.4)';this.style.background='#fffbf2'">
+              style="border:2px dashed rgba(247,160,26,0.4);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;background:var(--bg);cursor:pointer;transition:border-color .2s,background .2s;"
+              onmouseover="this.style.borderColor='var(--gold)';this.style.background=document.body.classList.contains('user-dark')?'rgba(247,160,26,0.09)':' #fff8e8'" onmouseout="this.style.borderColor='rgba(247,160,26,0.4)';this.style.background='var(--bg)'">
               <div style="width:38px;height:38px;background:rgba(247,160,26,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <i class="fa-solid fa-cloud-arrow-up" style="color:#f7a01a;font-size:1.1rem;"></i>
               </div>
@@ -3454,6 +3673,24 @@
       if (!document.hidden) { let s = JSON.parse(localStorage.getItem("session") || "null"); if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null, "", "login.html"); location.replace("login.html"); } }
     });
 
+
+    // ── SESSION CACHE — avoids 27x repeated JSON.parse(localStorage.getItem("session"))
+    const _sCache = { v: null, t: 0 };
+    function _sess() {
+      const now = Date.now();
+      if (_sCache.v && now - _sCache.t < 2000) return _sCache.v; // 2s cache
+      try {
+        _sCache.v = JSON.parse(localStorage.getItem("session") || "null");
+        _sCache.t = now;
+      } catch(e) { _sCache.v = null; }
+      return _sCache.v;
+    }
+    function _sessInvalidate() { _sCache.v = null; _sCache.t = 0; }
+    // Invalidate on storage changes from other tabs
+    window.addEventListener("storage", function(e) {
+      if (e.key === "session") _sessInvalidate();
+    });
+
     // ── Device info collector (for audit logging — works on all mobile browsers)
     function _getDeviceInfo() {
       try {
@@ -3589,11 +3826,11 @@
                 <span style="background:rgba(255,255,255,.1);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:3px 14px;font-size:11px;font-weight:600;">${escapeHtml(myProfile.Role || "User")}</span>
               </div>
             </div>
-            <div style="padding:10px 20px 16px;background:#fff;">
-              <div class="_row" style="border-bottom:1px solid #fef3e2;"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-mobile-screen" style="color:#f7a01a;font-size:11px;"></i></span> Mobile</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(String(myProfile.Mobile || "—"))}</span></div>
-              <div class="_row" style="border-bottom:1px solid #fef3e2;"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-envelope" style="color:#f7a01a;font-size:11px;"></i></span> Email</span><span class="_rv" style="word-break:break-all;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Email || "—")}</span></div>
-              ${myProfile.Village ? `<div class="_row" style="border-bottom:1px solid #fef3e2;"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-map-pin" style="color:#f7a01a;font-size:11px;"></i></span> Village</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Village)}</span></div>` : ""}
-              ${myProfile.Address ? `<div class="_row" style="border-bottom:1px solid #fef3e2;"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-location-dot" style="color:#f7a01a;font-size:11px;"></i></span> Address</span><span class="_rv" style="white-space:pre-wrap;text-align:right;max-width:220px;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Address)}</span></div>` : ""}
+            <div style="padding:10px 20px 16px;background:var(--white);">
+              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-mobile-screen" style="color:#f7a01a;font-size:11px;"></i></span> Mobile</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(String(myProfile.Mobile || "—"))}</span></div>
+              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-envelope" style="color:#f7a01a;font-size:11px;"></i></span> Email</span><span class="_rv" style="word-break:break-all;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Email || "—")}</span></div>
+              ${myProfile.Village ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-map-pin" style="color:#f7a01a;font-size:11px;"></i></span> Village</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Village)}</span></div>` : ""}
+              ${myProfile.Address ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-location-dot" style="color:#f7a01a;font-size:11px;"></i></span> Address</span><span class="_rv" style="white-space:pre-wrap;text-align:right;max-width:220px;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Address)}</span></div>` : ""}
               <div class="_row"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-id-card" style="color:#f7a01a;font-size:11px;"></i></span> Member ID</span><span class="_rv" style="font-family:monospace;font-size:12px;font-weight:700;color:#3c1a00;letter-spacing:.5px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
             </div>
           </div>
@@ -3643,7 +3880,7 @@
               <label class="_fl">Full Name</label><input class="_fi" id="ep_name" value="${escapeHtml(dN)}" placeholder="Your name"/>
               <label class="_fl">Email</label><input class="_fi" id="ep_email" type="email" value="${escapeHtml(dE)}" placeholder="your@email.com"/>
               <label class="_fl">Mobile Number</label>
-              <div style="background:#f8f8f8;border:1.5px solid #eee;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <div style="background:var(--bg);border:1.5px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
                 <div style="display:flex;align-items:center;gap:8px;">
                   <i class="fa-solid fa-mobile-screen" style="color:#f7a01a;font-size:13px;"></i>
                   <span style="color:#555;font-size:13px;font-weight:600;letter-spacing:1px;">${escapeHtml(String(myProfile?.Mobile || "—"))}</span>
@@ -3653,9 +3890,9 @@
                 </span>
               </div>
               <label class="_fl" style="margin-top:0;">Village</label><input class="_fi" id="ep_village" value="${escapeHtml(dV)}" placeholder="Village name"/>
-              <label class="_fl">Address</label><textarea class="_fi" id="ep_address" rows="2" placeholder="Full address" style="resize:vertical;min-height:52px;display:block;background:#fafafa;color:#333;cursor:text;">${escapeHtml(dA)}</textarea>
+              <label class="_fl">Address</label><textarea class="_fi" id="ep_address" rows="2" placeholder="Full address" style="resize:vertical;min-height:52px;display:block;background:var(--bg);color:var(--ink);cursor:text;">${escapeHtml(dA)}</textarea>
               <label class="_fl">Password</label>
-                  <div style="background:#f8f8f8;border:1.5px solid #eee;border-radius:8px;
+                  <div style="background:var(--bg);border:1.5px solid rgba(0,0,0,0.08);border-radius:8px;
                     padding:10px 14px;display:flex;align-items:center;justify-content:space-between;
                     margin-bottom:14px;">
                     <span style="color:#aaa;letter-spacing:2px;font-size:14px;">••••••••</span>
@@ -3700,7 +3937,7 @@
       overlay.id = "_mobileConfirmOverlay";
       overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;";
       overlay.innerHTML = `
-          <div style="background:#fff;border-radius:18px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;animation:dropFade .2s ease;">
+          <div style="background:var(--white);border-radius:18px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;animation:dropFade .2s ease;">
 
             <!-- HEADER — warm brown gradient matching hero -->
             <div style="background:linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid rgba(247,160,26,0.35);">
@@ -3717,7 +3954,7 @@
             <div style="padding:20px 20px 16px;">
 
               <!-- Verification info card -->
-              <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;background:#fffbf2;border:1.5px solid rgba(247,160,26,0.22);border-radius:10px;padding:12px 14px;">
+              <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;background:var(--bg);border:1.5px solid rgba(247,160,26,0.22);border-radius:10px;padding:12px 14px;">
                 <div style="width:36px;height:36px;background:rgba(247,160,26,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
                   <i class="fa-solid fa-shield-halved" style="color:#f7a01a;font-size:15px;"></i>
                 </div>
@@ -3741,7 +3978,7 @@
               <div id="_mobileStep1">
                 <div style="font-size:12.5px;color:#64748b;margin-bottom:14px;line-height:1.6;">Click <b style="color:#1e293b;">Yes, Continue</b> to proceed. An OTP will be sent to your registered email to confirm the change.</div>
                 <div style="display:flex;gap:8px;">
-                  <button onclick="document.getElementById('_mobileConfirmOverlay').remove()" style="flex:1;padding:10px;background:#f1f5f9;color:#64748b;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:none;">Cancel</button>
+                  <button onclick="document.getElementById('_mobileConfirmOverlay').remove()" style="flex:1;padding:10px;background:var(--bg2);color:var(--ink-soft);border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:none;">Cancel</button>
                   <button onclick="_mobileGoToStep2()" style="flex:2;padding:10px;background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(247,160,26,0.35);display:inline-flex;align-items:center;justify-content:center;gap:7px;">
                     <i class="fa-solid fa-arrow-right"></i> Yes, Continue
                   </button>
@@ -3777,14 +4014,14 @@
               <div id="_mobileStep3" style="display:none;">
                 <!-- Step indicator -->
                 <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
-                  <span style="width:22px;height:22px;background:#dcfce7;border-radius:50%;color:#16a34a;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-check" style="font-size:9px;"></i></span>
+                  <span style="width:22px;height:22px;background:rgba(34,197,94,0.15);border-radius:50%;color:#16a34a;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-check" style="font-size:9px;"></i></span>
                   <span style="font-size:11.5px;font-weight:600;color:#16a34a;">Number set</span>
                   <span style="flex:1;height:1.5px;background:linear-gradient(90deg,rgba(247,160,26,0.4),transparent);"></span>
                   <span style="width:22px;height:22px;background:linear-gradient(135deg,#f7a01a,#e8920a);border-radius:50%;color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">2</span>
                   <span style="font-size:11.5px;font-weight:600;color:#f7a01a;">Verify OTP</span>
                 </div>
                 <!-- Email sent-to banner -->
-                <div id="_mobileOtpEmailBanner" style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:9px;padding:9px 13px;display:flex;align-items:center;gap:9px;margin-bottom:12px;">
+                <div id="_mobileOtpEmailBanner" style="background:rgba(34,197,94,0.08);border:1.5px solid rgba(74,222,128,0.25);border-radius:9px;padding:9px 13px;display:flex;align-items:center;gap:9px;margin-bottom:12px;">
                   <i class="fa-solid fa-envelope-circle-check" style="color:#16a34a;font-size:1rem;flex-shrink:0;"></i>
                   <div>
                     <div style="font-size:11px;color:#15803d;font-weight:700;">OTP sent to your email</div>
@@ -3841,8 +4078,8 @@
       if (!el) return;
       el.textContent = msg;
       el.style.display = "block";
-      el.style.background = ok ? "#eafaf1" : "#fdedec";
-      el.style.color = ok ? "#1e8449" : "#c0392b";
+      el.style.background = ok ? (document.body.classList.contains("user-dark") ? "rgba(20,83,45,0.55)" : "#eafaf1") : (document.body.classList.contains("user-dark") ? "rgba(69,10,10,0.55)" : "#fdedec");
+      el.style.color = ok ? (document.body.classList.contains("user-dark") ? "#86efac" : "#1e8449") : (document.body.classList.contains("user-dark") ? "#fca5a5" : "#c0392b");
       el.style.borderLeftColor = ok ? "#22c55e" : "#e74c3c";
     }
 
@@ -4043,7 +4280,7 @@
           style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
           font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
       </div>
-      <div id="cp_strength" style="height:4px;border-radius:2px;background:#f1f5f9;
+      <div id="cp_strength" style="height:4px;border-radius:2px;background:var(--bg2);
         margin:-8px 0 12px;overflow:hidden;">
         <div id="cp_strength_bar"
           style="height:100%;width:0%;border-radius:2px;transition:width .3s,background .3s;"></div>
@@ -4225,7 +4462,7 @@
         enabled.map(g => {
           let col = Number(g.CurrentAmount || 0), tgt = Number(g.TargetAmount || 1), pct = Math.min(100, Math.round(col / tgt * 100));
           let bc = pct >= 100 ? "#22c55e" : pct >= 60 ? "#f7a01a" : "#ef4444";
-          let sp = pct >= 100 ? `<span class="goal-pill" style="background:#dcfce7;color:#16a34a;">✓ Achieved</span>` : `<span class="goal-pill" style="background:#fef9ee;color:#f7a01a;">${pct}% funded</span>`;
+          let sp = pct >= 100 ? `<span class="goal-pill" style="background:rgba(34,197,94,0.13);color:#16a34a;">✓ Achieved</span>` : `<span class="goal-pill" style="background:rgba(247,160,26,0.12);color:#f7a01a;">${pct}% funded</span>`;
           return `<div class="goal-item" style="border-left-color:${bc};">
               <div class="goal-top"><div class="goal-name"><i class="fa-solid fa-bullseye" style="color:${bc};font-size:11px;"></i> ${escapeHtml(g.GoalName)}</div>${sp}</div>
               <div class="goal-track"><div class="goal-fill" style="width:${pct}%;background:linear-gradient(90deg,${bc}cc,${bc});"></div></div>
@@ -4261,7 +4498,7 @@
         const bPriority = b.priority || "normal";
         const cls = b.type === "poll" ? "poll" : b.type === "innovation" ? "innovation" : bPriority === "urgent" ? "urgent" : bPriority === "important" ? "important" : "";
         const pollBtns = b.type === "poll"
-          ? '<div style="margin-top:9px;display:flex;gap:7px;flex-wrap:wrap;"><span style="background:#dcfce7;color:#16a34a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">✅ Yes</span><span style="background:#fee2e2;color:#ef4444;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">❌ No</span><span style="background:#fef9ee;color:#f7a01a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">💬 Suggestion</span></div>'
+          ? '<div style="margin-top:9px;display:flex;gap:7px;flex-wrap:wrap;"><span style="background:rgba(34,197,94,0.12);color:#16a34a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">✅ Yes</span><span style="background:rgba(239,68,68,0.10);color:#ef4444;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">❌ No</span><span style="background:rgba(247,160,26,0.10);color:#f7a01a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">💬 Suggestion</span></div>'
           : '';
         return '<div class="bc-item ' + cls + '">'
           + '<div class="bc-meta">'
@@ -4738,7 +4975,7 @@
           pulling = true;
           triggered = false;
         }
-      }, { passive: true });
+      }, { passive: true })
 
       document.addEventListener("touchmove", function(e) {
         if (!pulling) return;
@@ -4753,7 +4990,7 @@
           triggered = true;
           ptrText.textContent = "Release to refresh";
         }
-      }, { passive: true });
+      }, { passive: true })
 
       document.addEventListener("touchend", function() {
         if (!pulling) return;
@@ -4784,7 +5021,7 @@
           indicator.classList.remove("ptr-visible");
         }
         triggered = false;
-      });
+      }, { passive: true })
     })();
 
     // ── Swipe down to close gesture
@@ -5587,8 +5824,17 @@
     }
 
     // ── L2: Dark mode
+    // Remove anti-FOUC inline style once real dark mode CSS is active
+    (function() {
+      var fouc = document.getElementById('_dark_fouc');
+      if (fouc) fouc.remove();
+    })();
+
     function toggleUserDarkMode() {
       const isDark = document.body.classList.toggle("user-dark");
+      // Update browser chrome color
+      const metaTheme = document.getElementById("metaThemeColor");
+      if (metaTheme) metaTheme.content = isDark ? "#08090f" : "#ffffff";
       // Mark explicit user preference — prevents system-pref auto-apply from re-overriding
       document.body.classList.toggle("user-light", !isDark);
       localStorage.setItem("mandir_user_dark", isDark ? "1" : "0");
@@ -5605,6 +5851,8 @@
       const shouldBeDark = stored === "1" || (stored === null && prefersDark);
       if (shouldBeDark) {
         document.body.classList.add("user-dark");
+        const mt = document.getElementById("metaThemeColor");
+        if (mt) mt.content = "#08090f";
         const btn = document.getElementById("userDarkBtn");
         if (btn) {
           btn.textContent = "☀️";
@@ -5745,8 +5993,8 @@
         if (msgEl) {
           msgEl.textContent = msg;
           msgEl.style.display = "block";
-          msgEl.style.background = ok ? "#eafaf1" : "#fdedec";
-          msgEl.style.color = ok ? "#1e8449" : "#c0392b";
+          msgEl.style.background = ok ? (document.body.classList.contains("user-dark") ? "rgba(20,83,45,0.55)" : "#eafaf1") : (document.body.classList.contains("user-dark") ? "rgba(69,10,10,0.55)" : "#fdedec");
+          msgEl.style.color = ok ? (document.body.classList.contains("user-dark") ? "#86efac" : "#1e8449") : (document.body.classList.contains("user-dark") ? "#fca5a5" : "#c0392b");
           msgEl.style.borderLeftColor = ok ? "#22c55e" : "#e74c3c";
         }
       };
@@ -5868,18 +6116,18 @@
                   </div>
                   <div style="text-align:right;display:flex;flex-direction:row;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
                   ${!isPending ? `<span id="del-wrap-${reqId}" style="display:inline-flex;align-items:center;gap:4px;">
-                    <button onclick="_confirmDelete('${reqId}')" class="req-del-btn" style="background:#fef2f2;border:none;color:#ef4444;font-size:11px;padding:4px 12px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-weight:700;box-shadow:none;transition:background 0.18s,color 0.18s,transform 0.15s;"><i class="fa-solid fa-trash"></i> Delete</button>
+                    <button onclick="_confirmDelete('${reqId}')" class="req-del-btn" style="background:rgba(239,68,68,0.09);border:none;color:#ef4444;font-size:11px;padding:4px 12px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-weight:700;box-shadow:none;transition:background 0.18s,color 0.18s,transform 0.15s;"><i class="fa-solid fa-trash"></i> Delete</button>
                   </span>` : ""}
                   <span style="background:${stBg};color:${stColor};border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;">${stIcon} ${escapeHtml(st)}</span>
                   </div>
                 </div>
                 ${actionBtns}
-                ${isRejected ? `<div style="margin-top:8px;padding:8px 12px;background:#fef2f2;border-radius:8px;border:1px solid #fca5a5;">
+                ${isRejected ? `<div style="margin-top:8px;padding:8px 12px;background:rgba(239,68,68,0.09);border-radius:8px;border:1px solid rgba(248,113,113,0.3);">
                   <div style="font-size:11px;font-weight:700;color:#991b1b;margin-bottom:${r.RejectionNote ? "4px" : "0"};">❌ This request was rejected by admin.</div>
                   ${r.RejectionNote ? `<div style="font-size:12px;color:#b91c1c;"><b>Reason:</b> ${escapeHtml(r.RejectionNote)}</div>` : `<div style="font-size:11px;color:#b91c1c;">No reason provided. Please contact admin.</div>`}
                 </div>` : ""}
-                ${isPending ? `<div style="margin-top:6px;font-size:11.5px;color:#92400e;background:#fffbeb;padding:6px 10px;border-radius:6px;">Admin will review and record this payment soon.</div>` : ""}
-                ${isApproved ? `<div style="margin-top:6px;font-size:11.5px;color:#166534;background:#f0fdf4;padding:6px 10px;border-radius:6px;">✅ Verified and added to your Contribution Records above.</div>` : ""}
+                ${isPending ? `<div style="margin-top:6px;font-size:11.5px;color:#92400e;background:rgba(247,160,26,0.1);padding:6px 10px;border-radius:6px;">Admin will review and record this payment soon.</div>` : ""}
+                ${isApproved ? `<div style="margin-top:6px;font-size:11.5px;color:#166534;background:rgba(34,197,94,0.1);padding:6px 10px;border-radius:6px;">✅ Verified and added to your Contribution Records above.</div>` : ""}
               </div>
             </div>`;
         }).join("");
@@ -5899,7 +6147,7 @@
       if (!wrap) return;
       wrap.innerHTML = `<span style="font-size:11px;color:var(--ink-soft);font-weight:600;white-space:nowrap;">Sure?</span>
         <button onclick="_deleteContribRequest('${reqId}')" style="background:#ef4444;border:none;color:#fff;font-size:11px;padding:4px 10px;border-radius:20px;cursor:pointer;font-weight:700;box-shadow:none;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-check"></i> Yes</button>
-        <button onclick="_loadUserContribRequests()" style="background:#f1f5f9;border:none;color:var(--ink-mid);font-size:11px;padding:4px 10px;border-radius:20px;cursor:pointer;font-weight:700;box-shadow:none;">No</button>`;
+        <button onclick="_loadUserContribRequests()" style="background:var(--bg2);border:none;color:var(--ink-mid);font-size:11px;padding:4px 10px;border-radius:20px;cursor:pointer;font-weight:700;box-shadow:none;">No</button>`;
     }
 
     async function _deleteContribRequest(reqId) {
@@ -5936,10 +6184,10 @@
       const m = document.createElement("div");
       m.id = "_slipPreviewModal";
       m.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:20px;";
-      m.innerHTML = `<div style="background:#fff;border-radius:16px;max-width:540px;width:100%;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.45);">
-          <div style="padding:13px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f3f9;background:#fffbf2;">
+      m.innerHTML = `<div style="background:var(--white);border-radius:16px;max-width:540px;width:100%;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.45);">
+          <div style="padding:13px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(247,160,26,0.15);background:var(--bg);">
             <span style="font-weight:700;font-size:14px;color:var(--ink);display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-image" style="color:var(--gold);"></i> Payment Slip Preview</span>
-            <button onclick="document.getElementById('_slipPreviewModal').remove()" style="background:none;border:none;font-size:20px;color:var(--ink-faint);cursor:pointer;padding:0;box-shadow:none;line-height:1;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">✕</button>
+            <button onclick="document.getElementById('_slipPreviewModal').remove()" style="background:none;border:none;font-size:20px;color:var(--ink-faint);cursor:pointer;padding:0;box-shadow:none;line-height:1;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;" onmouseover="this.style.background=document.body.classList.contains('user-dark')?'rgba(247,160,26,0.10)':'#f1f5f9'" onmouseout="this.style.background='none'">✕</button>
           </div>
           <div style="background:#f8fafc;min-height:320px;display:flex;align-items:center;justify-content:center;position:relative;">
             ${isGDrive
@@ -5979,8 +6227,8 @@
       const m = document.createElement("div");
       m.id = "_editContribModal";
       m.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;padding:16px;";
-      m.innerHTML = `<div style="background:#fff;border-radius:16px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.35);">
-          <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f3f9;background:#fffbf2;">
+      m.innerHTML = `<div style="background:var(--white);border-radius:16px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.35);">
+          <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(247,160,26,0.15);background:var(--bg);">
             <span style="font-weight:700;font-size:14px;color:var(--ink);"><i class="fa-solid fa-pen-to-square" style="color:var(--gold);margin-right:6px;"></i>Edit Payment Request</span>
             <button onclick="document.getElementById('_editContribModal').remove()" style="background:none;border:none;font-size:18px;color:var(--ink-faint);cursor:pointer;padding:0;box-shadow:none;line-height:1;">✕</button>
           </div>
@@ -6009,7 +6257,7 @@
             </div>
             <div>
               <label style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Replace Payment Slip (optional)</label>
-              <div style="border:1.5px dashed #e2e8f0;border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;background:#fafafa;cursor:pointer;" onclick="document.getElementById('_ecr_slip').click()">
+              <div style="border:1.5px dashed #e2e8f0;border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;background:var(--bg);cursor:pointer;" onclick="document.getElementById('_ecr_slip').click()">
                 <i class="fa-solid fa-image" style="color:var(--gold);font-size:1rem;"></i>
                 <div style="flex:1;">
                   <div id="_ecr_slip_name" style="font-size:12px;color:var(--ink-soft);">${req.SlipURL ? "Current slip attached — tap to replace" : "Tap to attach new slip"}</div>
@@ -6060,8 +6308,8 @@
       const show = (msg, ok) => {
         if (msgEl) {
           msgEl.textContent = msg; msgEl.style.display = "block";
-          msgEl.style.background = ok ? "#eafaf1" : "#fdedec";
-          msgEl.style.color = ok ? "#1e8449" : "#c0392b";
+          msgEl.style.background = ok ? (document.body.classList.contains("user-dark") ? "rgba(20,83,45,0.55)" : "#eafaf1") : (document.body.classList.contains("user-dark") ? "rgba(69,10,10,0.55)" : "#fdedec");
+          msgEl.style.color = ok ? (document.body.classList.contains("user-dark") ? "#86efac" : "#1e8449") : (document.body.classList.contains("user-dark") ? "#fca5a5" : "#c0392b");
           msgEl.style.borderLeftColor = ok ? "#22c55e" : "#e74c3c";
         }
       };
