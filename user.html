@@ -1726,10 +1726,11 @@
     body.user-dark .ra-amt   { color: #4ade80 !important; }
     body.user-dark .ra-view-all {
       border-top-color: rgba(247,160,26,0.10) !important;
-      color: var(--gold) !important;
+      background: rgba(255,255,255,0.02) !important;
+      color: var(--ink-faint) !important;
     }
     body.user-dark .ra-view-all:hover {
-      background: rgba(247,160,26,0.05) !important;
+      background: rgba(255,255,255,0.02) !important;
     }
 
     /* ── Menu accordion items ── */
@@ -2249,6 +2250,37 @@
     .sec-panel-back:hover { color: var(--gold); }
     .sec-panel-back:active { transform: none; }
 
+    /* ─── RECENT ACTIVITY TOOLTIP ─── */
+    .ra-item-noclk { cursor: default !important; }
+    .ra-item-noclk:focus-visible { outline: none !important; background: transparent !important; }
+    .ra-tooltip {
+      display: none;
+      position: absolute;
+      right: 14px;
+      top: calc(100% + 6px);
+      z-index: 200;
+      background: var(--white);
+      border: 1.5px solid rgba(247,160,26,0.28);
+      border-radius: var(--rad-md);
+      box-shadow: var(--sh-lg);
+      padding: 10px 13px;
+      min-width: 210px;
+      max-width: 270px;
+      pointer-events: none;
+    }
+    .ra-item-noclk:last-child .ra-tooltip,
+    .ra-item-noclk:nth-last-child(2) .ra-tooltip {
+      top: auto;
+      bottom: calc(100% + 6px);
+    }
+    .ra-item-noclk:hover .ra-tooltip { display: block; }
+    body.user-dark .ra-tooltip {
+      background: #1e293b !important;
+      border-color: rgba(247,160,26,0.3) !important;
+      box-shadow: 0 14px 44px rgba(0,0,0,0.7) !important;
+    }
+    body.user-dark .ra-tooltip div[style*="color:var(--ink)"] { color: #f1f5f9 !important; }
+
     /* ─── RECENT ACTIVITY STRIP ─── */
     .ra-list { display: flex; flex-direction: column; }
     .ra-item {
@@ -2279,7 +2311,8 @@
       border-top: 1px solid rgba(247,160,26,0.1);
       transition: background var(--t);
     }
-    .ra-view-all:hover { background: #fffbf2; }
+    .ra-view-all { background: var(--bg); }
+    .ra-view-all:hover { background: var(--bg); }
 
     /* ─── DARK MODE: supplemental overrides ─── */
     body.user-dark .sec-panel-back { color: #64748b !important; }
@@ -3049,9 +3082,9 @@
     </div>
     <div class="header-right">
       <button id="userDarkBtn" onclick="toggleUserDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"
-        style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:6px 10px;cursor:pointer;font-size:14px;line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;">🌙</button>
+        style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:0;cursor:pointer;font-size:13px;line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;width:36px;height:32px;flex-shrink:0;">🌙</button>
       <button id="userLangBtn" onclick="toggleUserLang()" title="Toggle Hindi/English" aria-label="Toggle language between Hindi and English"
-        style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:700;color:var(--ink-mid);line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;min-width:36px;">EN</button>
+        style="background:rgba(0,0,0,0.06);border:1.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:0;cursor:pointer;font-size:11px;font-weight:700;color:var(--ink-mid);line-height:1;transition:background 0.2s,border-color 0.2s;display:flex;align-items:center;justify-content:center;width:36px;height:32px;flex-shrink:0;">EN</button>
       <div class="hdr-avatar-wrap">
         <img id="hdr_photo" class="hdr-avatar" src="" loading="lazy" decoding="async"
           onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',40);"
@@ -3172,8 +3205,9 @@
           <div style="font-size:12px;color:var(--ink-faint);font-weight:500;">Loading activity…</div>
         </div>
       </div>
-      <div class="ra-view-all" onclick="_openMenuSection('panelRecords')" tabindex="0" role="button" aria-label="View all contribution records" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_openMenuSection('panelRecords');}">
-        View all records <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>
+      <div class="ra-view-all" style="cursor:default;color:var(--ink-faint);font-size:11px;font-weight:400;gap:4px;">
+        <i class="fa-solid fa-circle-info" style="font-size:10px;color:var(--ink-faint);opacity:0.7;"></i>
+        To see complete data, click <strong style="color:var(--ink-soft);font-weight:600;">My Contribution</strong> in the menu below
       </div>
     </div>
 
@@ -5081,7 +5115,25 @@
         var type = (types.find(function(t) { return String(t.TypeId) === String(c.TypeId); }) || {}).TypeName || "Contribution";
         var status = String(c.Status || "Approved");
         var statusColor = status.toLowerCase() === "approved" ? "var(--green)" : status.toLowerCase() === "pending" ? "#f59e0b" : "var(--red)";
-        return '<div class="ra-item" onclick="_openMenuSection(\'panelRecords\')" tabindex="0" role="button" aria-label="View contribution of ₹' + fmt(c.Amount) + ' for ' + escapeHtml(c.ForMonth || '') + '">'
+        // Build tooltip rows for full transaction details
+        var tipRows = [
+          ["Month", escapeHtml(c.ForMonth || "—") + (c.Year ? " " + c.Year : "")],
+          ["Amount", "₹ " + fmt(c.Amount)],
+          ["Type", escapeHtml(type)],
+          ["Status", escapeHtml(status)],
+          ["Date", escapeHtml(c.PaymentDate || "—")],
+          ["Mode", escapeHtml(c.PaymentMode || "—")],
+          ["Receipt", escapeHtml(c.ReceiptID || "—")],
+        ];
+        if (c.UtrRef) tipRows.push(["UTR/Ref", escapeHtml(c.UtrRef)]);
+        if (c.Note) tipRows.push(["Note", escapeHtml(c.Note)]);
+        var tipHtml = tipRows.map(function(r) {
+          return '<div style="display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px solid rgba(247,160,26,0.08);">'
+            + '<span style="color:var(--ink-faint);font-size:10px;white-space:nowrap;">' + r[0] + '</span>'
+            + '<span style="font-weight:600;font-size:11px;color:var(--ink);text-align:right;">' + r[1] + '</span>'
+            + '</div>';
+        }).join("");
+        return '<div class="ra-item ra-item-noclk" style="cursor:default;position:relative;">'
           + '<div class="ra-dot ra-dot-gold"></div>'
           + '<div style="flex:1;min-width:0;">'
           + '<div class="ra-month">' + escapeHtml(c.ForMonth || "—") + " " + (c.Year || "") + '</div>'
@@ -5090,6 +5142,10 @@
           + '<div class="ra-right">'
           + '<div class="ra-amt">₹ ' + fmt(c.Amount) + '</div>'
           + '<div class="ra-status" style="color:' + statusColor + ';font-size:10px;">' + escapeHtml(status) + '</div>'
+          + '</div>'
+          + '<div class="ra-tooltip">'
+          + '<div style="font-family:var(--font-h);font-size:11px;font-weight:700;color:var(--gold);margin-bottom:6px;padding-bottom:5px;border-bottom:1.5px solid rgba(247,160,26,0.2);">Transaction Details</div>'
+          + tipHtml
           + '</div>'
           + '</div>';
       }).join("");
