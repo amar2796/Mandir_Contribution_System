@@ -2976,166 +2976,78 @@
 
       <!-- DASHBOARD — merged inline (no iframe, reuses admin data) -->
       <div id="dashboardPage" class="page">
-        <!-- H10: Local download reminder banner -->
-        <div id="localDownloadBanner"
-          style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <i class="fa-solid fa-triangle-exclamation" style="color:#d97706;font-size:18px;"></i>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;color:#78350f;">📥 Monthly Local Backup Reminder</div>
-            <div id="lastDownloadMsg" style="font-size:12px;color:#92400e;margin-top:2px;"></div>
+
+        <!-- ── Ghost elements: JS writes to these; not shown in UI ── -->
+        <div style="display:none;" aria-hidden="true">
+          <span id="dash_yearTitle"></span>
+          <span id="dash_opening"></span>
+          <span id="dash_yearFullC"></span>
+          <span id="dash_yearTotalC"></span>
+          <span id="dash_yearTotalE"></span>
+          <span id="dash_closing"></span>
+          <span id="dash_grandTotal"></span>
+          <span id="dash_filteredCountLabel"></span>
+          <div id="dash_monthlyBarChart"></div>
+          <select id="dash_yearSelect" onchange="dash_applyFilter()"></select>
+          <input type="text" id="dash_userSearch" />
+          <input type="text" id="dash_trackingSearch" />
+          <input type="text" id="dash_startDate" readonly />
+          <input type="text" id="dash_endDate" readonly />
+          <tbody id="dash_monthWiseBody"></tbody>
+          <tbody id="dash_userWiseBody"></tbody>
+          <tbody id="dash_detailBody"></tbody>
+          <div id="dash_txnPagination"></div>
+          <div id="dash_loadingMsg"></div>
+        </div>
+
+        <!-- ── Row 1: Top bar — Backup + Refresh ── -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;background:#fff;border-radius:12px;padding:10px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border:1px solid #f1f5f9;flex-wrap:wrap;">
+          <!-- Backup left side -->
+          <div id="localDownloadBanner" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fa-solid fa-hard-drive" style="color:#d97706;font-size:14px;"></i>
+            </div>
+            <div style="min-width:0;">
+              <div style="font-size:12px;font-weight:700;color:#78350f;white-space:nowrap;">Monthly Backup</div>
+              <div id="lastDownloadMsg" style="font-size:11px;color:#92400e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;"></div>
+            </div>
+            <button onclick="downloadLocalBackup()" style="background:#f7a01a;box-shadow:none;padding:6px 13px;font-size:11px;font-weight:600;border-radius:7px;white-space:nowrap;flex-shrink:0;">
+              <i class="fa-solid fa-download"></i> Download
+            </button>
           </div>
-          <button onclick="downloadLocalBackup()"
-            style="background:#f7a01a;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-family:inherit;cursor:pointer;white-space:nowrap;">
-            <i class="fa-solid fa-download"></i> Download Now
-          </button>
-        </div>
-
-        <!-- Dashboard refresh bar -->
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-          <div style="font-size:12px;color:#94a3b8;" id="dash_lastLoaded">Showing data loaded at page start.</div>
-          <button onclick="refreshDashboardData()" style="background:#334155;box-shadow:none;padding:7px 14px;font-size:12px;">
-            <i class="fa-solid fa-rotate-right"></i> Refresh Dashboard
-          </button>
-        </div>
-
-        <!-- Dashboard content (was dashboard.html body) -->
-        <div id="dash_loadingMsg" style="text-align:center;padding:30px;font-size:1rem;color:#666;display:none;">
-          <i class="fa-solid fa-spinner fa-spin"></i> Refreshing data...
-        </div>
-
-        <div class="grid-layout" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));">
-          <div class="card summary-text">
-            <h3 id="dash_yearTitle"><i class="fa-solid fa-wallet"></i> Year Summary</h3>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;">
-              <div style="background:linear-gradient(135deg,#eafaf1,#d5f5e3);border-radius:10px;padding:12px;text-align:center;border-left:4px solid #27ae60;">
-                <div style="font-size:10px;color:#555;font-weight:600;margin-bottom:4px;">OPENING BALANCE</div>
-                <div style="font-size:1.1rem;font-weight:700;color:#27ae60;">₹ <span id="dash_opening">0</span></div>
-              </div>
-              <div style="background:linear-gradient(135deg,#eafaf1,#d5f5e3);border-radius:10px;padding:12px;text-align:center;border-left:4px solid #2ecc71;">
-                <div style="font-size:10px;color:#555;font-weight:600;margin-bottom:4px;">YEAR COLLECTION</div>
-                <div style="font-size:1.1rem;font-weight:700;color:#27ae60;">₹ <span id="dash_yearFullC">0</span></div>
-              </div>
-              <div style="background:linear-gradient(135deg,#fdedec,#fad5d2);border-radius:10px;padding:12px;text-align:center;border-left:4px solid #e74c3c;">
-                <div style="font-size:10px;color:#555;font-weight:600;margin-bottom:4px;">FILTERED EXPENSES</div>
-                <div style="font-size:1.1rem;font-weight:700;color:#e74c3c;">₹ <span id="dash_yearTotalE">0</span></div>
-              </div>
-              <div style="background:linear-gradient(135deg,#fef9ee,#fdebd0);border-radius:10px;padding:12px;text-align:center;border-left:4px solid #f7a01a;">
-                <div style="font-size:10px;color:#555;font-weight:600;margin-bottom:4px;">CLOSING BALANCE</div>
-                <div style="font-size:1.1rem;font-weight:700;color:#f7a01a;">₹ <span id="dash_closing">0</span></div>
-              </div>
-            </div>
-            <div style="background:#f8f8f8;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#666;">
-              <span style="color:#999;font-size:11px;" id="dash_filteredCountLabel">↳ Filtered Contributions:</span>
-              <b style="color:#27ae60;float:right;">+ ₹ <span id="dash_yearTotalC">0</span></b>
-            </div>
-            <div style="background:linear-gradient(135deg,#334155,#1e293b);border-radius:10px;padding:14px;text-align:center;">
-              <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">💰 OVERALL NET BALANCE</div>
-              <div style="font-size:1.5rem;font-weight:700;color:#f7a01a;">₹ <span id="dash_grandTotal">0</span></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3><i class="fa-solid fa-filter"></i> Advanced Data Filters</h3>
-            <label>Select Year</label>
-            <select id="dash_yearSelect" onchange="dash_applyFilter()"></select>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
-              <div>
-                <label>User Search</label>
-                <input type="text" id="dash_userSearch" placeholder="Name or Mobile" data-debounce="dash_applyFilter" style="margin-bottom:0;" />
-              </div>
-              <div>
-                <label>Tracking ID (MNR-)</label>
-                <input type="text" id="dash_trackingSearch" placeholder="MNR-... or TRX-..." data-debounce="dash_applyFilter" style="margin-bottom:0;" />
-              </div>
-              <div>
-                <label>Start Date</label>
-                <div style="position:relative;">
-                  <input type="text" id="dash_startDate" placeholder="Select date" readonly onclick="dash_openCal('start')" style="cursor:pointer;padding-right:32px;margin-bottom:0;" />
-                  <i class="fa-solid fa-calendar-days" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#f7a01a;pointer-events:none;font-size:14px;"></i>
-                </div>
-              </div>
-              <div>
-                <label>End Date</label>
-                <div style="position:relative;">
-                  <input type="text" id="dash_endDate" placeholder="Select date" readonly onclick="dash_openCal('end')" style="cursor:pointer;padding-right:32px;margin-bottom:0;" />
-                  <i class="fa-solid fa-calendar-days" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#f7a01a;pointer-events:none;font-size:14px;"></i>
-                </div>
-              </div>
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-              <button onclick="dash_applyFilter()"><i class="fa-solid fa-filter"></i> Filter</button>
-              <button onclick="dash_clearDates()"><i class="fa-solid fa-xmark"></i> Clear</button>
-              <button style="background:#25d366;box-shadow:none;" onclick="dash_whatsApp()"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
-              <button style="background:#2980b9;box-shadow:none;" onclick="dash_email()"><i class="fa-solid fa-envelope"></i> Email</button>
-              <button style="background:#27ae60;box-shadow:none;" onclick="dash_exportPDF()"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
-            </div>
+          <!-- Divider -->
+          <div style="width:1px;height:32px;background:#e2e8f0;flex-shrink:0;"></div>
+          <!-- Refresh right side -->
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            <div style="font-size:11px;color:#94a3b8;" id="dash_lastLoaded">Loaded at page start</div>
+            <button onclick="refreshDashboardData()" style="background:#334155;box-shadow:none;padding:6px 13px;font-size:11px;font-weight:600;border-radius:7px;white-space:nowrap;">
+              <i class="fa-solid fa-rotate-right"></i> Refresh
+            </button>
           </div>
         </div>
 
-        <!-- Monthly bar chart -->
-        <div class="card" style="margin-bottom:16px;">
-          <h3 style="margin-bottom:14px;"><i class="fa-solid fa-chart-bar" style="color:#f7a01a;"></i> Monthly Income vs Expense</h3>
-          <div id="dash_monthlyBarChart" style="display:flex;align-items:flex-end;gap:6px;height:140px;padding:0 4px;overflow-x:auto;">
-            <div style="color:#aaa;font-size:12px;padding:10px;">Loading chart…</div>
-          </div>
-          <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;font-weight:600;">
-            <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:#22c55e;border-radius:3px;display:inline-block;"></span>Income</span>
-            <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:#f97316;border-radius:3px;display:inline-block;"></span>Expense</span>
-          </div>
-        </div>
-
-        <!-- Month-wise and User-wise -->
-        <div class="grid-layout" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));">
-          <div class="card">
-            <h3><i class="fa-solid fa-calendar-days"></i> Month-wise Tracking</h3>
-            <div class="table-responsive">
-              <table>
-                <thead><tr><th>Month</th><th>Contributions (₹)</th><th>Expenses (₹)</th></tr></thead>
-                <tbody id="dash_monthWiseBody"></tbody>
-              </table>
+        <!-- ── Row 2: Tracker Header + Export Actions ── -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#f7a01a,#f59e0b);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(247,160,26,0.35);">
+              <i class="fa-solid fa-bolt" style="color:#fff;font-size:16px;"></i>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:#1e293b;">Contribution Tracker</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:1px;">Full Track — Power Filtered</div>
             </div>
           </div>
-          <div class="card">
-            <h3><i class="fa-solid fa-users"></i> User-wise Tracking</h3>
-            <div class="table-responsive">
-              <table>
-                <thead><tr><th>User Name</th><th>Total Contributed (₹)</th></tr></thead>
-                <tbody id="dash_userWiseBody"></tbody>
-              </table>
-            </div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;">
+            <button onclick="dash_whatsApp()" style="background:#25d366;box-shadow:none;padding:7px 13px;font-size:11px;font-weight:600;border-radius:8px;display:flex;align-items:center;gap:6px;">
+              <i class="fa-brands fa-whatsapp"></i> WhatsApp
+            </button>
+            <button onclick="dash_email()" style="background:#2980b9;box-shadow:none;padding:7px 13px;font-size:11px;font-weight:600;border-radius:8px;display:flex;align-items:center;gap:6px;">
+              <i class="fa-solid fa-envelope"></i> Email
+            </button>
+            <button onclick="dash_exportPDF()" style="background:#e74c3c;box-shadow:none;padding:7px 13px;font-size:11px;font-weight:600;border-radius:8px;display:flex;align-items:center;gap:6px;">
+              <i class="fa-solid fa-file-pdf"></i> Export PDF
+            </button>
           </div>
-        </div>
-
-        <!-- Transaction log -->
-        <div class="card">
-          <h3><i class="fa-solid fa-list-check"></i> Transaction Log
-            <span style="font-size:11px;font-weight:400;color:#999;">— click contribution row for receipt</span>
-          </h3>
-          <div class="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th><th>Name / Title</th><th>Type</th><th>Month</th>
-                  <th>Occasion</th><th>Amount</th><th>Receipt</th>
-                </tr>
-              </thead>
-              <tbody id="dash_detailBody"></tbody>
-            </table>
-          </div>
-          <div id="dash_txnPagination" style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:12px;"></div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════════════ -->
-        <!-- ⚡ CONTRIBUTION TRACKER — Power Filter & Full Track  -->
-        <!-- ══════════════════════════════════════════════════════ -->
-
-        <!-- Section divider -->
-        <div class="ct-sec-divider">
-          <span></span>
-          <i class="fa-solid fa-bolt" style="color:#f7a01a;"></i>
-          Contribution Tracker — Full Track
-          <span class="ct-sec-new">NEW</span>
-          <span></span>
         </div>
 
         <!-- Summary strip -->
