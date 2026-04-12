@@ -2217,6 +2217,140 @@
     body.dark-mode [style*="color:#d97706"] { color: #fbbf24 !important; }
     body.dark-mode [style*="color:#6366f1"] { color: #a5b4fc !important; }
 
+    /* ── Contribution Tracker Power Filter ── */
+    .ct-sec-divider {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 10px; font-weight: 700; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin: 20px 0 12px;
+    }
+    .ct-sec-divider span { flex: 1; height: 1px; background: #e2e8f0; }
+    .ct-sec-new {
+      padding: 2px 9px; background: #dbeafe; color: #1d4ed8;
+      border-radius: 20px; font-size: 9px; font-weight: 700;
+    }
+    .ct-sum6 {
+      display: grid; grid-template-columns: repeat(6, 1fr);
+      gap: 10px; margin-bottom: 14px;
+    }
+    @media (max-width: 900px) { .ct-sum6 { grid-template-columns: repeat(3,1fr); } }
+    .ct-scard {
+      background: #fff; border-radius: 10px; border: 1px solid #e2e8f0;
+      padding: 10px 13px; position: relative; overflow: hidden;
+    }
+    .ct-scard::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 10px 0 0 10px;
+    }
+    .ct-scard.sc-g::before { background: #22c55e; }
+    .ct-scard.sc-b::before { background: #3b82f6; }
+    .ct-scard.sc-r::before { background: #ef4444; }
+    .ct-scard.sc-t::before { background: #14b8a6; }
+    .ct-scard.sc-a::before { background: #f7a01a; }
+    .ct-scard.sc-o::before { background: #f97316; }
+    .ct-scard .sc-lbl { font-size: 9px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .3px; }
+    .ct-scard .sc-val { font-size: 15px; font-weight: 700; color: #1e293b; margin-top: 2px; line-height: 1.2; }
+    .ct-scard .sc-sub { font-size: 9px; color: #94a3b8; margin-top: 1px; }
+
+    /* Power filter panel */
+    .ct-pf-panel {
+      background: #fff; border-radius: 10px;
+      border: 1.5px solid #bfdbfe; padding: 14px 16px; margin-bottom: 14px;
+    }
+    .ct-pf-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px;
+    }
+    .ct-pf-title { font-size: 12px; font-weight: 700; color: #1e40af; display: flex; align-items: center; gap: 7px; }
+    .ct-pf-hint { font-size: 10px; color: #94a3b8; }
+    .ct-pf-g5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 8px; }
+    .ct-pf-g6 { display: grid; grid-template-columns: repeat(4,1fr) auto auto; gap: 8px; align-items: end; }
+    @media (max-width: 900px) {
+      .ct-pf-g5 { grid-template-columns: repeat(2,1fr); }
+      .ct-pf-g6 { grid-template-columns: 1fr 1fr; }
+    }
+    .ct-pf-lbl { font-size: 9px; font-weight: 600; color: #64748b; margin-bottom: 3px; display: block; }
+    .ct-pf-sel, .ct-pf-inp {
+      width: 100%; padding: 6px 9px; border-radius: 7px;
+      border: 1px solid #e2e8f0; font-size: 11px; color: #334155;
+      background: #fff; outline: none; transition: border-color .2s;
+    }
+    .ct-pf-sel:focus, .ct-pf-inp:focus { border-color: #f7a01a; }
+    .ct-amt-range { display: flex; gap: 5px; align-items: center; }
+    .ct-amt-range span { font-size: 10px; color: #94a3b8; }
+    .ct-amt-range input { width: 70px !important; }
+    .ct-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+    .ct-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 9px; background: #dbeafe; color: #1d4ed8;
+      border: 1px solid #bfdbfe; border-radius: 20px;
+      font-size: 10px; font-weight: 600;
+    }
+    .ct-tag .ct-tag-x { cursor: pointer; color: #3b82f6; font-size: 10px; }
+    .ct-tag .ct-tag-x:hover { color: #1d4ed8; }
+
+    /* view toggle */
+    .ct-view-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; flex-wrap: wrap; gap: 8px;
+    }
+    .ct-vtoggle {
+      display: flex; gap: 3px; background: #f1f5f9;
+      border-radius: 8px; padding: 3px;
+    }
+    .ct-vbtn {
+      padding: 5px 12px; border-radius: 6px; font-size: 11px;
+      font-weight: 600; border: none; cursor: pointer;
+      color: #64748b; background: transparent; transition: all .15s;
+    }
+    .ct-vbtn.active {
+      background: #fff; color: #1e293b;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .ct-sort-row { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #64748b; }
+    .ct-sort-sel {
+      padding: 5px 8px; border-radius: 6px; border: 1px solid #e2e8f0;
+      font-size: 11px; background: #fff; color: #334155;
+    }
+
+    /* tracker table */
+    .ct-tbl-wrap { overflow-x: auto; }
+    .ct-tbl { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 900px; }
+    .ct-tbl th {
+      padding: 7px 10px; background: #f8fafc; color: #64748b; font-weight: 600;
+      text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+      cursor: pointer; user-select: none;
+    }
+    .ct-tbl th:hover { color: #f7a01a; }
+    .ct-tbl td {
+      padding: 6px 10px; border-bottom: 1px solid #f8fafc;
+      color: #334155; vertical-align: middle;
+    }
+    .ct-tbl tr:hover td { background: #fafafa; }
+    .ct-tbl tr.ct-pend td { background: #fffbeb; }
+    .ct-tbl tr.ct-pend:hover td { background: #fef9c3; }
+    .ct-streak { display: flex; gap: 2px; }
+    .ct-sd { width: 8px; height: 8px; border-radius: 2px; }
+    .ct-sd-on { background: #22c55e; }
+    .ct-sd-off { background: #e2e8f0; }
+    .ct-sd-warn { background: #f97316; }
+    .ct-act { display: flex; gap: 3px; }
+    .ct-act-btn {
+      padding: 3px 7px; border-radius: 5px; border: none;
+      font-size: 10px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    }
+    .ct-act-view { background: #eff6ff; color: #1d4ed8; }
+    .ct-act-edit { background: #f0fdf4; color: #166534; }
+    .ct-act-remind { background: #fff7ed; color: #c2410c; }
+    .ct-badge { display: inline-block; padding: 2px 7px; border-radius: 20px; font-size: 9px; font-weight: 700; }
+    .ct-b-mem { background: #f5f3ff; color: #6d28d9; }
+    .ct-b-wk  { background: #f0f9ff; color: #0369a1; }
+    .ct-b-paid { background: #dcfce7; color: #166534; }
+    .ct-b-pend { background: #fef3c7; color: #92400e; }
+    .ct-tbl-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 10px; font-size: 10px; color: #94a3b8; flex-wrap: wrap; gap: 6px;
+    }
+    .ct-pg-btns { display: flex; gap: 4px; }
     /* ── Audit action badges ── */
     body.dark-mode #auditTableBody [style*="background:#dcfce7"] { background: #052e16 !important; color: #86efac !important; border-color: #14532d !important; }
     body.dark-mode #auditTableBody [style*="background:#fef3c7"] { background: #1a1200 !important; color: #fde68a !important; border-color: #78350f !important; }
@@ -2989,6 +3123,216 @@
             </table>
           </div>
           <div id="dash_txnPagination" style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:12px;"></div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- ⚡ CONTRIBUTION TRACKER — Power Filter & Full Track  -->
+        <!-- ══════════════════════════════════════════════════════ -->
+
+        <!-- Section divider -->
+        <div class="ct-sec-divider">
+          <span></span>
+          <i class="fa-solid fa-bolt" style="color:#f7a01a;"></i>
+          Contribution Tracker — Full Track
+          <span class="ct-sec-new">NEW</span>
+          <span></span>
+        </div>
+
+        <!-- Summary strip -->
+        <div class="ct-sum6">
+          <div class="ct-scard sc-g">
+            <div class="sc-lbl">Total Collected</div>
+            <div class="sc-val" id="ct_totalCollected">₹0</div>
+            <div class="sc-sub">Filtered period</div>
+          </div>
+          <div class="ct-scard sc-b">
+            <div class="sc-lbl">Members Paid</div>
+            <div class="sc-val" id="ct_membersPaid">0 / 0</div>
+            <div class="sc-sub" id="ct_membersPaidSub">This month</div>
+          </div>
+          <div class="ct-scard sc-r">
+            <div class="sc-lbl">Pending</div>
+            <div class="sc-val" id="ct_pending">0</div>
+            <div class="sc-sub">Not paid · filtered month</div>
+          </div>
+          <div class="ct-scard sc-t">
+            <div class="sc-lbl">Walk-in Total</div>
+            <div class="sc-val" id="ct_walkinTotal">₹0</div>
+            <div class="sc-sub" id="ct_walkinCount">0 entries</div>
+          </div>
+          <div class="ct-scard sc-a">
+            <div class="sc-lbl">Avg / Member</div>
+            <div class="sc-val" id="ct_avgMember">₹0</div>
+            <div class="sc-sub">Filtered period</div>
+          </div>
+          <div class="ct-scard sc-o">
+            <div class="sc-lbl">Highest Month</div>
+            <div class="sc-val" id="ct_highMonth">—</div>
+            <div class="sc-sub" id="ct_highMonthAmt"></div>
+          </div>
+        </div>
+
+        <!-- Power Filter panel -->
+        <div class="ct-pf-panel">
+          <div class="ct-pf-header">
+            <div class="ct-pf-title">
+              <i class="fa-solid fa-sliders" style="color:#3b82f6;"></i>
+              Power Filters
+              <span style="font-size:10px;font-weight:400;color:#94a3b8;" id="ct_filterCount"></span>
+            </div>
+            <div class="ct-pf-hint">All filters combine together</div>
+          </div>
+
+          <div class="ct-pf-g5">
+            <div>
+              <span class="ct-pf-lbl">Year</span>
+              <select class="ct-pf-sel" id="ct_filterYear" onchange="ct_applyFilter()"></select>
+            </div>
+            <div>
+              <span class="ct-pf-lbl">Month</span>
+              <select class="ct-pf-sel" id="ct_filterMonth" onchange="ct_applyFilter()">
+                <option value="">All Months</option>
+                <option>January</option><option>February</option><option>March</option>
+                <option>April</option><option>May</option><option>June</option>
+                <option>July</option><option>August</option><option>September</option>
+                <option>October</option><option>November</option><option>December</option>
+              </select>
+            </div>
+            <div>
+              <span class="ct-pf-lbl">Member / Name</span>
+              <input class="ct-pf-inp" id="ct_filterName" placeholder="Search name or mobile…" oninput="ct_debounceFilter()" />
+            </div>
+            <div>
+              <span class="ct-pf-lbl">Tracking ID</span>
+              <input class="ct-pf-inp" id="ct_filterTrackID" placeholder="MNR-… or TRX-…" oninput="ct_debounceFilter()" />
+            </div>
+            <div>
+              <span class="ct-pf-lbl">Contribution Type</span>
+              <select class="ct-pf-sel" id="ct_filterType" onchange="ct_applyFilter()">
+                <option value="">All Types</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="ct-pf-g6">
+            <div>
+              <span class="ct-pf-lbl">Occasion</span>
+              <select class="ct-pf-sel" id="ct_filterOccasion" onchange="ct_applyFilter()">
+                <option value="">All Occasions</option>
+              </select>
+            </div>
+            <div>
+              <span class="ct-pf-lbl">Member Type</span>
+              <select class="ct-pf-sel" id="ct_filterMemberType" onchange="ct_applyFilter()">
+                <option value="">All</option>
+                <option value="member">Members Only</option>
+                <option value="walkin">Walk-in Only</option>
+              </select>
+            </div>
+            <div>
+              <span class="ct-pf-lbl">Payment Status</span>
+              <select class="ct-pf-sel" id="ct_filterStatus" onchange="ct_applyFilter()">
+                <option value="">All</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+            <div>
+              <span class="ct-pf-lbl">Amount Range</span>
+              <div class="ct-amt-range">
+                <input class="ct-pf-inp" id="ct_filterAmtMin" placeholder="₹ Min" type="number" min="0" oninput="ct_debounceFilter()" />
+                <span>–</span>
+                <input class="ct-pf-inp" id="ct_filterAmtMax" placeholder="₹ Max" type="number" min="0" oninput="ct_debounceFilter()" />
+              </div>
+            </div>
+            <button onclick="ct_applyFilter()" style="background:#f7a01a;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;height:34px;align-self:end;white-space:nowrap;">
+              <i class="fa-solid fa-filter"></i> Filter
+            </button>
+            <button onclick="ct_clearFilter()" style="background:transparent;border:1px solid #cbd5e1;color:#475569;border-radius:8px;padding:8px 12px;font-size:11px;font-weight:600;cursor:pointer;height:34px;align-self:end;white-space:nowrap;">
+              Clear All
+            </button>
+          </div>
+
+          <!-- Active filter tags -->
+          <div class="ct-tags" id="ct_activeTags"></div>
+        </div>
+
+        <!-- View toggle + sort bar -->
+        <div class="ct-view-bar">
+          <div class="ct-vtoggle">
+            <button class="ct-vbtn active" id="ct_vbtn_table" onclick="ct_switchView('table',this)">
+              <i class="fa-solid fa-table-list"></i> Table View
+            </button>
+            <button class="ct-vbtn" id="ct_vbtn_cards" onclick="ct_switchView('cards',this)">
+              <i class="fa-solid fa-id-card"></i> Member Cards
+            </button>
+            <button class="ct-vbtn" id="ct_vbtn_grid" onclick="ct_switchView('grid',this)">
+              <i class="fa-solid fa-calendar-days"></i> Month Grid
+            </button>
+          </div>
+          <div class="ct-sort-row">
+            Sort by:
+            <select class="ct-sort-sel" id="ct_sortBy" onchange="ct_applyFilter()">
+              <option value="date_desc">Date (Newest first)</option>
+              <option value="date_asc">Date (Oldest first)</option>
+              <option value="amount_desc">Amount (High → Low)</option>
+              <option value="amount_asc">Amount (Low → High)</option>
+              <option value="name_asc">Name A → Z</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TABLE VIEW -->
+        <div class="card" id="ct_view_table">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+            <h3 style="margin:0;font-size:13px;">
+              <i class="fa-solid fa-list-check" style="color:#f7a01a;"></i>
+              All Contributions — Power Tracker
+              <span style="font-size:11px;font-weight:400;color:#999;">— click row for receipt</span>
+            </h3>
+            <span id="ct_visibleAmt" style="font-size:11px;font-weight:600;color:#15803d;"></span>
+          </div>
+          <div class="ct-tbl-wrap">
+            <table class="ct-tbl">
+              <thead>
+                <tr>
+                  <th onclick="ct_setSort('date_desc','date_asc')" title="Sort by date">Date ↕</th>
+                  <th>Tracking ID</th>
+                  <th onclick="ct_setSort('name_asc','name_desc')" title="Sort by name">Name ↕</th>
+                  <th>Type</th>
+                  <th>Occasion</th>
+                  <th>For Month</th>
+                  <th>Kind</th>
+                  <th onclick="ct_setSort('amount_desc','amount_asc')" title="Sort by amount">Amount ↕</th>
+                  <th title="12-month payment streak">12-Mo Streak</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ct_tableBody"></tbody>
+            </table>
+          </div>
+          <div class="ct-tbl-footer">
+            <span id="ct_pageInfo"></span>
+            <div class="ct-pg-btns" id="ct_pagination"></div>
+          </div>
+        </div>
+
+        <!-- MEMBER CARDS VIEW (hidden by default) -->
+        <div id="ct_view_cards" style="display:none;">
+          <div id="ct_cardsBody" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+        </div>
+
+        <!-- MONTH GRID VIEW (hidden by default) -->
+        <div id="ct_view_grid" style="display:none;">
+          <div class="card">
+            <h3 style="font-size:13px;margin-bottom:12px;">
+              <i class="fa-solid fa-calendar-days" style="color:#f7a01a;"></i> Month × Member Payment Grid
+            </h3>
+            <div class="ct-tbl-wrap">
+              <table class="ct-tbl" id="ct_gridTable" style="min-width:600px;"></table>
+            </div>
+          </div>
         </div>
 
         <!-- Custom Calendar Popup (dashboard date picker) -->
@@ -12710,6 +13054,406 @@
       const body = encodeURIComponent(`${APP.name.toUpperCase()} — FINANCIAL REPORT ${dash_selectedYear}\n${APP.location}\n\nYear Collection : Rs.${totalC}\nExpenses        : Rs.${totalE}\n\nMEMBER-WISE CONTRIBUTIONS:\n${memberLines}\n\nSystem Generated — ${genDate}\nNot Manually Signed`);
       window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ⚡ CONTRIBUTION TRACKER — Power Filter & Full Track
+    // ═══════════════════════════════════════════════════════════════════
+
+    var _ct_filtered   = [];   // filtered contribution rows (with pending injected)
+    var _ct_page       = 1;
+    var _ct_perPage    = 15;
+    var _ct_view       = "table";
+    var _ct_sortBy     = "date_desc";
+    var _ct_debTimer   = null;
+    var _ct_allMembers = [];   // cached active members for streak + pending logic
+
+    /* Called from dash_renderAll after data loads */
+    function ct_init() {
+      _ct_buildYearSelect();
+      _ct_buildTypeSelect();
+      _ct_buildOccasionSelect();
+      ct_applyFilter();
+    }
+
+    function _ct_buildYearSelect() {
+      const sel = document.getElementById("ct_filterYear");
+      if (!sel) return;
+      const years = new Set();
+      dash_contributions.forEach(c => { const y = Number(c.Year); if (y > 2000) years.add(y); });
+      const sorted = [...years].sort((a,b) => b-a);
+      sel.innerHTML = '<option value="">All Years</option>' +
+        sorted.map(y => `<option value="${y}"${y === dash_selectedYear ? " selected" : ""}>${y}</option>`).join("");
+      sel.onchange = ct_applyFilter;
+    }
+
+    function _ct_buildTypeSelect() {
+      const sel = document.getElementById("ct_filterType");
+      if (!sel || !dash_types.length) return;
+      sel.innerHTML = '<option value="">All Types</option>' +
+        dash_types.map(t => `<option value="${t.TypeId}">${escapeHtml(t.TypeName)}</option>`).join("");
+    }
+
+    function _ct_buildOccasionSelect() {
+      const sel = document.getElementById("ct_filterOccasion");
+      if (!sel || !dash_occasions.length) return;
+      sel.innerHTML = '<option value="">All Occasions</option>' +
+        dash_occasions.map(o => `<option value="${o.OccasionId}">${escapeHtml(o.OccasionName)}</option>`).join("");
+    }
+
+    function ct_debounceFilter() {
+      clearTimeout(_ct_debTimer);
+      _ct_debTimer = setTimeout(ct_applyFilter, 280);
+    }
+
+    function ct_applyFilter() {
+      _ct_sortBy = document.getElementById("ct_sortBy")?.value || "date_desc";
+
+      const fYear    = document.getElementById("ct_filterYear")?.value || "";
+      const fMonth   = (document.getElementById("ct_filterMonth")?.value || "").toLowerCase();
+      const fName    = (document.getElementById("ct_filterName")?.value || "").toLowerCase();
+      const fTrack   = (document.getElementById("ct_filterTrackID")?.value || "").toLowerCase();
+      const fType    = document.getElementById("ct_filterType")?.value || "";
+      const fOcc     = document.getElementById("ct_filterOccasion")?.value || "";
+      const fKind    = document.getElementById("ct_filterMemberType")?.value || "";
+      const fStatus  = document.getElementById("ct_filterStatus")?.value || "";
+      const fAmtMin  = parseFloat(document.getElementById("ct_filterAmtMin")?.value) || 0;
+      const fAmtMax  = parseFloat(document.getElementById("ct_filterAmtMax")?.value) || Infinity;
+
+      /* Build paid rows from contributions */
+      var paidRows = dash_contributions.filter(c => {
+        if (fYear && Number(c.Year) !== Number(fYear)) return false;
+        if (fMonth && (c.ForMonth || "").toLowerCase() !== fMonth) return false;
+        const user = dash_users.find(u => String(u.UserId) === String(c.UserId));
+        const isWalkIn = String(c.UserId).startsWith("WALKIN_");
+        if (fKind === "member" && isWalkIn) return false;
+        if (fKind === "walkin" && !isWalkIn) return false;
+        if (fStatus === "pending") return false; // pending = no row in contributions
+        const name = dash_getDisplayName(c.UserId, c.Note);
+        const mobile = user?.Mobile || "";
+        if (fName && !name.toLowerCase().includes(fName) && !String(mobile).includes(fName)) return false;
+        const rid = (c.ReceiptID || "");
+        const dispRid = rid.replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        if (fTrack && !rid.toLowerCase().includes(fTrack) && !dispRid.toLowerCase().includes(fTrack)) return false;
+        if (fType && String(c.TypeId) !== String(fType)) return false;
+        if (fOcc && String(c.OccasionId) !== String(fOcc)) return false;
+        const amt = Number(c.Amount || 0);
+        if (amt < fAmtMin || amt > fAmtMax) return false;
+        return true;
+      }).map(c => ({ _type: "paid", _data: c }));
+
+      /* Build pending rows — members who have no contribution for the filtered month/year */
+      var pendingRows = [];
+      if (fStatus !== "paid" && fKind !== "walkin") {
+        const filterYear  = fYear  ? Number(fYear)  : null;
+        const filterMonth = fMonth ? fMonth          : null;
+        if (filterYear && filterMonth) {
+          var paidUserIds = new Set(
+            dash_contributions
+              .filter(c => Number(c.Year) === filterYear && (c.ForMonth || "").toLowerCase() === filterMonth)
+              .map(c => String(c.UserId))
+          );
+          dash_users.forEach(u => {
+            if (String(u.Status || "active").toLowerCase() === "inactive") return;
+            if (paidUserIds.has(String(u.UserId))) return;
+            if (fName && !u.Name.toLowerCase().includes(fName) && !String(u.Mobile||"").includes(fName)) return;
+            if (fStatus === "paid") return;
+            pendingRows.push({ _type: "pending", _data: u, _year: filterYear, _month: filterMonth });
+          });
+        }
+      }
+
+      /* Combine */
+      var combined = [...paidRows, ...pendingRows];
+
+      /* Sort */
+      combined.sort((a, b) => {
+        const getDate = r => r._type === "paid" ? _dash_parseDateSort(r._data.PaymentDate) : "0";
+        const getAmt  = r => r._type === "paid" ? Number(r._data.Amount || 0) : 0;
+        const getName = r => r._type === "paid"
+          ? dash_getDisplayName(r._data.UserId, r._data.Note).toLowerCase()
+          : (r._data.Name || "").toLowerCase();
+        if (_ct_sortBy === "date_desc") return getDate(b).localeCompare(getDate(a));
+        if (_ct_sortBy === "date_asc")  return getDate(a).localeCompare(getDate(b));
+        if (_ct_sortBy === "amount_desc") return getAmt(b) - getAmt(a);
+        if (_ct_sortBy === "amount_asc")  return getAmt(a) - getAmt(b);
+        if (_ct_sortBy === "name_asc")    return getName(a).localeCompare(getName(b));
+        if (_ct_sortBy === "name_desc")   return getName(b).localeCompare(getName(a));
+        return 0;
+      });
+
+      _ct_filtered = combined;
+      _ct_page = 1;
+
+      ct_renderSummary(fYear, fMonth, paidRows, pendingRows);
+      ct_renderActiveTags(fYear, fMonth, fName, fTrack, fType, fOcc, fKind, fStatus, fAmtMin, fAmtMax);
+      ct_renderCurrentView();
+    }
+
+    function ct_renderSummary(fYear, fMonth, paidRows, pendingRows) {
+      const totalC = paidRows.reduce((s,r) => s + Number(r._data.Amount||0), 0);
+      const walkinRows = paidRows.filter(r => String(r._data.UserId).startsWith("WALKIN_"));
+      const walkinAmt  = walkinRows.reduce((s,r) => s + Number(r._data.Amount||0), 0);
+
+      const memberPaidSet = new Set(
+        paidRows.filter(r => !String(r._data.UserId).startsWith("WALKIN_")).map(r => r._data.UserId)
+      );
+      const totalMembers = dash_users.filter(u => String(u.Status||"active").toLowerCase() !== "inactive").length;
+
+      // highest month
+      const monthMap = {};
+      dash_contributions.forEach(c => {
+        if (fYear && Number(c.Year) !== Number(fYear)) return;
+        const m = c.ForMonth || ""; if (!m) return;
+        monthMap[m] = (monthMap[m] || 0) + Number(c.Amount || 0);
+      });
+      const highEntry = Object.entries(monthMap).sort((a,b) => b[1]-a[1])[0];
+
+      const avgPerMember = memberPaidSet.size > 0 ? Math.round(
+        paidRows.filter(r => !String(r._data.UserId).startsWith("WALKIN_")).reduce((s,r) => s + Number(r._data.Amount||0), 0)
+        / memberPaidSet.size
+      ) : 0;
+
+      _setTxt("ct_totalCollected", "₹" + fmt(totalC));
+      _setTxt("ct_membersPaid", memberPaidSet.size + " / " + totalMembers);
+      _setTxt("ct_pending", pendingRows.length);
+      _setTxt("ct_walkinTotal", "₹" + fmt(walkinAmt));
+      _setTxt("ct_walkinCount", walkinRows.length + " entries");
+      _setTxt("ct_avgMember", "₹" + fmt(avgPerMember));
+      _setTxt("ct_highMonth", highEntry ? highEntry[0].slice(0,3) : "—");
+      _setTxt("ct_highMonthAmt", highEntry ? "₹" + fmt(highEntry[1]) : "");
+      _setTxt("ct_filterCount", _ct_filtered.length + " records");
+    }
+
+    function ct_renderActiveTags(fYear, fMonth, fName, fTrack, fType, fOcc, fKind, fStatus, fAmtMin, fAmtMax) {
+      const tags = [];
+      if (fYear)   tags.push({ label: "Year: " + fYear,   clear: () => { document.getElementById("ct_filterYear").value = ""; ct_applyFilter(); } });
+      if (fMonth)  tags.push({ label: "Month: " + _cap(fMonth), clear: () => { document.getElementById("ct_filterMonth").value = ""; ct_applyFilter(); } });
+      if (fName)   tags.push({ label: "Name: " + fName,   clear: () => { document.getElementById("ct_filterName").value = ""; ct_applyFilter(); } });
+      if (fTrack)  tags.push({ label: "ID: " + fTrack,    clear: () => { document.getElementById("ct_filterTrackID").value = ""; ct_applyFilter(); } });
+      if (fType) {
+        const tn = dash_types.find(t => String(t.TypeId) === fType)?.TypeName || fType;
+        tags.push({ label: "Type: " + tn, clear: () => { document.getElementById("ct_filterType").value = ""; ct_applyFilter(); } });
+      }
+      if (fOcc) {
+        const on = dash_occasions.find(o => String(o.OccasionId) === fOcc)?.OccasionName || fOcc;
+        tags.push({ label: "Occasion: " + on, clear: () => { document.getElementById("ct_filterOccasion").value = ""; ct_applyFilter(); } });
+      }
+      if (fKind)   tags.push({ label: _cap(fKind) + " Only", clear: () => { document.getElementById("ct_filterMemberType").value = ""; ct_applyFilter(); } });
+      if (fStatus) tags.push({ label: _cap(fStatus),          clear: () => { document.getElementById("ct_filterStatus").value = ""; ct_applyFilter(); } });
+      if (fAmtMin) tags.push({ label: "Min ₹" + fAmtMin,      clear: () => { document.getElementById("ct_filterAmtMin").value = ""; ct_applyFilter(); } });
+      if (fAmtMax !== Infinity) tags.push({ label: "Max ₹" + fAmtMax, clear: () => { document.getElementById("ct_filterAmtMax").value = ""; ct_applyFilter(); } });
+
+      const el = document.getElementById("ct_activeTags");
+      if (!el) return;
+      el.innerHTML = tags.map((t, i) =>
+        `<span class="ct-tag">${escapeHtml(t.label)} <span class="ct-tag-x" onclick="ct_removeTag(${i})">✕</span></span>`
+      ).join("");
+      el._tagClears = tags.map(t => t.clear);
+    }
+
+    function ct_removeTag(i) {
+      const el = document.getElementById("ct_activeTags");
+      if (el && el._tagClears && el._tagClears[i]) el._tagClears[i]();
+    }
+
+    function _cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ""; }
+
+    function ct_clearFilter() {
+      ["ct_filterYear","ct_filterMonth","ct_filterType","ct_filterOccasion","ct_filterMemberType","ct_filterStatus"]
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+      ["ct_filterName","ct_filterTrackID","ct_filterAmtMin","ct_filterAmtMax"]
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+      ct_applyFilter();
+    }
+
+    function ct_switchView(view, btn) {
+      _ct_view = view;
+      document.querySelectorAll(".ct-vbtn").forEach(b => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+      ["table","cards","grid"].forEach(v => {
+        const el = document.getElementById("ct_view_" + v);
+        if (el) el.style.display = v === view ? "" : "none";
+      });
+      ct_renderCurrentView();
+    }
+
+    function ct_setSort(asc, desc) {
+      const sel = document.getElementById("ct_sortBy");
+      if (!sel) return;
+      sel.value = sel.value === asc ? desc : asc;
+      ct_applyFilter();
+    }
+
+    function ct_renderCurrentView() {
+      if (_ct_view === "table")  ct_renderTable();
+      if (_ct_view === "cards")  ct_renderCards();
+      if (_ct_view === "grid")   ct_renderGrid();
+    }
+
+    /* ── Build 12-month streak dots for a userId ── */
+    function _ct_streak(userId) {
+      const yr = Number(document.getElementById("ct_filterYear")?.value) || dash_selectedYear;
+      return _dash_months.map((m, i) => {
+        const hasPaid = dash_contributions.some(c =>
+          String(c.UserId) === String(userId) &&
+          Number(c.Year) === yr &&
+          (c.ForMonth || "") === m
+        );
+        return `<div class="ct-sd ${hasPaid ? "ct-sd-on" : "ct-sd-off"}" title="${m}: ${hasPaid ? "Paid" : "Not paid"}"></div>`;
+      }).join("");
+    }
+
+    /* ── TABLE VIEW ── */
+    function ct_renderTable() {
+      const total = _ct_filtered.length;
+      const pages = Math.ceil(total / _ct_perPage) || 1;
+      _ct_page    = Math.min(_ct_page, pages);
+      const slice = _ct_filtered.slice((_ct_page-1)*_ct_perPage, _ct_page*_ct_perPage);
+
+      const visAmt = _ct_filtered
+        .filter(r => r._type === "paid")
+        .reduce((s,r) => s + Number(r._data.Amount||0), 0);
+      _setTxt("ct_visibleAmt", "Showing ₹" + fmt(visAmt) + " of ₹" + fmt(
+        _ct_filtered.filter(r=>r._type==="paid").reduce((s,r)=>s+Number(r._data.Amount||0),0)
+      ));
+
+      const tbody = document.getElementById("ct_tableBody");
+      if (!tbody) return;
+
+      if (slice.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#aaa;padding:20px;">No records match the current filters.</td></tr>';
+      } else {
+        tbody.innerHTML = slice.map(row => {
+          if (row._type === "paid") {
+            const c = row._data;
+            const isWalkIn = String(c.UserId).startsWith("WALKIN_");
+            const name  = dash_getDisplayName(c.UserId, c.Note);
+            const tName = dash_types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
+            const oName = dash_occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
+            const rid   = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+            const _drid = _storeReceipt(c, name, tName, oName);
+            const streak = isWalkIn
+              ? `<div class="ct-streak" style="opacity:.25;">${"<div class='ct-sd ct-sd-off'></div>".repeat(12)}</div>`
+              : `<div class="ct-streak">${_ct_streak(c.UserId)}</div>`;
+            return `<tr class="clickable-row" style="cursor:pointer;" onclick="viewDashboardEntry('${_drid}')">
+              <td>${escapeHtml(String(c.PaymentDate||"N/A"))}</td>
+              <td><span style="background:#eff6ff;color:#1d4ed8;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;font-family:monospace;">${escapeHtml(rid||"—")}</span></td>
+              <td><b>${escapeHtml(name)}</b></td>
+              <td>${escapeHtml(tName)}</td>
+              <td>${escapeHtml(oName)}</td>
+              <td>${escapeHtml(c.ForMonth||"—")}</td>
+              <td><span class="ct-badge ${isWalkIn?"ct-b-wk":"ct-b-mem"}">${isWalkIn?"Walk-in":"Member"}</span></td>
+              <td style="font-weight:600;color:#15803d;">+₹${fmt(c.Amount)}</td>
+              <td>${streak}</td>
+              <td><span class="ct-badge ct-b-paid">Paid</span></td>
+              <td class="ct-act">
+                <button class="ct-act-btn ct-act-view" onclick="event.stopPropagation();showReceiptById('${_drid}')">🧾 Receipt</button>
+              </td>
+            </tr>`;
+          } else {
+            const u = row._data;
+            const streak = `<div class="ct-streak">${_ct_streak(u.UserId)}</div>`;
+            return `<tr class="ct-pend">
+              <td style="color:#94a3b8;">—</td>
+              <td>—</td>
+              <td><b style="color:#c2410c;">${escapeHtml(u.Name||"")}</b></td>
+              <td>Monthly</td>
+              <td>—</td>
+              <td>${escapeHtml(row._month ? _cap(row._month) : "—")} ${row._year||""}</td>
+              <td><span class="ct-badge ct-b-mem">Member</span></td>
+              <td style="color:#94a3b8;">₹0</td>
+              <td>${streak}</td>
+              <td><span class="ct-badge ct-b-pend">Pending</span></td>
+              <td class="ct-act">
+                <button class="ct-act-btn ct-act-remind" onclick="event.stopPropagation();_quickNav('contributionPage','[onclick*=contributionPage]')">🔔 Remind</button>
+              </td>
+            </tr>`;
+          }
+        }).join("");
+      }
+
+      // pagination
+      const pgEl = document.getElementById("ct_pagination");
+      const piEl = document.getElementById("ct_pageInfo");
+      if (piEl) piEl.textContent = "Showing " + (Math.min((_ct_page-1)*_ct_perPage+1, total)) + "–" + Math.min(_ct_page*_ct_perPage, total) + " of " + total + " records";
+      if (!pgEl) return;
+      if (pages <= 1) { pgEl.innerHTML = ""; return; }
+      let ph = `<button class="pg-btn" onclick="_ct_goPage(${_ct_page-1})" ${_ct_page<=1?"disabled":""}>&#8249; Prev</button>`;
+      const s2 = Math.max(1, _ct_page-2), e2 = Math.min(pages, _ct_page+2);
+      if (s2>1) { ph+=`<button class="pg-btn" onclick="_ct_goPage(1)">1</button>`; if(s2>2) ph+=`<span style="font-size:11px;color:#94a3b8;">…</span>`; }
+      for (let p=s2;p<=e2;p++) ph+=`<button class="pg-btn${p===_ct_page?" active":""}" onclick="_ct_goPage(${p})">${p}</button>`;
+      if (e2<pages) { if(e2<pages-1) ph+=`<span style="font-size:11px;color:#94a3b8;">…</span>`; ph+=`<button class="pg-btn" onclick="_ct_goPage(${pages})">${pages}</button>`; }
+      ph+=`<button class="pg-btn" onclick="_ct_goPage(${_ct_page+1})" ${_ct_page>=pages?"disabled":""}>Next &#8250;</button>`;
+      pgEl.innerHTML = ph;
+    }
+
+    function _ct_goPage(p) {
+      const pages = Math.ceil(_ct_filtered.length / _ct_perPage);
+      _ct_page = Math.max(1, Math.min(p, pages));
+      ct_renderTable();
+    }
+
+    /* ── MEMBER CARDS VIEW ── */
+    function ct_renderCards() {
+      const el = document.getElementById("ct_cardsBody");
+      if (!el) return;
+      const map = {}, noteMap = {};
+      _ct_filtered.filter(r => r._type === "paid" && !String(r._data.UserId).startsWith("WALKIN_"))
+        .forEach(r => {
+          const uid = r._data.UserId;
+          map[uid]  = (map[uid]||0) + Number(r._data.Amount||0);
+          if (!noteMap[uid]) noteMap[uid] = r._data.Note || "";
+        });
+      const sorted = Object.keys(map).sort((a,b) => map[b]-map[a]);
+      if (!sorted.length) { el.innerHTML = '<div style="color:#aaa;padding:20px;text-align:center;">No member contributions match filters.</div>'; return; }
+      el.innerHTML = sorted.map(uid => {
+        const name    = dash_getDisplayName(uid, noteMap[uid]);
+        const initials = name.split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+        const streak  = _ct_streak(uid);
+        return `<div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:13px 14px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#92400e;margin-bottom:7px;">${initials}</div>
+          <div style="font-size:12px;font-weight:600;color:#1e293b;margin-bottom:2px;">${escapeHtml(name)}</div>
+          <div style="font-size:16px;font-weight:700;color:#15803d;">₹${fmt(map[uid])}</div>
+          <div style="font-size:10px;color:#94a3b8;margin-top:2px;">12-month streak</div>
+          <div class="ct-streak" style="margin-top:5px;">${streak}</div>
+        </div>`;
+      }).join("");
+    }
+
+    /* ── MONTH GRID VIEW ── */
+    function ct_renderGrid() {
+      const tbl = document.getElementById("ct_gridTable");
+      if (!tbl) return;
+      const fYear = document.getElementById("ct_filterYear")?.value;
+      const yr = fYear ? Number(fYear) : dash_selectedYear;
+      const members = dash_users.filter(u => String(u.Status||"active").toLowerCase() !== "inactive");
+      if (!members.length) { tbl.innerHTML = '<tr><td style="color:#aaa;padding:16px;">No members found.</td></tr>'; return; }
+
+      let hdr = '<thead><tr><th style="min-width:130px;">Member</th>';
+      _dash_months.forEach(m => { hdr += `<th style="min-width:60px;text-align:center;">${m.slice(0,3)}</th>`; });
+      hdr += '<th style="min-width:80px;">Total</th></tr></thead>';
+
+      const rows = members.map(u => {
+        let total = 0;
+        let cells = _dash_months.map(m => {
+          const contrib = dash_contributions.find(c =>
+            String(c.UserId) === String(u.UserId) && Number(c.Year) === yr && (c.ForMonth||"") === m
+          );
+          if (contrib) { total += Number(contrib.Amount||0); return `<td style="text-align:center;"><span style="background:#dcfce7;color:#15803d;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:600;">₹${fmt(contrib.Amount)}</span></td>`; }
+          return `<td style="text-align:center;"><span style="color:#e2e8f0;font-size:12px;">—</span></td>`;
+        }).join("");
+        return `<tr><td style="font-weight:600;font-size:11px;">${escapeHtml(u.Name||"")}</td>${cells}<td style="font-weight:700;color:#15803d;font-size:11px;">₹${fmt(total)}</td></tr>`;
+      }).join("");
+
+      tbl.innerHTML = hdr + `<tbody>${rows}</tbody>`;
+    }
+
+    /* Hook into existing dash_renderAll so tracker auto-refreshes with dashboard */
+    const _orig_dash_renderAll = dash_renderAll;
+    dash_renderAll = function() {
+      _orig_dash_renderAll();
+      if (dash_contributions.length || dash_users.length) ct_init();
+    };
 
     // ── Calendar picker (all prefixed dash_ to avoid collision with any other cal)
     function dash_openCal(target) {
