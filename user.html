@@ -3479,7 +3479,7 @@
         <span class="dm-icon dm-icon-moon">🌙</span>
       </div>
       <div class="hdr-avatar-wrap">
-        <img id="hdr_photo" class="hdr-avatar" src="data:," loading="lazy" decoding="async"
+        <img id="hdr_photo" class="hdr-avatar" src="Image/logo.PNG" loading="eager" decoding="async"
           onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',40);"
           onclick="toggleUserDropdown()" title="Account" alt="User avatar" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleUserDropdown();}" />
         <div id="userDropdown" class="hdr-dropdown" role="menu" aria-label="Account menu">
@@ -4342,7 +4342,8 @@
       let dE = prefillEmail !== undefined ? prefillEmail : myProfile?.Email || s.email || "";
       let dV = prefillVillage !== undefined ? prefillVillage : myProfile?.Village || "";
       let dA = prefillAddress !== undefined ? prefillAddress : myProfile?.Address || "";
-      let photoSrc = previewB64 || _fixDrivePhotoUrl(myProfile?.PhotoURL || "");
+      // Use initials as placeholder; load real photo via proxy (same as header)
+      let photoSrc = previewB64 || _initialsAvatar(dN || "?", 88);
       let fb = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
       let html = `
           <div class="_mhdr" style="background:linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);border-bottom:2px solid rgba(247,160,26,0.35);"><h3 style="color:#fff;display:flex;align-items:center;gap:8px;"><span style="width:28px;height:28px;background:rgba(247,160,26,0.18);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-user-pen" style="color:var(--gold);font-size:13px;"></i></span> Edit Profile</h3><button class="_mcls" onclick="closeModal()" style="color:rgba(255,255,255,0.6);font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:0;">×</button></div>
@@ -4359,10 +4360,10 @@
               <label class="_fl" for="ep_name">Full Name</label><input class="_fi" id="ep_name" value="${escapeHtml(dN)}" placeholder="Your name"/>
               <label class="_fl" for="ep_email">Email</label><input class="_fi" id="ep_email" type="email" value="${escapeHtml(dE)}" placeholder="your@email.com"/>
               <label class="_fl">Mobile Number</label>
-              <div style="background:var(--bg);border:1.5px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <div style="background:var(--bg);border:1.5px solid rgba(247,160,26,0.22);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
                 <div style="display:flex;align-items:center;gap:8px;">
                   <i class="fa-solid fa-mobile-screen" style="color:#f7a01a;font-size:13px;"></i>
-                  <span style="color:#555;font-size:13px;font-weight:600;letter-spacing:1px;">${escapeHtml(String(myProfile?.Mobile || "—"))}</span>
+                  <span style="color:var(--ink);font-size:13px;font-weight:600;letter-spacing:1px;">${escapeHtml(String(myProfile?.Mobile || "—"))}</span>
                 </div>
                 <span onclick="openUpdateMobileConfirm()" style="color:#3b82f6;font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap;">
                   <i class="fa-solid fa-mobile-screen-button" style="margin-right:3px;"></i>Update Mobile
@@ -4388,6 +4389,17 @@
             <button class="_mbtn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);box-shadow:0 3px 10px rgba(247,160,26,0.35);" onclick="saveProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
           </div>`;
       openModal(html, "460px");
+      // Load real photo via proxy after modal opens (avoids CORS block)
+      if (!previewB64 && myProfile?.PhotoURL) {
+        _fetchPhotoBase64(myProfile.PhotoURL).then(function(b64) {
+          const imgEl = document.getElementById("photoPreview");
+          if (imgEl && b64) {
+            imgEl.style.transition = "opacity 0.35s ease";
+            imgEl.style.opacity = "0";
+            setTimeout(function() { imgEl.src = b64; imgEl.style.opacity = "1"; }, 160);
+          }
+        });
+      }
     }
 
     function pickPhoto() { let f = document.getElementById("photoFile"); if (f) f.click(); }
@@ -4438,16 +4450,16 @@
                   <i class="fa-solid fa-shield-halved" style="color:#f7a01a;font-size:15px;"></i>
                 </div>
                 <div>
-                  <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:3px;">Verification Required</div>
-                  <div style="font-size:12px;color:#64748b;line-height:1.65;">Mobile number is important for your account. To change it, we need to verify your identity using your registered <b style="color:#334155;">email OTP</b>.</div>
+                  <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px;">Verification Required</div>
+                  <div style="font-size:12px;color:var(--ink-soft);line-height:1.65;">Mobile number is important for your account. To change it, we need to verify your identity using your registered <b style="color:var(--ink-mid);">email OTP</b>.</div>
                 </div>
               </div>
 
               <!-- Current number display -->
-              <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+              <div style="background:var(--bg);border:1.5px solid rgba(247,160,26,0.22);border-radius:9px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px;">
                 <i class="fa-solid fa-mobile-screen" style="color:#f7a01a;font-size:14px;"></i>
-                <span style="font-size:12px;color:#94a3b8;font-weight:500;">Current number</span>
-                <span style="font-size:14px;font-weight:700;color:#1e293b;letter-spacing:1.5px;margin-left:auto;">${(() => { let s = (_sess() || {}); let mp = users.find(u => String(u.UserId) === String(s.userId)); return mp?.Mobile || "—"; })()}</span>
+                <span style="font-size:12px;color:var(--ink-faint);font-weight:500;">Current number</span>
+                <span style="font-size:14px;font-weight:700;color:var(--ink);letter-spacing:1.5px;margin-left:auto;">${(() => { let s = (_sess() || {}); let mp = users.find(u => String(u.UserId) === String(s.userId)); return mp?.Mobile || "—"; })()}</span>
               </div>
 
               <!-- Message area -->
@@ -4455,7 +4467,7 @@
 
               <!-- ── STEP 1: Confirm ── -->
               <div id="_mobileStep1">
-                <div style="font-size:12.5px;color:#64748b;margin-bottom:14px;line-height:1.6;">Click <b style="color:#1e293b;">Yes, Continue</b> to proceed. An OTP will be sent to your registered email to confirm the change.</div>
+                <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;line-height:1.6;">Click <b style="color:var(--ink);">Yes, Continue</b> to proceed. An OTP will be sent to your registered email to confirm the change.</div>
                 <div style="display:flex;gap:8px;">
                   <button onclick="document.getElementById('_mobileConfirmOverlay').remove()" style="flex:1;padding:10px;background:var(--bg2);color:var(--ink-soft);border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:none;">Cancel</button>
                   <button onclick="_mobileGoToStep2()" style="flex:2;padding:10px;background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(247,160,26,0.35);display:inline-flex;align-items:center;justify-content:center;gap:7px;">
@@ -4714,7 +4726,7 @@
         toast("Uploading photo...", "warn");
         try {
           let resp = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "uploadAndSaveProfile", UserId: s.userId, Name: name, Mobile: myProfile?.Mobile || "", Role: s.role, Password: "", Email: email, Village: village, Address: address, Status: "Active", AdminName: name, base64: _pendingCroppedB64, fileName: "User_" + s.userId + "_" + Date.now() + ".jpg", oldPhotoURL: myProfile?.PhotoURL || "" }) });
-          let res = await resp.json(); if (res.status === "success") { photoURL = res.photoUrl; toast("✅ Photo uploaded!"); } else toast("Photo upload failed, profile still updating.", "warn");
+          let res = await resp.json(); if (res.status === "success") { photoURL = res.photoUrl; if (myProfile?.PhotoURL) delete window._photoB64Cache[myProfile.PhotoURL]; toast("✅ Photo uploaded!"); } else toast("Photo upload failed, profile still updating.", "warn");
         } catch (e) { toast("Photo upload error: " + e.message, "warn"); }
       }
       try {
