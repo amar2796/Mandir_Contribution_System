@@ -3436,6 +3436,19 @@
 
 <body>
 
+  <!-- _initialsAvatar defined early so onerror on avatar <img> tags can call it
+       before app.js and the main inline <script> block have loaded. -->
+  <script>
+    function _initialsAvatar(name, size) {
+      const parts = (name || "?").trim().split(/\s+/);
+      const initials = (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
+      const colors = ["#c2410c","#b45309","#15803d","#1d4ed8","#7c3aed","#be185d","#0f766e"];
+      const col = colors[(name || "").charCodeAt(0) % colors.length];
+      const fs = Math.round(size * 0.38);
+      return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><circle cx='${size/2}' cy='${size/2}' r='${size/2}' fill='${col}'/><text x='${size/2}' y='${size/2+fs*0.36}' text-anchor='middle' fill='white' font-size='${fs}' font-family='Arial' font-weight='700'>${initials}</text></svg>`)}`;
+    }
+  </script>
+
   <!-- TOAST (pre-rendered so aria-live is registered before first message) -->
   <div id="toast" role="status" aria-live="polite" aria-atomic="true" style="display:none;"></div>
 
@@ -4176,8 +4189,8 @@
       } else if (s.includes("drive.google.com/file/d/")) {
         fileId = s.split("/file/d/")[1].split("/")[0].split("?")[0].trim();
       }
-      // lh3 format embeds directly in <img> tags without auth issues
-      if (fileId) return "https://lh3.googleusercontent.com/d/" + fileId + "=w400";
+      // drive.google.com/thumbnail avoids OpaqueResponseBlocking caused by lh3.googleusercontent.com
+      if (fileId) return "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w400";
       return s;
     }
     // ── Smooth photo load: show initials instantly, fade in real photo when ready
