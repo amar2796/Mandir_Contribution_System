@@ -2413,6 +2413,84 @@
       .ct-view-bar { flex-direction: column !important; align-items: flex-start !important; }
       .ct-vtoggle { overflow-x: auto; width: 100%; }
     }
+
+    /* ══════════════════════════════════════════════
+       BUTTON FEEDBACK ANIMATIONS (non-breaking)
+    ══════════════════════════════════════════════ */
+
+    /* Ripple container */
+    button { position: relative; overflow: hidden; }
+
+    /* Ripple splash on click */
+    .btn-ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      transform: scale(0);
+      animation: btnRippleAnim 0.55s linear;
+      pointer-events: none;
+      z-index: 10;
+    }
+    @keyframes btnRippleAnim {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* Loading / processing state */
+    button.btn-loading {
+      cursor: wait !important;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+    button.btn-loading .btn-original-content { display: none; }
+    button.btn-loading::after {
+      content: '';
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.45);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: btnSpinAnim 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    /* For dark/light secondary buttons the spinner should contrast */
+    button.btn-loading[style*="background:#334155"]::after,
+    button.btn-loading.btn-secondary::after {
+      border-color: rgba(255,255,255,0.3);
+      border-top-color: #fff;
+    }
+    @keyframes btnSpinAnim {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Success flash */
+    @keyframes btnSuccessFlash {
+      0%   { box-shadow: 0 0 0 0 rgba(39,174,96,0.6); }
+      50%  { box-shadow: 0 0 0 8px rgba(39,174,96,0); }
+      100% { box-shadow: 0 0 0 0 rgba(39,174,96,0); }
+    }
+    button.btn-success-flash {
+      animation: btnSuccessFlash 0.6s ease forwards;
+    }
+
+    /* Press / tap down effect (instant feedback) */
+    button:active:not(:disabled):not(.btn-loading) {
+      transform: scale(0.96) translateY(1px) !important;
+      transition: transform 0.08s ease !important;
+    }
+
+    /* Sidebar nav items — tap pulse */
+    .sidebar li:active:not(.nav-section-label) {
+      background: rgba(247,160,26,0.5) !important;
+      transition: background 0.08s !important;
+    }
+
+    /* Dark mode spinner */
+    body.dark-mode button.btn-loading::after {
+      border-color: rgba(255,255,255,0.25);
+      border-top-color: #fff;
+    }
   </style>
 </head>
 
@@ -13895,6 +13973,175 @@
       dash_applyFilter();
     }
 
+  </script>
+
+  <!-- ══ BUTTON FEEDBACK SYSTEM (ripple + loading state) ══ -->
+  <script>
+  (function() {
+
+    /* ── 1. RIPPLE on every button click ── */
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('button');
+      if (!btn || btn.disabled || btn.classList.contains('btn-loading')) return;
+      const rect   = btn.getBoundingClientRect();
+      const size   = Math.max(rect.width, rect.height) * 1.8;
+      const x      = e.clientX - rect.left - size / 2;
+      const y      = e.clientY - rect.top  - size / 2;
+      const ripple = document.createElement('span');
+      ripple.className = 'btn-ripple';
+      ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px;`;
+      btn.appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove());
+    }, true);
+
+    /* ── 2. Loading-state helpers ── */
+    // Functions that do async work (network/sheet calls) — we wrap these
+    const ASYNC_FNS = [
+      'addContribution','addUser','addExpense','addEvent','addGoal','addOccasion',
+      'addType','addExpenseType',
+      'saveEditContrib','saveEditUser','saveEditEvent','saveEventExpense','saveEditGoal',
+      'saveAnnouncement','clearAnnouncement','saveChatbotSettings','saveLogoUrl',
+      'saveWalkIn','saveAdminProfile','saveAdminNewPassword',
+      'deleteExpense','deleteEvent','deleteGoal','deleteGalleryPhoto',
+      'uploadGalleryPhoto','uploadExpenseReceipt','openReceiptAttach',
+      'exportContribCSV','exportExpenseCSV','exportAuditCSV','exportAnnualReportPDF',
+      'dash_exportPDF',
+      'sendBroadcast','scheduleBroadcast','previewBroadcast',
+      'sendTrackerMsg','sendWhatsAppReport','sendWhatsAppPDFReport',
+      'triggerManualMonthlyReport',
+      'runHealthCheck','runTracker',
+      'runBulkInsert','_executeBulkInsert',
+      'loadContributionRequests','loadFeedbackAdmin','loadAuditLog','loadYearSummary',
+      'refreshDashboardData',
+      'fbMarkResolved','fbDeleteRow',
+      'replyToFeedback','_sendFeedbackReply',
+      '_approveContribRequest','_rejectContribRequest','confirmRejectUser',
+      'loadChatbotSettings',
+      'downloadLocalBackup',
+      '_submitContributionFromPreview','_submitWalkInFromPreview',
+      '_confirmCorrectionEntry'
+    ];
+
+    // Loading label overrides — what to show while processing
+    const LOADING_LABELS = {
+      addContribution: 'Saving…', addUser: 'Adding…', addExpense: 'Saving…',
+      addEvent: 'Adding…', saveEditContrib: 'Saving…', saveEditUser: 'Saving…',
+      saveEditEvent: 'Saving…', saveAnnouncement: 'Saving…', saveChatbotSettings: 'Saving…',
+      saveLogoUrl: 'Saving…', saveWalkIn: 'Saving…', saveAdminProfile: 'Saving…',
+      saveAdminNewPassword: 'Updating…',
+      deleteExpense: 'Deleting…', deleteEvent: 'Deleting…', deleteGoal: 'Deleting…',
+      deleteGalleryPhoto: 'Deleting…',
+      uploadGalleryPhoto: 'Uploading…', uploadExpenseReceipt: 'Uploading…',
+      exportContribCSV: 'Exporting…', exportExpenseCSV: 'Exporting…',
+      exportAuditCSV: 'Exporting…', exportAnnualReportPDF: 'Generating PDF…',
+      dash_exportPDF: 'Generating PDF…',
+      sendBroadcast: 'Sending…', sendTrackerMsg: 'Sending…',
+      sendWhatsAppReport: 'Preparing…', sendWhatsAppPDFReport: 'Preparing PDF…',
+      triggerManualMonthlyReport: 'Sending…',
+      runHealthCheck: 'Checking…', runTracker: 'Loading…',
+      runBulkInsert: 'Inserting…',
+      loadContributionRequests: 'Loading…', loadFeedbackAdmin: 'Loading…',
+      loadAuditLog: 'Loading…', loadYearSummary: 'Loading…',
+      refreshDashboardData: 'Refreshing…',
+      fbMarkResolved: 'Updating…', fbDeleteRow: 'Deleting…',
+      _approveContribRequest: 'Approving…', _rejectContribRequest: 'Rejecting…',
+      confirmRejectUser: 'Rejecting…',
+      downloadLocalBackup: 'Preparing…',
+      _submitContributionFromPreview: 'Saving…', _submitWalkInFromPreview: 'Saving…',
+      clearAnnouncement: 'Clearing…', scheduleBroadcast: 'Scheduling…',
+      addGoal:'Saving…', addOccasion:'Saving…', addType:'Saving…', addExpenseType:'Saving…',
+      saveEditGoal:'Saving…', saveEventExpense:'Saving…',
+      replyToFeedback:'Sending…', _sendFeedbackReply:'Sending…',
+      previewBroadcast:'Loading…', loadChatbotSettings:'Loading…',
+      openReceiptAttach:'Loading…', _confirmCorrectionEntry:'Saving…'
+    };
+
+    function _setBtnLoading(btn, fnName) {
+      if (!btn || btn.classList.contains('btn-loading')) return;
+      // Wrap current inner HTML
+      const inner = btn.innerHTML;
+      btn.dataset._origHtml = inner;
+      btn.innerHTML = `<span class="btn-original-content" style="display:none">${inner}</span>`;
+      btn.classList.add('btn-loading');
+      btn.disabled = true;
+      // Insert loading text after the spinner (::after pseudo handles spinner)
+      const label = LOADING_LABELS[fnName] || 'Processing…';
+      const txt = document.createElement('span');
+      txt.className = 'btn-loading-txt';
+      txt.textContent = ' ' + label;
+      btn.appendChild(txt);
+    }
+
+    function _resetBtn(btn) {
+      if (!btn) return;
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+      const saved = btn.dataset._origHtml;
+      if (saved) { btn.innerHTML = saved; delete btn.dataset._origHtml; }
+    }
+
+    function _flashSuccess(btn) {
+      if (!btn) return;
+      btn.classList.add('btn-success-flash');
+      btn.addEventListener('animationend', () => btn.classList.remove('btn-success-flash'), {once:true});
+    }
+
+    // Wrap a global function with loading state
+    function _wrapFn(fnName) {
+      if (typeof window[fnName] !== 'function') return;
+      const orig = window[fnName];
+      window[fnName] = function(...args) {
+        // Find the button that triggered this — look at the event target chain
+        const btn = (window._lastClickedBtn && window._lastClickedBtn._fnName === fnName)
+          ? window._lastClickedBtn.el : null;
+
+        const result = orig.apply(this, args);
+
+        if (result && typeof result.then === 'function') {
+          // It's async — show loading
+          if (btn) _setBtnLoading(btn, fnName);
+          result.then(() => {
+            if (btn) { _resetBtn(btn); _flashSuccess(btn); }
+          }).catch(() => {
+            if (btn) _resetBtn(btn);
+          });
+        }
+        return result;
+      };
+    }
+
+    // Track which button was last clicked, map to which fn it calls
+    document.addEventListener('mousedown', function(e) {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const oc = btn.getAttribute('onclick') || '';
+      // Extract function name from onclick attribute
+      const m = oc.match(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/);
+      if (m) {
+        window._lastClickedBtn = { el: btn, _fnName: m[1] };
+      }
+    }, true);
+
+    // Apply wrapping after page fully loads
+    function _applyWraps() {
+      ASYNC_FNS.forEach(fn => _wrapFn(fn));
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _applyWraps);
+    } else {
+      // Small delay to let inline scripts define their functions first
+      setTimeout(_applyWraps, 800);
+    }
+
+    /* ── 3. Sidebar nav tap ripple ── */
+    document.addEventListener('click', function(e) {
+      const li = e.target.closest('.sidebar li:not(.nav-section-label)');
+      if (!li) return;
+      li.style.transition = 'background 0.08s';
+    });
+
+  })();
   </script>
 
 </body>
