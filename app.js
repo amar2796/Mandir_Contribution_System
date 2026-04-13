@@ -918,9 +918,45 @@ function _getLogoB64(cb) {
 setTimeout(function(){ _getLogoB64(function(){}); }, 500);
 
 /* ═══ RECEIPT POPUP — Enhanced with logo, improved design ═══ */
+/* ── Receipt helpers (shared by all receipt functions) ───────────────────── */
+
+/** Normalises a ReceiptID: migrates legacy TRX- prefix to APP.receiptPrefix */
+function _displayRID(c) {
+  return (c.ReceiptID || "—").replace(
+    /^TRX-/,
+    (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : APP.legacyReceiptPrefix || "MNR") + "-"
+  );
+}
+
+/** Builds the WhatsApp text body for a contribution receipt (no duplicates) */
+function _buildReceiptWAMsg(c, userName, typeName, occasionName, displayRID) {
+  const genDate = new Date().toLocaleDateString("en-IN");
+  const payMode = c.PaymentMode || "—";
+  return (
+    `${APP.symbol} *${APP.name.toUpperCase()}*\n` +
+    `📍 ${APP.location}\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `✅ *CONTRIBUTION RECEIPT*\n\n` +
+    `🔖 Receipt No: *${displayRID}*\n` +
+    `👤 Donor: *${userName}*\n` +
+    `💰 Amount: *${APP.currency} ${Number(c.Amount || 0).toLocaleString("en-IN")}*\n` +
+    `💳 Payment: ${payMode}\n` +
+    `📅 Month: ${c.ForMonth || "—"} ${c.Year || ""}\n` +
+    `🏷️ Type: ${typeName || "Contribution"}\n` +
+    (occasionName && occasionName !== "—" ? `🎉 Occasion: ${occasionName}\n` : "") +
+    (c.Note ? `📝 Note: ${c.Note}\n` : "") +
+    `📆 Date: ${formatPaymentDate(c.PaymentDate)}\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `_🙏 ${APP.thankYouMsg}_\n` +
+    `_${APP.tagline} | System Generated — ${genDate}_`
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
 function showReceipt(c, userName, typeName, occasionName, isAdmin){
   const rid        = _storeReceipt(c, userName, typeName, occasionName);
-  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
+  const displayRID = _displayRID(c);
   const payMode    = c.PaymentMode || "—";
   const payIcon    = payMode==="Cash" ? "money-bill-wave" : payMode==="Cheque" ? "file-invoice" : "mobile-screen-button";
   const shareButtons = isAdmin ? `
@@ -934,14 +970,14 @@ function showReceipt(c, userName, typeName, occasionName, isAdmin){
   // Logo HTML — show actual logo if available, else styled OM
   const logoHtml = window._logoB64
     ? `<img src="${window._logoB64}" alt="Logo" style="width:54px;height:54px;border-radius:50%;border:2.5px solid rgba(247,160,26,0.7);object-fit:cover;background:#78501e;display:block;margin:0 auto 8px;">`
-    : `<div style="font-size:2.6rem;margin-bottom:8px;filter:drop-shadow(0 0 8px rgba(247,160,26,0.5));">🕉️</div>`;
+    : `<div style="font-size:2.6rem;margin-bottom:8px;filter:drop-shadow(0 0 8px rgba(247,160,26,0.5));">${APP.symbol}</div>`;
 
   let html=`
     <div class="_mhdr"><h3><i class="fa-solid fa-receipt"></i> Contribution Receipt</h3><button class="_mcls" onclick="closeModal()">×</button></div>
     <div class="_mbdy" style="padding:0;">
 
       <!-- Header Band -->
-      <div style="background:linear-gradient(135deg,#1e293b 0%,#334155 60%,#3d5068 100%);padding:22px 24px 18px;text-align:center;position:relative;overflow:hidden;">
+      <div class="rcpt-hdr-band" style="background:linear-gradient(135deg,#1e293b 0%,#334155 60%,#3d5068 100%);padding:22px 24px 18px;text-align:center;position:relative;overflow:hidden;">
         <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f7a01a,#fbbf24,#f7a01a);"></div>
         ${logoHtml}
         <div style="font-size:1.15rem;font-weight:700;color:#f7a01a;letter-spacing:.8px;text-shadow:0 1px 4px rgba(0,0,0,0.3);">${escapeHtml(APP.name.toUpperCase())}</div>
@@ -952,23 +988,23 @@ function showReceipt(c, userName, typeName, occasionName, isAdmin){
       </div>
 
       <!-- Receipt ID Band -->
-      <div style="background:linear-gradient(90deg,#fef3c7,#fde68a,#fef3c7);padding:10px 24px;text-align:center;border-bottom:2px solid #fcd34d;">
-        <span style="color:#78350f;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Receipt No: </span>
-        <span style="color:#92400e;font-size:15px;font-weight:700;font-family:monospace;letter-spacing:1.5px;">${escapeHtml(displayRID)}</span>
+      <div class="rcpt-id-band" style="background:linear-gradient(90deg,#fef3c7,#fde68a,#fef3c7);padding:10px 24px;text-align:center;border-bottom:2px solid #fcd34d;">
+        <span class="rcpt-id-label" style="color:#78350f;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Receipt No: </span>
+        <span class="rcpt-id-value" style="color:#92400e;font-size:15px;font-weight:700;font-family:monospace;letter-spacing:1.5px;">${escapeHtml(displayRID)}</span>
       </div>
 
       <!-- Amount Hero -->
-      <div style="padding:20px 24px 14px;text-align:center;border-bottom:1px dashed #e2e8f0;background:#fafffe;">
-        <div style="color:#64748b;font-size:10.5px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Amount Received</div>
-        <div style="color:#15803d;font-size:2.2rem;font-weight:800;margin:4px 0;letter-spacing:-0.5px;">₹ ${fmt(c.Amount)}</div>
-        <div style="display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:20px;padding:5px 14px;font-size:12px;color:#166534;font-weight:600;margin-top:4px;">
+      <div class="rcpt-amt-zone" style="padding:20px 24px 14px;text-align:center;border-bottom:1px dashed #e2e8f0;background:#fafffe;">
+        <div class="rcpt-amt-label" style="color:#64748b;font-size:10.5px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Amount Received</div>
+        <div class="rcpt-amt-num" style="color:#15803d;font-size:2.2rem;font-weight:800;margin:4px 0;letter-spacing:-0.5px;">₹ ${fmt(c.Amount)}</div>
+        <div class="rcpt-pay-pill" style="display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:20px;padding:5px 14px;font-size:12px;color:#166534;font-weight:600;margin-top:4px;">
           <i class="fa-solid fa-${payIcon}" style="color:#16a34a;"></i>
           ${escapeHtml(payMode)}
         </div>
       </div>
 
       <!-- Details -->
-      <div style="padding:4px 24px 12px;">
+      <div class="rcpt-details" style="padding:4px 24px 12px;">
         <div class="_row"><span class="_rl">Donor Name</span><span class="_rv" style="color:#1e293b;font-weight:700;">${escapeHtml(userName)}</span></div>
         <div class="_row"><span class="_rl">For Month / Year</span><span class="_rv">${escapeHtml(c.ForMonth||"—")} ${escapeHtml(String(c.Year||""))}</span></div>
         <div class="_row"><span class="_rl">Contribution Type</span><span class="_rv">${escapeHtml(typeName||"Contribution")}</span></div>
@@ -978,11 +1014,11 @@ function showReceipt(c, userName, typeName, occasionName, isAdmin){
       </div>
 
       <!-- Signature -->
-      <div style="display:flex;justify-content:space-between;padding:12px 24px;border-top:1px solid #e8eef4;background:#f8fafc;font-size:11px;">
+      <div class="rcpt-sig-strip" style="display:flex;justify-content:space-between;padding:12px 24px;border-top:1px solid #e8eef4;background:#f8fafc;font-size:11px;">
         <div>
-          <div style="font-weight:700;color:#334155;font-size:12px;">${escapeHtml(APP.signatory)}</div>
-          <div style="color:#64748b;">${escapeHtml(APP.designation)}</div>
-          <div style="color:#94a3b8;font-size:10px;">${escapeHtml(APP.name)}</div>
+          <div class="rcpt-sig-name" style="font-weight:700;color:#334155;font-size:12px;">${escapeHtml(APP.signatory)}</div>
+          <div class="rcpt-sig-desig" style="color:#64748b;">${escapeHtml(APP.designation)}</div>
+          <div class="rcpt-sig-temple" style="color:#94a3b8;font-size:10px;">${escapeHtml(APP.name)}</div>
         </div>
         <div style="text-align:right;color:#94a3b8;font-size:10px;">
           <div>System-generated receipt</div>
@@ -991,9 +1027,9 @@ function showReceipt(c, userName, typeName, occasionName, isAdmin){
       </div>
 
       <!-- Thank You -->
-      <div style="background:linear-gradient(135deg,#fef9ee,#fef3c7);padding:14px 24px;text-align:center;border-top:2px solid #fde68a;">
-        <div style="color:#92400e;font-size:13px;font-weight:700;">🙏 ${escapeHtml(APP.thankYouMsg)}</div>
-        <div style="color:#a16207;font-size:11px;margin-top:3px;font-style:italic;">${escapeHtml(APP.tagline)}</div>
+      <div class="rcpt-thankyou" style="background:linear-gradient(135deg,#fef9ee,#fef3c7);padding:14px 24px;text-align:center;border-top:2px solid #fde68a;">
+        <div class="rcpt-ty-msg" style="color:#92400e;font-size:13px;font-weight:700;">🙏 ${escapeHtml(APP.thankYouMsg)}</div>
+        <div class="rcpt-ty-tag" style="color:#a16207;font-size:11px;margin-top:3px;font-style:italic;">${escapeHtml(APP.tagline)}</div>
       </div>
     </div>
 
@@ -1008,26 +1044,8 @@ function sendReceiptWhatsApp(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
-  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
-  const genDate    = new Date().toLocaleDateString("en-IN");
-  const payMode    = c.PaymentMode || "—";
-  const msg =
-    `${APP.symbol} *${APP.name.toUpperCase()}*\n` +
-    `📍 ${APP.location}\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `✅ *CONTRIBUTION RECEIPT*\n\n` +
-    `🔖 Receipt No: *${displayRID}*\n` +
-    `👤 Donor: *${userName}*\n` +
-    `💰 Amount: *₹ ${Number(c.Amount||0).toLocaleString("en-IN")}*\n` +
-    `💳 Payment: ${payMode}\n` +
-    `📅 Month: ${c.ForMonth||"—"} ${c.Year||""}\n` +
-    `🏷️ Type: ${typeName||"Contribution"}\n` +
-    (occasionName && occasionName!=="—" ? `🎉 Occasion: ${occasionName}\n` : "") +
-    (c.Note ? `📝 Note: ${c.Note}\n` : "") +
-    `📆 Date: ${formatPaymentDate(c.PaymentDate)}\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `_🙏 ${APP.thankYouMsg}_\n` +
-    `_${APP.tagline} | System Generated — ${genDate}_`;
+  const dRID = _displayRID(c);
+  const msg  = _buildReceiptWAMsg(c, userName, typeName, occasionName, dRID);
   window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
 
@@ -1035,27 +1053,14 @@ function exportReceiptPDFForWhatsApp(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
-  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
-  const genDate    = new Date().toLocaleDateString("en-IN");
-  const payMode    = c.PaymentMode || "—";
-  const msg =
-    `${APP.symbol} *${APP.name.toUpperCase()}*\n` +
-    `📍 ${APP.location}\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `✅ *CONTRIBUTION RECEIPT*\n\n` +
-    `🔖 Receipt No: *${displayRID}*\n` +
-    `👤 Donor: *${userName}*\n` +
-    `💰 Amount: *₹ ${Number(c.Amount||0).toLocaleString("en-IN")}*\n` +
-    `💳 Payment: ${payMode}\n` +
-    `📅 Month: ${c.ForMonth||"—"} ${c.Year||""}\n` +
-    `🏷️ Type: ${typeName||"Contribution"}\n` +
-    (occasionName && occasionName!=="—" ? `🎉 Occasion: ${occasionName}\n` : "") +
-    (c.Note ? `📝 Note: ${c.Note}\n` : "") +
-    `📆 Date: ${formatPaymentDate(c.PaymentDate)}\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `_🙏 ${APP.thankYouMsg}_\n` +
-    `_PDF Receipt also downloaded — please attach it_\n` +
-    `_${APP.tagline} | System Generated — ${genDate}_`;
+  const dRID = _displayRID(c);
+  const baseMsg = _buildReceiptWAMsg(c, userName, typeName, occasionName, dRID);
+  // Insert PDF-attach note before the last closing line
+  const lastLine = `_${APP.tagline}`;
+  const msg = baseMsg.replace(
+    lastLine,
+    `_PDF Receipt also downloaded — please attach it_\n${lastLine}`
+  );
   exportReceiptPDF(rid);
   setTimeout(()=>{
     toast("📥 PDF downloaded — attach it in WhatsApp along with this message","");
@@ -1068,7 +1073,7 @@ async function sendReceiptEmailDirect(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
-  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
+  const displayRID = _displayRID(c);
   toast("📧 Sending receipt email...","");
   try {
     const res = await postData({
@@ -1102,11 +1107,11 @@ function printReceipt(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
   const {c,userName,typeName,occasionName} = stored;
-  const displayRID = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
+  const displayRID = _displayRID(c);
   const payMode    = c.PaymentMode||"—";
   const logoTag    = window._logoB64
     ? `<img src="${window._logoB64}" alt="Logo" style="width:60px;height:60px;border-radius:50%;border:3px solid rgba(247,160,26,0.7);object-fit:cover;display:block;margin:0 auto 10px;">`
-    : `<div class="om">🕉️</div>`;
+    : `<div class="om">${APP.symbol}</div>`;
   const win = window.open("","_blank","width=620,height=800");
   win.document.write(`<!DOCTYPE html><html><head><title>Receipt ${displayRID}</title>
   <style>
@@ -1183,14 +1188,14 @@ async function exportReceiptPDF(rid){
       .replace(/\s+/g," ").trim();
   }
 
-  const displayRID  = (c.ReceiptID||"—").replace(/^TRX-/, (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : "MNR") + "-");
+  const displayRID  = _displayRID(c);
   const payMode     = _pdf(c.PaymentMode || "—");
   const {jsPDF}     = window.jspdf;
   const pdfName     = _pdf(APP.name);
   const pdfLocation = _pdf(APP.location);
   const pdfTagline  = _pdf(APP.tagline);
   const pdfThankYou = _pdf(APP.thankYouMsg);
-  const pdfDesig    = _pdf(APP.designation) || "Authorized Signatory";
+  const pdfDesig    = _pdf(APP.designation);
   const amtNum      = Number(c.Amount||0);
   const amtFmt      = "Rs. " + amtNum.toLocaleString("en-IN");
 

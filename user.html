@@ -2018,10 +2018,182 @@
     /* ── Secondary button in dark ── */
     body.user-dark .btn-secondary {
       background: #1e293b !important;
+      color: #cbd5e1 !important;
+    }
+    body.user-dark .btn-secondary:hover {
+      background: #263448 !important;
     }
 
     /* ── Inline select in dark ── */
     body.user-dark .inl-sel:focus { border-color: var(--gold) !important; }
+
+    /* ── Mobile contribution cards ── */
+    body.user-dark .mob-c-card {
+      border-bottom-color: rgba(247,160,26,0.07) !important;
+    }
+    body.user-dark .mob-c-card:hover {
+      background: rgba(247,160,26,0.05) !important;
+    }
+    body.user-dark .mob-c-card:active {
+      background: rgba(247,160,26,0.09) !important;
+    }
+    body.user-dark .mob-c-amt   { color: #4ade80 !important; }
+    body.user-dark .mob-c-date  { color: #475569 !important; }
+    body.user-dark .mob-c-month { color: #94a3b8 !important; }
+
+    /* ── Table horizontal scroll shadow ── */
+    body.user-dark .t-wrap::after {
+      background: linear-gradient(to left, rgba(17,24,39,0.95), transparent) !important;
+    }
+
+    /* ── Skeleton loaders in dark ── */
+    body.user-dark .skel {
+      background: linear-gradient(90deg, rgba(30,41,59,0.8) 25%, rgba(51,65,85,0.7) 50%, rgba(30,41,59,0.8) 75%) !important;
+      background-size: 600px 100% !important;
+    }
+    body.user-dark .skel-ra {
+      border-bottom-color: rgba(247,160,26,0.05) !important;
+    }
+
+    /* ── Badge variants in dark ── */
+    body.user-dark .mb-amber {
+      background: rgba(247,160,26,0.16) !important;
+      color: #fbbf24 !important;
+      border-color: rgba(247,160,26,0.28) !important;
+    }
+    body.user-dark .mb-green {
+      background: rgba(34,197,94,0.14) !important;
+      color: #4ade80 !important;
+      border-color: rgba(74,222,128,0.22) !important;
+    }
+    body.user-dark .mb-blue {
+      background: rgba(59,130,246,0.14) !important;
+      color: #93c5fd !important;
+      border-color: rgba(147,197,253,0.22) !important;
+    }
+
+    /* ── Broadcast pill chips in dark ── */
+    body.user-dark .bc-pill {
+      filter: brightness(0.85) saturate(1.2);
+    }
+    body.user-dark .bc-item.urgent  { border-left-color: #f87171 !important; }
+    body.user-dark .bc-item.poll    { border-left-color: #a78bfa !important; }
+    body.user-dark .bc-item.innovation { border-left-color: #4ade80 !important; }
+
+    /* ── Goal progress bar track ── */
+    body.user-dark .goal-track  { background: #1e293b !important; }
+    body.user-dark .goal-nums b { color: #94a3b8 !important; }
+    body.user-dark .goal-pill   { filter: brightness(0.85) saturate(1.15); }
+
+    /* ── Photo preview ── */
+    body.user-dark .photo-preview {
+      background: #1e293b !important;
+      border-color: var(--gold) !important;
+      box-shadow: 0 4px 20px rgba(247,160,26,0.28) !important;
+    }
+
+    /* ── Dropdown file upload area in edit modal ── */
+    body.user-dark [id="_editContribModal"] [style*="dashed"] {
+      background: #0d1117 !important;
+      border-color: rgba(247,160,26,0.22) !important;
+    }
+
+    /* ── Pull-to-refresh indicator spin ── */
+    body.user-dark #ptr-indicator .ptr-spin {
+      border-color: rgba(247,160,26,0.18) !important;
+      border-top-color: var(--gold) !important;
+    }
+
+    /* ── Page progress bar (already gold, add glow in dark) ── */
+    body.user-dark #page-progress {
+      box-shadow: 0 0 8px rgba(247,160,26,0.6) !important;
+    }
+
+    /* ── Acc body warm tint ── */
+    body.user-dark .acc-body {
+      background: #0a0e17 !important;
+    }
+    body.user-dark .acc-body.acc-open {
+      background: #0a0e17 !important;
+    }
+
+    /* ── Hero pill badge ── */
+    body.user-dark .hero-pill {
+      background: rgba(247,160,26,0.12) !important;
+      border-color: rgba(247,160,26,0.32) !important;
+      color: #fbbf24 !important;
+      text-shadow: 0 0 12px rgba(247,160,26,0.35);
+    }
+
+    /* ── Ambient body noise texture for depth ── */
+    body.user-dark {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E") !important;
+    }
+
+    /* ── Events container card in dark ── */
+    body.user-dark #eventsContainer .card {
+      background: #111827 !important;
+      border-color: rgba(247,160,26,0.10) !important;
+    }
+    body.user-dark #eventsContainer .card:hover {
+      border-color: rgba(247,160,26,0.28) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(247,160,26,0.12) !important;
+    }
+
+    /* ── BS (bottom sheet) body scrollbar refined ── */
+    body.user-dark .bs-body::-webkit-scrollbar-thumb {
+      background: rgba(247,160,26,0.18) !important;
+    }
+    body.user-dark .bs-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(247,160,26,0.4) !important;
+    }
+
+    /* ── Ripple in dark ── */
+    body.user-dark .ripple-circle {
+      background: rgba(247,160,26,0.18) !important;
+    }
+
+    /* ── Gold text glow on key labels ── */
+    body.user-dark .card-title i,
+    body.user-dark .sec-lbl i {
+      filter: drop-shadow(0 0 6px rgba(247,160,26,0.5));
+    }
+
+    /* ── Hero amount gold accent text glow ── */
+    body.user-dark .hero-amount span {
+      text-shadow: 0 0 24px rgba(247,160,26,0.45);
+    }
+
+    /* ── Table row highlight stripe for readability ── */
+    body.user-dark tbody tr:nth-child(even) {
+      background: rgba(255,255,255,0.013) !important;
+    }
+
+    /* ── S-item highlight override in dark ── */
+    body.user-dark .s-item {
+      border-bottom-color: rgba(247,160,26,0.07) !important;
+    }
+
+    /* ── Acc open menu title glow ── */
+    body.user-dark .menu-item.acc-open .menu-title {
+      text-shadow: 0 0 16px rgba(247,160,26,0.3) !important;
+    }
+
+    /* ── Dark mode transition for mode toggle smoothness ── */
+    body.user-dark *,
+    body.user-dark *::before,
+    body.user-dark *::after {
+      transition-property: background, background-color, border-color, color, box-shadow !important;
+      transition-duration: 0.22s !important;
+      transition-timing-function: cubic-bezier(.4,0,.2,1) !important;
+    }
+    /* Re-apply critical transitions that need their own values */
+    body.user-dark .goal-fill {
+      transition: width 1.4s cubic-bezier(.4,0,.2,1) !important;
+    }
+    body.user-dark .acc-body {
+      transition: max-height 0.38s cubic-bezier(.4,0,.2,1), opacity 0.28s ease !important;
+    }
 
     /* ─── MENU ITEMS ─── */
     .menu-grid {
@@ -3050,6 +3222,151 @@
       background: #2d3748 !important;
       color: #64748b !important;
     }
+
+    /* ══════════════════════════════════════════════════════════════
+       CONTRIBUTION RECEIPT MODAL — DARK MODE
+       Class-based selectors (rcpt-*) — reliable, no style-string matching
+       ══════════════════════════════════════════════════════════════ */
+
+    /* ── Outer modal shell ── */
+    body.user-dark ._modal > div {
+      background: #111827 !important;
+      color: #e2e8f0 !important;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.85),
+                  0 0 0 1px rgba(247,160,26,0.14),
+                  inset 0 1px 0 rgba(247,160,26,0.06) !important;
+    }
+
+    /* ── Modal header bar (title + close btn) ── */
+    body.user-dark ._modal ._mhdr {
+      background: linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%) !important;
+      border-bottom: 2px solid rgba(247,160,26,0.35) !important;
+    }
+    body.user-dark ._modal ._mhdr h3,
+    body.user-dark ._modal ._mhdr [style*="color:#fff"],
+    body.user-dark ._modal ._mhdr [style*="color:white"] { color: #fff !important; }
+
+    /* ── Modal body wrapper ── */
+    body.user-dark ._modal ._mbdy {
+      background: #111827 !important;
+      color: #e2e8f0 !important;
+    }
+
+    /* ── Modal footer ── */
+    body.user-dark ._modal ._mft {
+      background: #0a0e17 !important;
+      border-top: 1.5px solid rgba(247,160,26,0.12) !important;
+    }
+
+    /* ── Zone 1: HEADER BAND — dark steel-blue → warm brown-gold ── */
+    body.user-dark .rcpt-hdr-band {
+      background: linear-gradient(135deg,#1c0d00 0%,#2e1800 55%,#1c0d00 100%) !important;
+    }
+
+    /* ── Zone 2: RECEIPT-ID BAND — amber gradient → deep amber-dark ── */
+    body.user-dark .rcpt-id-band {
+      background: linear-gradient(90deg,#1c1000,#2e1c00,#1c1000) !important;
+      border-bottom-color: rgba(247,160,26,0.30) !important;
+    }
+    body.user-dark .rcpt-id-label { color: #b45309 !important; }
+    body.user-dark .rcpt-id-value {
+      color: #fbbf24 !important;
+      text-shadow: 0 0 14px rgba(247,160,26,0.3);
+    }
+
+    /* ── Zone 3: AMOUNT HERO — light mint → deep dark surface ── */
+    body.user-dark .rcpt-amt-zone {
+      background: #080f0c !important;
+      border-bottom-color: rgba(247,160,26,0.12) !important;
+    }
+    body.user-dark .rcpt-amt-label { color: #475569 !important; }
+    body.user-dark .rcpt-amt-num {
+      color: #4ade80 !important;
+      text-shadow: 0 0 22px rgba(74,222,128,0.28);
+    }
+    body.user-dark .rcpt-pay-pill {
+      background: rgba(5,46,22,0.6) !important;
+      border-color: rgba(74,222,128,0.25) !important;
+      color: #4ade80 !important;
+    }
+    body.user-dark .rcpt-pay-pill i { color: #4ade80 !important; }
+
+    /* ── Zone 4: DETAILS ROWS ── */
+    body.user-dark ._modal ._row {
+      border-bottom-color: rgba(247,160,26,0.07) !important;
+    }
+    body.user-dark ._modal ._rl { color: #64748b !important; }
+    body.user-dark ._modal ._rv { color: #f1f5f9 !important; }
+    body.user-dark ._modal ._rv[style*="color:#1e293b"] { color: #f1f5f9 !important; }
+
+    /* ── Zone 5: SIGNATURE STRIP — light grey → dark surface ── */
+    body.user-dark .rcpt-sig-strip {
+      background: #0d1117 !important;
+      border-top-color: rgba(247,160,26,0.08) !important;
+    }
+    body.user-dark .rcpt-sig-name   { color: #cbd5e1 !important; }
+    body.user-dark .rcpt-sig-desig  { color: #64748b !important; }
+    body.user-dark .rcpt-sig-temple { color: #374151 !important; }
+
+    /* ── Zone 6: THANK-YOU FOOTER — warm cream → deep warm dark ── */
+    body.user-dark .rcpt-thankyou {
+      background: linear-gradient(135deg,#110900,#1c1000) !important;
+      border-top-color: rgba(247,160,26,0.28) !important;
+    }
+    body.user-dark .rcpt-ty-msg { color: #d97706 !important; }
+    body.user-dark .rcpt-ty-tag { color: #92400e !important; }
+
+    /* ── Misc modal inline-style surfaces (non-receipt modals) ── */
+    body.user-dark ._modal [style*="background:#dcfce7"],
+    body.user-dark ._modal [style*="background:rgba(34,197,94"] {
+      background: rgba(5,46,22,0.55) !important;
+      color: #86efac !important;
+    }
+    body.user-dark ._modal [style*="background:#fffbeb"] {
+      background: rgba(92,55,0,0.45) !important;
+      color: #fde68a !important;
+    }
+    body.user-dark ._modal [style*="background:#fee2e2"] {
+      background: rgba(69,10,10,0.55) !important;
+      color: #fca5a5 !important;
+    }
+    body.user-dark ._modal [style*="background:rgba(247,160,26,0.1"],
+    body.user-dark ._modal [style*="background:rgba(247,160,26,.1"] {
+      background: rgba(247,160,26,0.16) !important;
+    }
+    body.user-dark ._modal [style*="background:#f8fafc"],
+    body.user-dark ._modal [style*="background:#fafafa"],
+    body.user-dark ._modal [style*="background:#f1f5f9"],
+    body.user-dark ._modal [style*="background:#f8f9fa"] {
+      background: #0d1117 !important;
+    }
+    body.user-dark ._modal .type-chip {
+      background: rgba(247,160,26,0.12) !important;
+      border-color: rgba(247,160,26,0.22) !important;
+      color: #fbbf24 !important;
+    }
+    body.user-dark ._modal .rid-mono { color: #64748b !important; }
+    body.user-dark ._modal [style*="color:#1e293b"],
+    body.user-dark ._modal [style*="color:#334155"],
+    body.user-dark ._modal [style*="color:#141b2d"] { color: #f1f5f9 !important; }
+    body.user-dark ._modal [style*="color:#64748b"],
+    body.user-dark ._modal [style*="color:#475569"] { color: #64748b !important; }
+    body.user-dark ._modal [style*="color:#94a3b8"] { color: #475569 !important; }
+    body.user-dark ._modal [style*="color:#22c55e"],
+    body.user-dark ._modal [style*="color:var(--green)"] { color: #4ade80 !important; }
+    body.user-dark ._modal [style*="color:#f7a01a"],
+    body.user-dark ._modal [style*="color:var(--gold)"] { color: #f7a01a !important; }
+    body.user-dark ._modal [style*="border-top:1px solid #e"],
+    body.user-dark ._modal [style*="border-bottom:1px solid #e"] {
+      border-color: rgba(247,160,26,0.08) !important;
+    }
+    body.user-dark ._modal img[style*="border"] { border-color: #2d3748 !important; }
+    body.user-dark ._modal ._fi {
+      background: #0d1117 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3748 !important;
+    }
+    body.user-dark ._modal ._fl { color: #64748b !important; }
 
     /* ─── INPUT PLACEHOLDER IN DARK ─── */
     body.user-dark input::placeholder,
@@ -5803,7 +6120,7 @@
           } catch (e) { return String(d); }
         }
         const catColors = { Festival: "#f7a01a", Pooja: "#8b5cf6", Maintenance: "#64748b", Community: "#22c55e", Other: "#3b82f6" };
-        const catIcons = { Festival: "fa-star-and-crescent", Pooja: "fa-place-of-worship", Maintenance: "fa-screwdriver-wrench", Community: "fa-people-group", Other: "fa-calendar-day" };
+        const catIcons = { Festival: "fa-solid fa-holly-berry", Pooja: "fa-solid fa-hands-praying", Maintenance: "fa-screwdriver-wrench", Community: "fa-people-group", Other: "fa-calendar-day" };
         container.innerHTML = visible.map(function (ev) {
           const cat = ev.Category || "Other";
           const color = catColors[cat] || "#3b82f6";
