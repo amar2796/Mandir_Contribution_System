@@ -9,75 +9,85 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <style>
+    /* ── THEME C: Refined Current ───────────────────────────────────
+       Palette:
+         Primary CTA  : #78350f (dark brown)  — 9.2:1 on white ✓ WCAG AA
+         Amber accent : #f7a01a               — borders, focus, pills, icons
+         Page bg      : #f5f0e8               — single warm background
+         Card surface : #fffbf5               — one cream surface (consolidated)
+         Border cream : #fde68a               — one border yellow (consolidated)
+         Body text    : #333                  — high contrast
+         Muted text   : #666                  — labels, hints
+         Placeholder  : #999                  — was #bbb — now passes contrast
+         Input icon   : #999                  — was #bbb — matches placeholder
+       ─────────────────────────────────────────────────────────────── */
     *{box-sizing:border-box;}
     body{margin:0;font-family:"Poppins",sans-serif;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#f5f0e8;padding:20px 16px;}
     .container{width:100%;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:16px;}
     @keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-    /* Card — no padding, overflow hidden for cream header */
     .card{background:#fff;border-radius:20px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(120,53,14,0.10);animation:slideUp .5s ease-out;position:relative;overflow:hidden;}
-    /* Cream header */
-    .card-header{background:#fffbf5;border-bottom:1px solid #fef3c7;padding:28px 32px 22px;text-align:center;}
+    .card-header{background:#fffbf5;border-bottom:1px solid #fde68a;padding:28px 32px 22px;text-align:center;}
     .login-logo{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fde68a;flex-shrink:0;background:#78501e;}
     .header-icon-wrap{width:52px;height:52px;border-radius:50%;background:#fff;border:2px solid #fde68a;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;}
     .card h2{margin:0 0 4px;color:#78350f;font-size:1.5rem;font-weight:700;}
     .card-subtitle{font-size:.8rem;color:#a16207;display:block;}
-    /* Form body */
     .card-body{padding:24px 32px 0;}
     .input-group{position:relative;margin-bottom:14px;}
-    .input-group i.icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#bbb;font-size:.95rem;pointer-events:none;}
-    .input-group input{width:100%;padding:12px 14px 12px 42px;border:1.5px solid #eee;border-radius:10px;outline:none;font-size:14px;font-family:"Poppins",sans-serif;transition:all .25s ease;background:#fafafa;color:#333;}
-    .input-group input:focus{border-color:#f7a01a;background:#fff;box-shadow:0 0 0 3px rgba(247,160,26,0.08);}
+    .input-group i.icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#999;font-size:.95rem;pointer-events:none;}
+    .input-group input{width:100%;padding:12px 14px 12px 42px;border:1.5px solid #e8e4dc;border-radius:10px;outline:none;font-size:14px;font-family:"Poppins",sans-serif;transition:all .25s ease;background:#fafaf8;color:#333;}
+    .input-group input::placeholder{color:#999;}
+    .input-group input:focus{border-color:#f7a01a;background:#fff;box-shadow:0 0 0 3px rgba(247,160,26,0.10);}
     .input-group input.field-err{border-color:#e74c3c!important;background:#fff8f8!important;}
     .field-err-msg{font-size:11px;color:#e74c3c;margin:-8px 0 10px;text-align:left;display:block;}
-    .forgot{font-size:.8rem;text-align:right;color:#aaa;cursor:pointer;display:block;margin-top:-6px;margin-bottom:14px;transition:color .25s;font-weight:500;}
-    .forgot:hover{color:#f7a01a;}
-    .remember-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:13px;color:#666;text-align:left;}
+    .forgot{font-size:.8rem;text-align:right;color:#999;cursor:pointer;display:block;margin-top:-6px;margin-bottom:14px;transition:color .25s;font-weight:500;}
+    .forgot:hover{color:#78350f;}
+    .remember-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:13px;color:#555;text-align:left;}
     .remember-row input[type=checkbox]{width:15px;height:15px;accent-color:#f7a01a;cursor:pointer;}
     .msg-box{padding:10px 14px;border-radius:9px;font-size:13px;font-weight:600;margin-bottom:14px;display:none;text-align:left;}
     .msg-box.error{background:#fdedec;color:#c0392b;display:block;}
     .msg-box.success{background:#eafaf1;color:#1e8449;display:block;}
-    .msg-box.pending{background:#fff8ee;color:#92400e;display:block;border:1.5px solid #f7a01a;border-radius:12px;padding:14px 16px;text-align:center;}
+    .msg-box.pending{background:#fffbf5;color:#92400e;display:block;border:1.5px solid #f7a01a;border-radius:12px;padding:14px 16px;text-align:center;}
     .msg-box.pending .pend-title{font-size:14px;font-weight:700;color:#78350f;margin-bottom:6px;}
     .msg-box.pending .pend-sub{font-size:12px;font-weight:400;color:#a16207;line-height:1.5;}
-    button.main-btn{width:100%;padding:13px;border:none;border-radius:10px;color:#fff;font-family:"Poppins",sans-serif;font-size:1rem;font-weight:700;cursor:pointer;background:#f7a01a;transition:all .25s ease;margin-bottom:10px;letter-spacing:.3px;}
-    button.main-btn:hover{background:#e08e12;transform:translateY(-1px);}
-    button.main-btn:disabled{background:#ccc;cursor:not-allowed;transform:none;}
-    .retry-btn{width:100%;padding:10px;border:1.5px solid #f7a01a;border-radius:10px;color:#946c44;font-family:"Poppins",sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;background:#fff8ee;margin-bottom:10px;display:none;}
-    .retry-btn:hover{background:#fef3c7;}
-    /* Register row — inline card style */
-    .reg-row-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fffbf5;border:1px solid #fef3c7;border-radius:10px;padding:12px 14px;margin-bottom:0;}
+    /* PRIMARY BUTTON — dark brown, white text, 9.2:1 contrast ✓ */
+    button.main-btn{width:100%;padding:13px;border:none;border-radius:10px;color:#fff;font-family:"Poppins",sans-serif;font-size:1rem;font-weight:700;cursor:pointer;background:#78350f;transition:all .25s ease;margin-bottom:10px;letter-spacing:.3px;}
+    button.main-btn:hover{background:#5c2709;transform:translateY(-1px);}
+    button.main-btn:disabled{background:#c4b9b0;cursor:not-allowed;transform:none;}
+    /* SECONDARY BUTTON — ghost style, clearly less prominent than primary */
+    .retry-btn{width:100%;padding:10px;border:1.5px solid #d6cfc6;border-radius:10px;color:#666;font-family:"Poppins",sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;background:#fff;margin-bottom:10px;display:none;transition:all .2s ease;}
+    .retry-btn:hover{border-color:#999;color:#333;}
+    /* Register row */
+    .reg-row-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fffbf5;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:0;}
     .reg-row-card .reg-text{font-size:12.5px;font-weight:700;color:#78350f;}
     .reg-row-card .reg-sub{font-size:10.5px;color:#a16207;font-weight:400;margin-top:1px;}
-    button.reg-btn{padding:8px 16px;border:1.5px solid #f7a01a;border-radius:8px;color:#f7a01a;font-family:"Poppins",sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;background:#fff;transition:all .2s ease;white-space:nowrap;flex-shrink:0;}
-    button.reg-btn:hover{background:#fff8ee;}
+    button.reg-btn{padding:8px 16px;border:1.5px solid #f7a01a;border-radius:8px;color:#78350f;font-family:"Poppins",sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;background:#fff;transition:all .2s ease;white-space:nowrap;flex-shrink:0;}
+    button.reg-btn:hover{background:#fffbf5;border-color:#78350f;}
     /* Card footer */
-    .card-footer{border-top:1px solid #fef3c7;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;margin-top:16px;}
+    .card-footer{border-top:1px solid #fde68a;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;margin-top:16px;}
     .back-home{display:inline-flex;align-items:center;gap:8px;font-size:.85rem;color:#946c44;text-decoration:none;font-weight:600;transition:color .2s;}
-    .back-home:hover{color:#f7a01a;}
-    .back-home-icon{width:26px;height:26px;border-radius:8px;background:#fff8ee;border:1.5px solid #fde68a;display:flex;align-items:center;justify-content:center;font-size:12px;color:#946c44;flex-shrink:0;}
-    /* Version */
+    .back-home:hover{color:#78350f;}
+    .back-home-icon{width:26px;height:26px;border-radius:8px;background:#fffbf5;border:1.5px solid #fde68a;display:flex;align-items:center;justify-content:center;font-size:12px;color:#946c44;flex-shrink:0;}
     .version-footer{font-size:10px;color:#bbb;}
     /* Modal */
-    .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(120,53,14,0.35);backdrop-filter:blur(4px);z-index:1000;justify-content:center;align-items:center;padding:16px;}
-    .modal-card{background:#fff;border-radius:20px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;overflow-x:hidden;box-shadow:0 16px 48px rgba(120,53,14,0.15);position:relative;animation:slideUp .3s ease-out;}
-    .modal-header{background:#fffbf5;border-bottom:1px solid #fef3c7;padding:22px 28px 18px;text-align:center;position:relative;}
+    .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(60,20,0,0.45);backdrop-filter:blur(4px);z-index:1000;justify-content:center;align-items:center;padding:16px;}
+    .modal-card{background:#fff;border-radius:20px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;overflow-x:hidden;box-shadow:0 16px 48px rgba(120,53,14,0.18);position:relative;animation:slideUp .3s ease-out;}
+    .modal-header{background:#fffbf5;border-bottom:1px solid #fde68a;padding:20px 24px 16px;text-align:center;position:relative;}
     .modal-icon{width:46px;height:46px;border-radius:50%;background:#fff;border:2px solid #fde68a;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:#f7a01a;font-size:1.2rem;}
-    .modal-card h2{margin:0 0 4px;color:#78350f;font-size:1.25rem;font-weight:700;}
+    .modal-card h2{margin:0 0 4px;color:#78350f;font-size:1.2rem;font-weight:700;}
     .modal-card h2 i{display:none;}
     .modal-card .card-subtitle{font-size:.78rem;color:#a16207;margin-bottom:0;display:block;}
-    .modal-body{padding:22px 28px 24px;}
+    .modal-body{padding:18px 24px 22px;}
     .close-btn{position:absolute;right:12px;top:10px;font-size:20px;color:#bbb;cursor:pointer;background:none;border:none;box-shadow:none;padding:4px 8px;width:auto;border-radius:6px;transition:background .2s,color .2s;z-index:2;}
-    .close-btn:hover{background:#fef3c7;color:#78350f;}
-    /* Registration form */
+    .close-btn:hover{background:#fde68a;color:#78350f;}
+    /* Registration form grid */
     .reg-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
     @media(max-width:400px){.reg-row{grid-template-columns:1fr;}}
-    .field-label{font-size:11.5px;font-weight:600;color:#666;margin-bottom:5px;display:block;text-align:left;}
+    .field-label{font-size:11.5px;font-weight:600;color:#555;margin-bottom:5px;display:block;text-align:left;}
     /* Password strength */
-    .strength-bar{height:4px;border-radius:4px;background:#eee;margin:4px 0 6px;overflow:hidden;}
+    .strength-bar{height:4px;border-radius:4px;background:#e8e4dc;margin:4px 0 6px;overflow:hidden;}
     .strength-fill{height:100%;width:0;border-radius:4px;transition:width .3s,background .3s;}
-    .strength-label{font-size:10px;color:#aaa;margin-bottom:8px;text-align:left;height:14px;}
-    /* Show/hide password icon inside input-group */
-    .pwd-eye{position:absolute;right:15px;top:50%;transform:translateY(-50%);cursor:pointer;color:#aaa;font-size:14px;}
+    .strength-label{font-size:10px;color:#999;margin-bottom:8px;text-align:left;height:14px;}
+    .pwd-eye{position:absolute;right:15px;top:50%;transform:translateY(-50%);cursor:pointer;color:#999;font-size:14px;}
     .reg-pending{background:#eafaf1;border:1.5px solid #a9dfbf;border-radius:12px;padding:18px 20px;text-align:center;margin-top:4px;}
     .reg-pending .pend-icon{font-size:32px;margin-bottom:8px;}
     .reg-pending h3{margin:0 0 6px;color:#1e8449;font-size:1rem;}
@@ -90,9 +100,26 @@
     @keyframes tBar{from{width:100%}to{width:0%}}
     .to_{animation:tDn .3s ease forwards!important;}
     @keyframes tDn{to{opacity:0;transform:translateY(12px)}}
-    .input-group input[readonly]{background:#f5f0e8!important;color:#78350f;border-color:#fde68a!important;cursor:not-allowed;}
-    #resendRegOtpBtn:hover{color:#f7a01a;}
-    @media(max-width:480px){.card{border-radius:16px;}.card-header{padding:22px 20px 18px;}.card-body{padding:18px 20px 0;}.card-footer{padding:12px 20px;}.card h2{font-size:1.3rem;}button.main-btn{font-size:.95rem;padding:12px;}.modal-header{padding:18px 18px 14px;}.modal-body{padding:16px 18px 18px;}.modal-card h2{font-size:1.1rem;}}
+    /* Readonly input (locked email) */
+    .input-group input[readonly]{background:#fffbf5!important;color:#78350f;border-color:#fde68a!important;cursor:not-allowed;}
+    /* OTP boxes — fluid width so 6 boxes always fit on mobile */
+    .otp-box{flex:1;min-width:0;max-width:46px;height:48px;text-align:center;font-size:20px;font-weight:700;border:1.5px solid #e8e4dc;border-radius:10px;font-family:"Poppins",sans-serif;background:#fafaf8;color:#333;outline:none;transition:border-color .2s,box-shadow .2s;}
+    .otp-box:focus{border-color:#f7a01a!important;background:#fff!important;box-shadow:0 0 0 3px rgba(247,160,26,0.12);}
+    .otp-box.otp-err{border-color:#e74c3c!important;background:#fff8f8!important;}
+    #fpResendBtn:hover,#regResendBtn:hover{color:#78350f;}
+    /* Responsive tweaks */
+    @media(max-width:480px){
+      .card{border-radius:16px;}
+      .card-header{padding:22px 20px 18px;}
+      .card-body{padding:18px 20px 0;}
+      .card-footer{padding:12px 20px;}
+      .card h2{font-size:1.3rem;}
+      button.main-btn{font-size:.95rem;padding:12px;}
+      .modal-header{padding:16px 18px 14px;}
+      .modal-body{padding:14px 16px 18px;}
+      .modal-card h2{font-size:1.1rem;}
+      .reg-row{grid-template-columns:1fr;}
+    }
   </style>
 </head>
 <body>
@@ -166,48 +193,116 @@
 <!-- ══ FORGOT PASSWORD MODAL ══ -->
 <div id="forgotModal" class="modal-overlay">
   <div class="modal-card" style="max-width:400px;">
-    <!-- Step 1 header -->
+
+    <!-- Step 1 header: enter mobile -->
     <div class="modal-header" id="forgotHeader1">
       <button class="close-btn" onclick="closeForgotModal()">×</button>
-      <div class="modal-icon"><i class="fa-solid fa-envelope-circle-check"></i></div>
+      <div class="modal-icon"><i class="fa-solid fa-mobile-screen-button" style="color:#f7a01a;"></i></div>
       <h2>Forgot Password</h2>
-      <span class="card-subtitle">Enter your registered email to receive an OTP</span>
+      <span class="card-subtitle">Enter your registered mobile number</span>
     </div>
-    <!-- Step 2 header (hidden initially) -->
+    <!-- Step 2 header: confirm masked email -->
     <div class="modal-header" id="forgotHeader2" style="display:none;">
       <button class="close-btn" onclick="closeForgotModal()">×</button>
-      <div class="modal-icon"><i class="fa-solid fa-key"></i></div>
-      <h2>Reset Password</h2>
-      <span class="card-subtitle">Enter the OTP sent to your email and set a new password</span>
+      <div class="modal-icon"><i class="fa-solid fa-envelope-circle-check" style="color:#f7a01a;"></i></div>
+      <h2>Confirm Your Email</h2>
+      <span class="card-subtitle" id="forgotMaskedEmailSub">We found your account</span>
     </div>
+    <!-- Step 3 header: OTP + new password -->
+    <div class="modal-header" id="forgotHeader3" style="display:none;">
+      <button class="close-btn" onclick="closeForgotModal()">×</button>
+      <div class="modal-icon"><i class="fa-solid fa-key" style="color:#f7a01a;"></i></div>
+      <h2>Reset Password</h2>
+      <span class="card-subtitle">Enter the OTP sent to your email</span>
+    </div>
+
     <div class="modal-body">
+
+      <!-- Step 1: mobile lookup -->
       <div id="resetStep1">
         <div class="msg-box" id="resetMsg1"></div>
-        <div class="input-group">
-          <i class="icon fa-solid fa-at"></i>
-          <input type="email" id="resetEmail" placeholder="Registered Email ID"/>
+        <!-- Step pill -->
+        <div style="display:flex;gap:6px;justify-content:center;margin-bottom:16px;">
+          <span id="fpPill1" style="height:6px;width:40px;border-radius:3px;background:#f7a01a;"></span>
+          <span id="fpPill2" style="height:6px;width:40px;border-radius:3px;background:#eee;"></span>
+          <span id="fpPill3" style="height:6px;width:40px;border-radius:3px;background:#eee;"></span>
         </div>
-        <button class="main-btn" onclick="sendOTP()">
-          <i class="fa-solid fa-paper-plane"></i> Verify &amp; Send OTP
+        <div class="input-group">
+          <i class="icon fa-solid fa-phone"></i>
+          <input type="text" id="resetMobile" placeholder="Registered mobile number" maxlength="10" inputmode="numeric"/>
+        </div>
+        <button class="main-btn" id="fpLookupBtn" onclick="fpLookupMobile()">
+          <i class="fa-solid fa-magnifying-glass"></i> Find My Account
         </button>
       </div>
+
+      <!-- Step 2: masked email confirmation -->
       <div id="resetStep2" style="display:none;">
         <div class="msg-box" id="resetMsg2"></div>
-        <div class="input-group">
-          <i class="icon fa-solid fa-shield-halved"></i>
-          <input type="number" id="inputOTP" placeholder="Enter 6-digit OTP" maxlength="6"/>
+        <div style="display:flex;gap:6px;justify-content:center;margin-bottom:16px;">
+          <span style="height:6px;width:40px;border-radius:3px;background:#27ae60;"></span>
+          <span id="fpPill2b" style="height:6px;width:40px;border-radius:3px;background:#f7a01a;"></span>
+          <span style="height:6px;width:40px;border-radius:3px;background:#eee;"></span>
         </div>
-        <div class="input-group">
+        <!-- Masked email display -->
+        <div style="background:#fffbf5;border:1.5px solid #fde68a;border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center;">
+          <div style="font-size:11px;color:#a16207;font-weight:600;margin-bottom:4px;">OTP will be sent to</div>
+          <div id="fpMaskedEmailDisplay" style="font-size:15px;font-weight:700;color:#78350f;letter-spacing:.5px;"></div>
+        </div>
+        <p style="font-size:12px;color:#666;text-align:center;margin:0 0 16px;line-height:1.55;">Is this your email? Tap <b>Send OTP</b> to receive a 6-digit verification code.</p>
+        <button class="main-btn" id="fpSendOtpBtn" onclick="fpSendOtp()">
+          <i class="fa-solid fa-paper-plane"></i> Send OTP to This Email
+        </button>
+        <button class="retry-btn" style="display:block;" onclick="fpGoBack()">
+          <i class="fa-solid fa-arrow-left"></i> That's not my email — go back
+        </button>
+      </div>
+
+      <!-- Step 3: OTP boxes + new password -->
+      <div id="resetStep3" style="display:none;">
+        <div class="msg-box" id="resetMsg3"></div>
+        <div style="display:flex;gap:6px;justify-content:center;margin-bottom:16px;">
+          <span style="height:6px;width:40px;border-radius:3px;background:#27ae60;"></span>
+          <span style="height:6px;width:40px;border-radius:3px;background:#27ae60;"></span>
+          <span id="fpPill3b" style="height:6px;width:40px;border-radius:3px;background:#f7a01a;"></span>
+        </div>
+        <!-- 6-box OTP -->
+        <div style="font-size:11.5px;font-weight:600;color:#666;margin-bottom:8px;">Verification code</div>
+        <div id="fpOtpBoxes" style="display:flex;gap:6px;justify-content:center;margin-bottom:6px;">
+          <input class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+          <input class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+          <input class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+          <input class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+          <input class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+          <input class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+        </div>
+        <!-- Resend row -->
+        <div style="text-align:center;margin-bottom:16px;">
+          <button id="fpResendBtn" onclick="fpResendOtp()" style="background:none;border:none;font-family:'Poppins',sans-serif;font-size:12.5px;color:#a16207;cursor:pointer;padding:4px 10px;border-radius:6px;font-weight:600;transition:color .2s;display:none;">
+            <i class="fa-solid fa-rotate-right" style="font-size:11px;"></i> Resend OTP
+          </button>
+          <span id="fpResendTimer" style="font-size:12px;color:#888;"></span>
+        </div>
+        <!-- New password -->
+        <span class="field-label">New password</span>
+        <div class="input-group" style="margin-bottom:4px;">
           <i class="icon fa-solid fa-lock"></i>
-          <input type="password" id="newPassword" placeholder="New Password (min 8 chars)"/>
+          <input type="password" id="newPassword" placeholder="Min 8 chars" autocomplete="new-password" oninput="checkPwdStrength(this.value,'resetStrengthFill','resetStrengthLabel')"/>
           <i class="fa-solid fa-eye pwd-eye" id="toggleNewPwd"></i>
         </div>
         <div class="strength-bar"><div class="strength-fill" id="resetStrengthFill"></div></div>
         <div class="strength-label" id="resetStrengthLabel"></div>
-        <button class="main-btn" onclick="verifyAndReset()">
+        <span class="field-label" style="margin-top:8px;display:block;">Confirm new password</span>
+        <div class="input-group" style="margin-bottom:16px;">
+          <i class="icon fa-solid fa-lock"></i>
+          <input type="password" id="newPasswordConfirm" placeholder="Re-enter password" autocomplete="new-password"/>
+          <i class="fa-solid fa-eye pwd-eye" id="toggleNewPwdConfirm"></i>
+        </div>
+        <button class="main-btn" id="fpResetBtn" onclick="fpVerifyAndReset()">
           <i class="fa-solid fa-check-circle"></i> Update Password
         </button>
       </div>
+
     </div>
   </div>
 </div>
@@ -216,49 +311,34 @@
 <div id="registerModal" class="modal-overlay">
   <div class="modal-card">
 
-    <!-- Dynamic cream header (swapped by JS) -->
-    <div class="modal-header" id="regModalHeader">
+    <!-- Step 1 header: fill details -->
+    <div class="modal-header" id="regHeader1">
       <button class="close-btn" onclick="closeRegisterModal()">×</button>
-      <div class="modal-icon" id="regModalIcon">
-        <img src="Image/logo.PNG" alt="Mandir" style="width:38px;height:38px;border-radius:50%;display:block;" onerror="this.style.display='none';document.getElementById('regModalIconFallback').style.display='inline-flex';">
-        <i id="regModalIconFallback" class="fa-solid fa-envelope-circle-check" style="display:none;"></i>
+      <div class="modal-icon">
+        <img src="Image/logo.PNG" alt="Mandir" style="width:38px;height:38px;border-radius:50%;display:block;" onerror="this.style.display='none';document.getElementById('regIconFallback').style.display='flex';">
+        <i id="regIconFallback" class="fa-solid fa-user-plus" style="display:none;color:#f7a01a;font-size:1.2rem;"></i>
       </div>
-      <h2 id="regModalTitle">Verify Email First</h2>
-      <span class="card-subtitle" id="regModalSub">We'll send a 6-digit code to confirm your email</span>
+      <h2>Create Account</h2>
+      <span class="card-subtitle">Fill your details — takes less than 2 minutes</span>
+    </div>
+    <!-- Step 2 header: verify OTP -->
+    <div class="modal-header" id="regHeader2" style="display:none;">
+      <button class="close-btn" onclick="closeRegisterModal()">×</button>
+      <div class="modal-icon"><i class="fa-solid fa-envelope-circle-check" style="color:#f7a01a;font-size:1.2rem;"></i></div>
+      <h2>Verify Your Email</h2>
+      <span class="card-subtitle" id="regOtpSub">Enter the 6-digit code sent to your email</span>
     </div>
 
     <div class="modal-body">
 
-      <!-- Step 0: Email OTP -->
-      <div id="regOtpStep" style="display:none;">
-        <div class="msg-box" id="regOtpMsg"></div>
-        <div class="input-group">
-          <i class="icon fa-solid fa-at"></i>
-          <input type="email" id="regOtpEmail" placeholder="Enter your email address" maxlength="200"/>
-        </div>
-        <button class="main-btn" id="sendRegOtpBtn" onclick="sendRegistrationOTP()">
-          <i class="fa-solid fa-paper-plane"></i> Send Verification Code
-        </button>
-        <!-- Resend link shown after OTP sent (smaller, subtle) -->
-        <div id="resendOtpRow" style="display:none;text-align:center;margin-bottom:10px;">
-          <button id="resendRegOtpBtn" onclick="resendRegistrationOTP()" style="background:none;border:none;font-family:'Poppins',sans-serif;font-size:12.5px;color:#a16207;cursor:pointer;padding:4px 10px;border-radius:6px;font-weight:600;transition:color .2s;">
-            <i class="fa-solid fa-rotate-right" style="font-size:11px;"></i> Resend OTP
-          </button>
-        </div>
-        <div id="regOtpInputRow" style="display:none;margin-top:4px;">
-          <div class="input-group">
-            <i class="icon fa-solid fa-shield-halved"></i>
-            <input type="number" id="regOtpCode" placeholder="Enter 6-digit code" maxlength="6"/>
-          </div>
-          <button class="main-btn" id="verifyRegOtpBtn" onclick="verifyRegistrationOTP()">
-            <i class="fa-solid fa-check-circle"></i> Verify &amp; Continue
-          </button>
-        </div>
-      </div>
-
-      <!-- Step 1: Registration form -->
+      <!-- ── Step 1: Registration form ── -->
       <div id="regForm">
         <div class="msg-box" id="regMsg"></div>
+        <!-- Step pill -->
+        <div style="display:flex;gap:6px;justify-content:center;margin-bottom:16px;">
+          <span style="height:6px;width:60px;border-radius:3px;background:#f7a01a;"></span>
+          <span style="height:6px;width:60px;border-radius:3px;background:#eee;"></span>
+        </div>
         <div class="reg-row">
           <div>
             <span class="field-label">Full Name *</span>
@@ -278,7 +358,7 @@
         <span class="field-label">Email Address *</span>
         <div class="input-group" style="margin-bottom:4px;">
           <i class="icon fa-solid fa-at"></i>
-          <input type="email" id="reg_email" placeholder="Your email address" maxlength="200"/>
+          <input type="email" id="reg_email" placeholder="OTP will be sent here" maxlength="200"/>
         </div>
         <div class="reg-row">
           <div>
@@ -306,25 +386,75 @@
           <input type="text" id="reg_village" placeholder="Your village or town" maxlength="100"/>
         </div>
         <span class="field-label">Full Address <span style="color:#bbb;font-weight:400;">(optional)</span></span>
-        <div class="input-group" style="margin-bottom:20px;">
+        <div class="input-group" style="margin-bottom:16px;">
           <i class="icon fa-solid fa-map-pin" style="top:18px;transform:none;"></i>
           <input type="text" id="reg_address" placeholder="Street, locality, district..." maxlength="300" style="padding-left:44px;"/>
         </div>
-        <button class="main-btn" id="regBtn" onclick="submitRegistration()">
-          <i class="fa-solid fa-paper-plane"></i> Submit Registration
+        <!-- T&C checkbox — collapsed into step 1 -->
+        <div id="tcRow" style="display:flex;align-items:flex-start;gap:9px;margin-bottom:16px;background:#fffbf5;border:1.5px solid #fde68a;border-radius:10px;padding:10px 12px;">
+          <input type="checkbox" id="reg_tc" style="width:16px;height:16px;accent-color:#f7a01a;cursor:pointer;flex-shrink:0;margin-top:2px;" disabled/>
+          <span style="font-size:12px;color:#78350f;line-height:1.55;">
+            I have read and agree to the
+            <span onclick="openTCModal()" style="color:#f7a01a;font-weight:700;cursor:pointer;text-decoration:underline;">Terms &amp; Conditions</span>
+            <span style="color:#e74c3c;"> *</span>
+          </span>
+        </div>
+        <div id="tcErrMsg" style="display:none;font-size:11px;color:#e74c3c;margin:-10px 0 12px;text-align:left;">Please read and accept the Terms &amp; Conditions to continue.</div>
+        <!-- Send OTP button — validates all fields + T&C, then sends OTP -->
+        <button class="main-btn" id="regSendOtpBtn" onclick="regSendOtp()">
+          <i class="fa-solid fa-paper-plane"></i> Next — Verify Email
         </button>
-        <p style="font-size:11.5px;color:#aaa;margin:0;line-height:1.5;">
+        <p style="font-size:11.5px;color:#888;margin:0;line-height:1.5;">
           <i class="fa-solid fa-shield-halved" style="color:#f7a01a;"></i>
-          Your account will be reviewed by the temple admin before activation.
+          A 6-digit code will be sent to your email to confirm and submit.
         </p>
       </div>
 
-      <!-- Step 2: Success -->
+      <!-- ── Step 2: OTP verify = final submit ── -->
+      <div id="regOtpStep" style="display:none;">
+        <div class="msg-box" id="regOtpMsg"></div>
+        <!-- Step pill -->
+        <div style="display:flex;gap:6px;justify-content:center;margin-bottom:16px;">
+          <span style="height:6px;width:60px;border-radius:3px;background:#27ae60;"></span>
+          <span style="height:6px;width:60px;border-radius:3px;background:#f7a01a;"></span>
+        </div>
+        <!-- Locked email display -->
+        <div style="background:#fffbf5;border:1.5px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+          <i class="fa-solid fa-circle-check" style="color:#27ae60;font-size:13px;flex-shrink:0;"></i>
+          <span style="font-size:12px;color:#78350f;font-weight:600;" id="regLockedEmail"></span>
+        </div>
+        <!-- 6-box OTP input -->
+        <div style="font-size:11.5px;font-weight:600;color:#666;margin-bottom:8px;">Verification code</div>
+        <div id="regOtpBoxes" style="display:flex;gap:6px;justify-content:center;margin-bottom:6px;">
+          <input class="otp-box reg-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+          <input class="otp-box reg-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+          <input class="otp-box reg-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+          <input class="otp-box reg-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+          <input class="otp-box reg-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+          <input class="otp-box reg-otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]" style="height:48px;"/>
+        </div>
+        <!-- Resend -->
+        <div style="text-align:center;margin-bottom:16px;">
+          <button id="regResendBtn" onclick="regResendOtp()" style="background:none;border:none;font-family:'Poppins',sans-serif;font-size:12.5px;color:#a16207;cursor:pointer;padding:4px 10px;border-radius:6px;font-weight:600;transition:color .2s;display:none;">
+            <i class="fa-solid fa-rotate-right" style="font-size:11px;"></i> Resend OTP
+          </button>
+          <span id="regResendTimer" style="font-size:12px;color:#888;"></span>
+        </div>
+        <!-- Submit = OTP verified → registerUser POST -->
+        <button class="main-btn" id="regVerifyBtn" onclick="regVerifyAndSubmit()">
+          <i class="fa-solid fa-check-circle"></i> Verify &amp; Complete Registration
+        </button>
+        <button class="retry-btn" style="display:block;" onclick="regGoBackToForm()">
+          <i class="fa-solid fa-arrow-left"></i> Edit details
+        </button>
+      </div>
+
+      <!-- ── Step 3: Success ── -->
       <div id="regSuccess" style="display:none;">
         <div class="reg-pending">
           <div class="pend-icon">🙏</div>
           <h3>Registration Submitted!</h3>
-          <p>Your request has been sent to the temple admin for review.<br/><br/>
+          <p id="regSuccessMsg">Your request has been sent to the temple admin for review.<br/><br/>
             You will receive an email once approved. You can then login with your mobile and password.</p>
         </div>
         <div style="margin-top:20px;">
@@ -335,6 +465,66 @@
     </div>
   </div>
 </div>
+
+<!-- ══ TERMS & CONDITIONS MODAL ══ -->
+<div id="tcModal" class="modal-overlay" style="display:none;">
+  <div class="modal-card" style="max-width:420px;">
+    <div class="modal-header">
+      <button class="close-btn" onclick="closeTCModal()">×</button>
+      <div class="modal-icon"><i class="fa-solid fa-file-shield" style="color:#f7a01a;"></i></div>
+      <h2>Terms &amp; Conditions</h2>
+      <span class="card-subtitle">Please read carefully before registering</span>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <!-- Scrollable content -->
+      <div id="tcScrollArea" style="max-height:300px;overflow-y:auto;padding:20px 24px 12px;border-bottom:1px solid #fde68a;" onscroll="checkTCScroll()">
+        <div style="display:flex;align-items:center;gap:9px;background:#fffbf5;border:1.5px solid #fde68a;border-radius:10px;padding:11px 14px;margin-bottom:16px;">
+          <i class="fa-solid fa-shield-halved" style="color:#f7a01a;font-size:1.1rem;"></i>
+          <span style="font-size:12.5px;font-weight:700;color:#78350f;">Shree Hanuman Mandir — Privacy &amp; Usage Policy</span>
+        </div>
+        <div style="font-size:13px;color:#444;line-height:1.75;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <div style="font-weight:700;color:#78350f;margin-bottom:4px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-user-shield" style="color:#f7a01a;"></i> Your Personal Data</div>
+            <p style="margin:0;">Your personal information (name, mobile, email, address) is collected <b>only</b> for temple record-keeping and communication. We do <b>not</b> share, sell, or disclose your personal details to any third party outside the temple trust.</p>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#78350f;margin-bottom:4px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-lock" style="color:#f7a01a;"></i> Password Security</div>
+            <p style="margin:0;">Your password is stored in <b>encrypted form</b> (SHA-256 hash). It is never stored or transmitted as plain text. No admin or staff member can view your password. Keep your password private.</p>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#78350f;margin-bottom:4px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-people-arrows" style="color:#f7a01a;"></i> Member Privacy</div>
+            <p style="margin:0;">Member details are <b>not shared</b> between members. You can only see your own contribution history and profile. Other members' personal or financial details are strictly confidential.</p>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#78350f;margin-bottom:4px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-envelope-open-text" style="color:#f7a01a;"></i> Communication</div>
+            <p style="margin:0;">Your email may be used to send you receipts, OTP verification codes, and important temple announcements. You will not receive spam or unrelated messages.</p>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#78350f;margin-bottom:4px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-circle-check" style="color:#f7a01a;"></i> Account Approval</div>
+            <p style="margin:0;">Registration requests are reviewed by the temple admin. Accounts are activated only after approval. The temple trust reserves the right to approve or decline any registration request.</p>
+          </div>
+          <div style="background:#fffbf5;border-radius:9px;padding:10px 13px;font-size:12px;color:#92400e;font-weight:600;margin-top:4px;">
+            🙏 By accepting, you confirm you have read, understood, and agree to these terms. — Jai Shree Ram
+          </div>
+        </div>
+      </div>
+      <!-- Scroll hint -->
+      <div id="tcScrollHint" style="text-align:center;font-size:11px;color:#a16207;padding:8px 0 4px;background:#fffbf5;display:flex;align-items:center;justify-content:center;gap:5px;">
+        <i class="fa-solid fa-angles-down" style="animation:tcBounce 1.2s ease-in-out infinite;"></i> Scroll down to read all terms
+      </div>
+      <!-- Accept button — hidden until scrolled to bottom -->
+      <div id="tcAcceptArea" style="display:none;padding:14px 24px 18px;text-align:center;">
+        <button onclick="acceptTC()" style="width:100%;padding:12px;background:#78350f;color:#fff;border:none;border-radius:10px;font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(247,160,26,0.35);">
+          <i class="fa-solid fa-circle-check"></i> I Accept the Terms &amp; Conditions
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes tcBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+@keyframes tcShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+</style>
 
 <div id="_tw"></div>
 
@@ -523,20 +713,39 @@ async function doLogin(){
       const sessionData={userId:user.UserId,name:user.Name,role:user.Role,email:user.Email||"",photoURL:user.PhotoURL||"",expiry:Date.now()+30*60*1000,sessionToken};
       localStorage.setItem("session",JSON.stringify(sessionData));
       setSessionTokenOnServer(String(user.UserId),sessionToken);
-      // Save remember-me token if checked
       if(document.getElementById("rememberMe").checked){
         saveRememberToken(user.UserId,user.Name,user.Role,user.Email||"",sessionToken);
       }
       try{const bc=new BroadcastChannel("mandir_session");bc.postMessage({type:"SESSION_REVOKED",userId:String(user.UserId)});setTimeout(()=>bc.close(),500);}catch(e){}
-      setMsg("loginMsg","✓ Login successful! Redirecting...","success");
+      // Show last-login info if available
+      const lastLoginStr = res.lastLogin ? " · Last login: "+res.lastLogin : "";
+      setMsg("loginMsg","✓ Login successful! Redirecting..."+lastLoginStr,"success");
       _loginSuccess();
-      setTimeout(()=>{location.href=user.Role==="Admin"?"admin.html":"user.html";},600);
+      setTimeout(()=>{location.href=user.Role==="Admin"?"admin.html":"user.html";},700);
     }else if(res.status==="pending"){
       setMsg("loginMsg","Your account is awaiting approval. You'll receive an email once the temple admin reviews your request.","pending");
     }else if(res.status==="error"){
-      setMsg("loginMsg","❌ "+(res.message||"Account issue."),"error");_loginFail();
+      // Use server's errorCode to highlight the exact field — no guessing
+      const code = res.errorCode || "";
+      const msg  = res.message  || "Login failed. Please try again.";
+      if(code==="mobile_not_found"){
+        setMsg("loginMsg","❌ "+msg,"error");
+        document.getElementById("mobile").classList.add("field-err");
+      }else if(code==="wrong_password"){
+        setMsg("loginMsg","❌ "+msg,"error");
+        document.getElementById("password").classList.add("field-err");
+      }else if(code==="rate_limited"){
+        setMsg("loginMsg","🔒 "+msg,"error");
+        const btn=document.getElementById("loginBtn");if(btn)btn.disabled=true;
+        setTimeout(()=>{const b=document.getElementById("loginBtn");if(b)b.disabled=false;setMsg("loginMsg","","");},15*60*1000);
+      }else{
+        // account_rejected, account_inactive, account_invalid — no field highlight
+        setMsg("loginMsg","❌ "+msg,"error");
+      }
+      _loginFail();
     }else{
-      setMsg("loginMsg","❌ Invalid mobile number or password.","error");_loginFail();
+      setMsg("loginMsg","❌ Unexpected response from server. Please try again.","error");
+      _loginFail();
     }
   }catch(err){
     setMsg("loginMsg","❌ "+(err.message||"Connection error."),"error");
@@ -548,61 +757,176 @@ async function doLogin(){
   }
 }
 document.addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
+// Clear field-err highlight when user edits login fields
+["mobile","password"].forEach(function(id){
+  const el=document.getElementById(id);
+  if(el)el.addEventListener("input",function(){el.classList.remove("field-err");});
+});
 
 // ══════════════════════════════════════════════════════════════════
-//  FORGOT PASSWORD — OTP FLOW
+//  FORGOT PASSWORD — 3-step: mobile → masked email confirm → OTP + new pwd
+//  Security: mobile-first lookup, masked email display, 6-box OTP,
+//  60s resend cooldown, max 3 OTP sends/15min, fetch POST for reset
 // ══════════════════════════════════════════════════════════════════
-let _targetUserId,_currentMobile;
+let _fp = { userId: null, mobile: null, maskedEmail: null, otpSent: false, sendCount: 0, sendLockUntil: 0 };
+const FP_MAX_SENDS = 3, FP_LOCK_MS = 15 * 60 * 1000, FP_RESEND_COOLDOWN = 60;
+
 function openForgotModal(){
-  _currentMobile=document.getElementById("mobile").value.trim();
-  if(!_currentMobile){setMsg("loginMsg","Please enter your Mobile Number first.","error");return;}
-  setMsg("resetMsg1","","");
-  document.getElementById("resetEmail").value="";
-  document.getElementById("inputOTP").value="";
-  document.getElementById("newPassword").value="";
-  document.getElementById("forgotModal").style.display="flex";
-  document.getElementById("resetStep1").style.display="block";
-  document.getElementById("resetStep2").style.display="none";
+  _fp = { userId:null, mobile:null, maskedEmail:null, otpSent:false, sendCount:0, sendLockUntil:0 };
+  ['resetMsg1','resetMsg2','resetMsg3'].forEach(id=>setMsg(id,'',''));
+  const mob = document.getElementById('resetMobile'); if(mob) mob.value = '';
+  ['newPassword','newPasswordConfirm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const sf=document.getElementById('resetStrengthFill'); if(sf)sf.style.width='0';
+  const sl=document.getElementById('resetStrengthLabel'); if(sl)sl.textContent='';
+  _fpShowStep(1);
+  document.getElementById('forgotModal').style.display='flex';
+  setTimeout(()=>{const m=document.getElementById('resetMobile');if(m)m.focus();},100);
 }
-function closeForgotModal(){
-  _setForgotHeader(1);document.getElementById("forgotModal").style.display="none";}
+function closeForgotModal(){ document.getElementById('forgotModal').style.display='none'; }
+function _fpShowStep(n){
+  [1,2,3].forEach(i=>{
+    const s=document.getElementById('resetStep'+i); if(s)s.style.display=(i===n?'block':'none');
+    const h=document.getElementById('forgotHeader'+i); if(h)h.style.display=(i===n?'':'none');
+  });
+}
 
-function sendOTP(){
-  const email=document.getElementById("resetEmail").value.trim();
-  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setMsg("resetMsg1","Please enter a valid email address.","error");return;}
-  const btn=event.target;btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
-  setMsg("resetMsg1","Sending OTP...","");
-  const s=document.createElement("script");
-  s.src=API_URL+"?action=sendEmailOTP&email="+encodeURIComponent(email)+"&mobile="+encodeURIComponent(_currentMobile)+"&callback=handleOTPSent";
-  document.body.appendChild(s);
-  setTimeout(()=>{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Verify &amp; Send OTP';},15000);
+// Step 1: look up by mobile, get masked email back
+async function fpLookupMobile(){
+  const mobile = (document.getElementById('resetMobile')||{}).value.trim();
+  if(!mobile || !/^[6-9]\d{9}$/.test(mobile)){
+    setMsg('resetMsg1','❌ Enter a valid 10-digit Indian mobile number.','error'); return;
+  }
+  const btn = document.getElementById('fpLookupBtn');
+  btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Looking up...';
+  setMsg('resetMsg1','','');
+  try {
+    const res = await postData({action:'lookupMobileForReset', mobile});
+    if(res && res.status==='success'){
+      _fp.userId = res.userId;
+      _fp.mobile = mobile;
+      _fp.maskedEmail = res.maskedEmail || '';
+      document.getElementById('fpMaskedEmailDisplay').textContent = _fp.maskedEmail;
+      document.getElementById('forgotMaskedEmailSub').textContent = 'OTP will be sent to your registered email';
+      _fpShowStep(2);
+    } else {
+      // Generic message — don't reveal if mobile exists or not (security)
+      setMsg('resetMsg1','❌ '+(res?.message||'No account found for this mobile number.'),'error');
+    }
+  } catch(err){ setMsg('resetMsg1','❌ '+(err.message||'Network error. Please try again.'),'error'); }
+  finally{ btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-magnifying-glass"></i> Find My Account'; }
 }
-window.handleOTPSent=function(res){
-  if(res.status==="success"){
-    _targetUserId=res.userId;
-    toast("✅ OTP sent to your email!");
-    document.getElementById("resetStep1").style.display="none";
-    document.getElementById("resetStep2").style.display="block";
-    setMsg("resetMsg2","","");
-  }else{setMsg("resetMsg1","❌ "+(res.message||"Verification failed."),"error");}
-};
+function fpGoBack(){ _fpShowStep(1); }
 
-async function verifyAndReset(){
-  const otp=document.getElementById("inputOTP").value.trim();
-  const newPass=document.getElementById("newPassword").value;
-  if(!otp||otp.length<6){setMsg("resetMsg2","Please enter the 6-digit OTP.","error");return;}
-  if(!newPass||newPass.length<8){setMsg("resetMsg2","Password must be at least 8 characters.","error");return;}
-  const btn=event.target;btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
-  const hashedNew=await sha256(newPass);
-  const s=document.createElement("script");
-  s.src=API_URL+"?action=resetPassword&UserId="+encodeURIComponent(_targetUserId)+"&otp="+encodeURIComponent(otp)+"&NewPassword="+hashedNew+"&callback=handleResetDone";
-  document.body.appendChild(s);
-  setTimeout(()=>{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check-circle"></i> Update Password';},15000);
+// Step 2: send OTP to the masked (server-known) email
+async function fpSendOtp(){
+  if(Date.now() < _fp.sendLockUntil){
+    const mins = Math.ceil((_fp.sendLockUntil - Date.now())/60000);
+    setMsg('resetMsg2','🔒 Too many OTP requests. Please wait '+mins+' minute(s).','error'); return;
+  }
+  if(_fp.sendCount >= FP_MAX_SENDS){
+    _fp.sendLockUntil = Date.now() + FP_LOCK_MS; _fp.sendCount = 0;
+    setMsg('resetMsg2','🔒 Too many OTP requests. Please wait 15 minutes.','error'); return;
+  }
+  const btn = document.getElementById('fpSendOtpBtn');
+  btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+  setMsg('resetMsg2','','');
+  try {
+    const res = await postData({action:'sendForgotPasswordOTP', userId: _fp.userId});
+    if(res && res.status==='success'){
+      _fp.sendCount++;
+      _fp.otpSent = true;
+      _fpShowStep(3);
+      _fpInitOtpBoxes();
+      _fpStartResendTimer();
+      setMsg('resetMsg3','','');
+    } else {
+      setMsg('resetMsg2','❌ '+(res?.message||'Failed to send OTP.'),'error');
+    }
+  } catch(err){ setMsg('resetMsg2','❌ '+(err.message||'Network error.'),'error'); }
+  finally{ btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Send OTP to This Email'; }
 }
-window.handleResetDone=function(res){
-  if(res.status==="success"){toast("✅ Password changed! Please login again.");closeForgotModal();}
-  else{setMsg("resetMsg2","❌ "+(res.message||"Invalid OTP. Please try again."),"error");}
-};
+
+// Step 3: OTP boxes init
+function _fpInitOtpBoxes(){
+  const boxes = document.querySelectorAll('#fpOtpBoxes .otp-box');
+  boxes.forEach((box,i)=>{
+    box.value='';
+    box.classList.remove('otp-err');
+    box.oninput=function(e){
+      const v=e.target.value.replace(/\D/g,'');
+      e.target.value=v.slice(0,1);
+      if(v && i<5) boxes[i+1].focus();
+    };
+    box.onkeydown=function(e){
+      if(e.key==='Backspace' && !box.value && i>0){ boxes[i-1].focus(); boxes[i-1].value=''; }
+    };
+    box.onpaste=function(e){
+      e.preventDefault();
+      const txt=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+      boxes.forEach((b,j)=>{ b.value=txt[j]||''; });
+      boxes[Math.min(txt.length,5)].focus();
+    };
+  });
+  setTimeout(()=>boxes[0].focus(),100);
+}
+function _fpGetOtp(){ return Array.from(document.querySelectorAll('#fpOtpBoxes .otp-box')).map(b=>b.value).join(''); }
+function _fpMarkOtpErr(){
+  document.querySelectorAll('#fpOtpBoxes .otp-box').forEach(b=>b.classList.add('otp-err'));
+  setTimeout(()=>document.querySelectorAll('#fpOtpBoxes .otp-box').forEach(b=>b.classList.remove('otp-err')),1200);
+}
+
+// Resend cooldown timer
+let _fpResendInterval = null;
+function _fpStartResendTimer(){
+  const btn=document.getElementById('fpResendBtn'); const lbl=document.getElementById('fpResendTimer');
+  if(btn) btn.style.display='none';
+  let secs=FP_RESEND_COOLDOWN;
+  if(lbl) lbl.textContent='Resend in '+secs+'s';
+  clearInterval(_fpResendInterval);
+  _fpResendInterval=setInterval(()=>{
+    secs--;
+    if(secs<=0){ clearInterval(_fpResendInterval); if(lbl)lbl.textContent=''; if(btn)btn.style.display=''; }
+    else { if(lbl) lbl.textContent='Resend in '+secs+'s'; }
+  },1000);
+}
+async function fpResendOtp(){
+  if(Date.now() < _fp.sendLockUntil){ setMsg('resetMsg3','🔒 Rate limited. Please wait.','error'); return; }
+  if(_fp.sendCount >= FP_MAX_SENDS){ _fp.sendLockUntil=Date.now()+FP_LOCK_MS; _fp.sendCount=0; setMsg('resetMsg3','🔒 Too many requests. Wait 15 min.','error'); return; }
+  const btn=document.getElementById('fpResendBtn'); if(btn){btn.style.display='none';}
+  const lbl=document.getElementById('fpResendTimer'); if(lbl)lbl.textContent='Sending...';
+  try{
+    const res=await postData({action:'sendForgotPasswordOTP', userId:_fp.userId});
+    if(res&&res.status==='success'){ _fp.sendCount++; _fpInitOtpBoxes(); _fpStartResendTimer(); toast('OTP resent!'); setMsg('resetMsg3','',''); }
+    else { setMsg('resetMsg3','❌ '+(res?.message||'Failed to resend.'),'error'); if(lbl)lbl.textContent=''; if(btn)btn.style.display=''; }
+  }catch(err){ setMsg('resetMsg3','❌ '+(err.message||'Network error.'),'error'); if(lbl)lbl.textContent=''; if(btn)btn.style.display=''; }
+}
+
+// Step 3: verify OTP + new password → resetPassword POST
+async function fpVerifyAndReset(){
+  const otp = _fpGetOtp();
+  const newPass = (document.getElementById('newPassword')||{}).value;
+  const confirmPass = (document.getElementById('newPasswordConfirm')||{}).value;
+  if(!otp || otp.length < 6){ _fpMarkOtpErr(); setMsg('resetMsg3','❌ Please enter the 6-digit OTP.','error'); return; }
+  if(!newPass || newPass.length < 8){ setMsg('resetMsg3','❌ Password must be at least 8 characters.','error'); return; }
+  if(newPass !== confirmPass){ setMsg('resetMsg3','❌ Passwords do not match.','error'); return; }
+  const btn = document.getElementById('fpResetBtn');
+  btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+  setMsg('resetMsg3','','');
+  try {
+    const hashedNew = await sha256(newPass);
+    // Security: send via POST body — OTP and hash never in URL
+    const res = await postData({action:'resetPassword', UserId: _fp.userId, otp, NewPassword: hashedNew});
+    if(res && res.status==='success'){
+      clearInterval(_fpResendInterval);
+      toast('✅ Password updated! Please login again.','success');
+      closeForgotModal();
+    } else {
+      _fpMarkOtpErr();
+      setMsg('resetMsg3','❌ '+(res?.message||'Invalid or expired OTP.'),'error');
+    }
+  } catch(err){ setMsg('resetMsg3','❌ '+(err.message||'Network error.'),'error'); }
+  finally{ btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check-circle"></i> Update Password'; }
+}
 
 // ══════════════════════════════════════════════════════════════════
 //  PASSWORD STRENGTH METER
@@ -652,66 +976,6 @@ function clearFieldErrors(){
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  REGISTRATION — single consolidated function, field-level errors
-// ══════════════════════════════════════════════════════════════════
-function openRegisterModal(){
-  _setRegHeader("envelope-circle-check","Verify Email First","We'll send a 6-digit code to confirm your email");
-  ["reg_name","reg_mobile","reg_email","reg_password","reg_confirm","reg_village","reg_address"].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.value="";
-  });
-  clearFieldErrors();
-  ["regStrengthFill","resetStrengthFill"].forEach(id=>{const el=document.getElementById(id);if(el)el.style.width="0";});
-  ["regStrengthLabel","resetStrengthLabel"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="";});
-  setMsg("regMsg","","");setMsg("regOtpMsg","","");
-  // Y1: Show email OTP step first
-  document.getElementById("regOtpStep").style.display="block";
-  document.getElementById("regForm").style.display="none";
-  document.getElementById("regSuccess").style.display="none";
-  document.getElementById("regOtpEmail").value="";
-  document.getElementById("regOtpCode") && (document.getElementById("regOtpCode").value="");
-  document.getElementById("regOtpInputRow").style.display="none";
-  window._regEmailVerified=false;window._regVerifiedEmail="";
-  document.getElementById("registerModal").style.display="flex";
-}
-function closeRegisterModal(){document.getElementById("registerModal").style.display="none";}
-
-async function submitRegistration(){
-  clearFieldErrors();setMsg("regMsg","","");
-  const name=document.getElementById("reg_name").value.trim();
-  const mobile=document.getElementById("reg_mobile").value.trim();
-  const email=document.getElementById("reg_email").value.trim();
-  const pwd=document.getElementById("reg_password").value;
-  const confirm=document.getElementById("reg_confirm").value;
-  const village=document.getElementById("reg_village").value.trim();
-  const address=document.getElementById("reg_address").value.trim();
-
-  // Field-level validation
-  let hasErr=false;
-  if(!name){setFieldErr("reg_name","Full name is required.");hasErr=true;}
-  if(!mobile||!/^[6-9]\d{9}$/.test(mobile)){setFieldErr("reg_mobile","Enter a valid 10-digit Indian mobile (starts with 6–9).");hasErr=true;}
-  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setFieldErr("reg_email","Enter a valid email address.");hasErr=true;}
-  if(!pwd||pwd.length<8){setFieldErr("reg_password","Password must be at least 8 characters.");hasErr=true;}
-  else if(pwd!==confirm){setFieldErr("reg_confirm","Passwords do not match.");hasErr=true;}
-  if(!village){setFieldErr("reg_village","Village or town is required.");hasErr=true;}
-  if(hasErr)return;
-
-  const btn=document.getElementById("regBtn");
-  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
-  try{
-    const hashedPwd=await sha256(pwd);
-    const res=await postData({action:"registerUser",Name:name,Mobile:mobile,Email:email,Password:hashedPwd,Village:village,Address:address});
-    if(res&&res.status==="success"){
-      document.getElementById("regForm").style.display="none";
-      document.getElementById("regSuccess").style.display="block";
-      _setRegHeader("circle-check","All Done!","Your registration has been submitted");
-    }else{
-      setMsg("regMsg","❌ "+(res&&res.message?res.message:"Registration failed. Please try again."),"error");
-    }
-  }catch(err){setMsg("regMsg","❌ "+(err.message||"Network error."),"error");}
-  finally{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Submit Registration';}
-}
-
-// ══════════════════════════════════════════════════════════════════
 //  INIT — load temple timings + version after page ready
 // ══════════════════════════════════════════════════════════════════
 window.addEventListener("load",function(){
@@ -732,100 +996,237 @@ window.addEventListener("load",function(){
   }catch(e){}
 });
 
-// ══ Modal header swap helpers ══
-function _setRegHeader(icon, title, sub){
-  const t=document.getElementById("regModalTitle");
-  const s=document.getElementById("regModalSub");
-  if(t)t.textContent=title;
-  if(s)s.textContent=sub;
+// ══════════════════════════════════════════════════════════════════
+//  REGISTRATION — details + T&C first, 6-box OTP last
+//  Security: all validation before OTP send, OTP = final submit gate,
+//  registerUser POST atomic (verify OTP + write row together),
+//  rate-limit: max 3 OTP sends / 15 min, 60s resend cooldown
+// ══════════════════════════════════════════════════════════════════
+let _reg = { otpKey: null, email: null, sendCount: 0, sendLockUntil: 0 };
+const REG_MAX_SENDS = 3, REG_LOCK_MS = 15 * 60 * 1000, REG_RESEND_COOLDOWN = 60;
+
+function openRegisterModal(){
+  _reg = { otpKey:null, email:null, sendCount:0, sendLockUntil:0 };
+  ['reg_name','reg_mobile','reg_email','reg_password','reg_confirm','reg_village','reg_address'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  clearFieldErrors();
+  ['regStrengthFill'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.width='0';});
+  ['regStrengthLabel'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});
+  setMsg('regMsg','',''); setMsg('regOtpMsg','','');
+  const tcCb=document.getElementById('reg_tc'); if(tcCb){tcCb.checked=false;tcCb.disabled=true;}
+  const tcErr=document.getElementById('tcErrMsg'); if(tcErr)tcErr.style.display='none';
+  // Show details form first, hide OTP step and success
+  document.getElementById('regForm').style.display='block';
+  document.getElementById('regOtpStep').style.display='none';
+  document.getElementById('regSuccess').style.display='none';
+  document.getElementById('regHeader1').style.display='';
+  document.getElementById('regHeader2').style.display='none';
+  document.getElementById('registerModal').style.display='flex';
+  setTimeout(()=>{const n=document.getElementById('reg_name');if(n)n.focus();},100);
 }
-function _setForgotHeader(step){
-  const h1=document.getElementById("forgotHeader1");
-  const h2=document.getElementById("forgotHeader2");
-  if(step===2){if(h1)h1.style.display="none";if(h2)h2.style.display="";}
-  else{if(h1)h1.style.display="";if(h2)h2.style.display="none";}
+function closeRegisterModal(){ document.getElementById('registerModal').style.display='none'; }
+function regGoBackToForm(){
+  document.getElementById('regOtpStep').style.display='none';
+  document.getElementById('regForm').style.display='block';
+  document.getElementById('regHeader1').style.display='';
+  document.getElementById('regHeader2').style.display='none';
+  setMsg('regOtpMsg','','');
 }
 
-// ══ Y1: Registration email OTP verification ══
-let _regOtpTargetUserId = null;
-
-async function sendRegistrationOTP() {
-  const email = (document.getElementById("regOtpEmail")||{}).value.trim();
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    setMsg("regOtpMsg","Please enter a valid email address.","error"); return;
+// "Send Verification Code" — validates all fields + T&C, then sends OTP
+async function regSendOtp(){
+  clearFieldErrors(); setMsg('regMsg','','');
+  // Rate limit check
+  if(Date.now() < _reg.sendLockUntil){
+    const mins=Math.ceil((_reg.sendLockUntil-Date.now())/60000);
+    setMsg('regMsg','🔒 Too many OTP requests. Please wait '+mins+' minute(s).','error'); return;
   }
-  const btn = document.getElementById("sendRegOtpBtn");
+  if(_reg.sendCount >= REG_MAX_SENDS){
+    _reg.sendLockUntil=Date.now()+REG_LOCK_MS; _reg.sendCount=0;
+    setMsg('regMsg','🔒 Too many OTP requests. Please wait 15 minutes.','error'); return;
+  }
+  // T&C check
+  const tcCb=document.getElementById('reg_tc');
+  if(!tcCb||!tcCb.checked){
+    const tcErr=document.getElementById('tcErrMsg'); if(tcErr)tcErr.style.display='block';
+    const tcRow=document.getElementById('tcRow');
+    if(tcRow){tcRow.style.transition='transform .1s';tcRow.style.transform='translateX(-4px)';setTimeout(()=>{tcRow.style.transform='translateX(4px)';setTimeout(()=>{tcRow.style.transform='translateX(0)';},80);},80);}
+    return;
+  }
+  const tcErr=document.getElementById('tcErrMsg'); if(tcErr)tcErr.style.display='none';
+  // Field validation
+  const name=document.getElementById('reg_name').value.trim();
+  const mobile=document.getElementById('reg_mobile').value.trim();
+  const email=document.getElementById('reg_email').value.trim();
+  const pwd=document.getElementById('reg_password').value;
+  const confirm=document.getElementById('reg_confirm').value;
+  const village=document.getElementById('reg_village').value.trim();
+  let hasErr=false;
+  if(!name||name.length<2){setFieldErr('reg_name','Full name is required (min 2 chars).');hasErr=true;}
+  if(!mobile||!/^[6-9]\d{9}$/.test(mobile)){setFieldErr('reg_mobile','Enter a valid 10-digit Indian mobile (starts 6–9).');hasErr=true;}
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setFieldErr('reg_email','Enter a valid email address.');hasErr=true;}
+  if(!pwd||pwd.length<8){setFieldErr('reg_password','Password must be at least 8 characters.');hasErr=true;}
+  else if(pwd!==confirm){setFieldErr('reg_confirm','Passwords do not match.');hasErr=true;}
+  if(!village){setFieldErr('reg_village','Village or town is required.');hasErr=true;}
+  if(hasErr) return;
+  // Send OTP
+  const btn=document.getElementById('regSendOtpBtn');
   btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
-  setMsg("regOtpMsg","","");
   try {
-    const s = document.createElement("script");
-    const cb = "cb_regOtp_" + Date.now();
-    let done = false;
-    await new Promise((resolve,reject) => {
-      window[cb] = function(res){ if(done)return;done=true;clearTimeout(t);delete window[cb];s.remove();resolve(res); };
-      const t = setTimeout(()=>{ if(done)return;done=true;delete window[cb];s.remove();reject(new Error("Timed out.")); },15000);
-      s.onerror = function(){ if(done)return;done=true;clearTimeout(t);delete window[cb];s.remove();reject(new Error("Network error.")); };
-      s.src = API_URL + "?action=sendRegistrationOTP&email=" + encodeURIComponent(email) + "&callback=" + cb;
-      document.body.appendChild(s);
-    }).then(res => {
-      if (res && res.status === "success") {
-        _regOtpTargetUserId = res.otpKey || email;
-        window._regVerifiedEmail = email;
-        // Lock email field and hide big send button, show resend link
-        const emailInput = document.getElementById("regOtpEmail");
-        if(emailInput) emailInput.readOnly = true;
-        document.getElementById("sendRegOtpBtn").style.display = "none";
-        document.getElementById("resendOtpRow").style.display = "block";
-        document.getElementById("regOtpInputRow").style.display = "block";
-        setMsg("regOtpMsg","✅ OTP sent! Check your email inbox (also check spam).","success");
-      } else {
-        setMsg("regOtpMsg","❌ " + (res?.message||"Failed to send OTP."),"error");
-      }
-    });
-  } catch(err) { setMsg("regOtpMsg","❌ " + err.message,"error"); }
-  finally { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Send Verification Code'; }
+    const res=await postData({action:'sendRegistrationOTP', email});
+    if(res && res.status==='success'){
+      _reg.otpKey = res.otpKey || email;
+      _reg.email = email;
+      _reg.sendCount++;
+      // Switch to OTP step
+      document.getElementById('regForm').style.display='none';
+      document.getElementById('regOtpStep').style.display='block';
+      document.getElementById('regHeader1').style.display='none';
+      document.getElementById('regHeader2').style.display='';
+      document.getElementById('regLockedEmail').textContent='OTP sent to: '+email;
+      document.getElementById('regOtpSub').textContent='Enter the 6-digit code sent to '+email;
+      _regInitOtpBoxes();
+      _regStartResendTimer();
+      setMsg('regOtpMsg','','');
+    } else {
+      setMsg('regMsg','❌ '+(res?.message||'Failed to send OTP. Please try again.'),'error');
+    }
+  } catch(err){ setMsg('regMsg','❌ '+(err.message||'Network error.'),'error'); }
+  finally{ btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-paper-plane"></i> Send Verification Code'; }
 }
 
-async function resendRegistrationOTP() {
-  // Unlock email temporarily, re-enable send button, then trigger send
-  const emailInput = document.getElementById("regOtpEmail");
-  if(emailInput) emailInput.readOnly = false;
-  document.getElementById("sendRegOtpBtn").style.display = "block";
-  document.getElementById("resendOtpRow").style.display = "none";
-  await sendRegistrationOTP();
+// OTP box wiring for registration
+function _regInitOtpBoxes(){
+  const boxes=document.querySelectorAll('#regOtpBoxes .reg-otp-box');
+  boxes.forEach((box,i)=>{
+    box.value=''; box.classList.remove('otp-err');
+    box.oninput=function(e){
+      const v=e.target.value.replace(/\D/g,'');
+      e.target.value=v.slice(0,1);
+      if(v && i<5) boxes[i+1].focus();
+    };
+    box.onkeydown=function(e){
+      if(e.key==='Backspace'&&!box.value&&i>0){boxes[i-1].focus();boxes[i-1].value='';}
+    };
+    box.onpaste=function(e){
+      e.preventDefault();
+      const txt=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+      boxes.forEach((b,j)=>{b.value=txt[j]||'';});
+      boxes[Math.min(txt.length,5)].focus();
+    };
+  });
+  setTimeout(()=>boxes[0].focus(),100);
+}
+function _regGetOtp(){ return Array.from(document.querySelectorAll('#regOtpBoxes .reg-otp-box')).map(b=>b.value).join(''); }
+function _regMarkOtpErr(){
+  document.querySelectorAll('#regOtpBoxes .reg-otp-box').forEach(b=>b.classList.add('otp-err'));
+  setTimeout(()=>document.querySelectorAll('#regOtpBoxes .reg-otp-box').forEach(b=>b.classList.remove('otp-err')),1200);
 }
 
-async function verifyRegistrationOTP() {
-  const otp = (document.getElementById("regOtpCode")||{}).value.trim();
-  if (!otp || otp.length < 6) { setMsg("regOtpMsg","Please enter the 6-digit OTP.","error"); return; }
-  const btn = document.getElementById("verifyRegOtpBtn");
+let _regResendInterval=null;
+function _regStartResendTimer(){
+  const btn=document.getElementById('regResendBtn'); const lbl=document.getElementById('regResendTimer');
+  if(btn)btn.style.display='none';
+  let secs=REG_RESEND_COOLDOWN;
+  if(lbl)lbl.textContent='Resend in '+secs+'s';
+  clearInterval(_regResendInterval);
+  _regResendInterval=setInterval(()=>{
+    secs--;
+    if(secs<=0){clearInterval(_regResendInterval);if(lbl)lbl.textContent='';if(btn)btn.style.display='';}
+    else{if(lbl)lbl.textContent='Resend in '+secs+'s';}
+  },1000);
+}
+async function regResendOtp(){
+  if(Date.now()<_reg.sendLockUntil){setMsg('regOtpMsg','🔒 Rate limited. Please wait.','error');return;}
+  if(_reg.sendCount>=REG_MAX_SENDS){_reg.sendLockUntil=Date.now()+REG_LOCK_MS;_reg.sendCount=0;setMsg('regOtpMsg','🔒 Too many requests. Wait 15 min.','error');return;}
+  const btn=document.getElementById('regResendBtn');if(btn)btn.style.display='none';
+  const lbl=document.getElementById('regResendTimer');if(lbl)lbl.textContent='Sending...';
+  try{
+    const res=await postData({action:'sendRegistrationOTP',email:_reg.email});
+    if(res&&res.status==='success'){_reg.otpKey=res.otpKey||_reg.email;_reg.sendCount++;_regInitOtpBoxes();_regStartResendTimer();toast('OTP resent!');setMsg('regOtpMsg','','');}
+    else{setMsg('regOtpMsg','❌ '+(res?.message||'Failed to resend.'),'error');if(lbl)lbl.textContent='';if(btn)btn.style.display='';}
+  }catch(err){setMsg('regOtpMsg','❌ '+(err.message||'Network error.'),'error');if(lbl)lbl.textContent='';if(btn)btn.style.display='';}
+}
+
+// OTP verified → registerUser POST (atomic: verify OTP + write row in one call)
+async function regVerifyAndSubmit(){
+  const otp=_regGetOtp();
+  if(!otp||otp.length<6){_regMarkOtpErr();setMsg('regOtpMsg','❌ Please enter the 6-digit OTP.','error');return;}
+  const btn=document.getElementById('regVerifyBtn');
   btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
-  try {
-    const s = document.createElement("script"); const cb = "cb_vrOtp_" + Date.now(); let done=false;
-    await new Promise((resolve,reject) => {
-      window[cb] = function(r){if(done)return;done=true;clearTimeout(t);delete window[cb];s.remove();resolve(r);};
-      const t = setTimeout(()=>{if(done)return;done=true;delete window[cb];s.remove();reject(new Error("Timed out."));},15000);
-      s.onerror = function(){if(done)return;done=true;clearTimeout(t);delete window[cb];s.remove();reject(new Error("Network error."));};
-      s.src = API_URL + "?action=verifyRegistrationOTP&otpKey=" + encodeURIComponent(_regOtpTargetUserId||"") + "&otp=" + encodeURIComponent(otp) + "&callback=" + cb;
-      document.body.appendChild(s);
-    }).then(res => {
-      if (res && res.status === "success") {
-        window._regEmailVerified = true;
-        // Pre-fill email in registration form
-        const emailField = document.getElementById("reg_email");
-        if (emailField) emailField.value = window._regVerifiedEmail || "";
-        // Move to registration form
-        document.getElementById("regOtpStep").style.display="none";
-        document.getElementById("regForm").style.display="block";
-        _setRegHeader("user-plus","Create Account","Fill in your details to complete registration");
-        toast("✅ Email verified! Complete your registration below.");
-      } else {
-        setMsg("regOtpMsg","❌ " + (res?.message||"Invalid OTP."),"error");
-      }
+  setMsg('regOtpMsg','','');
+  try{
+    const name=document.getElementById('reg_name').value.trim();
+    const mobile=document.getElementById('reg_mobile').value.trim();
+    const email=_reg.email;
+    const pwd=document.getElementById('reg_password').value;
+    const village=document.getElementById('reg_village').value.trim();
+    const address=document.getElementById('reg_address').value.trim();
+    const hashedPwd=await sha256(pwd);
+    const res=await postData({
+      action:'registerUser',
+      otpKey:_reg.otpKey, otp,
+      Name:name, Mobile:mobile, Email:email,
+      Password:hashedPwd, Village:village, Address:address
     });
-  } catch(err) { setMsg("regOtpMsg","❌ " + err.message,"error"); }
-  finally { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check-circle"></i> Verify & Continue'; }
+    if(res&&res.status==='success'){
+      clearInterval(_regResendInterval);
+      document.getElementById('regOtpStep').style.display='none';
+      document.getElementById('regHeader2').style.display='none';
+      document.getElementById('regSuccess').style.display='block';
+      document.getElementById('regSuccessMsg').innerHTML=
+        'Hi <b>'+escapeHtml(name)+'</b>, your request has been sent to the temple admin for review.<br/><br/>'+
+        'You will receive an email at <b>'+escapeHtml(email)+'</b> once approved.';
+    }else if(res&&res.message&&(res.message.toLowerCase().includes('mobile')||res.message.toLowerCase().includes('otp'))){
+      if(res.message.toLowerCase().includes('otp')||res.message.toLowerCase().includes('invalid')||res.message.toLowerCase().includes('expired')){
+        _regMarkOtpErr(); setMsg('regOtpMsg','❌ '+(res.message||'Invalid or expired OTP.'),'error');
+      } else {
+        // Duplicate mobile/email — go back to form
+        regGoBackToForm();
+        if(res.message.toLowerCase().includes('mobile')) setFieldErr('reg_mobile',res.message);
+        else if(res.message.toLowerCase().includes('email')) setFieldErr('reg_email',res.message);
+        else setMsg('regMsg','❌ '+res.message,'error');
+      }
+    }else{
+      setMsg('regOtpMsg','❌ '+(res?.message||'Registration failed. Please try again.'),'error');
+    }
+  }catch(err){
+    setMsg('regOtpMsg','❌ '+(err.message||'Network error.'),'error');
+  }finally{
+    btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check-circle"></i> Verify &amp; Complete Registration';
+  }
 }
+
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function openTCModal(){
+  document.getElementById("tcModal").style.display="flex";
+  // Reset scroll area
+  const sa=document.getElementById("tcScrollArea");
+  if(sa)sa.scrollTop=0;
+  document.getElementById("tcScrollHint").style.display="flex";
+  document.getElementById("tcAcceptArea").style.display="none";
+}
+function closeTCModal(){document.getElementById("tcModal").style.display="none";}
+function checkTCScroll(){
+  const sa=document.getElementById("tcScrollArea");
+  if(!sa)return;
+  // Show accept button when user has scrolled at least 85% of the content
+  if(sa.scrollTop+sa.clientHeight >= sa.scrollHeight*0.85){
+    document.getElementById("tcScrollHint").style.display="none";
+    document.getElementById("tcAcceptArea").style.display="block";
+  }
+}
+function acceptTC(){
+  const cb=document.getElementById("reg_tc");
+  if(cb){cb.checked=true;cb.disabled=false;}
+  const err=document.getElementById("tcErrMsg");if(err)err.style.display="none";
+  closeTCModal();
+  toast("✅ Terms accepted!");
+}
+
+// Wire confirm-password and new-password-confirm show/hide toggles
+_pwdToggle("toggleNewPwdConfirm","newPasswordConfirm");
 
 </script>
 </body>

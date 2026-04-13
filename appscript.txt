@@ -112,26 +112,42 @@ function sanitize(val, maxLen) {
 }
 
 // ── Audit log helper
-function logAction(adminName, action, details, deviceInfo) {
+// Parameters:
+//   adminName  — who performed the action (user/admin name)
+//   action     — what was done (e.g. "addContribution", "deleteUser")
+//   details    — specific record info (e.g. "ReceiptId: MNR-2025-00042 | Amount: ₹500")
+//   reason     — WHY it was done (e.g. "Devotee requested cash donation for Diwali puja")
+//   deviceInfo — browser/device string (e.g. "Android | Chrome | Asia/Kolkata")
+function logAction(adminName, action, details, reason, deviceInfo) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName(SHEETS.AUDIT);
     // Auto-create AUDIT_LOGS sheet with headers if it doesn't exist
     if (!sheet) {
       sheet = ss.insertSheet(SHEETS.AUDIT);
-      sheet.appendRow(["Timestamp","UserAdmin","Action","Details","DeviceInfo"]);
+      sheet.appendRow(["Timestamp","UserAdmin","Action","Details","Reason","DeviceInfo"]);
       sheet.setFrozenRows(1);
-      // Bold header row
-      sheet.getRange(1,1,1,5).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+      sheet.getRange(1,1,1,6).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
     }
-    const ts = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+    const ts = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MMM-yyyy hh:mm a");
     sheet.appendRow([
       ts,
       sanitize(adminName, 100),
       sanitize(action, 100),
       sanitize(details, 500),
+      sanitize(reason || "", 300),      // ← Reason/purpose column
       sanitize(deviceInfo || "", 200)
     ]);
+    // ── Auto-trim: keep only latest 1000 data rows (header stays at row 1)
+    // Deletes oldest rows in one batch — fast single API call, no performance impact.
+    try {
+      const lastRow = sheet.getLastRow();
+      const MAX_ROWS = 1000;
+      const dataRows = lastRow - 1; // subtract header row
+      if (dataRows > MAX_ROWS) {
+        sheet.deleteRows(2, dataRows - MAX_ROWS); // delete oldest from row 2
+      }
+    } catch(trimErr) { /* trim failure must never crash the log write */ }
   } catch (e) { /* Audit failure must never crash main op */ }
 }
 
@@ -396,7 +412,6 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
 
   const users         = getSheetData(SHEETS.USERS);
   const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
-  const types         = getSheetData(SHEETS.TYPES);
 
   const activeMembers = users.filter(u =>
     String(u.Role||"").toLowerCase() !== "admin" &&
@@ -406,10 +421,6 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
 
   let sent = 0, skipped = 0;
 
-  // FIX: Process each member individually with a sleep between sends.
-  // Multiple contributions per member caused large HTML → GAS timeout → "network error" in admin UI.
-  // Solution: pre-build all email bodies, then send with 300ms sleep between each.
-  // This keeps execution well under the 6-minute GAS limit and avoids MailApp rate errors.
   const emailQueue = [];
   activeMembers.forEach(member => {
     const myContribs = contributions.filter(c =>
@@ -417,15 +428,13 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
       String(c.ForMonth) === month &&
       String(c.Year) === year
     );
-    if (!canSendEmail()) { skipped++; return; } // fast read-only pre-check to avoid building HTML for nothing; atomic check happens in send loop via tryConsumeEmailQuota()
-    let htmlBody;
-    if (myContribs.length > 0) {
-      const totalAmt = myContribs.reduce((s,c) => s + Number(c.Amount||0), 0);
-      // FIX: pass types array to receipt email builder — missing was causing undefined type names
-      htmlBody = _buildMonthlyReceiptEmail(member, myContribs, types, month, year, totalAmt);
-    } else {
-      htmlBody = _buildReminderEmail(member, month, year);
-    }
+
+    // ✅ FIX 1: was "retrun" (typo) — skip members who already contributed
+    if (myContribs.length > 0) return;
+
+    if (!canSendEmail()) { skipped++; return; }
+
+    let htmlBody = _buildReminderEmail(member, month, year);
     emailQueue.push({ to: String(member.Email).trim(), htmlBody: htmlBody, name: member.Name });
   });
 
@@ -434,11 +443,11 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
       if (!tryConsumeEmailQuota()) { skipped++; return; }
       MailApp.sendEmail({
         to:       item.to,
-        subject:  CFG.name + " — " + month + " " + year + " Monthly Update",
+        // ✅ FIX 2: subject now correctly says "Contribution Reminder"
+        subject:  CFG.name + " — Gentle Reminder: " + month + " " + year + " Contribution Pending",
         htmlBody: item.htmlBody
       });
       sent++;
-      // Small sleep between sends avoids MailApp quota bursts and prevents timeout
       Utilities.sleep(300);
     } catch(e) {
       Logger.log("Failed to send to " + item.to + ": " + e.toString());
@@ -446,7 +455,7 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
     }
   });
 
-  logAction("System", "Monthly Report Sent", month + " " + year + " — sent:" + sent + ", skipped:" + skipped);
+  logAction("System", "Monthly Reminder Sent", month + " " + year + " — sent:" + sent + ", skipped:" + skipped);
   const quota = getEmailQuotaStatus();
   return { status: "ok", sent: sent, skipped: skipped, quotaRemaining: quota.remaining };
 }
@@ -730,39 +739,66 @@ function doGet(e) {
     let users   = getSheetData(SHEETS.USERS);
     let mobile  = sanitize(e.parameter.mobile, 15);
     let pwdHash = sanitize(e.parameter.password, 128);
-     const _rl = _checkLoginRate(mobile);
-     if (_rl.blocked) {
-       result = { status: "fail", message: _rl.message };
+    const _rl = _checkLoginRate(mobile);
+    if (_rl.blocked) {
+      // Use status:"error" so client message-display branch handles it correctly
+      result = { status: "error", message: _rl.message, errorCode: "rate_limited" };
     } else {
-      let user = users.find(u => String(u.Mobile) === mobile && String(u.Password) === pwdHash);
-      // FIX #1: Check specific statuses BEFORE the catch-all "not Active" guard,
-      // so pending/rejected/inactive users receive the correct error message.
-      // Previously the first condition caught ALL non-Active users, making the
-      // else-if branches for pending/rejected/inactive unreachable dead code.
-      if (!user) {
+      // Step 1: check if mobile exists (regardless of password)
+      let userByMobile = users.find(u => String(u.Mobile) === mobile);
+      if (!userByMobile) {
+        // Mobile not registered at all
         _recordLoginFail(mobile);
-        result = { status: "fail" };
-      } else if (String(user.Status||"").toLowerCase() === "pending") {
+        result = { status: "error", message: "Mobile number not registered. Please check your number or register.", errorCode: "mobile_not_found" };
+      } else if (String(userByMobile.Status||"").toLowerCase() === "pending") {
         result = { status: "pending", message: "Your registration is pending admin approval. You will receive an email once approved." };
-      } else if (String(user.Status||"").toLowerCase() === "rejected") {
-        result = { status: "error", message: "Your registration was not approved. Please contact the temple admin." };
-      } else if (String(user.Status||"").toLowerCase() === "inactive") {
-        result = { status: "error", message: "Account is deactivated. Please contact admin." };
-      } else if (user.Status !== "Active") {
+      } else if (String(userByMobile.Status||"").toLowerCase() === "rejected") {
+        result = { status: "error", message: "Your registration was not approved. Please contact the temple admin.", errorCode: "account_rejected" };
+      } else if (String(userByMobile.Status||"").toLowerCase() === "inactive") {
+        result = { status: "error", message: "Your account is deactivated. Please contact admin.", errorCode: "account_inactive" };
+      } else if (String(userByMobile.Status||"").toLowerCase() !== "active") {
         _recordLoginFail(mobile);
-        result = { status: "fail" };
+        result = { status: "error", message: "Account status invalid. Please contact admin.", errorCode: "account_invalid" };
       } else {
-        _clearLoginFail(mobile);
-        let safeUser = Object.assign({}, user);
-        delete safeUser.Password;
-        const deviceInfo = sanitize(e.parameter.deviceInfo || "", 200);
-        logAction(
-          safeUser.Name || "User",
-          "Login",
-          "Mobile: " + mobile + " | Role: " + (safeUser.Role || "User") + " | UserId: " + (safeUser.UserId || ""),
-          deviceInfo
-        );
-        result = { status: "success", user: safeUser };
+        // Step 2: mobile found and Active — now check password
+        if (String(userByMobile.Password) !== pwdHash) {
+          _recordLoginFail(mobile);
+          result = { status: "error", message: "Incorrect password. Please try again.", errorCode: "wrong_password" };
+        } else {
+          // Login success
+          _clearLoginFail(mobile);
+          let safeUser = Object.assign({}, userByMobile);
+          delete safeUser.Password;
+          const deviceInfo = sanitize(e.parameter.deviceInfo || "", 200);
+          const loginTime  = formatDate();
+          // Write LastLogin timestamp back to USERS sheet
+          try {
+            const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+            const data    = sheet.getDataRange().getValues();
+            const headers = data[0];
+            let llCol = headers.indexOf("LastLogin");
+            if (llCol === -1) {
+              // Column doesn't exist yet — create it
+              llCol = headers.length;
+              sheet.getRange(1, llCol + 1).setValue("LastLogin");
+            }
+            for (let i = 1; i < data.length; i++) {
+              if (String(data[i][0]) === String(safeUser.UserId)) {
+                sheet.getRange(i + 1, llCol + 1).setValue(loginTime);
+                SpreadsheetApp.flush();
+                break;
+              }
+            }
+          } catch(llErr) { /* non-fatal — never block login on this */ }
+          logAction(
+            safeUser.Name || "User",
+            "Login",
+            "Mobile: " + mobile + " | Role: " + (safeUser.Role || "User") + " | UserId: " + (safeUser.UserId || ""),
+            "User initiated login",
+            deviceInfo
+          );
+          result = { status: "success", user: safeUser, lastLogin: safeUser.LastLogin || "" };
+        }
       }
     }
   }
@@ -846,9 +882,9 @@ function doGet(e) {
 
   // ── READ DATA
   else if (action === "getUsers")         result = getSheetData(SHEETS.USERS);
-  else if (action === "getTypes")         result = _cachedSheet(SHEETS.TYPES,         "c_types",    600);
-  else if (action === "getExpenseTypes")  result = _cachedSheet(SHEETS.EXPENSE_TYPES, "c_exptypes", 600);
-  else if (action === "getOccasions")     result = _cachedSheet(SHEETS.OCCASIONS,     "c_occasions",600);
+  else if (action === "getTypes")         result = _cachedSheet(SHEETS.TYPES,         "c_types",    600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
+  else if (action === "getExpenseTypes")  result = _cachedSheet(SHEETS.EXPENSE_TYPES, "c_exptypes", 600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
+  else if (action === "getOccasions")     result = _cachedSheet(SHEETS.OCCASIONS,     "c_occasions",600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
   else if (action === "getContributions") result = getSheetData(SHEETS.CONTRIBUTIONS);
   else if (action === "getExpenses")      result = getSheetData(SHEETS.EXPENSES);
   else if (action === "getEventData")     { result = { events: getSheetData(SHEETS.EVENTS), eventExpenses: getSheetData(SHEETS.EVENT_EXPENSES) }; }
@@ -1072,11 +1108,16 @@ function doGet(e) {
 
   // ── GET ALL DATA
   else if (action === "getAllData") {
+    var _sortBySortOrder = function(arr) {
+      return arr.slice().sort(function(a, b) {
+        return (Number(a.SortOrder) || 0) - (Number(b.SortOrder) || 0);
+      });
+    };
     result = {
       users:         getSheetData(SHEETS.USERS),
-      types:         getSheetData(SHEETS.TYPES),
-      expenseTypes:  getSheetData(SHEETS.EXPENSE_TYPES),
-      occasions:     getSheetData(SHEETS.OCCASIONS),
+      types:         _sortBySortOrder(getSheetData(SHEETS.TYPES)),
+      expenseTypes:  _sortBySortOrder(getSheetData(SHEETS.EXPENSE_TYPES)),
+      occasions:     _sortBySortOrder(getSheetData(SHEETS.OCCASIONS)),
       contributions: getSheetData(SHEETS.CONTRIBUTIONS),
       expenses:      getSheetData(SHEETS.EXPENSES),
       yearConfig:    getSheetData("YEAR_CONFIG"),
@@ -1085,7 +1126,7 @@ function doGet(e) {
     result.users = result.users.map(u => { let s = Object.assign({}, u); delete s.Password; return s; });
   }
 
-  // ── AUDIT LOG
+  // ── AUDIT LOG — returns latest 1000 rows, newest first, with Reason column
   else if (action === "getAuditLog") {
     try {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.AUDIT);
@@ -1094,8 +1135,14 @@ function doGet(e) {
         const data = sheet.getDataRange().getValues();
         if (data.length < 2) { result = []; }
         else {
-          result = data.slice(1).reverse().map(r => ({
-            Timestamp: r[0]||"", UserAdmin: r[1]||"", Action: r[2]||"", Details: r[3]||""
+          // slice(1) = skip header | slice(-1000) = latest 1000 | reverse = newest first
+          result = data.slice(1).slice(-1000).reverse().map(r => ({
+            Timestamp:  r[0] || "",
+            UserAdmin:  r[1] || "",
+            Action:     r[2] || "",
+            Details:    r[3] || "",
+            Reason:     r[4] || "",      // ← NEW
+            DeviceInfo: r[5] || ""
           }));
         }
       }
@@ -1177,12 +1224,30 @@ function doGet(e) {
   }
 
   else if (action === "logAudit") {
-    logAction(sanitize(e.parameter.adminName,100), sanitize(e.parameter.action2,100), sanitize(e.parameter.details,500));
+    logAction(
+      sanitize(e.parameter.adminName, 100),
+      sanitize(e.parameter.action2,   100),
+      sanitize(e.parameter.details,   500),
+      sanitize(e.parameter.reason,    300)   // reason from client
+    );
     result = { status: "ok" };
   }
 
   else if (action === "logout") {
-    logAction(sanitize(e.parameter.userName,100)||"User","Logout","UserId: "+sanitize(e.parameter.userId,30));
+    // logoutReason tells us exactly WHY session ended:
+    //   "User clicked logout"              → manual by user
+    //   "Admin clicked logout button"      → manual by admin
+    //   "Session expired - 30 min inactivity" → auto timeout
+    //   "Kicked - login from another device"  → new device login
+    //   "Kicked - another tab opened"         → same browser, new tab
+    //   "Session expired - missing or corrupted" → corrupt session
+    logAction(
+      sanitize(e.parameter.userName, 100) || "User",
+      "Logout",
+      "UserId: " + sanitize(e.parameter.userId, 30),
+      sanitize(e.parameter.logoutReason || "Session ended", 200),
+      sanitize(e.parameter.deviceInfo   || "", 200)
+    );
     result = { status: "ok" };
   }
 
@@ -1290,41 +1355,82 @@ function doGet(e) {
     }
   }
 
-  // ── SEND OTP
-  else if (action === "sendEmailOTP") {
-    let email  = sanitize(e.parameter.email,  200);
-    let mobile = sanitize(e.parameter.mobile, 15);
-    let users  = getSheetData(SHEETS.USERS);
-    let user   = users.find(u => String(u.Mobile)===mobile && String(u.Email).toLowerCase()===email.toLowerCase());
-    if (user) {
-      if (!tryConsumeEmailQuota()) {
+  // ── FORGOT PASSWORD Step 1: look up by mobile, return masked email
+  //  Security: generic error — never reveals whether mobile exists
+  else if (action === "lookupMobileForReset") {
+    const mobile = sanitize(e.parameter.mobile, 15);
+    if (!mobile || !/^[6-9]\d{9}$/.test(mobile)) {
+      result = { status: "error", message: "Enter a valid 10-digit mobile number." };
+    } else {
+      const users = getSheetData(SHEETS.USERS);
+      const user  = users.find(u =>
+        String(u.Mobile || "") === mobile &&
+        ["active","pending"].indexOf(String(u.Status || "").toLowerCase()) !== -1
+      );
+      if (!user) {
+        // Generic — do not reveal if mobile exists or not
+        result = { status: "error", message: "No active account found for this mobile number." };
+      } else {
+        // Mask email: m***@g***.com
+        const em = String(user.Email || "");
+        const at = em.indexOf("@");
+        let masked = em;
+        if (at > 1) {
+          const local  = em.substring(0, at);
+          const domain = em.substring(at + 1);
+          const dDot   = domain.indexOf(".");
+          const dMask  = (dDot > 1 ? domain.substring(0,1) + "***" + domain.substring(dDot) : domain);
+          masked = local.substring(0,1) + "***@" + dMask;
+        }
+        result = { status: "success", userId: user.UserId, maskedEmail: masked };
+      }
+    }
+  }
+
+  // ── FORGOT PASSWORD Step 2: send OTP to the server-known email (never from client)
+  //  Security: userId from step 1 — client cannot specify which email to send to
+  else if (action === "sendForgotPasswordOTP") {
+    const userId = sanitize(e.parameter.userId, 30);
+    if (!userId) {
+      result = { status: "error", message: "Invalid request." };
+    } else {
+      const users = getSheetData(SHEETS.USERS);
+      const user  = users.find(u => String(u.UserId || "") === userId &&
+        ["active","pending"].indexOf(String(u.Status || "").toLowerCase()) !== -1
+      );
+      if (!user || !user.Email) {
+        result = { status: "error", message: "Account not found." };
+      } else if (!tryConsumeEmailQuota()) {
         result = { status: "error", message: "Email limit reached for today. Please try again tomorrow." };
       } else {
-        let otp = Math.floor(100000 + Math.random() * 900000);
-        const cache = CacheService.getScriptCache();
-        cache.put("otp_" + user.UserId, String(otp), 600);
+        const otp = Math.floor(100000 + Math.random() * 900000);
+        CacheService.getScriptCache().put("fpotp_" + userId, String(otp), 600); // 10 min TTL
         MailApp.sendEmail({
-          to: email,
-          subject: CFG.name + " — Password Reset OTP",
-          htmlBody: `<div style="font-family:sans-serif;padding:20px;border:1px solid #f7a01a;border-radius:8px;">
-                      <h2 style="color:#946c44;">Verification Code</h2>
-                      <h1 style="color:#f7a01a;font-size:48px;letter-spacing:8px;">${otp}</h1>
-                      <p style="color:#666;">This code expires in 10 minutes. Do not share it with anyone.</p>
-                      <p style="color:#999;font-size:12px;">${CFG.name} | ${CFG.location}</p>
-                     </div>`
+          to: user.Email,
+          subject: CFG.name + " — Password Reset Code",
+          htmlBody: `<div style="font-family:sans-serif;padding:20px;border:1px solid #f7a01a;border-radius:8px;max-width:480px;">
+            <h2 style="color:#946c44;">${CFG.name}</h2>
+            <p style="color:#475569;">A password reset was requested for your account. Use this code:</p>
+            <h1 style="color:#f7a01a;font-size:48px;letter-spacing:8px;margin:16px 0;">${otp}</h1>
+            <p style="color:#64748b;font-size:13px;">This code expires in 10 minutes. If you did not request this, please ignore this email.</p>
+            <p style="color:#94a3b8;font-size:11px;">${CFG.name} | ${CFG.location}</p>
+          </div>`
         });
-        result = { status: "success", userId: user.UserId };
+        result = { status: "success" };
       }
-    } else {
-      result = { status: "error", message: "Mobile and Email do not match any account." };
     }
+  }
+
+  // ── LEGACY: keep sendEmailOTP for backward compatibility (old clients)
+  else if (action === "sendEmailOTP") {
+    result = { status: "error", message: "This flow has been updated. Please use the latest version of the app." };
   }
 
   // ── RESET PASSWORD
   else if (action === "resetPassword") {
     const cache      = CacheService.getScriptCache();
     const userId     = sanitize(e.parameter.UserId, 30);
-    const savedOtp   = cache.get("otp_" + userId);
+    const savedOtp   = cache.get("fpotp_" + userId) || cache.get("otp_" + userId); // fpotp_ = new key, otp_ = legacy
     const userOtp    = sanitize(e.parameter.otp, 10);
     if (savedOtp && userOtp === savedOtp) {
       let sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
@@ -1340,7 +1446,7 @@ function doGet(e) {
           if (String(data[i][headers.indexOf("UserId")] || data[i][0]) === userId) {
             sheet.getRange(i + 1, pwdCol + 1).setValue(newHashedPwd);
             SpreadsheetApp.flush();
-            cache.remove("otp_" + userId);
+            cache.remove("fpotp_" + userId); cache.remove("otp_" + userId); // clear both keys
             found = true;
             logAction("System", "Password Reset", "UserId: " + userId);
             break;
@@ -1363,8 +1469,10 @@ function doGet(e) {
     if (result.status === "deleted") logAction("Admin", "Delete User", "UserId: " + id);
   }
   else if (action === "updateUser")      { result = updateUser(e.parameter); }
+  // ── CONTRIBUTION TYPES (with permanent SortOrder) ──────────────
   else if (action === "addType") {
-    addRow(SHEETS.TYPES, [generateId(), sanitize(e.parameter.TypeName, 100)]);
+    var nextSort = _getNextSortOrder(SHEETS.TYPES);
+    addRow(SHEETS.TYPES, [generateId(), sanitize(e.parameter.TypeName, 100), nextSort]);
     logAction("Admin", "Add Type", e.parameter.TypeName);
     _bustSheetCache("c_types");
     result = { status: "success" };
@@ -1375,11 +1483,34 @@ function doGet(e) {
     _bustSheetCache("c_types");
     if (result.status === "deleted") logAction("Admin", "Delete Type", "TypeId: " + id);
   }
-  else if (action === "updateType")      { result = updateSingle(SHEETS.TYPES, sanitize(e.parameter.TypeId,30), sanitize(e.parameter.TypeName,100)); _bustSheetCache("c_types");}
-  else if (action === "addOccasion")     { addRow(SHEETS.OCCASIONS,[generateId(),sanitize(e.parameter.OccasionName,100)]); _bustSheetCache("c_occasions"); result={status:"success"}; }
+  else if (action === "updateType") {
+    result = updateSingle(SHEETS.TYPES, sanitize(e.parameter.TypeId,30), sanitize(e.parameter.TypeName,100));
+    _bustSheetCache("c_types");
+  }
+  else if (action === "updateSortOrder") {
+    result = _updateSortOrder(
+      sanitize(e.parameter.sheet, 20),
+      JSON.parse(e.parameter.order || "[]")
+    );
+  }
+
+  // ── OCCASIONS (with permanent SortOrder) ────────────────────────
+  else if (action === "addOccasion") {
+    var nextSort = _getNextSortOrder(SHEETS.OCCASIONS);
+    addRow(SHEETS.OCCASIONS, [generateId(), sanitize(e.parameter.OccasionName, 100), nextSort]);
+    _bustSheetCache("c_occasions");
+    result = { status: "success" };
+  }
   else if (action === "deleteOccasion")  { result = deleteRow(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30)); _bustSheetCache("c_occasions");}
   else if (action === "updateOccasion")  { result = updateSingle(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30), sanitize(e.parameter.OccasionName,100)); _bustSheetCache("c_occasions");}
-  else if (action === "addExpenseType")  { addRow(SHEETS.EXPENSE_TYPES,[generateId(),sanitize(e.parameter.Name,100)]); _bustSheetCache("c_exptypes"); result={status:"success"}; }
+
+  // ── EXPENSE TYPES (with permanent SortOrder) ─────────────────────
+  else if (action === "addExpenseType") {
+    var nextSort = _getNextSortOrder(SHEETS.EXPENSE_TYPES);
+    addRow(SHEETS.EXPENSE_TYPES, [generateId(), sanitize(e.parameter.Name, 100), nextSort]);
+    _bustSheetCache("c_exptypes");
+    result = { status: "success" };
+  }
   else if (action === "deleteExpenseType"){ result=deleteRow(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30));  _bustSheetCache("c_exptypes");}
   else if (action === "updateExpenseType"){ result=updateSingle(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30),sanitize(e.parameter.Name,100)); _bustSheetCache("c_exptypes");}
 
@@ -1943,24 +2074,41 @@ function doGet(e) {
     const email = sanitize(e.parameter.email, 200);
     if (!email) {
       result = { status: "error", message: "Email is required." };
-    } else if (!tryConsumeEmailQuota()) {
-      result = { status: "error", message: "Email limit reached for today. Please try again tomorrow." };
     } else {
-      const otp = Math.floor(100000 + Math.random() * 900000);
-      const otpKey = "regOtp_" + email.toLowerCase().replace(/[^a-z0-9]/g,"_").substring(0,30);
-      CacheService.getScriptCache().put(otpKey, String(otp), 600); // 10 min
-      MailApp.sendEmail({
-        to: email,
-        subject: CFG.name + " — Email Verification Code",
-        htmlBody: `<div style="font-family:sans-serif;padding:20px;border:1px solid #f7a01a;border-radius:8px;max-width:480px;">
-          <h2 style="color:#946c44;">${CFG.name}</h2>
-          <p style="color:#475569;">You are registering a new account. Please verify your email with this code:</p>
-          <h1 style="color:#f7a01a;font-size:48px;letter-spacing:8px;margin:16px 0;">${otp}</h1>
-          <p style="color:#64748b;font-size:13px;">This code expires in 10 minutes. Do not share it with anyone.</p>
-          <p style="color:#94a3b8;font-size:11px;">${CFG.name} | ${CFG.address}</p>
-        </div>`
-      });
-      result = { status: "success", otpKey: otpKey };
+      // Pre-check: is this email already registered in an active/pending/inactive account?
+      const allUsers = getSheetData(SHEETS.USERS);
+      const existingEmail = allUsers.find(u =>
+        String(u.Email || "").toLowerCase() === email.toLowerCase() &&
+        String(u.Status || "").toLowerCase() !== "rejected"
+      );
+      if (existingEmail) {
+        const es = String(existingEmail.Status || "").toLowerCase();
+        if (es === "active") {
+          result = { status: "error", message: "This email is already registered. Please login directly or use Forgot Password.", errorCode: "email_active" };
+        } else if (es === "pending") {
+          result = { status: "error", message: "A registration with this email is already pending approval. Please wait for admin review.", errorCode: "email_pending" };
+        } else {
+          result = { status: "error", message: "This email address is already in use.", errorCode: "email_exists" };
+        }
+      } else if (!tryConsumeEmailQuota()) {
+        result = { status: "error", message: "Email limit reached for today. Please try again tomorrow." };
+      } else {
+        const otp = Math.floor(100000 + Math.random() * 900000);
+        const otpKey = "regOtp_" + email.toLowerCase().replace(/[^a-z0-9]/g,"_").substring(0,30);
+        CacheService.getScriptCache().put(otpKey, String(otp), 600); // 10 min
+        MailApp.sendEmail({
+          to: email,
+          subject: CFG.name + " — Email Verification Code",
+          htmlBody: `<div style="font-family:sans-serif;padding:20px;border:1px solid #f7a01a;border-radius:8px;max-width:480px;">
+            <h2 style="color:#946c44;">${CFG.name}</h2>
+            <p style="color:#475569;">You are registering a new account. Please verify your email with this code:</p>
+            <h1 style="color:#f7a01a;font-size:48px;letter-spacing:8px;margin:16px 0;">${otp}</h1>
+            <p style="color:#64748b;font-size:13px;">This code expires in 10 minutes. Do not share it with anyone.</p>
+            <p style="color:#94a3b8;font-size:11px;">${CFG.name} | ${CFG.address}</p>
+          </div>`
+        });
+        result = { status: "success", otpKey: otpKey };
+      }
     }
   }
 
@@ -2224,6 +2372,76 @@ function deleteRow(name, id) {
     if (String(data[i][0]) === String(id)) { sheet.deleteRow(i+1); return {status:"deleted"}; }
   }
   return { status: "not found" };
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PERMANENT SORT ORDER HELPERS
+//  _getNextSortOrder — returns max(SortOrder)+1 for a sheet
+//                      so newly added items go to the bottom.
+//  _updateSortOrder  — receives [{id, sort}] array, writes each
+//                      SortOrder value back to col 3 of the sheet.
+//                      Called by the ↑ ↓ buttons in admin panel.
+// ════════════════════════════════════════════════════════════════
+function _getNextSortOrder(sheetName) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) return 1;
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return 1;
+  var headers = data[0];
+  var sortCol = headers.indexOf("SortOrder");
+  if (sortCol === -1) return data.length; // no column yet — use row count as fallback
+  var max = 0;
+  for (var i = 1; i < data.length; i++) {
+    var v = Number(data[i][sortCol] || 0);
+    if (v > max) max = v;
+  }
+  return max + 1;
+}
+
+function _updateSortOrder(sheetName, orderArr) {
+  // orderArr: [{id: "...", sort: 1}, {id: "...", sort: 2}, ...]
+  // Writes the SortOrder value into column 3 (index 2) for each matching row.
+  if (!sheetName || !Array.isArray(orderArr) || orderArr.length === 0) {
+    return { status: "error", message: "Invalid parameters" };
+  }
+  var sheetMap = { types: SHEETS.TYPES, occasions: SHEETS.OCCASIONS, expenseTypes: SHEETS.EXPENSE_TYPES };
+  var target = sheetMap[sheetName] || sheetName;
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(target);
+  if (!sheet) return { status: "error", message: "Sheet not found: " + target };
+
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var idCol   = 0; // ID is always col 0 (TypeId / OccasionId / ExpenseTypeId)
+
+  // Find or create SortOrder column
+  var sortCol = headers.indexOf("SortOrder");
+  if (sortCol === -1) {
+    // Column missing — add header to row 1
+    sortCol = headers.length;
+    sheet.getRange(1, sortCol + 1).setValue("SortOrder");
+  }
+
+  // Build a lookup map id → sort value for O(1) access
+  var sortMap = {};
+  orderArr.forEach(function(item) { sortMap[String(item.id)] = Number(item.sort); });
+
+  // Write each SortOrder value in one pass
+  var updated = 0;
+  for (var i = 1; i < data.length; i++) {
+    var rowId = String(data[i][idCol] || "");
+    if (sortMap.hasOwnProperty(rowId)) {
+      sheet.getRange(i + 1, sortCol + 1).setValue(sortMap[rowId]);
+      updated++;
+    }
+  }
+  SpreadsheetApp.flush();
+
+  // Bust the relevant cache
+  var cacheKeyMap = { TYPES: "c_types", OCCASIONS: "c_occasions", EXPENSE_TYPES: "c_exptypes" };
+  if (cacheKeyMap[target]) _bustSheetCache(cacheKeyMap[target]);
+
+  logAction("Admin", "updateSortOrder", sheetName + " — " + updated + " rows updated");
+  return { status: "success", updated: updated };
 }
 
 function updateRow(name, body) {
@@ -2896,16 +3114,34 @@ function registerUser(params) {
     const ss     = SpreadsheetApp.getActiveSpreadsheet();
     const sheet  = ss.getSheetByName(SHEETS.USERS);
     if (!sheet) return { status: "error", message: "System error. Please try again." };
- 
+
     const name    = sanitize(params.Name    || "", 100);
     const mobile  = sanitize(params.Mobile  || "", 15);
     const email   = sanitize(params.Email   || "", 200);
     const pwd     = sanitize(params.Password || "", 200); // SHA-256 hashed on client
     const village = sanitize(params.Village || "", 100);
     const address = sanitize(params.Address || "", 300);
- 
+
     if (!name || !mobile || !email || !pwd) {
       return { status: "error", message: "Name, Mobile, Email and Password are required." };
+    }
+
+    // ── ATOMIC OTP VERIFICATION (new flow: OTP sent before form, verified here)
+    //  If otpKey + otp are provided, verify and consume them now — one round trip.
+    //  If not provided (legacy path or direct API), skip OTP check.
+    const otpKey  = sanitize(params.otpKey || "", 80);
+    const userOtp = sanitize(params.otp    || "", 10);
+    if (otpKey && userOtp) {
+      const cache    = CacheService.getScriptCache();
+      const savedOtp = cache.get(otpKey);
+      if (!savedOtp) {
+        return { status: "error", message: "OTP expired or not found. Please request a new verification code.", errorCode: "otp_expired" };
+      }
+      if (savedOtp !== userOtp) {
+        return { status: "error", message: "Incorrect verification code. Please try again.", errorCode: "otp_invalid" };
+      }
+      // Consume immediately — single use
+      cache.remove(otpKey);
     }
  
     const existingUsers = getSheetData(SHEETS.USERS);
@@ -2920,10 +3156,11 @@ function registerUser(params) {
       return { status: "error", message: "Mobile number already in use." };
     }
  
-    // Check duplicate email (only among non-rejected accounts)
+    // Check duplicate email (exclude rejected AND inactive — inactive users should be able to re-register)
     const dupEmail = existingUsers.find(u =>
       String(u.Email || "").toLowerCase() === email.toLowerCase() &&
-      String(u.Status || "").toLowerCase() !== "rejected"
+      String(u.Status || "").toLowerCase() !== "rejected" &&
+      String(u.Status || "").toLowerCase() !== "inactive"
     );
     if (dupEmail) return { status: "error", message: "This email address is already registered." };
  
@@ -2956,6 +3193,42 @@ function registerUser(params) {
     sheet.appendRow(row);
     SpreadsheetApp.flush();
     logAction("System", "New Registration (Pending)", "Name: " + name + " | Mobile: " + mobile);
+ 
+    // Send confirmation email to the registrant (best-effort)
+    try {
+      if (email && tryConsumeEmailQuota()) {
+        MailApp.sendEmail({
+          to: email,
+          subject: CFG.name + " — Registration Received",
+          htmlBody: `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+<tr><td align="center">
+<table width="540" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);max-width:540px;width:100%;border-top:4px solid #f7a01a;">
+  <tr><td style="background:#334155;padding:24px 32px;text-align:center;">
+    ${_logoHtml()}
+    <div style="color:#f7a01a;font-size:18px;font-weight:700;">${CFG.name.toUpperCase()}</div>
+    <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${CFG.location}</div>
+    <div style="margin-top:10px;"><span style="background:#f59e0b;color:#fff;padding:3px 14px;border-radius:20px;font-size:11px;font-weight:700;">REGISTRATION RECEIVED</span></div>
+  </td></tr>
+  <tr><td style="padding:24px 28px;">
+    <p style="color:#334155;font-size:15px;font-weight:700;margin:0 0 8px;">Jai Shree Ram, ${name}!</p>
+    <p style="color:#475569;font-size:13px;line-height:1.7;margin:0 0 16px;">Thank you for registering with <strong>${CFG.name}</strong>. Your request has been received and is pending review by the temple admin.</p>
+    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:16px 20px;margin:0 0 16px;">
+      <div style="color:#92400e;font-size:13px;font-weight:700;margin-bottom:10px;">Your Registration Details</div>
+      <div style="color:#78350f;font-size:13px;margin-bottom:5px;"><strong>Name:</strong> ${name}</div>
+      <div style="color:#78350f;font-size:13px;margin-bottom:5px;"><strong>Mobile (Login ID):</strong> ${mobile}</div>
+      <div style="color:#78350f;font-size:13px;"><strong>Email:</strong> ${email}</div>
+    </div>
+    <p style="color:#64748b;font-size:13px;line-height:1.7;margin:0;">You will receive another email once the admin approves your account. Your <strong>mobile number</strong> will be your Login ID.</p>
+  </td></tr>
+  <tr><td style="background:#fef9ee;padding:14px 28px;text-align:center;border-top:1px solid #fde68a;">
+    <div style="color:#a16207;font-size:11px;">${CFG.name} | ${CFG.address} | ${CFG.tagline}</div>
+  </td></tr>
+</table></td></tr></table></body></html>`
+        });
+      }
+    } catch(regMailErr) { /* non-fatal */ }
  
     // Notify all admin users (best-effort, non-blocking)
     try {
