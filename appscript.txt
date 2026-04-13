@@ -17,7 +17,7 @@ const CFG = {
   receiptPrefix: "MNR",          // Receipt IDs: MNR-2025-00001
   signatory:     "Temple Trust",
   designation:   "Authorized Signatory",
-  tagline:       "Jai Shree Ram 🙏",
+  tagline:       "Jai Shree Ram",
   thankYouMsg:   "Thank you for your generous contribution",
   emailDailyLimit: 90,           // Gmail free = 100/day; keep 10 buffer for OTPs
   // Logo: place your logo at Image/logo.PNG in your web app folder.
@@ -2131,6 +2131,12 @@ function doGet(e) {
     }
   }
 
+  // ── PHOTO PROXY: fetch Drive photo server-side as base64 (solves CORS block in browser)
+  else if (action === "getPhotoBase64") {
+    const fileId = sanitize(e.parameter.fileId, 200);
+    result = getPhotoBase64(fileId);
+  }
+
   else { result = { error: "Invalid action: " + action }; }
 
   return ContentService
@@ -3543,6 +3549,28 @@ function getPublicStats() {
  
   } catch(err) {
     return { status: "error", message: err.message };
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PHOTO PROXY — fetch Drive file server-side, return as base64
+//  Called by client via action=getPhotoBase64&fileId=...
+//  Solves CORS block: browser cannot read Drive thumbnails into canvas,
+//  but Apps Script can fetch the file directly using DriveApp.
+//  Result is cached in client (_photoB64Cache) so 1 call per session.
+// ════════════════════════════════════════════════════════════════
+function getPhotoBase64(fileId) {
+  if (!fileId || fileId.length < 10) {
+    return { status: "error", message: "Invalid fileId." };
+  }
+  try {
+    const file  = DriveApp.getFileById(fileId);
+    const blob  = file.getBlob();
+    const b64   = Utilities.base64Encode(blob.getBytes());
+    const mime  = blob.getContentType() || "image/jpeg";
+    return { status: "success", base64: "data:" + mime + ";base64," + b64 };
+  } catch (e) {
+    return { status: "error", message: e.message };
   }
 }
 

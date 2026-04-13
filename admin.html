@@ -5245,18 +5245,51 @@
         if (ts) ts.placeholder = APP.receiptPrefix + "-... or TRX-...";
         if (sc) sc.placeholder = "🔍 Search name, mobile, amount, " + APP.receiptPrefix + "-...";
       }
-      // Set admin avatar if profile photo exists
+      // Set admin avatar if profile photo exists — loaded via proxy (fixes CORS/429 block)
       let myProfile = users.find(
         (u) => String(u.UserId) === String(s.userId)
       );
       if (myProfile?.PhotoURL) {
-        let url = myProfile.PhotoURL;
-        if (url.includes("drive.google.com/uc")) {
-          let m = url.match(/[?&]id=([^&]+)/);
-          if (m) url = "https://lh3.googleusercontent.com/d/" + m[1];
-        }
-        document.getElementById("adminAvatar").src = url;
+        _fetchAdminPhotoBase64(myProfile.PhotoURL).then(function(b64) {
+          if (!b64) return;
+          const av = document.getElementById("adminAvatar");
+          if (av) { av.style.transition = "opacity 0.35s ease"; av.style.opacity = "0"; setTimeout(function() { av.src = b64; av.style.opacity = "1"; }, 160); }
+        });
       }
+    }
+
+    // ── Extract Drive file ID from any Drive URL format ──────────────────────
+    function _adminExtractDriveFileId(url) {
+      if (!url) return "";
+      const s = String(url).trim();
+      if (s.includes("drive.google.com/thumbnail")) {
+        const m = s.match(/[?&]id=([^&]+)/); if (m) return m[1].trim();
+      } else if (s.includes("drive.google.com/uc")) {
+        const m = s.match(/[?&]id=([^&]+)/); if (m) return m[1].trim();
+      } else if (s.includes("lh3.googleusercontent.com/d/")) {
+        return s.split("/d/")[1].split("?")[0].split("=")[0].trim();
+      } else if (s.includes("drive.google.com/file/d/")) {
+        return s.split("/file/d/")[1].split("/")[0].split("?")[0].trim();
+      }
+      return "";
+    }
+
+    // ── Fetch Drive photo as base64 via Apps Script proxy (solves CORS/429 block) ─
+    // Caches per PhotoURL so header + profile modal share 1 backend request per session
+    window._adminPhotoB64Cache = {};
+    async function _fetchAdminPhotoBase64(photoURL) {
+      if (!photoURL) return null;
+      if (window._adminPhotoB64Cache[photoURL]) return window._adminPhotoB64Cache[photoURL];
+      const fileId = _adminExtractDriveFileId(photoURL);
+      if (!fileId) return null;
+      try {
+        const res = await postData({ action: "getPhotoBase64", fileId: fileId });
+        if (res && res.status === "success" && res.base64) {
+          window._adminPhotoB64Cache[photoURL] = res.base64;
+          return res.base64;
+        }
+      } catch (e) { /* fall through — keep initials/default avatar */ }
+      return null;
     }
 
     function logout() {
@@ -5323,9 +5356,8 @@
       if (!s) { toast("Session expired.", "error"); return; }
       let myProfile = users.find((u) => String(u.UserId) === String(s.userId));
       if (!myProfile) { toast("Profile data not loaded yet.", "warn"); return; }
-      let photoSrc = myProfile.PhotoURL || "";
-      if (photoSrc.includes("drive.google.com/uc")) { let m = photoSrc.match(/[?&]id=([^&]+)/); if (m) photoSrc = "https://lh3.googleusercontent.com/d/" + m[1]; }
-      let fb = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
+      let photoSrc = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
+      let fb = photoSrc;
       let st = String(myProfile.Status || "Active");
       let stC = st.toLowerCase() === "active" ? "#22c55e" : st.toLowerCase() === "pending" ? "#f59e0b" : "#ef4444";
       let rowStyle = "border-bottom:1px solid #fef3e2;";
@@ -5342,7 +5374,7 @@
           <div style="background:linear-gradient(180deg,#141b2d 0%,#2a0f00 60%,#3c1a00 100%);padding:26px 20px 20px;text-align:center;position:relative;overflow:hidden;">
             <div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(247,160,26,0.15),transparent 70%);border-radius:50%;pointer-events:none;"></div>
             <div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(247,160,26,0.4),transparent);"></div>
-            <img src="${escapeHtml(photoSrc)}" onerror="this.src='${fb}'"
+            <img id="_adminProfileModalPhoto" src="${escapeHtml(photoSrc)}" onerror="this.src='${fb}'"
               style="width:82px;height:82px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#eee;display:block;margin:0 auto 10px;box-shadow:0 4px 20px rgba(247,160,26,0.45);"/>
             <div style="color:#f7a01a;font-size:1.05rem;font-weight:700;margin-bottom:8px;">${escapeHtml(myProfile.Name || "—")}</div>
             <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
@@ -5364,6 +5396,17 @@
           <button class="_mbtn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);box-shadow:0 3px 10px rgba(247,160,26,0.35);" onclick="closeModal();openAdminEditProfileForm()"><i class="fa-solid fa-user-pen"></i> Edit Profile</button>
         </div>`;
       openModal(html, "460px");
+      // Load real photo via proxy after modal is in DOM (avoids CORS/429 on Drive URLs)
+      if (myProfile.PhotoURL) {
+        _fetchAdminPhotoBase64(myProfile.PhotoURL).then(function(b64) {
+          const imgEl = document.getElementById("_adminProfileModalPhoto");
+          if (imgEl && b64) {
+            imgEl.style.transition = "opacity 0.35s ease";
+            imgEl.style.opacity = "0";
+            setTimeout(function() { imgEl.src = b64; imgEl.style.opacity = "1"; }, 160);
+          }
+        });
+      }
     }
 
     /* ── Edit Profile modal ── */
@@ -5371,8 +5414,7 @@
       let s = JSON.parse(localStorage.getItem("session") || "null");
       if (!s) { toast("Session expired.", "error"); return; }
       let myProfile = users.find((u) => String(u.UserId) === String(s.userId));
-      let photoSrc = previewB64 || myProfile?.PhotoURL || "";
-      if (!previewB64 && photoSrc.includes("drive.google.com/uc")) { let m = photoSrc.match(/[?&]id=([^&]+)/); if (m) photoSrc = "https://lh3.googleusercontent.com/d/" + m[1]; }
+      let photoSrc = previewB64 || (myProfile?.PhotoURL ? _driveImgSrc(myProfile.PhotoURL) : "") || "";
       let dN = prefillName     !== undefined ? prefillName     : myProfile?.Name    || s.name  || "";
       let dE = prefillEmail    !== undefined ? prefillEmail    : myProfile?.Email   || s.email || "";
       let dV = prefillVillage  !== undefined ? prefillVillage  : myProfile?.Village || "";
@@ -8169,7 +8211,7 @@
         return `
       <tr class="${rowClass}" onclick="viewUser('${u.UserId}')" title="Click to view details">
         <td onclick="event.stopPropagation();openEditUser('${u.UserId}')" title="Click to edit user" style="cursor:pointer;">
-          <img src="${u.PhotoURL ? escapeHtml(u.PhotoURL) : ""}" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23f7a01a\'/></svg>'"
+          <img src="${u.PhotoURL ? escapeHtml(_driveImgSrc(u.PhotoURL)) : ""}" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23f7a01a\'/></svg>'"
                width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;"/>
         </td>
         <td><b>${escapeHtml(u.Name || "")}</b></td>
@@ -8272,7 +8314,7 @@
     ) {
       let u = users.find((x) => String(x.UserId) === String(id));
       if (!u) return;
-      let photoSrc = previewB64 || u.PhotoURL || "";
+      let photoSrc = previewB64 || (u.PhotoURL ? _driveImgSrc(u.PhotoURL) : "") || "";
       let html = `
       <div class="_mhdr"><h3><i class="fa-solid fa-user-pen"></i> Edit User</h3><button class="_mcls" onclick="closeModal()">×</button></div>
       <div class="_mbdy">

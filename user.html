@@ -4,11 +4,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- DNS prefetch for external resources -->
+  <!-- CSP: restricts framing and object embeds; script/style remain open for JSONP + CDN -->
+  <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self'; object-src 'none'; base-uri 'self';">
+  <!-- Favicon — fixes 404 on every page load -->
+  <link rel="icon" href="Image/logo.PNG" type="image/png" />
+  <!-- DNS prefetch + preconnect declared once each (was duplicated) -->
   <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
   <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
   <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Preload local JS files so browser fetches them early while HTML parses -->
   <link rel="preload" href="constants.js" as="script" />
   <link rel="preload" href="config.js" as="script" />
@@ -18,8 +24,6 @@
   <!-- Browser chrome color matches app theme -->
   <meta name="theme-color" content="#ffffff" id="metaThemeColor">
   <meta name="color-scheme" content="light dark"><!-- Title is set dynamically via APP.name in _setUserVersion() -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap"
     rel="stylesheet" />
@@ -71,6 +75,7 @@
 
     html {
       scroll-padding-top: 72px;
+      scroll-behavior: smooth;
     }
 
     body {
@@ -842,6 +847,17 @@
       -webkit-overflow-scrolling: touch;
       border-radius: var(--rad-lg);
       touch-action: pan-x;
+      position: relative;
+    }
+    .t-wrap::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 20px;
+      background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+      pointer-events: none;
+      border-radius: 0 var(--rad-lg) var(--rad-lg) 0;
+      transition: opacity 0.2s;
     }
 
     table {
@@ -1345,11 +1361,6 @@
       background: var(--gold);
     }
 
-    /* ── SMOOTH SCROLL ── */
-    html {
-      scroll-behavior: smooth;
-    }
-
     /* ── HORIZONTAL SCROLL FADE EDGES ── */
     .qa-row-wrap {
       position: relative;
@@ -1380,21 +1391,6 @@
     }
     .anchor-highlight {
       animation: anchorPulse 0.7s ease-out;
-    }
-
-    /* ── TABLE HORIZONTAL SCROLL SHADOW ── */
-    .t-wrap {
-      position: relative;
-    }
-    .t-wrap::after {
-      content: '';
-      position: absolute;
-      right: 0; top: 0; bottom: 0;
-      width: 20px;
-      background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
-      pointer-events: none;
-      border-radius: 0 var(--rad-lg) var(--rad-lg) 0;
-      transition: opacity 0.2s;
     }
 
     /* ── BS-BODY SCROLLBAR ── */
@@ -3418,6 +3414,10 @@
   <script>
     (function() {
       try {
+        // Set language immediately from stored preference so lang attr is correct before paint
+        var storedLang = localStorage.getItem('mandir_lang');
+        if (storedLang === 'HI') document.documentElement.lang = 'hi';
+
         var stored = localStorage.getItem('mandir_user_dark');
         var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (stored === '1' || (stored === null && prefersDark)) {
@@ -3479,12 +3479,12 @@
         <span class="dm-icon dm-icon-moon">🌙</span>
       </div>
       <div class="hdr-avatar-wrap">
-        <img id="hdr_photo" class="hdr-avatar" src="" loading="lazy" decoding="async"
+        <img id="hdr_photo" class="hdr-avatar" src="data:," loading="lazy" decoding="async"
           onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',40);"
           onclick="toggleUserDropdown()" title="Account" alt="User avatar" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleUserDropdown();}" />
         <div id="userDropdown" class="hdr-dropdown" role="menu" aria-label="Account menu">
           <div class="hdr-drop-head">
-            <img id="hdr_drop_photo" src="" loading="lazy" decoding="async"
+            <img id="hdr_drop_photo" src="data:," loading="lazy" decoding="async"
               onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',34);"
               alt="" />
             <div>
@@ -3915,7 +3915,7 @@
                 <div id="pr_slip_name" style="font-size:13px;color:#64748b;font-weight:500;">Tap to attach payment slip</div>
                 <div style="font-size:10.5px;color:#94a3b8;margin-top:1px;">JPG, PNG · Max 5 MB</div>
                 <div id="pr_slip_preview_wrap" style="display:none;margin-top:6px;">
-                  <img id="pr_slip_preview" style="max-height:60px;border-radius:6px;border:1px solid #e2e8f0;" src="" />
+                  <img id="pr_slip_preview" style="max-height:60px;border-radius:6px;border:1px solid #e2e8f0;" src="data:," />
                 </div>
               </div>
               <input type="file" id="pr_slip" accept="image/*" style="display:none;" onchange="handlePrSlip(this)" />
@@ -4044,16 +4044,6 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script>
-    // ── Initials avatar — defined early so session guard IIFE can use it below
-    function _initialsAvatar(name, size) {
-      const parts = (name || "?").trim().split(/\s+/);
-      const initials = (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
-      const colors = ["#c2410c","#b45309","#15803d","#1d4ed8","#7c3aed","#be185d","#0f766e"];
-      const col = colors[(name || "").charCodeAt(0) % colors.length];
-      const fs = Math.round(size * 0.38);
-      return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}'><circle cx='${size/2}' cy='${size/2}' r='${size/2}' fill='${col}'/><text x='${size/2}' y='${size/2+fs*0.36}' text-anchor='middle' fill='white' font-size='${fs}' font-family='Arial' font-weight='700'>${initials}</text></svg>`)}`;
-    }
-
     // ── Session guard — with Remember Me restore (H12)
     (function () {
       let s = JSON.parse(localStorage.getItem("session") || "null");
@@ -4068,9 +4058,9 @@
             };
             localStorage.setItem("session", JSON.stringify(s));
           } else {
-            localStorage.clear(); history.replaceState(null, "", "login.html"); location.replace("login.html"); return;
+            ["session","mandir_remember_token"].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); return;
           }
-        } catch (e) { localStorage.clear(); history.replaceState(null, "", "login.html"); location.replace("login.html"); return; }
+        } catch (e) { ["session","mandir_remember_token"].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); return; }
       }
       if (s.role !== "User") { location.replace("admin.html"); return; }
       s.expiry = Date.now() + 30 * 60 * 1000; localStorage.setItem("session", JSON.stringify(s));
@@ -4090,14 +4080,14 @@
     })();
     window.addEventListener("pageshow", () => {
       let s = JSON.parse(localStorage.getItem("session") || "null");
-      if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null, "", "login.html"); location.replace("login.html"); }
+      if (!s || Date.now() > s.expiry || s.role !== "User") { ["session","mandir_remember_token"].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); }
     });
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) { let s = JSON.parse(localStorage.getItem("session") || "null"); if (!s || Date.now() > s.expiry || s.role !== "User") { localStorage.clear(); history.replaceState(null, "", "login.html"); location.replace("login.html"); } }
+      if (!document.hidden) { let s = JSON.parse(localStorage.getItem("session") || "null"); if (!s || Date.now() > s.expiry || s.role !== "User") { ["session","mandir_remember_token"].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); } }
     });
 
 
-    // ── SESSION CACHE — avoids 27x repeated JSON.parse(localStorage.getItem("session"))
+    // ── SESSION CACHE — avoids 27x repeated _sess()
     const _sCache = { v: null, t: 0 };
     function _sess() {
       const now = Date.now();
@@ -4137,7 +4127,7 @@
 
     function logout() {
       try {
-        const s = JSON.parse(localStorage.getItem("session") || "null");
+        const s = _sess();
         if (s && s.userId) {
           const devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
           const p = new URLSearchParams({
@@ -4155,7 +4145,8 @@
       } catch (e) { }
       // H12: also clear remember-me token on explicit logout
       try { localStorage.removeItem("mandir_remember_token"); } catch (e) { }
-      localStorage.clear(); sessionStorage.clear(); setTimeout(() => { history.replaceState(null, "", "login.html"); location.replace("login.html"); }, 150);
+      ["session","mandir_remember_token","mandir_user_dark","mandir_lang"].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+      sessionStorage.clear(); setTimeout(() => { history.replaceState(null, "", "login.html"); location.replace("login.html"); }, 150);
     }
 
     function toggleUserDropdown() {
@@ -4193,6 +4184,41 @@
       if (fileId) return "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w400";
       return s;
     }
+
+    // ── Extract raw Drive file ID from any Drive URL format ──────────────────
+    function _extractDriveFileId(url) {
+      if (!url) return "";
+      const s = String(url).trim();
+      if (s.includes("drive.google.com/thumbnail")) {
+        const m = s.match(/[?&]id=([^&]+)/); if (m) return m[1].trim();
+      } else if (s.includes("drive.google.com/uc")) {
+        const m = s.match(/[?&]id=([^&]+)/); if (m) return m[1].trim();
+      } else if (s.includes("lh3.googleusercontent.com/d/")) {
+        return s.split("/d/")[1].split("?")[0].split("=")[0].trim();
+      } else if (s.includes("drive.google.com/file/d/")) {
+        return s.split("/file/d/")[1].split("/")[0].split("?")[0].trim();
+      }
+      return "";
+    }
+
+    // ── Fetch Drive photo as base64 via Apps Script proxy (solves CORS block) ─
+    // Caches per PhotoURL so repeated calls (header + ID card) cost only 1 request
+    window._photoB64Cache = {};
+    async function _fetchPhotoBase64(photoURL) {
+      if (!photoURL) return null;
+      if (window._photoB64Cache[photoURL]) return window._photoB64Cache[photoURL];
+      const fileId = _extractDriveFileId(photoURL);
+      if (!fileId) return null;
+      try {
+        const res = await postData({ action: "getPhotoBase64", fileId: fileId });
+        if (res && res.status === "success" && res.base64) {
+          window._photoB64Cache[photoURL] = res.base64;
+          return res.base64;
+        }
+      } catch (e) { /* fall through — initials will show */ }
+      return null;
+    }
+
     // ── Smooth photo load: show initials instantly, fade in real photo when ready
     function _loadPhotoSmooth(imgEl, photoUrl, name, size) {
       const initials = _initialsAvatar(name, size);
@@ -4218,20 +4244,39 @@
       document.getElementById("hdr_drop_name").innerText = name;
       const roleEl = document.getElementById("hdr_drop_role");
       if (roleEl) roleEl.textContent = myProfile?.Role || s.role || "Member";
+      // Show initials instantly, then load real photo via backend proxy (fixes CORS block)
+      const hdrPhoto = document.getElementById("hdr_photo");
+      const dropPhoto = document.getElementById("hdr_drop_photo");
+      if (hdrPhoto) hdrPhoto.src = _initialsAvatar(name, 40);
+      if (dropPhoto) dropPhoto.src = _initialsAvatar(name, 34);
       const rawUrl = myProfile?.PhotoURL || s.photoURL || "";
-      const url = _fixDrivePhotoUrl(rawUrl);
-      _loadPhotoSmooth(document.getElementById("hdr_photo"), url, name, 40);
-      _loadPhotoSmooth(document.getElementById("hdr_drop_photo"), url, name, 34);
+      if (rawUrl) {
+        _fetchPhotoBase64(rawUrl).then(function(b64) {
+          if (!b64) return; // keep initials on failure
+          if (hdrPhoto) {
+            hdrPhoto.style.transition = "opacity 0.35s ease";
+            hdrPhoto.style.opacity = "0";
+            setTimeout(function() { hdrPhoto.src = b64; hdrPhoto.style.opacity = "1"; }, 160);
+          }
+          if (dropPhoto) {
+            dropPhoto.style.transition = "opacity 0.35s ease";
+            dropPhoto.style.opacity = "0";
+            setTimeout(function() { dropPhoto.src = b64; dropPhoto.style.opacity = "1"; }, 160);
+          }
+        });
+      }
     }
 
     let _pendingCroppedB64 = "";
 
     function openMyProfile() {
-      let s = JSON.parse(localStorage.getItem("session") || "null");
+      let s = _sess();
       if (!s) { toast("Session expired. Please log in again.", "error"); return; }
       let myProfile = users.find(u => String(u.UserId) === String(s.userId));
       if (!myProfile) { toast("Profile data not loaded yet.", "warn"); return; }
-      let photoSrc = _fixDrivePhotoUrl(myProfile.PhotoURL || "");
+      // Use initials as placeholder; real photo loads via proxy after modal opens
+      const _profName = myProfile.Name || s.name || "?";
+      let photoSrc = _initialsAvatar(_profName, 82);
       let fb = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
       let st = String(myProfile.Status || "Active");
       let stC = st.toLowerCase() === "active" ? "#22c55e" : st.toLowerCase() === "pending" ? "#f59e0b" : "#ef4444";
@@ -4241,7 +4286,7 @@
             <div style="background:linear-gradient(180deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);padding:26px 20px 20px;text-align:center;position:relative;overflow:hidden;">
               <div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(247,160,26,0.15),transparent 70%);border-radius:50%;pointer-events:none;"></div>
               <div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(247,160,26,0.4),transparent);"></div>
-              <img src="${escapeHtml(photoSrc)}" onerror="this.src='${fb}'"
+              <img id="_profileModalPhoto" src="${escapeHtml(photoSrc)}" onerror="this.src='${fb}'"
                 style="width:82px;height:82px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#eee;display:block;margin:0 auto 10px;box-shadow:0 4px 20px rgba(247,160,26,0.45);"/>
               <div style="font-family:'Sora',sans-serif;color:#f7a01a;font-size:1.05rem;font-weight:700;margin-bottom:8px;">${escapeHtml(myProfile.Name || "—")}</div>
               <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
@@ -4269,6 +4314,17 @@
       </button>
     </div>`;
       openModal(html, "460px");
+      // Load real photo via proxy after modal is in DOM
+      if (myProfile.PhotoURL) {
+        _fetchPhotoBase64(myProfile.PhotoURL).then(function(b64) {
+          const imgEl = document.getElementById("_profileModalPhoto");
+          if (imgEl && b64) {
+            imgEl.style.transition = "opacity 0.35s ease";
+            imgEl.style.opacity = "0";
+            setTimeout(function() { imgEl.src = b64; imgEl.style.opacity = "1"; }, 160);
+          }
+        });
+      }
     }
 
     function toggleProfilePassword() {
@@ -4279,7 +4335,7 @@
     }
 
     function openEditProfile(previewB64, prefillName, prefillEmail, prefillVillage, prefillAddress) {
-      let s = JSON.parse(localStorage.getItem("session") || "null");
+      let s = _sess();
       if (!s) { toast("Session expired. Please log in again.", "error"); return; }
       let myProfile = users.find(u => String(u.UserId) === String(s.userId));
       let dN = prefillName !== undefined ? prefillName : myProfile?.Name || s.name || "";
@@ -4300,8 +4356,8 @@
             <p style="font-size:11px;color:#aaa;margin:0 0 14px;">Tap the camera icon to change photo</p>
             <input type="file" id="photoFile" accept="image/*" style="display:none;" onchange="handlePhotoSelected(this)"/>
             <div style="text-align:left;">
-              <label class="_fl">Full Name</label><input class="_fi" id="ep_name" value="${escapeHtml(dN)}" placeholder="Your name"/>
-              <label class="_fl">Email</label><input class="_fi" id="ep_email" type="email" value="${escapeHtml(dE)}" placeholder="your@email.com"/>
+              <label class="_fl" for="ep_name">Full Name</label><input class="_fi" id="ep_name" value="${escapeHtml(dN)}" placeholder="Your name"/>
+              <label class="_fl" for="ep_email">Email</label><input class="_fi" id="ep_email" type="email" value="${escapeHtml(dE)}" placeholder="your@email.com"/>
               <label class="_fl">Mobile Number</label>
               <div style="background:var(--bg);border:1.5px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
                 <div style="display:flex;align-items:center;gap:8px;">
@@ -4312,8 +4368,8 @@
                   <i class="fa-solid fa-mobile-screen-button" style="margin-right:3px;"></i>Update Mobile
                 </span>
               </div>
-              <label class="_fl" style="margin-top:0;">Village</label><input class="_fi" id="ep_village" value="${escapeHtml(dV)}" placeholder="Village name"/>
-              <label class="_fl">Address</label><textarea class="_fi" id="ep_address" rows="2" placeholder="Full address" style="resize:vertical;min-height:52px;display:block;background:var(--bg);color:var(--ink);cursor:text;">${escapeHtml(dA)}</textarea>
+              <label class="_fl" for="ep_village" style="margin-top:0;">Village</label><input class="_fi" id="ep_village" value="${escapeHtml(dV)}" placeholder="Village name"/>
+              <label class="_fl" for="ep_address">Address</label><textarea class="_fi" id="ep_address" rows="2" placeholder="Full address" style="resize:vertical;min-height:52px;display:block;background:var(--bg);color:var(--ink);cursor:text;">${escapeHtml(dA)}</textarea>
               <label class="_fl">Password</label>
                   <div style="background:var(--bg);border:1.5px solid rgba(0,0,0,0.08);border-radius:8px;
                     padding:10px 14px;display:flex;align-items:center;justify-content:space-between;
@@ -4391,7 +4447,7 @@
               <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px;">
                 <i class="fa-solid fa-mobile-screen" style="color:#f7a01a;font-size:14px;"></i>
                 <span style="font-size:12px;color:#94a3b8;font-weight:500;">Current number</span>
-                <span style="font-size:14px;font-weight:700;color:#1e293b;letter-spacing:1.5px;margin-left:auto;">${(() => { let s = JSON.parse(localStorage.getItem("session") || "{}"); let mp = users.find(u => String(u.UserId) === String(s.userId)); return mp?.Mobile || "—"; })()}</span>
+                <span style="font-size:14px;font-weight:700;color:#1e293b;letter-spacing:1.5px;margin-left:auto;">${(() => { let s = (_sess() || {}); let mp = users.find(u => String(u.UserId) === String(s.userId)); return mp?.Mobile || "—"; })()}</span>
               </div>
 
               <!-- Message area -->
@@ -4508,7 +4564,7 @@
 
     // STEP 2: Validate new number and send OTP
     async function _mobileSendOTP() {
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const s = (_sess() || {});
       const newMobile = (document.getElementById("_mobileNewInput") || {}).value || "";
       // Validate mobile number format first (same regex as Apps Script)
       if (!newMobile || !/^[6-9]\d{9}$/.test(newMobile)) {
@@ -4559,7 +4615,7 @@
 
     // STEP 3: Verify OTP — Apps Script updates sheet automatically on success
     async function _mobileVerifyOTP() {
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const s = (_sess() || {});
       const otp = (document.getElementById("_mobileOtpInput") || {}).value || "";
       if (!otp || otp.length < 6) { _mobilePopupMsg("Enter the 6-digit OTP.", false); return; }
       const btn = document.getElementById("_mobileVerifyBtn");
@@ -4628,7 +4684,7 @@
       // Go back to step 2 state briefly, then re-trigger send
       const newMobile = (document.getElementById("_mobileNewInput") || {}).value || "";
       if (!newMobile) { _mobilePopupMsg("Please go back and re-enter mobile number.", false); return; }
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const s = (_sess() || {});
       _mobilePopupMsg("", true);
       try {
         const res = await getData("sendMobileChangeOTP&userId=" + encodeURIComponent(s.userId) + "&newMobile=" + encodeURIComponent(newMobile));
@@ -4646,7 +4702,7 @@
     }
 
     async function saveProfile() {
-      let s = JSON.parse(localStorage.getItem("session"));
+      let s = _sess();
       let myProfile = users.find(u => String(u.UserId) === String(s.userId));
       let name = document.getElementById("ep_name").value.trim();
       let email = document.getElementById("ep_email").value.trim();
@@ -4684,7 +4740,7 @@
         Enter your current password to verify, then set a new one.<br>
         Minimum 6 characters.
       </p>
-      <label class="_fl">Current Password</label>
+      <label class="_fl" for="cp_current">Current Password</label>
       <div style="position:relative;margin-bottom:14px;">
         <input class="_fi" type="password" id="cp_current"
           placeholder="Your current password"
@@ -4693,7 +4749,7 @@
           style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
           font-size:12px;color:#888;cursor:pointer;font-weight:600;">Show</span>
       </div>
-      <label class="_fl">New Password</label>
+      <label class="_fl" for="cp_new">New Password</label>
       <div style="position:relative;margin-bottom:14px;">
         <input class="_fi" type="password" id="cp_new"
           placeholder="New password (min 6 chars)"
@@ -4708,7 +4764,7 @@
         <div id="cp_strength_bar"
           style="height:100%;width:0%;border-radius:2px;transition:width .3s,background .3s;"></div>
       </div>
-      <label class="_fl">Confirm New Password</label>
+      <label class="_fl" for="cp_confirm">Confirm New Password</label>
       <div style="position:relative;margin-bottom:6px;">
         <input class="_fi" type="password" id="cp_confirm"
           placeholder="Repeat new password"
@@ -4787,7 +4843,7 @@
       if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...'; }
 
       try {
-        var s = JSON.parse(localStorage.getItem("session") || "null");
+        var s = _sess();
         if (!s) {
           _cpMsg("Session expired. Please log in again.");
           if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-key"></i> Update Password'; }
@@ -4849,7 +4905,7 @@
     async function init() {
       try {
         let allData = (await getCached("getAllData")) || {};
-        let s = JSON.parse(localStorage.getItem("session") || "null");
+        let s = _sess();
         if (!s) { location.replace("login.html"); return; }
         users = allData.users || []; types = allData.types || []; occasions = allData.occasions || [];
         allContributions = allData.contributions || []; allGoals = allData.goals || [];
@@ -5592,7 +5648,7 @@
 
       const { jsPDF } = window.jspdf;
       let doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      let s = JSON.parse(localStorage.getItem("session")), w = doc.internal.pageSize.getWidth();
+      let s = _sess(), w = doc.internal.pageSize.getWidth();
 
       // ── BROWN/GOLD header matching dashboard theme
       // Header bg — brown gradient approximated as solid
@@ -5776,7 +5832,7 @@
         await _loadJsPDF();
         const { jsPDF } = window.jspdf;
 
-        const s = JSON.parse(localStorage.getItem("session") || "{}");
+        const s = (_sess() || {});
         const myProfile = (typeof users !== "undefined" ? users : [])
           .find(u => String(u.UserId) === String(s.userId));
 
@@ -5808,26 +5864,11 @@
           console.log("Logo load failed");
         }
 
-        // ✅ Load profile photo (canvas-based, CORS-safe with fallback to initials)
+        // ✅ Load profile photo via Apps Script proxy (solves CORS block on Drive URLs)
         let PHOTO = null;
-        const _profilePhotoUrl = _fixDrivePhotoUrl(myProfile.PhotoURL || "");
-        if (_profilePhotoUrl) {
+        if (myProfile.PhotoURL) {
           try {
-            PHOTO = await new Promise(function (resolve) {
-              const img = new Image();
-              img.crossOrigin = "Anonymous";
-              img.onload = function () {
-                try {
-                  const cv = document.createElement("canvas");
-                  cv.width = img.naturalWidth || img.width || 200;
-                  cv.height = img.naturalHeight || img.height || 200;
-                  cv.getContext("2d").drawImage(img, 0, 0);
-                  resolve(cv.toDataURL("image/jpeg", 0.85));
-                } catch (e) { resolve(null); }
-              };
-              img.onerror = function () { resolve(null); };
-              img.src = _profilePhotoUrl;
-            });
+            PHOTO = await _fetchPhotoBase64(myProfile.PhotoURL);
           } catch (e) { PHOTO = null; }
         }
 
@@ -5841,9 +5882,9 @@
 
         // ✅ LOGO (perfect aligned box area)
         if (LOGO) {
-          const logoSize = 15;      // bigger size
-          const logoX = 1.8;          // left margin
-          const logoY = 0.4;          // vertical center in header
+          const logoSize = 10;      // fits within 14mm header
+          const logoX = 2;
+          const logoY = 2;          // vertically centered: (14 - 10) / 2
 
           doc.addImage(LOGO, "PNG", logoX, logoY, logoSize, logoSize);
         }
@@ -5853,7 +5894,7 @@
         doc.rect(0, 14, W, 1.2, "F");
 
         // ✅ Title aligned after logo
-        const textStartX = 18; // shifted based on logo
+        const textStartX = 15; // adjusted for smaller logo
 
         doc.setTextColor(...GOLD);
         doc.setFontSize(10);
@@ -5972,7 +6013,7 @@
     }
 
     init();
-    (function () { const s = JSON.parse(localStorage.getItem("session") || "null"); if (s && s.userId) broadcastSessionRevoke(s.userId); })();
+    (function () { const s = _sess(); if (s && s.userId) broadcastSessionRevoke(s.userId); })();
     //    1. Auto-load jsPDF if not loaded (fixes "PDF library not loaded" error)
     //    2. Enhance QR data to include name + amount + date
     //    3. Sync receipt header to brown/gold dashboard theme
@@ -5998,7 +6039,7 @@
         });
         let richText = text;
         if (stored) {
-          const s = JSON.parse(localStorage.getItem("session") || "{}");
+          const s = (_sess() || {});
           richText = "Receipt: " + text
             + " | Member: " + (stored.userName || s.name || "")
             + " | Amount: Rs." + Number(stored.c.Amount || 0).toLocaleString("en-IN")
@@ -6047,7 +6088,7 @@
         const t = JSON.parse(raw);
         if (!t || Date.now() > t.expiry) { localStorage.removeItem(RKEY); return; }
         // Valid token — restore session expiry
-        const sess = JSON.parse(localStorage.getItem("session") || "null");
+        const sess = _sess();
         if (sess) {
           sess.expiry = Date.now() + 30 * 60 * 1000;
           localStorage.setItem("session", JSON.stringify(sess));
@@ -6064,7 +6105,7 @@
         // Events, records, stats, payment requests — all lazy-loaded on panel open
         // Hero pill — show member status
         try {
-          const s2 = JSON.parse(localStorage.getItem("session") || "{}");
+          const s2 = (_sess() || {});
           const pill = document.getElementById("heroPill");
           if (pill && typeof users !== "undefined") {
             const mp = users.find(u => String(u.UserId) === String(s2.userId));
@@ -6133,11 +6174,12 @@
           } catch (e) { return String(d); }
         }
         const catColors = { Festival: "#f7a01a", Pooja: "#8b5cf6", Maintenance: "#64748b", Community: "#22c55e", Other: "#3b82f6" };
-        const catIcons = { Festival: "fa-solid fa-holly-berry", Pooja: "fa-solid fa-hands-praying", Maintenance: "fa-screwdriver-wrench", Community: "fa-people-group", Other: "fa-calendar-day" };
+        const catIcons = { Festival: "fa-holly-berry", Pooja: "fa-hands-praying", Maintenance: "fa-screwdriver-wrench", Community: "fa-people-group", Other: "fa-calendar-day" };
         container.innerHTML = visible.map(function (ev) {
-          const cat = ev.Category || "Other";
-          const color = catColors[cat] || "#3b82f6";
-          const icon = catIcons[cat] || "fa-calendar-day";
+          // Whitelist category — only use known keys, fall back to "Other" for unknown server values
+          const cat = catColors.hasOwnProperty(ev.Category) ? ev.Category : "Other";
+          const color = catColors[cat];
+          const icon = catIcons[cat];
           const start = fmtEvDate(ev.StartDate);
           const end = fmtEvDate(ev.EndDate);
           const dateStr = start + (end && end !== start ? " — " + end : "");
@@ -6172,7 +6214,7 @@
         if (msgEl) { msgEl.textContent = "❌ Please enter a message."; msgEl.style.color = "#e74c3c"; msgEl.style.display = "block"; }
         return;
       }
-      const s = JSON.parse(localStorage.getItem("session") || "null");
+      const s = _sess();
       if (!s) return;
       if (msgEl) { msgEl.textContent = "Submitting…"; msgEl.style.color = "var(--ink-soft)"; msgEl.style.display = "block"; }
       postData({
@@ -6197,7 +6239,7 @@
 
     // ── M16: Direct edit profile shortcut
     function openEditProfileDirect() {
-      const s = JSON.parse(localStorage.getItem("session") || "null");
+      const s = _sess();
       if (!s) return;
       openEditProfile(null, s.name, s.email || "", "", "");
     }
@@ -6294,7 +6336,7 @@
       }
 
       const { jsPDF } = window.jspdf;
-      let s = JSON.parse(localStorage.getItem("session"));
+      let s = _sess();
       if (!s) { toast("Not logged in.", "error"); return; }
 
       const yr = String(new Date().getFullYear());
@@ -6831,7 +6873,7 @@
 
     // ── M4: Submit payment request
     async function submitPaymentRequest() {
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const s = (_sess() || {});
       const month = (document.getElementById("pr_month") || {}).value || "";
       const amount = (document.getElementById("pr_amount") || {}).value || "";
       const mode = (document.getElementById("pr_mode") || {}).value || "UPI";
@@ -6899,7 +6941,7 @@
     // ── Load & display user's own contribution requests (lazy — only on first panel open)
     let _contribReqsLoaded = false;
     async function _loadUserContribRequests() {
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const s = (_sess() || {});
       const section = document.getElementById("myContribRequestsSection");
       const listEl = document.getElementById("myContribRequestsList");
       if (!section || !listEl || !s.userId) return;
@@ -7000,7 +7042,7 @@
     }
 
     async function _deleteContribRequest(reqId) {
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const s = (_sess() || {});
       try {
         const res = await postData({ action: "deleteContributionRequest", ReqId: reqId, userId: s.userId });
         if (res?.status === "success" || res?.status === "deleted") {
@@ -7056,7 +7098,7 @@
     // ── Edit contribution request modal (Pending only)
     let _editReqData = {};
     async function openEditContribRequest(reqId) {
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const s = (_sess() || {});
       let req = null;
       try {
         const res = await getData("getUserContributionRequests&userId=" + encodeURIComponent(s.userId));
@@ -7084,24 +7126,24 @@
           <div style="padding:16px;display:flex;flex-direction:column;gap:11px;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div>
-                <label style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Month *</label>
+                <label for="_ecr_month" style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Month *</label>
                 <select id="_ecr_month" style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;"><option value="">Select</option>${moOptions}</select>
               </div>
               <div>
-                <label style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Amount (₹) *</label>
+                <label for="_ecr_amount" style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Amount (₹) *</label>
                 <input type="number" id="_ecr_amount" value="${escapeHtml(String(req.Amount || ""))}" min="1" style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;"/>
               </div>
             </div>
             <div>
-              <label style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Payment Mode</label>
+              <label for="_ecr_mode" style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Payment Mode</label>
               <select id="_ecr_mode" style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;">${modeOptions}</select>
             </div>
             <div>
-              <label style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">UTR / Reference (optional)</label>
+              <label for="_ecr_utr" style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">UTR / Reference (optional)</label>
               <input type="text" id="_ecr_utr" value="${escapeHtml(String(req.UtrRef || ""))}" placeholder="UPI transaction ID or cheque number" style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;"/>
             </div>
             <div>
-              <label style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Note (optional)</label>
+              <label for="_ecr_note" style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Note (optional)</label>
               <input type="text" id="_ecr_note" value="${escapeHtml(String(req.Note || ""))}" maxlength="200" placeholder="Any additional info..." style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;"/>
             </div>
             <div>
@@ -7110,7 +7152,7 @@
                 <i class="fa-solid fa-image" style="color:var(--gold);font-size:1rem;"></i>
                 <div style="flex:1;">
                   <div id="_ecr_slip_name" style="font-size:12px;color:var(--ink-soft);">${req.SlipURL ? "Current slip attached — tap to replace" : "Tap to attach new slip"}</div>
-                  <div id="_ecr_slip_preview_wrap" style="display:none;margin-top:5px;"><img id="_ecr_slip_preview" style="max-height:50px;border-radius:5px;" src=""/></div>
+                  <div id="_ecr_slip_preview_wrap" style="display:none;margin-top:5px;"><img id="_ecr_slip_preview" style="max-height:50px;border-radius:5px;" src="data:,"/></div>
                 </div>
                 <input type="file" id="_ecr_slip" accept="image/*" style="display:none;" onchange="handleEditSlip(this)"/>
               </div>
@@ -7145,7 +7187,7 @@
     }
 
     async function saveEditContribRequest(reqId) {
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const s = (_sess() || {});
       const month = (document.getElementById("_ecr_month") || {}).value || "";
       const amount = (document.getElementById("_ecr_amount") || {}).value || "";
       const mode = (document.getElementById("_ecr_mode") || {}).value || "UPI";
