@@ -2495,6 +2495,18 @@
 </head>
 
 <body>
+  <!-- FEATURE 6: Offline Banner -->
+  <div id="_offlineBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999999;background:#1e293b;color:#fff;padding:8px 18px;font-size:13px;font-weight:600;align-items:center;justify-content:center;gap:10px;text-align:center;flex-wrap:wrap;">
+    <span>📡</span>
+    <span id="_offlineBannerMsg">You're offline — changes won't save until connection returns.</span>
+  </div>
+
+  <!-- FEATURE: Session Expiry Warning Banner -->
+  <div id="_sessionExpiryBanner" style="display:none;position:fixed;top:36px;left:0;right:0;z-index:999998;background:#f59e0b;color:#fff;padding:8px 18px;font-size:12px;font-weight:600;align-items:center;justify-content:center;gap:10px;text-align:center;flex-wrap:wrap;">
+    <span id="_sessionExpiryBannerMsg">⚠️ Session expiring soon. Save your work.</span>
+    <button onclick="document.getElementById('_sessionExpiryBanner').style.display='none'" style="background:rgba(0,0,0,0.2);border:none;color:#fff;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;margin-left:8px;">✕</button>
+  </div>
+
   <div id="loadingOverlay">
     <div class="spinner"></div>
     <div style="
@@ -2824,6 +2836,21 @@
         <!-- Right: Avatar + dropdown -->
 
         <div style="position: relative;flex-shrink: 0; display: flex;justify-content: space-between;gap: 13px;">
+          <!-- RECEIPT SEARCH — static HTML, always visible -->
+          <div id="_grsWrap" style="position:relative;flex-shrink:0;">
+            <button id="_grsToggleBtn" onclick="window._grsToggle()" title="Search by Receipt ID"
+              style="background:rgba(247,160,26,0.1);border:1.5px solid rgba(247,160,26,0.35);border-radius:8px;padding:7px 11px;cursor:pointer;color:#f7a01a;font-size:13px;box-shadow:none;display:flex;align-items:center;gap:5px;">
+              <i class="fa-solid fa-receipt" style="font-size:13px;"></i>
+              <span style="font-size:11px;font-weight:600;">Receipt</span>
+            </button>
+            <div id="_grsBox" style="display:none;position:fixed;top:58px;right:12px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.22);border:1.5px solid #e8e8e8;padding:14px 16px;width:290px;z-index:99999;">
+              <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">&#x1F9FE; Receipt Quick Find</div>
+              <input id="_grsInput" placeholder="Type MNR-001 or member name..."
+                style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:Poppins,sans-serif;outline:none;box-sizing:border-box;"
+                oninput="window._grsSearch(this.value)" />
+              <div id="_grsResults" style="margin-top:8px;max-height:220px;overflow-y:auto;"></div>
+            </div>
+          </div>
           <div>
             <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark/light mode"
               style="flex-shrink:0;background:rgba(0,0,0,0.06);border:none;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:14px;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1),background 0.2s;">
@@ -3763,6 +3790,10 @@
                 <option>User</option>
                 <option>Admin</option>
               </select>
+            </div>
+            <div>
+              <label>Date of Birth <span style="font-size:10px;color:#aaa;font-weight:400;">(optional — for birthday alerts)</span></label>
+              <input id="u_dob" type="date" style="margin-bottom:0;" />
             </div>
           </div>
           <button onclick="addUser()">
@@ -5307,6 +5338,37 @@
       if (!document.hidden) _checkAdminSession();
     });
 
+    // FIX: Show session-expiry warning banner if admin leaves tab open long
+    (function _sessionExpiryBannerInit() {
+      var _bannerShown = false;
+      function _checkExpiry() {
+        var s = JSON.parse(localStorage.getItem("session") || "null");
+        var banner = document.getElementById("_sessionExpiryBanner");
+        if (!banner) return;
+        if (!s || !s.expiry) return;
+        var remaining = s.expiry - Date.now();
+        var msgEl = document.getElementById("_sessionExpiryBannerMsg");
+        if (remaining > 0 && remaining < 5 * 60 * 1000) {
+          if (!_bannerShown) {
+            _bannerShown = true;
+            banner.style.display = "flex";
+            var minsLeft = Math.ceil(remaining / 60000);
+            if (msgEl) msgEl.textContent = "⚠️ Session expires in ~" + minsLeft + " min. Save your work before it logs out.";
+          }
+        } else if (remaining <= 0) {
+          banner.style.display = "none";
+          _bannerShown = false;
+        } else {
+          // More than 5 mins remaining — hide if previously shown
+          if (_bannerShown) {
+            banner.style.display = "none";
+            _bannerShown = false;
+          }
+        }
+      }
+      setInterval(_checkExpiry, 30000); // check every 30s
+    })();
+
     function showUser() {
       let s = JSON.parse(localStorage.getItem("session"));
       if (!s) return;
@@ -5641,7 +5703,7 @@
       if (newVal !== confirmVal)  { _admCpMsg("New passwords do not match."); return; }
       if (newVal === currentVal)  { _admCpMsg("New password must be different from current."); return; }
       let btn = document.getElementById("adm_cp_save_btn");
-      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...'; }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...'; btn._noAutoLoad = true; }
       try {
         let s = JSON.parse(localStorage.getItem("session") || "null");
         if (!s) { _admCpMsg("Session expired."); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-key"></i> Update Password'; } return; }
@@ -5769,6 +5831,10 @@
       }
       if (id === "galleryAdminPage") loadGalleryAdmin();
       if (id === "announcementPage") loadAnnouncementAdmin();
+      // DRAFT: restore contribution draft when navigating to contribution page
+      if (id === "contributionPage") {
+        setTimeout(function() { if (typeof _restoreDraft === "function") _restoreDraft(); }, 250);
+      }
     }
 
     /* ══════════════════════════════
@@ -6395,6 +6461,18 @@
       "December",
     ];
 
+    /* PERF: shared year-options builder — replaces repeated inline loops */
+    function _buildYearOpts(selectedYear, minYear, maxYear) {
+      minYear = minYear || 2023;
+      maxYear = maxYear || (new Date().getFullYear() + 1);
+      selectedYear = selectedYear || new Date().getFullYear();
+      var opts = '';
+      for (var y = maxYear; y >= minYear; y--) {
+        opts += '<option value="' + y + '"' + (y === Number(selectedYear) ? ' selected' : '') + '>' + y + '</option>';
+      }
+      return opts;
+    }
+
     function loadYearSummary() {
       // Show loading, hide everything else
       _ysShow("ys_loading");
@@ -6540,7 +6618,7 @@
 
       // This-month vs last-month trend
       const now = new Date();
-      const MOS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      const MOS = MONTHS; // PERF: reuse global
       const curMonth = MOS[now.getMonth()];
       const curYear = now.getFullYear();
       const lastMonthIdx = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
@@ -7078,6 +7156,24 @@
         });
       }
 
+      // BIRTHDAY: inject upcoming birthdays
+      (function() {
+        if (typeof users === "undefined" || !users.length) return;
+        var today = new Date();
+        users.forEach(function(u) {
+          if (!u.DOB || String(u.Role||"").toLowerCase() === "admin") return;
+          var parts, mm, dd;
+          if (/^\d{2}-\d{2}-\d{4}$/.test(u.DOB)) { parts = u.DOB.split("-"); dd=Number(parts[0]); mm=Number(parts[1]); }
+          else if (/^\d{4}-\d{2}-\d{2}$/.test(u.DOB)) { parts = u.DOB.split("-"); dd=Number(parts[2]); mm=Number(parts[1]); }
+          else return;
+          var bday = new Date(today.getFullYear(), mm-1, dd);
+          if (bday < today) bday.setFullYear(today.getFullYear()+1);
+          var diff = Math.round((bday - today) / 86400000);
+          if (diff === 0) alerts.push({ type:"birthday", text:"🎂 Today is " + u.Name + "'s birthday!", sub:"Consider sending a greeting" });
+          else if (diff <= 7) alerts.push({ type:"birthday", text:"🎂 " + u.Name + "'s birthday in " + diff + " day" + (diff>1?"s":""), sub:"" });
+        });
+      })();
+
       // All clear
       if (alerts.length === 0) {
         alerts.push({ type: "ok", text: "All clear — everything looks good!", sub: "" });
@@ -7094,10 +7190,10 @@
       }
 
       el.innerHTML = alerts.map(function(a) {
-        var bg  = a.type === "warn" ? "#fffbeb" : a.type === "info" ? "#eff6ff" : "#f0fdf4";
-        var bc  = a.type === "warn" ? "#fde68a" : a.type === "info" ? "#bfdbfe" : "#bbf7d0";
-        var ic  = a.type === "warn" ? "fa-triangle-exclamation" : a.type === "info" ? "fa-circle-info" : "fa-circle-check";
-        var ic2 = a.type === "warn" ? "#d97706" : a.type === "info" ? "#2563eb" : "#16a34a";
+        var bg  = a.type === "warn" ? "#fffbeb" : a.type === "info" ? "#eff6ff" : a.type === "birthday" ? "#fdf4ff" : "#f0fdf4";
+        var bc  = a.type === "warn" ? "#fde68a" : a.type === "info" ? "#bfdbfe" : a.type === "birthday" ? "#e9d5ff" : "#bbf7d0";
+        var ic  = a.type === "warn" ? "fa-triangle-exclamation" : a.type === "info" ? "fa-circle-info" : a.type === "birthday" ? "fa-cake-candles" : "fa-circle-check";
+        var ic2 = a.type === "warn" ? "#d97706" : a.type === "info" ? "#2563eb" : a.type === "birthday" ? "#9333ea" : "#16a34a";
         var cursor = a.action ? "cursor:pointer;" : "";
         var onclick = a.action ? ' onclick="' + a.action + '"' : "";
         return '<div style="background:' + bg + ';border:1px solid ' + bc + ';border-radius:8px;padding:9px 12px;margin-bottom:7px;' + cursor + '"' + onclick + '>' +
@@ -7168,10 +7264,7 @@
     function updateSidebarSummary() {
       const now = new Date();
       const curYear = now.getFullYear();
-      const MOS = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December",
-      ];
+      const MOS = MONTHS; // PERF: reuse global
       const curMonth = MOS[now.getMonth()];
 
       // All contributions this month/year
@@ -7290,20 +7383,7 @@
     }
 
     function sendWhatsAppReport(type) {
-      const MOS = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
+      const MOS = MONTHS; // PERF: reuse global
       let waMonth = document.getElementById("wa_month");
       let waYear = document.getElementById("wa_year");
       const selMonth = waMonth ? waMonth.value : MOS[new Date().getMonth()];
@@ -7411,20 +7491,7 @@
       // Generate dashboard PDF then open WhatsApp with summary text
       let waMonth = document.getElementById("wa_month");
       let waYear = document.getElementById("wa_year");
-      const MOS = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
+      const MOS = MONTHS;
       const selMonth = waMonth ? waMonth.value : MOS[new Date().getMonth()];
       const selYear = waYear
         ? Number(waYear.value)
@@ -8085,20 +8152,7 @@
         ey.innerHTML = yOpts;
         ey.value = String(cur);
       }
-      let MONTHS = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
+      // PERF: reuse global MONTHS
       let mOpts =
         `<option value="">All Months</option>` +
         MONTHS.map((m) => `<option value="${m}">${m}</option>`).join("");
@@ -8273,6 +8327,22 @@
         if (st === "inactive") return `<span class="badge badge-red">Inactive</span>`;
         return `<span class="badge badge-green">${escapeHtml(u.Status || "Active")}</span>`;
       };
+      if (items.length === 0) {
+        const sv = (document.getElementById("userSearchInput")?.value || "").trim();
+        document.getElementById("userTable").innerHTML = sv
+          ? `<tr><td colspan="6" style="text-align:center;padding:36px 20px;">
+              <div style="font-size:2rem;margin-bottom:8px;">🔍</div>
+              <div style="font-weight:600;color:#334155;font-size:14px;margin-bottom:4px;">No members match "${sv}"</div>
+              <div style="color:#94a3b8;font-size:12px;">Try a different name or mobile number</div>
+            </td></tr>`
+          : `<tr><td colspan="6" style="text-align:center;padding:36px 20px;">
+              <div style="font-size:2rem;margin-bottom:8px;">👥</div>
+              <div style="font-weight:600;color:#334155;font-size:14px;margin-bottom:4px;">No members yet</div>
+              <div style="color:#94a3b8;font-size:12px;margin-bottom:14px;">Add a member using the form above</div>
+            </td></tr>`;
+        _buildPagination("users_pagination", 1, 0, "_gotoUsersPage");
+        return;
+      }
       document.getElementById("userTable").innerHTML = items.map(u => {
         const st = String(u.Status || "Active").toLowerCase();
         const isPending = st === "pending";
@@ -8439,6 +8509,10 @@
         <input class="_fi" id="eu_monthly_target" type="number" min="0"
           placeholder="e.g. 500 (leave 0 for no target)"
           value="${Number(u.MonthlyTarget || 0) || 0}"/>
+        <label class="_fl">Date of Birth
+          <span style="color:#bbb;font-weight:400;font-size:10px;">— for birthday alerts on dashboard</span>
+        </label>
+        <input class="_fi" type="date" id="eu_dob" value="${escapeHtml(u.DOB || '')}" style="margin-bottom:0;"/>
       </div>
       <div class="_mft">
         <button class="_mbtn" style="background:#999;" onclick="closeModal();_adminPendingCroppedB64='';">Cancel</button>
@@ -8468,6 +8542,7 @@
               Email: document.getElementById("eu_email").value,
               Status: document.getElementById("eu_status").value,
               MonthlyTarget: Number(document.getElementById("eu_monthly_target")?.value || 0),
+              DOB: document.getElementById("eu_dob")?.value || "",
               AdminName: s.name,
               base64: _adminPendingCroppedB64,
               fileName: "User_" + id + "_" + Date.now() + ".jpg",
@@ -8498,6 +8573,7 @@
           Password: "",
           PhotoURL: photoURL,
           MonthlyTarget: Number(document.getElementById("eu_monthly_target")?.value || 0),
+          DOB: document.getElementById("eu_dob")?.value || "",
           AdminName: s.name,
         });
         toast(
@@ -9011,8 +9087,7 @@
       const occasionName = escapeHtml(occasionObj?.OccasionName || "— None —");
 
       // Build month options
-      const MOS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-      const monthOpts = MOS.map(m => `<option value="${m}"${m===forMonth?" selected":""}>${m}</option>`).join("");
+      const monthOpts = MONTHS.map(m => `<option value="${m}"${m===forMonth?" selected":""}>${m}</option>`).join("");
       const curY = new Date().getFullYear();
       let yearOptsP = "";
       for (let y = curY+1; y >= 2023; y--) yearOptsP += `<option value="${y}"${y===Number(year)?" selected":""}>${y}</option>`;
@@ -9094,7 +9169,7 @@
 
     async function _submitContributionFromPreview() {
       const btn = document.getElementById("prev_submitBtn");
-      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; btn._noAutoLoad = true; }
       const userId = document.getElementById("prev_user").value;
       const amount = document.getElementById("prev_amount").value;
       const year = document.getElementById("prev_year").value;
@@ -9124,15 +9199,21 @@
           toast(msg);
           document.getElementById("amount").value = "";
           document.getElementById("note").value = "";
-          // Reset month, type, occasion, paymentMode to defaults
+          // UX FIX: Reset all form fields to defaults after save
+          const _now2 = new Date();
+          const _curMonth = MONTHS[_now2.getMonth()];
           const _mEl = document.getElementById("month");
-          const _now = new Date();
-          const _curMonth = ["January","February","March","April","May","June","July","August","September","October","November","December"][_now.getMonth()];
           if (_mEl) _mEl.value = _curMonth;
           const _pmEl = document.getElementById("paymentMode");
           if (_pmEl) _pmEl.value = "UPI";
           const _occEl = document.getElementById("occasion");
           if (_occEl) _occEl.selectedIndex = 0;
+          const _yrEl = document.getElementById("contribYear");
+          if (_yrEl) _yrEl.value = String(_now2.getFullYear());
+          const _typeEl = document.getElementById("type");
+          if (_typeEl) _typeEl.selectedIndex = 0;
+          // clear draft
+          try { localStorage.removeItem("_contrib_draft"); } catch(e){}
           smartRefresh("contributions");
           _dashSyncFromAdmin();
         } else {
@@ -9146,15 +9227,32 @@
     }
     async function del(id) {
       if (!checkSession()) return;
+      // UNDO: capture contribution before confirm dialog
+      const _undoC = (typeof data !== "undefined") ? data.find(c => String(c.Id) === String(id)) : null;
+      const _undoLabel = _undoC ? ("₹" + Number(_undoC.Amount||0).toLocaleString("en-IN") + " — " + (_undoC.ForMonth||"") + " " + (_undoC.Year||"")) : "Contribution";
+      const _undoSaved = _undoC ? JSON.parse(JSON.stringify(_undoC)) : null;
       confirmModal("Delete this contribution?", async () => {
         try {
           const _s = JSON.parse(localStorage.getItem("session") || "{}");
           let res = await postData({ action: "deleteContribution", Id: id, sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
-          toast(
-            res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            res.status === "deleted" ? "" : "error"
-          );
-          smartRefresh("contributions");
+          if (res.status === "deleted") {
+            smartRefresh("contributions");
+            // UNDO: show toast with undo option
+            if (typeof _showUndoToast === "function") {
+              _showUndoToast(_undoLabel, function() {
+                if (_undoSaved) {
+                  var payload = Object.assign({ action: "addContribution" }, _undoSaved);
+                  delete payload.ReceiptID;
+                  postData(payload).then(function() {
+                    smartRefresh("contributions");
+                    toast("↩ Contribution restored.");
+                  });
+                }
+              });
+            }
+          } else {
+            toast("❌ Delete failed.", "error");
+          }
         } catch (err) {
           toast("❌ " + err.message, "error");
         }
@@ -9505,6 +9603,7 @@
       if (!/^\d{10}$/.test(mobile))
         return toast("Mobile must be exactly 10 digits.", "error");
       try {
+        let dob = (document.getElementById("u_dob")?.value || "").trim();
         let res = await postData({
           action: "addUser",
           UserId: Date.now(),
@@ -9513,6 +9612,7 @@
           Password: pass,
           Email: email,
           Role: role,
+          DOB: dob,
         });
         if (res.status === "error") toast("❌ " + res.message, "error");
         else {
@@ -9521,6 +9621,8 @@
           document.getElementById("u_mobile").value = "";
           document.getElementById("u_password").value = "";
           document.getElementById("u_email").value = "";
+          const _dobEl = document.getElementById("u_dob");
+          if (_dobEl) _dobEl.value = "";
           smartRefresh("users");
         }
       } catch (err) {
@@ -10819,6 +10921,7 @@
     function exportExpenseCSV() {
       toast("⏳ Preparing expenses CSV...", "warn");
       setTimeout(function() {
+      const txt = (document.getElementById("searchExpense")?.value || "").toLowerCase(); // FIX: was undefined
       const yr = document.getElementById("expFilterYear")?.value || "";
       const mo = document.getElementById("expFilterMonth")?.value || "";
 
@@ -11182,20 +11285,7 @@
 
     /* ═══ FIX 5: MANUAL WALK-IN CONTRIBUTION (no user account) ═══ */
     function openWalkInContribution() {
-      const months = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
+      const months = MONTHS; // PERF: reuse global
       const curY = new Date().getFullYear();
       let yearOpts = "";
       for (let y = curY + 1; y >= 2023; y--)
@@ -11278,7 +11368,7 @@
       if (!amount || Number(amount) <= 0) return toast("Please enter a valid amount.", "error");
 
       // Build options for inline editing in preview
-      const MOS2 = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      const MOS2 = MONTHS; // PERF: reuse global
       const monthOptsWI = `<option value="">— All / General —</option>` + MOS2.map(m=>`<option value="${m}"${m===month?" selected":""}>${m}</option>`).join("");
       const curY2 = new Date().getFullYear();
       let yearOptsWI = "";
@@ -11365,7 +11455,7 @@
 
     async function _submitWalkInFromPreview() {
       const btn = document.getElementById("wprev_submitBtn");
-      if (btn) { btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; }
+      if (btn) { btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; btn._noAutoLoad = true; }
       const name = (document.getElementById("wprev_name")?.value||"").trim();
       const mobile = (document.getElementById("wprev_mobile")?.value||"").trim();
       const email = (document.getElementById("wprev_email")?.value||"").trim();
@@ -11429,7 +11519,7 @@
        Walk-in donors are excluded from pending (anonymous).
        ═══════════════════════════════════════════════════════ */
     function initTrackerDropdowns() {
-      const MOS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const MOS = MONTHS; // PERF: reuse global
       const now = new Date();
 
       // Type dropdown
@@ -11805,12 +11895,11 @@
 
     function initEmailAutoPage() {
       // Populate month/year dropdowns for manual send
-      const MOS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       const now = new Date();
       const mSel = document.getElementById("ea_test_month");
       const ySel = document.getElementById("ea_test_year");
       if (mSel && mSel.options.length === 0) {
-        MOS.forEach((m, i) => {
+        MONTHS.forEach((m, i) => {
           const o = document.createElement("option");
           o.value = m; o.textContent = m;
           if (i === now.getMonth()) o.selected = true;
@@ -12490,24 +12579,21 @@
     }
 
     function downloadLocalBackup() {
-      // Download all contributions as CSV
-      if (typeof window._allContributions !== "undefined" && window._allContributions) {
-        const data = window._allContributions;
-        if (data.length === 0) { toast("No data to download.", "warn"); return; }
-        const headers = Object.keys(data[0]).join(",");
-        const rows = data.map(r => Object.values(r).map(v => '"' + String(v || "").replace(/"/g, '""') + '"').join(",")).join("\n");
-        const csv = headers + "\n" + rows;
-        const blob = new Blob([csv], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = "Mandir_Backup_" + new Date().toISOString().slice(0, 10) + ".csv";
-        a.click(); URL.revokeObjectURL(url);
-        localStorage.setItem(_DL_KEY, String(Date.now()));
-        toast("✅ Local backup downloaded!", "success");
-        _checkLocalDownloadReminder();
-      } else {
-        toast("Load dashboard data first, then download.", "warn");
-      }
+      // Download all contributions as CSV — FIX: use 'data' global directly
+      const _backupData = (typeof data !== "undefined" && data && data.length) ? data :
+        (typeof window._allContributions !== "undefined" && window._allContributions ? window._allContributions : []);
+      if (_backupData.length === 0) { toast("No data to download. Load the page first.", "warn"); return; }
+      const headers = Object.keys(_backupData[0]).join(",");
+      const rows = _backupData.map(r => Object.values(r).map(v => '"' + String(v || "").replace(/"/g, '""') + '"').join(",")).join("\n");
+      const csv = headers + "\n" + rows;
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "Mandir_Backup_" + new Date().toISOString().slice(0, 10) + ".csv";
+      a.click(); URL.revokeObjectURL(url);
+      localStorage.setItem(_DL_KEY, String(Date.now()));
+      toast("✅ Local backup downloaded!", "success");
+      _checkLocalDownloadReminder();
     }
 
     // ── H5: Annual Year Report PDF export
@@ -12864,7 +12950,7 @@
     var _dash_calTarget = "start";
     var _dash_calYear   = new Date().getFullYear();
     var _dash_calMonth  = new Date().getMonth();
-    var _dash_months    = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    var _dash_months    = MONTHS; // PERF: reuse global
 
     // ── Called once when admin first opens Dashboard page
     function initDashboardView() {
@@ -14099,11 +14185,14 @@
 
         if (result && typeof result.then === 'function') {
           // It's async — show loading
-          if (btn) _setBtnLoading(btn, fnName);
+          // _noAutoLoad flag: set by functions that manage their own spinner manually
+          // (saveAdminNewPassword, _submitContributionFromPreview, _submitWalkInFromPreview)
+          // Skipping _setBtnLoading for these prevents a double-spinner conflict.
+          if (btn && !btn._noAutoLoad) _setBtnLoading(btn, fnName);
           result.then(() => {
-            if (btn) { _resetBtn(btn); _flashSuccess(btn); }
+            if (btn && !btn._noAutoLoad) { _resetBtn(btn); _flashSuccess(btn); }
           }).catch(() => {
-            if (btn) _resetBtn(btn);
+            if (btn && !btn._noAutoLoad) _resetBtn(btn);
           });
         }
         return result;
@@ -14140,6 +14229,367 @@
       if (!li) return;
       li.style.transition = 'background 0.08s';
     });
+
+  })();
+  </script>
+
+
+  <!-- ══ NEW FEATURES: Receipt Search · Undo Delete · Print Receipt · Offline · Draft · Birthday ══ -->
+  <script>
+  (function() {
+    "use strict";
+
+    /* ════════════════════════════════════════════════════════
+       FEATURE 1 — GLOBAL RECEIPT SEARCH
+       Floating pill in header — type MNR-001, finds & opens receipt.
+       Completely isolated from all other logic.
+    ════════════════════════════════════════════════════════ */
+    function _injectReceiptSearchPill() {
+      var header = document.querySelector(".header");
+      if (!header || document.getElementById("_grsWrap")) return;
+
+      var wrap = document.createElement("div");
+      wrap.id = "_grsWrap";
+      wrap.style.cssText = "position:relative;flex-shrink:0;";
+      wrap.innerHTML =
+        '<button id="_grsToggleBtn" title="Search by Receipt ID" onclick="_grsToggle()" ' +
+        'style="background:rgba(247,160,26,0.1);border:1.5px solid rgba(247,160,26,0.35);' +
+        'border-radius:8px;padding:7px 11px;cursor:pointer;color:#f7a01a;font-size:13px;' +
+        'box-shadow:none;transition:all 0.2s;display:flex;align-items:center;gap:6px;">' +
+        '<i class="fa-solid fa-magnifying-glass"></i>' +
+        '<span style="font-size:11px;font-weight:600;display:none;" id="_grsBtnLabel">Receipt</span>' +
+        '</button>' +
+        '<div id="_grsBox" style="display:none;position:absolute;right:0;top:calc(100% + 8px);' +
+        'background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);' +
+        'border:1.5px solid #f0f0f0;padding:12px 14px;min-width:270px;z-index:9999;">' +
+        '<div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;' +
+        'letter-spacing:1px;margin-bottom:8px;">🧾 Receipt Quick Find</div>' +
+        '<input id="_grsInput" placeholder="Type MNR-001 or TRX-..." ' +
+        'style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;' +
+        'font-size:13px;font-family:Poppins,sans-serif;outline:none;box-sizing:border-box;" ' +
+        'oninput="_grsSearch(this.value)" onkeydown="if(event.key==='Escape')_grsClose()"/>' +
+        '<div id="_grsResults" style="margin-top:8px;max-height:200px;overflow-y:auto;"></div>' +
+        '</div>';
+
+        // Insert directly before the right-side group in the header
+      var rightGroup = header.querySelector('[style*="position: relative"]') ||
+                       header.querySelector('[style*="position:relative"]');
+      if (rightGroup) {
+        header.insertBefore(wrap, rightGroup);
+      } else {
+        header.appendChild(wrap);
+      }
+
+      // Close on outside click
+      document.addEventListener("click", function(e) {
+        if (!wrap.contains(e.target)) _grsClose();
+      });
+    }
+
+    window._grsToggle = function() {
+      var box = document.getElementById("_grsBox");
+      if (!box) return;
+      var open = box.style.display !== "none";
+      box.style.display = open ? "none" : "block";
+      if (!open) {
+        var inp = document.getElementById("_grsInput");
+        if (inp) { inp.value = ""; inp.focus(); }
+        document.getElementById("_grsResults").innerHTML = "";
+      }
+    };
+
+    window._grsClose = function() {
+      var box = document.getElementById("_grsBox");
+      if (box) box.style.display = "none";
+    };
+
+    window._grsSearch = function(val) {
+      var res = document.getElementById("_grsResults");
+      if (!res) return;
+      val = (val || "").trim().toLowerCase();
+      if (!val) { res.innerHTML = ""; return; }
+
+      // Search in receipt store (_receiptStore in app.js)
+      var store = window._receiptStore || {};
+      var matches = [];
+      Object.keys(store).forEach(function(rid) {
+        var d = store[rid];
+        if (!d) return;
+        var receiptId = ((d.c && d.c.ReceiptID) || rid).toLowerCase();
+        var name = (d.userName || "").toLowerCase();
+        if (receiptId.includes(val) || name.includes(val)) {
+          matches.push({ rid: rid, d: d });
+        }
+      });
+
+      // Also search main data array
+      if (typeof data !== "undefined") {
+        var APP_PREFIX = (typeof APP !== "undefined" && APP.receiptPrefix) ? APP.receiptPrefix : "MNR";
+        data.forEach(function(c) {
+          if (!c.ReceiptID) return;
+          var displayRid = c.ReceiptID.replace(/^TRX-/, APP_PREFIX + "-").toLowerCase();
+          if (displayRid.includes(val) || c.ReceiptID.toLowerCase().includes(val)) {
+            // Check not already in matches
+            if (!matches.some(function(m) { return m.rid === c.ReceiptID; })) {
+              var u = (typeof users !== "undefined") ? users.find(function(x) { return String(x.UserId) === String(c.UserId); }) : null;
+              matches.push({ rid: c.ReceiptID, label: displayRid.toUpperCase(), name: u ? u.Name : "Walk-in", amount: c.Amount, month: c.ForMonth });
+            }
+          }
+        });
+      }
+
+      if (!matches.length) {
+        res.innerHTML = '<div style="color:#94a3b8;font-size:12px;padding:8px 4px;">No receipt found for "' + val + '"</div>';
+        return;
+      }
+
+      res.innerHTML = matches.slice(0, 8).map(function(m) {
+        var label = m.label || ((m.d && m.d.c && m.d.c.ReceiptID) || m.rid);
+        var name  = m.name || (m.d && m.d.userName) || "";
+        var amt   = m.amount || (m.d && m.d.c && m.d.c.Amount) || "";
+        var mo    = m.month  || (m.d && m.d.c && m.d.c.ForMonth) || "";
+        return '<div onclick="_grsOpen('' + m.rid + '')" style="display:flex;align-items:center;' +
+               'justify-content:space-between;padding:8px 10px;border-radius:8px;cursor:pointer;' +
+               'transition:background 0.15s;border:1px solid #f0f0f0;margin-bottom:5px;" ' +
+               'onmouseover="this.style.background='#fef9f0'" onmouseout="this.style.background='#fff'">' +
+               '<div><div style="font-size:11px;font-weight:700;color:#f7a01a;font-family:monospace;">' +
+               label + '</div><div style="font-size:11px;color:#334155;">' + name + (mo ? ' · ' + mo : '') + '</div></div>' +
+               (amt ? '<div style="font-size:12px;font-weight:700;color:#27ae60;">₹' + Number(amt).toLocaleString("en-IN") + '</div>' : '') +
+               '</div>';
+      }).join("");
+    };
+
+    window._grsOpen = function(rid) {
+      _grsClose();
+      if (typeof showReceiptById === "function") {
+        showReceiptById(rid);
+      } else if (typeof viewDashboardEntry === "function") {
+        viewDashboardEntry(rid);
+      }
+    };
+
+    // Wire outside-click handler for receipt search
+    if (document.readyState === "complete") {
+      _injectReceiptSearchPill();
+    } else {
+      document.addEventListener("DOMContentLoaded", _injectReceiptSearchPill);
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       FEATURE 3 — UNDO LAST DELETE (30-second window)
+       Works for contributions and goals. In-memory only.
+       Wraps del() and deleteGoal() — no API change needed.
+    ════════════════════════════════════════════════════════ */
+    var _undoQueue = null; // { type, payload, label, timer }
+
+    function _showUndoToast(label, undoFn) {
+      // Remove existing undo toast if any
+      var ex = document.getElementById("_undoToast");
+      if (ex) ex.remove();
+      if (_undoQueue && _undoQueue.timer) clearTimeout(_undoQueue.timer);
+
+      var toast = document.createElement("div");
+      toast.id = "_undoToast";
+      toast.style.cssText =
+        "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);" +
+        "background:#1e293b;color:#fff;padding:12px 20px;border-radius:12px;" +
+        "font-size:13px;font-family:Poppins,sans-serif;z-index:99999;" +
+        "display:flex;align-items:center;gap:14px;box-shadow:0 8px 28px rgba(0,0,0,0.3);" +
+        "animation:_undoFadeIn 0.25s ease;";
+      toast.innerHTML =
+        '<span>🗑️ ' + label + ' deleted</span>' +
+        '<button onclick="_doUndo()" style="background:#f7a01a;border:none;color:#fff;' +
+        'padding:5px 14px;border-radius:7px;cursor:pointer;font-weight:700;font-size:12px;' +
+        'font-family:Poppins,sans-serif;box-shadow:none;">↩ Undo</button>' +
+        '<div id="_undoProgress" style="position:absolute;bottom:0;left:0;height:3px;' +
+        'background:#f7a01a;border-radius:0 0 12px 12px;width:100%;' +
+        'transition:width 30s linear;"></div>';
+      document.body.appendChild(toast);
+
+      // Animate progress bar
+      requestAnimationFrame(function() {
+        var bar = document.getElementById("_undoProgress");
+        if (bar) { bar.style.transition = "width 30s linear"; bar.style.width = "0%"; }
+      });
+
+      _undoQueue = {
+        undoFn: undoFn,
+        timer: setTimeout(function() {
+          var t = document.getElementById("_undoToast");
+          if (t) t.remove();
+          _undoQueue = null;
+        }, 30000)
+      };
+    }
+
+    window._doUndo = function() {
+      if (!_undoQueue) return;
+      clearTimeout(_undoQueue.timer);
+      var fn = _undoQueue.undoFn;
+      _undoQueue = null;
+      var t = document.getElementById("_undoToast");
+      if (t) t.remove();
+      if (typeof fn === "function") fn();
+    };
+
+    // Undo is wired directly into del() function body below — no patch needed here
+
+    // Inject undo animation keyframes
+    var undoStyle = document.createElement("style");
+    undoStyle.textContent = "@keyframes _undoFadeIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }";
+    document.head.appendChild(undoStyle);
+
+
+    /* ════════════════════════════════════════════════════════
+       FEATURE 5 — PRINT RECEIPT
+       app.js showReceipt() already includes a Print button (purple,
+       calls printReceipt(rid)) that opens a full styled print window.
+       The showReceipt wrapper injection has been removed to prevent a
+       duplicate grey Print button alongside the existing one.
+    ════════════════════════════════════════════════════════ */
+
+
+        /* ════════════════════════════════════════════════════════
+       FEATURE 6 — OFFLINE NETWORK STATUS BANNER
+    ════════════════════════════════════════════════════════ */
+    function _updateOfflineBanner() {
+      var b = document.getElementById("_offlineBanner");
+      if (!b) return;
+      if (!navigator.onLine) {
+        b.style.display = "flex";
+        // Push sticky header down so banner is visible above it
+        var hdr = document.querySelector(".header");
+        if (hdr) hdr.style.top = "36px";
+      } else {
+        b.style.display = "none";
+        var hdr = document.querySelector(".header");
+        if (hdr) hdr.style.top = "";
+      }
+    }
+    window.addEventListener("online",  _updateOfflineBanner);
+    window.addEventListener("offline", _updateOfflineBanner);
+    document.addEventListener("DOMContentLoaded", _updateOfflineBanner);
+
+
+    /* ════════════════════════════════════════════════════════
+       FEATURE 7 — AUTO-SAVE DRAFT FOR CONTRIBUTION FORM
+       Saves: user, amount, month, year, type, occasion, note, paymentMode
+       Restores on page load. Clears on successful save.
+    ════════════════════════════════════════════════════════ */
+    var _DRAFT_KEY = "_contrib_draft";
+    var _DRAFT_FIELDS = ["user","amount","month","contribYear","type","occasion","note","paymentMode"];
+
+    function _saveDraft() {
+      var draft = {};
+      _DRAFT_FIELDS.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) draft[id] = el.value;
+      });
+      // Only save if something is filled
+      if (draft.amount || draft.note) {
+        try { localStorage.setItem(_DRAFT_KEY, JSON.stringify(draft)); } catch(e) {}
+      }
+    }
+
+    function _restoreDraft() {
+      try {
+        var raw = localStorage.getItem(_DRAFT_KEY);
+        if (!raw) return;
+        var draft = JSON.parse(raw);
+        var hasData = false;
+        _DRAFT_FIELDS.forEach(function(id) {
+          if (draft[id]) {
+            var el = document.getElementById(id);
+            if (el) { el.value = draft[id]; hasData = true; }
+          }
+        });
+        if (hasData) {
+          // Show a subtle banner that draft was restored
+          var contribPage = document.getElementById("contributionPage");
+          if (contribPage && !document.getElementById("_draftBanner")) {
+            var banner = document.createElement("div");
+            banner.id = "_draftBanner";
+            banner.style.cssText =
+              "background:linear-gradient(90deg,#fef9ec,#fef3c7);border:1px solid #fde68a;" +
+              "border-radius:8px;padding:8px 14px;font-size:12px;color:#92400e;" +
+              "display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;";
+            banner.innerHTML =
+              '<span><i class="fa-solid fa-clock-rotate-left" style="margin-right:6px;"></i>' +
+              'Draft restored from your last session</span>' +
+              '<button onclick="localStorage.removeItem('' + _DRAFT_KEY + '');this.parentElement.remove();" ' +
+              'style="background:none;border:none;color:#92400e;cursor:pointer;font-size:12px;' +
+              'font-weight:700;padding:0;box-shadow:none;">✕ Clear</button>';
+            var firstCard = contribPage.querySelector(".card");
+            if (firstCard) firstCard.insertBefore(banner, firstCard.firstChild);
+          }
+        }
+      } catch(e) {}
+    }
+
+    // Wire up auto-save on input — FIX: use load event so all fields exist
+    function _initDraftWatcher() {
+      var debouncedSave = null;
+      function _draftDebounce() {
+        clearTimeout(debouncedSave);
+        debouncedSave = setTimeout(_saveDraft, 800);
+      }
+      _DRAFT_FIELDS.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.addEventListener("input",  _draftDebounce);
+          el.addEventListener("change", _draftDebounce);
+        }
+      });
+
+      // Draft restore is called directly in showPage() — no wrapper needed here
+    }
+    if (document.readyState === "complete") {
+      setTimeout(_initDraftWatcher, 200);
+    } else {
+      window.addEventListener("load", function() { setTimeout(_initDraftWatcher, 200); });
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       FEATURE 8 — BIRTHDAY ALERTS ON DASHBOARD
+       Reads u.DOB from users array, shows in Smart Alerts.
+    ════════════════════════════════════════════════════════ */
+    function _getBirthdayAlerts() {
+      if (typeof users === "undefined" || !users.length) return [];
+      var today = new Date();
+      var todayMM = today.getMonth() + 1;
+      var todayDD = today.getDate();
+      var alerts = [];
+
+      users.forEach(function(u) {
+        if (!u.DOB || String(u.Role || "").toLowerCase() === "admin") return;
+        // DOB format: DD-MM-YYYY or YYYY-MM-DD
+        var parts, mm, dd;
+        if (/^\d{2}-\d{2}-\d{4}$/.test(u.DOB)) {
+          parts = u.DOB.split("-"); dd = Number(parts[0]); mm = Number(parts[1]);
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(u.DOB)) {
+          parts = u.DOB.split("-"); dd = Number(parts[2]); mm = Number(parts[1]);
+        } else { return; }
+
+        var daysUntil = 0;
+        var thisBday = new Date(today.getFullYear(), mm - 1, dd);
+        if (thisBday < today) thisBday.setFullYear(today.getFullYear() + 1);
+        daysUntil = Math.round((thisBday - today) / 86400000);
+
+        if (daysUntil === 0) {
+          alerts.push({ type: "birthday", days: 0, name: u.Name, text: "🎂 Today is " + u.Name + "'s birthday! Consider sending a greeting." });
+        } else if (daysUntil <= 7) {
+          alerts.push({ type: "birthday", days: daysUntil, name: u.Name, text: "🎂 " + u.Name + "'s birthday in " + daysUntil + " day" + (daysUntil > 1 ? "s" : "") + "." });
+        }
+      });
+
+      // Sort by days
+      alerts.sort(function(a, b) { return a.days - b.days; });
+      return alerts;
+    }
+
+    // Birthday alerts are injected directly inside _hmRenderAlerts — no patch needed here
 
   })();
   </script>

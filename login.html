@@ -386,9 +386,14 @@
           <input type="text" id="reg_village" placeholder="Your village or town" maxlength="100"/>
         </div>
         <span class="field-label">Full Address <span style="color:#bbb;font-weight:400;">(optional)</span></span>
-        <div class="input-group" style="margin-bottom:16px;">
+        <div class="input-group" style="margin-bottom:4px;">
           <i class="icon fa-solid fa-map-pin" style="top:18px;transform:none;"></i>
           <input type="text" id="reg_address" placeholder="Street, locality, district..." maxlength="300" style="padding-left:44px;"/>
+        </div>
+        <span class="field-label">Date of Birth <span style="color:#bbb;font-weight:400;">(optional — for birthday alerts)</span></span>
+        <div class="input-group" style="margin-bottom:16px;">
+          <i class="icon fa-solid fa-cake-candles" style="top:50%;transform:translateY(-50%);"></i>
+          <input type="date" id="reg_dob" style="padding-left:44px;cursor:pointer;" max=""/>
         </div>
         <!-- T&C checkbox — collapsed into step 1 -->
         <div id="tcRow" style="display:flex;align-items:flex-start;gap:9px;margin-bottom:16px;background:#fffbf5;border:1.5px solid #fde68a;border-radius:10px;padding:10px 12px;">
@@ -1007,7 +1012,7 @@ const REG_MAX_SENDS = 3, REG_LOCK_MS = 15 * 60 * 1000, REG_RESEND_COOLDOWN = 60;
 
 function openRegisterModal(){
   _reg = { otpKey:null, email:null, sendCount:0, sendLockUntil:0 };
-  ['reg_name','reg_mobile','reg_email','reg_password','reg_confirm','reg_village','reg_address'].forEach(id=>{
+  ['reg_name','reg_mobile','reg_email','reg_password','reg_confirm','reg_village','reg_address','reg_dob'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   clearFieldErrors();
@@ -1023,6 +1028,9 @@ function openRegisterModal(){
   document.getElementById('regHeader1').style.display='';
   document.getElementById('regHeader2').style.display='none';
   document.getElementById('registerModal').style.display='flex';
+  // Cap DOB picker at today — no future birthdates
+  const dobEl=document.getElementById('reg_dob');
+  if(dobEl) dobEl.max=new Date().toISOString().slice(0,10);
   setTimeout(()=>{const n=document.getElementById('reg_name');if(n)n.focus();},100);
 }
 function closeRegisterModal(){ document.getElementById('registerModal').style.display='none'; }
@@ -1163,12 +1171,15 @@ async function regVerifyAndSubmit(){
     const pwd=document.getElementById('reg_password').value;
     const village=document.getElementById('reg_village').value.trim();
     const address=document.getElementById('reg_address').value.trim();
+    const rawDob=document.getElementById('reg_dob')?.value||''; // YYYY-MM-DD from <input type="date">
+    // Convert YYYY-MM-DD → DD-MM-YYYY for consistent sheet storage
+    const dob=rawDob ? rawDob.split('-').reverse().join('-') : '';
     const hashedPwd=await sha256(pwd);
     const res=await postData({
       action:'registerUser',
       otpKey:_reg.otpKey, otp,
       Name:name, Mobile:mobile, Email:email,
-      Password:hashedPwd, Village:village, Address:address
+      Password:hashedPwd, Village:village, Address:address, DOB:dob
     });
     if(res&&res.status==='success'){
       clearInterval(_regResendInterval);

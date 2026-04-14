@@ -416,7 +416,16 @@ function mandirCacheBust(action) {
       instantly without waiting for the 90s poll.
    ═══════════════════════════════════════════════════════════ */
 
-window._myTabToken = Math.random().toString(36).slice(2) + Date.now();
+// FIX SEC-4: Use crypto.getRandomValues() — Math.random() is not cryptographically secure
+window._myTabToken = (function() {
+  try {
+    var arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return Array.from(arr).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('') + Date.now();
+  } catch(e) {
+    return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + Date.now();
+  }
+}());
 
 /* ── Same-browser tab kick (instant) ── */
 (function(){
@@ -1076,6 +1085,7 @@ async function sendReceiptEmailDirect(rid){
   const displayRID = _displayRID(c);
   toast("📧 Sending receipt email...","");
   try {
+    const _s = JSON.parse(localStorage.getItem("session")||"null");
     const res = await postData({
       action:        "sendContribReceiptEmail",
       receiptId:     c.ReceiptID||displayRID,
@@ -1088,7 +1098,8 @@ async function sendReceiptEmailDirect(rid){
       note:          c.Note||"",
       paymentDate:   c.PaymentDate||"",
       paymentMode:   c.PaymentMode||"",
-      userId:        c.UserId||""
+      userId:        c.UserId||"",
+      sessionToken:  _s?.sessionToken||""
     });
     if(res && res.status==="sent")     toast("✅ Receipt email sent successfully!","");
     else if(res && res.status==="no_email") toast("⚠️ No email address on record for this donor.","warn");
@@ -1463,9 +1474,11 @@ function clearRememberToken() {
 // ════════════════════════════════════════════════════════════════
 function getDataWithRetry(action, retryCount) {
   const attempt = retryCount || 0;
-  return getData(action).catch(function(err) {
+  // FIX PERF-8: Use getCached() so warm cache is returned without a network hit on retry
+  return getCached(action).catch(function(err) {
     if ((err.message || "").toLowerCase().includes("timed out") && attempt < 1) {
       if (typeof toast === "function") toast("⟳ Network slow — retrying...", "warn");
+      mandirCacheBust(action); // bust stale pending entry so retry fires fresh
       return new Promise(function(resolve, reject) {
         setTimeout(function() {
           getDataWithRetry(action, attempt + 1).then(resolve).catch(reject);

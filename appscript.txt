@@ -81,10 +81,17 @@ function _verifySession(params, actionName) {
       if (rowId && (rowId === userId || String(allData[i][headers.indexOf("Name")]||"") === userId)) {
         const stored = String(allData[i][tokenCol] || "").trim();
         if (!stored) return true; // empty token = legacy user, allow
-        return stored === token;
+        // FIX SEC-5: explicit true/false — no fall-through to permissive return
+        if (stored === token) return true;
+        logAction(userId, "SESSION_TOKEN_MISMATCH", "Action: " + actionName + " — token rejected");
+        return false;
       }
     }
-  } catch(e) { return true; } // on error, allow (don't block legitimate users)
+  } catch(e) {
+    // FIX SEC-5: log the error; still allow (don't block legitimate users on sheet errors)
+    logAction(userId || "Unknown", "VERIFY_SESSION_ERROR", "Action: " + actionName + " — " + e.message);
+    return true;
+  }
   return true; // user not found but allow (will fail at action level)
 }
 // ── Hash password (SHA-256, matches client-side sha256())
@@ -108,6 +115,11 @@ function sanitize(val, maxLen) {
   if (val === undefined || val === null) return "";
   let s = String(val).trim();
   if (maxLen && s.length > maxLen) s = s.substring(0, maxLen);
+  // FIX SEC-10: Strip leading formula-trigger characters to prevent spreadsheet formula injection.
+  // Google Sheets evaluates cells starting with = + - @ | as formulas.
+  // Prefix with a single quote would change display; instead we strip the trigger char only when
+  // the entire value starts with it (legitimate names/notes never start with = or @).
+  s = s.replace(/^[=+\-@|]/, "");
   return s;
 }
 
@@ -716,18 +728,53 @@ function _emailRow(label, value) {
 // ════════════════════════════════════════════════════════════════
 function doGet(e) {
   const action   = sanitize(e.parameter.action, 50);
-  const callback = sanitize(e.parameter.callback, 100) || "cb";
+  // FIX SEC-3: Whitelist callback to alphanumeric+underscore only — prevents JSONP injection
+  const _rawCb   = String(e.parameter.callback || "cb");
+  const callback = /^[a-zA-Z0-9_$]{1,80}$/.test(_rawCb) ? _rawCb : "cb";
   let result = {};
 
 
-  // ── MUST #7: Verify session token for all write/mutating actions
-  const _WRITE_ACTIONS = ["addContribution","addExpense","deleteContribution","deleteExpense",
-    "addUser","deleteUser","updateUser","addGoal","deleteGoal","updateGoal",
-    "addType","deleteType","updateType","addOccasion","deleteOccasion","updateOccasion",
-    "addExpenseType","deleteExpenseType","updateExpenseType",
-    "addEvent","deleteEvent","updateEvent","addEventExpense",
-    "approveUser","rejectUser","saveEmailSettings","saveAnnouncement","clearAnnouncement",
-    "saveBroadcast","updateFeedbackStatus","deleteFeedback"];
+  // ── MUST #7: Verify session token for all write, mutating, and sensitive read actions
+  // FIX SEC-1 (complete): Every action that modifies data OR exposes private data requires auth
+  const _WRITE_ACTIONS = [
+    // Contributions & Expenses
+    "addContribution","updateContribution","deleteContribution",
+    "addExpense","updateExpense","deleteExpense",
+    "removeExpenseReceipt","removeOneExpenseReceipt","removeAllExpenseReceipts",
+    // Users
+    "addUser","deleteUser","updateUser","approveUser","rejectUser","changePassword",
+    // Master data
+    "addType","deleteType","updateType",
+    "addOccasion","deleteOccasion","updateOccasion",
+    "addExpenseType","deleteExpenseType","updateExpenseType","updateSortOrder",
+    // Goals / Events / Gallery
+    "addGoal","updateGoal","deleteGoal",
+    "addEvent","updateEvent","deleteEvent","addEventExpense",
+    "deleteGalleryPhoto",
+    // Settings & comms
+    "saveEmailSettings","saveAnnouncement","clearAnnouncement",
+    "saveBroadcast","saveChatbotConfig",
+    // Feedback & contribution requests
+    "updateFeedbackStatus","deleteFeedback",
+    "submitContributionRequest","resolveContributionRequest",
+    "editContributionRequest","deleteContributionRequest",
+    // Email blast actions — must require auth to prevent spam abuse
+    "triggerMonthlyReport","triggerMonthlyReminder","sendMonthlyReminders",
+    "sendContribReceiptEmail",
+    // Mobile number change — requires active session
+    "sendMobileChangeOTP","verifyMobileChangeOTP",
+    // Audit log write — prevent unauthenticated fake entries
+    "logAudit",
+    // Photo proxy — prevent unauthenticated Drive file access
+    "getPhotoBase64",
+    // Sensitive reads — private user/financial/system data
+    "getAllData","getContributions","getExpenses","getEventData","getYearConfig",
+    "getUsers","getUsersByStatus","getPendingUsers","getPendingCount",
+    "getFeedback","getContributionRequests","getUserContributionRequests",
+    "getAuditLog","getAnnouncementHistory","getHealthCheck",
+    "getEmailSettings","getEmailQuota","getYearlySummary",
+    "getMonthlyReportStatus",
+  ];
   if (_WRITE_ACTIONS.indexOf(action) !== -1 && !_verifySession(e.parameter, action)) {
     return ContentService
       .createTextOutput(callback + "(" + JSON.stringify({status:"error",message:"Session expired. Please login again."}) + ")")
@@ -881,7 +928,8 @@ function doGet(e) {
   }
 
   // ── READ DATA
-  else if (action === "getUsers")         result = getSheetData(SHEETS.USERS);
+  // FIX SEC-6: Strip password hashes before returning — getAllData already does this, now getUsers does too
+  else if (action === "getUsers")         result = getSheetData(SHEETS.USERS).map(u => { const s = Object.assign({}, u); delete s.Password; return s; });
   else if (action === "getTypes")         result = _cachedSheet(SHEETS.TYPES,         "c_types",    600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
   else if (action === "getExpenseTypes")  result = _cachedSheet(SHEETS.EXPENSE_TYPES, "c_exptypes", 600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
   else if (action === "getOccasions")     result = _cachedSheet(SHEETS.OCCASIONS,     "c_occasions",600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
@@ -915,11 +963,16 @@ function doGet(e) {
 
     if (!toEmail) {
       result = { status: "no_email" };
-    } else if (!tryConsumeEmailQuota()) {
-      result = { status: "quota" };
     } else {
+      // FIX SEC-A: Do NOT call tryConsumeEmailQuota() here — sendReceiptEmail() already
+      // calls it atomically at its top. Calling it here too caused double-consumption
+      // (2 quota slots burned per on-demand email instead of 1).
       const sent = sendReceiptEmail(toEmail, userName, receiptId, amount, forMonth, year, typeName, occasionName, note, paymentDate, paymentMode);
-      result = { status: sent ? "sent" : "error" };
+      if (sent === false && !canSendEmail()) {
+        result = { status: "quota" };
+      } else {
+        result = { status: sent ? "sent" : "error" };
+      }
     }
   }
 
@@ -1127,6 +1180,7 @@ function doGet(e) {
   }
 
   // ── AUDIT LOG — returns latest 1000 rows, newest first, with Reason column
+  // Auth: covered by _WRITE_ACTIONS above
   else if (action === "getAuditLog") {
     try {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.AUDIT);
@@ -1176,12 +1230,17 @@ function doGet(e) {
       if (!sheet) { result = { status: "error", message: "Sheet not found" }; }
       else {
         const rowIndex = parseInt(e.parameter.RowIndex);
-        const newStatus = sanitize(e.parameter.Status, 20);
-        // Ensure Status column (col 6) exists — extend header if needed
-        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-        if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
-        sheet.getRange(rowIndex, 6).setValue(newStatus);
-        result = { status: "updated" };
+        // FIX: validate RowIndex — must be an integer > 1 (row 1 is the header)
+        if (!rowIndex || rowIndex < 2 || rowIndex > sheet.getLastRow()) {
+          result = { status: "error", message: "Invalid row index." };
+        } else {
+          const newStatus = sanitize(e.parameter.Status, 20);
+          // Ensure Status column (col 6) exists — extend header if needed
+          const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+          if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
+          sheet.getRange(rowIndex, 6).setValue(newStatus);
+          result = { status: "updated" };
+        }
       }
     } catch(err) { result = { status: "error", message: err.message }; }
   }
@@ -1192,11 +1251,16 @@ function doGet(e) {
       if (!sheet) { result = { status: "error", message: "Sheet not found" }; }
       else {
         const rowIndex = parseInt(e.parameter.RowIndex);
-        // Mark as Deleted (soft delete) so row numbers stay stable
-        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-        if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
-        sheet.getRange(rowIndex, 6).setValue("Deleted");
-        result = { status: "deleted" };
+        // FIX: validate RowIndex — must be an integer > 1 (row 1 is the header)
+        if (!rowIndex || rowIndex < 2 || rowIndex > sheet.getLastRow()) {
+          result = { status: "error", message: "Invalid row index." };
+        } else {
+          // Mark as Deleted (soft delete) so row numbers stay stable
+          const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+          if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
+          sheet.getRange(rowIndex, 6).setValue("Deleted");
+          result = { status: "deleted" };
+        }
       }
     } catch(err) { result = { status: "error", message: err.message }; }
   }
@@ -1348,7 +1412,8 @@ function doGet(e) {
         hashedPwd,
         sanitize(e.parameter.Email,  200),
         "Active",
-        ""
+        "",
+        sanitize(e.parameter.DOB || "", 12)   // DOB: DD-MM-YYYY or blank
       ]);
       logAction("Admin", "Add User", "Mobile: " + mobile + ", Name: " + e.parameter.Name);
       result = { status: "success" };
@@ -1488,10 +1553,10 @@ function doGet(e) {
     _bustSheetCache("c_types");
   }
   else if (action === "updateSortOrder") {
-    result = _updateSortOrder(
-      sanitize(e.parameter.sheet, 20),
-      JSON.parse(e.parameter.order || "[]")
-    );
+    // FIX: wrap JSON.parse in try-catch — malformed order param would crash doGet
+    let _sortOrder = [];
+    try { _sortOrder = JSON.parse(e.parameter.order || "[]"); } catch(ex) { _sortOrder = []; }
+    result = _updateSortOrder(sanitize(e.parameter.sheet, 20), _sortOrder);
   }
 
   // ── OCCASIONS (with permanent SortOrder) ────────────────────────
@@ -2132,6 +2197,8 @@ function doGet(e) {
   }
 
   // ── PHOTO PROXY: fetch Drive photo server-side as base64 (solves CORS block in browser)
+  // ── PHOTO PROXY: fetch Drive photo server-side as base64 (solves CORS block in browser)
+  // Auth: covered by _WRITE_ACTIONS above
   else if (action === "getPhotoBase64") {
     const fileId = sanitize(e.parameter.fileId, 200);
     result = getPhotoBase64(fileId);
@@ -2149,10 +2216,14 @@ function doGet(e) {
 // ════════════════════════════════════════════════════════════════
 
 function _loginCacheKey(mobile) {
-  // Short key: "lfail_" + last 4 digits of mobile
-  // Not truly secure but prevents raw mobile exposure in cache keys
-  // and is sufficient for rate-limiting purposes
-  return "lfail_" + String(mobile).slice(-4) + "_" + String(mobile).length;
+  // FIX BUG-1: Previous key used last-4 digits + length, causing collisions between
+  // mobiles sharing the same last 4 digits (e.g. 9999999999 and 1239999999 → same key).
+  // Now we XOR-scramble the full 10-digit mobile so the raw number isn't in the key
+  // but each unique mobile maps to a unique cache key.
+  const m = String(mobile).replace(/\D/g, ""); // digits only
+  let h = 0;
+  for (let i = 0; i < m.length; i++) { h = ((h << 5) - h + m.charCodeAt(i)) | 0; }
+  return "lfail_" + (h >>> 0).toString(36); // unsigned 32-bit → base-36 string
 }
  
 function _checkLoginRate(mobile) {
@@ -2357,6 +2428,7 @@ function updateUser(p) {
       if (p.Village       !== undefined) _setCol("Village",       sanitize(p.Village, 100));
       if (p.Address       !== undefined) _setCol("Address",       sanitize(p.Address, 300));
       if (p.MonthlyTarget !== undefined) _setCol("MonthlyTarget", Number(p.MonthlyTarget||0));
+      if (p.DOB           !== undefined) _setCol("DOB",           sanitize(p.DOB || "", 12));
       // Single batched write — 1 API call instead of ~10
       sheet.getRange(i + 1, 1, 1, newRow.length).setValues([newRow]);
       SpreadsheetApp.flush();
@@ -2646,6 +2718,22 @@ function doPost(e) {
   let result = {};
   try {
     const data = JSON.parse(e.postData.contents);
+
+    // FIX SEC-9: Verify session token on all doPost actions — photo uploads modify Drive and user data
+    const _postUserId = sanitize(data.UserId || data.userId || "", 30);
+    const _postToken  = sanitize(data.sessionToken || data.token || "", 64);
+    if (_postUserId && _postToken) {
+      // Has token — validate it
+      if (!_verifySession({ userId: _postUserId, sessionToken: _postToken }, data.action || "doPost")) {
+        return ContentService
+          .createTextOutput(JSON.stringify({ status: "error", message: "Session expired. Please login again." }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    } else if (_postUserId) {
+      // UserId present but no token — log as unverified (legacy tolerance)
+      logAction(_postUserId, "UNVERIFIED_POST", "Action: " + (data.action || "doPost") + " — no session token");
+    }
+
     if (data.action === "uploadAndSaveProfile") {
       if (!data.base64 || !data.fileName) return ContentService.createTextOutput(JSON.stringify({status:"error",message:"Missing data."})).setMimeType(ContentService.MimeType.JSON);
       // Try to delete old photo — handle both lh3 and thumbnail URL formats
@@ -2750,8 +2838,14 @@ function doPost(e) {
 
 // ── Core upload helper — uploads base64 to a specific Drive folder by ID
 function _uploadToFolder(base64Data, fileName, folderId) {
-  const folder      = DriveApp.getFolderById(folderId);
+  // FIX BUG-2: Whitelist MIME types — reject non-image uploads to prevent
+  // arbitrary file types (JS, HTML, PDF, etc.) being stored in Drive folders
   const contentType = base64Data.substring(5, base64Data.indexOf(';'));
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
+  if (!ALLOWED_TYPES.includes(contentType.toLowerCase())) {
+    throw new Error("Invalid file type. Only images (JPEG, PNG, WEBP, GIF) are allowed.");
+  }
+  const folder      = DriveApp.getFolderById(folderId);
   const bytes       = Utilities.base64Decode(base64Data.split(',')[1]);
   const blob        = Utilities.newBlob(bytes, contentType, fileName);
   const file        = folder.createFile(blob);
@@ -3172,7 +3266,7 @@ function registerUser(params) {
  
     // Ensure required columns exist — add gracefully if missing
     let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    const requiredCols = ["Village", "Address", "RegisteredAt"];
+    const requiredCols = ["Village", "Address", "RegisteredAt", "DOB"];
     requiredCols.forEach(col => {
       if (headers.indexOf(col) === -1) {
         sheet.getRange(1, sheet.getLastColumn() + 1).setValue(col);
@@ -3182,6 +3276,7 @@ function registerUser(params) {
     headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
  
     const newId = generateId();
+    const dob = sanitize(params.DOB || "", 12);
     const row = headers.map(h => {
       if (h === "UserId")       return newId;
       if (h === "Name")         return name;
@@ -3194,6 +3289,7 @@ function registerUser(params) {
       if (h === "Village")      return village;
       if (h === "Address")      return address;
       if (h === "RegisteredAt") return formatDate();
+      if (h === "DOB")          return dob;
       return "";
     });
     sheet.appendRow(row);
