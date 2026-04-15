@@ -1351,7 +1351,7 @@ function doGet(e) {
  
   else if (action === "sendBirthdayEmails") {
     const isTest    = (e.parameter.isTest === "1");
-    const testUserId = sanitize(e.parameter.userId || "", 30);
+    const testUserId = sanitize(e.parameter.userId || "", 30) || null;
     try {
       result = sendBirthdayEmails(isTest, testUserId);
     } catch(err) {
@@ -3898,7 +3898,20 @@ function sendBirthdayEmails(isTest, testUserId) {
       } catch(e) { return false; }
     }
 
-    return true; // isTest=true, no testUserId — send to all active users with DOB (test-all mode)
+    // isTest=true, no testUserId — still only send to today's birthday members
+    try {
+      var dd, mm;
+      if (u.DOB instanceof Date) {
+        var istStr = Utilities.formatDate(u.DOB, "GMT+5:30", "dd-MM-yyyy");
+        var p = istStr.split("-"); dd = Number(p[0]); mm = Number(p[1]);
+      } else {
+        var dob = String(u.DOB || "").trim();
+        if      (/^\d{2}-\d{2}-\d{4}$/.test(dob)) { var p=dob.split("-"); dd=Number(p[0]); mm=Number(p[1]); }
+        else if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) { var p=dob.split("-"); dd=Number(p[2]); mm=Number(p[1]); }
+        else return false;
+      }
+      return dd === todayDD && mm === todayMM;
+    } catch(e) { return false; }
   });
 
   candidates.forEach(function(u) {
