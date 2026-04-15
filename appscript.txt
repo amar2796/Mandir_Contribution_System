@@ -944,7 +944,9 @@ function doGet(e) {
 
   // ── IMPROVEMENT #1: SEND RECEIPT EMAIL ON DEMAND (from admin Email button)
   else if (action === "sendContribReceiptEmail") {
-    const userId      = sanitize(e.parameter.userId,       30);
+    // donorUserId — identifies the DONOR for email lookup (may differ from logged-in admin)
+    // userId      — identifies the logged-in ADMIN, used by _verifySession above for auth
+    const donorUserId  = sanitize(e.parameter.donorUserId || e.parameter.userId, 30);
     const receiptId   = sanitize(e.parameter.receiptId,    30);
     const userName    = sanitize(e.parameter.userName,    100);
     const amount      = sanitize(e.parameter.amount,       20);
@@ -956,9 +958,9 @@ function doGet(e) {
     const paymentDate = sanitize(e.parameter.paymentDate,  50);
     const paymentMode = sanitize(e.parameter.paymentMode,  30);
 
-    // Look up email from USERS sheet
+    // Look up email from USERS sheet using DONOR's id, not admin's
     const users = getSheetData(SHEETS.USERS);
-    const donor = users.find(u => String(u.UserId) === userId);
+    const donor = users.find(u => String(u.UserId) === donorUserId);
     const toEmail = donor ? String(donor.Email||"").trim() : "";
 
     if (!toEmail) {

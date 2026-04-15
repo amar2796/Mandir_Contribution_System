@@ -130,7 +130,9 @@ function getData(action) {
     window[cb]=function(data){ _fin(); clearTimeout(timer); delete window[cb]; script.remove(); resolve(data); };
     const timer=setTimeout(()=>{ _fin(); window[cb]=function(){try{delete window[cb];script.remove();}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Request timed out.")); },20000);
     script.onerror=function(){ _fin(); clearTimeout(timer); window[cb]=function(){try{delete window[cb];}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Network error. Check Apps Script deployment.")); };
-    script.src=API_URL+"?action="+action+"&callback="+cb; document.body.appendChild(script);
+    let _url=API_URL+"?action="+action+"&callback="+cb;
+    try{const _sess=JSON.parse(localStorage.getItem("session")||"{}");if(_sess.sessionToken)_url+="&sessionToken="+encodeURIComponent(_sess.sessionToken);if(_sess.userId)_url+="&userId="+encodeURIComponent(_sess.userId);}catch(_e){}
+    script.src=_url; document.body.appendChild(script);
   });
 }
 
@@ -1098,7 +1100,8 @@ async function sendReceiptEmailDirect(rid){
       note:          c.Note||"",
       paymentDate:   c.PaymentDate||"",
       paymentMode:   c.PaymentMode||"",
-      userId:        c.UserId||"",
+      donorUserId:   c.UserId||"",        // donor — for email lookup only
+      userId:        _s?.userId||"",      // admin — for session verification
       sessionToken:  _s?.sessionToken||""
     });
     if(res && res.status==="sent")     toast("✅ Receipt email sent successfully!","");

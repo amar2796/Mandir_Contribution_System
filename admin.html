@@ -5423,7 +5423,8 @@
       const fileId = _adminExtractDriveFileId(photoURL);
       if (!fileId) return null;
       try {
-        const res = await postData({ action: "getPhotoBase64", fileId: fileId });
+        const _s = JSON.parse(localStorage.getItem("session") || "{}");
+        const res = await postData({ action: "getPhotoBase64", fileId: fileId, sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
         if (res && res.status === "success" && res.base64) {
           window._adminPhotoB64Cache[photoURL] = res.base64;
           return res.base64;
