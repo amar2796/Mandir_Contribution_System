@@ -3861,9 +3861,10 @@ function sendBirthdayEmails(isTest, testUserId) {
   }
 
   const allUsers = getSheetData(SHEETS.USERS);
-  const today    = new Date();
-  const todayDD  = today.getDate();
-  const todayMM  = today.getMonth() + 1;
+  // Use IST (GMT+5:30) consistent with all other date ops in this codebase
+  const _now    = new Date();
+  const todayDD = Number(Utilities.formatDate(_now, "GMT+5:30", "d"));  // 1-31
+  const todayMM = Number(Utilities.formatDate(_now, "GMT+5:30", "M"));  // 1-12
 
   let sent = 0, skipped = 0, noEmail = 0, errors = [];
 

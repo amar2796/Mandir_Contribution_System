@@ -5105,6 +5105,14 @@
     let _pgList = [], _pgPage = 1;
     const _pgSize = 10;
 
+    // ── Shared date parser: handles dd-MM-yyyy and dd-MM-yyyy H:mm:ss / HH:mm:ss ──
+    function _parseDMY(s) {
+      if (!s) return 0;
+      const m = String(s).trim().match(/^(\d{2})-(\d{2})-(\d{4})(?:\s+(\d{1,2}):(\d{2}):(\d{2}))?/);
+      if (m) return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0), +(m[6]||0)).getTime();
+      const t = new Date(s).getTime(); return isNaN(t) ? 0 : t;
+    }
+
     function renderTable(list) {
       _pgList = list;
       _pgPage = 1;
@@ -5216,7 +5224,10 @@
       if (ylEl) ylEl.textContent = curY;
 
       // ── Last donation row ──
-      const sorted = data.slice().sort((a, b) => new Date(b.PaymentDate || 0) - new Date(a.PaymentDate || 0));
+      const sorted = data
+        .filter(c => (String(c.Status || "Approved")).toLowerCase() === "approved")
+        .slice()
+        .sort((a, b) => _parseDMY(b.PaymentDate) - _parseDMY(a.PaymentDate));
       const last = sorted[0];
       const ldrEl = document.getElementById("lastDonationRow");
       if (last && ldrEl) {
@@ -5622,7 +5633,7 @@
         if (el) el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-faint);font-size:13px;"><i class="fa-solid fa-receipt" style="opacity:.3;font-size:1.6rem;display:block;margin-bottom:6px;"></i>No records yet</div>';
         return;
       }
-      var sorted = data.slice().sort(function(a, b) { return new Date(b.PaymentDate || 0) - new Date(a.PaymentDate || 0); });
+      var sorted = data.slice().sort(function(a, b) { return _parseDMY(b.PaymentDate) - _parseDMY(a.PaymentDate); });
       var recent = sorted.slice(0, 5);
       el.innerHTML = recent.map(function(c) {
         var type = (types.find(function(t) { return String(t.TypeId) === String(c.TypeId); }) || {}).TypeName || "Contribution";
