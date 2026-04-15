@@ -729,7 +729,8 @@
       }
 
       #ea_card_receipt,
-      #ea_card_monthly {
+      #ea_card_monthly,
+      #ea_card_birthday {
         padding: 14px !important;
       }
     }
@@ -4891,13 +4892,33 @@
                 status...
               </div>
             </div>
+
+            <!-- Toggle 3: Birthday Email -->
+            <div style="border:1.5px solid #e2e8f0;border-radius:12px;padding:18px;background:#fff;transition:border-color 0.2s;" id="ea_card_birthday">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                <div style="flex:1;">
+                  <div style="font-weight:700;color:#1e293b;font-size:14px;margin-bottom:4px;">
+                    <i class="fa-solid fa-cake-candles" style="color:#ec4899;margin-right:6px;"></i>Birthday Email
+                  </div>
+                  <div style="font-size:11.5px;color:#64748b;line-height:1.6;">Automatically sends a beautiful mandir-themed birthday email directly to the member on their birthday. Runs daily via Apps Script trigger at 8 AM.</div>
+                </div>
+                <label class="ea-toggle" style="flex-shrink:0;">
+                  <input type="checkbox" id="toggle_birthday_email"
+                    onchange="saveEmailToggle('birthday_email', this.checked)">
+                  <span class="ea-slider"></span>
+                </label>
+              </div>
+              <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:11px;color:#94a3b8;" id="ea_birthday_status">
+                <i class="fa-solid fa-circle" style="font-size:7px;margin-right:4px;color:#94a3b8;"></i> Loading status...
+              </div>
+            </div>
           </div>
 
           <!-- How It Works -->
           <div style="background:#f8fafc;border-radius:10px;padding:16px 20px;border:1px solid #e2e8f0;">
             <div style="font-weight:700;color:#334155;font-size:13px;margin-bottom:12px;"><i
                 class="fa-solid fa-circle-question" style="color:#6366f1;margin-right:6px;"></i>How It Works</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px;color:#475569;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:12px;color:#475569;">
               <div>
                 <div style="font-weight:600;color:#1e293b;margin-bottom:4px;">📧 Auto Receipt Email</div>
                 <ul style="margin:0;padding-left:16px;line-height:1.8;color:#64748b;">
@@ -4916,11 +4937,24 @@
                   <li>Each member gets only their own data</li>
                 </ul>
               </div>
+              <div>
+                <div style="font-weight:600;color:#1e293b;margin-bottom:4px;">&#x1F382; Birthday Email</div>
+                <ul style="margin:0;padding-left:16px;line-height:1.8;color:#64748b;">
+                  <li>Runs daily at 8 AM via Apps Script trigger</li>
+                  <li>Sent only to member whose birthday is today</li>
+                  <li>Mandir-themed email in Hindi + English</li>
+                  <li>Skipped if daily email quota is full</li>
+                </ul>
+              </div>
             </div>
             <div style="margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11.5px;color:#94a3b8;">
               <i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i>
               Monthly report requires a <strong>Time-based trigger</strong> set up in Apps Script. Go to Apps Script →
               Triggers → Add trigger → <code>sendMonthlyEndReports</code> → Month timer → End of month.
+              <br/><br/>
+              <i class="fa-solid fa-cake-candles" style="color:#ec4899;"></i>
+              Birthday email requires a separate daily trigger: Apps Script → Triggers → Add trigger →
+              <code>sendBirthdayEmails</code> → <strong>Time-based → Day timer → 8 AM &ndash; 9 AM</strong>.
             </div>
           </div>
 
@@ -4980,6 +5014,24 @@
               </button>
             </div>
             <div id="ea_manual_result" style="margin-top:10px;font-size:12px;display:none;"></div>
+          </div>
+
+
+          <!-- Test Birthday Email -->
+          <div style="margin-top:16px;background:linear-gradient(135deg,#fff0f6,#fce7f3);border:1px solid #fbcfe8;border-radius:10px;padding:16px 20px;">
+            <div style="font-weight:700;color:#9d174d;font-size:13px;margin-bottom:8px;">
+              <i class="fa-solid fa-cake-candles" style="color:#ec4899;margin-right:6px;"></i>Test Birthday Email
+            </div>
+            <div style="font-size:12px;color:#831843;margin-bottom:12px;">Send a preview birthday email to any member regardless of their actual birthday. Useful to verify the email looks correct before enabling the daily trigger.</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+              <select id="ea_birthday_user" style="padding:8px 12px;border:1px solid #fbcfe8;border-radius:8px;font-size:12px;background:#fff;min-width:200px;flex:1;">
+                <option value="">-- Select a member --</option>
+              </select>
+              <button onclick="triggerTestBirthdayEmail()" style="background:linear-gradient(135deg,#ec4899,#db2777);color:#fff;padding:9px 18px;font-size:12px;border:none;border-radius:8px;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(236,72,153,0.35);flex-shrink:0;">
+                <i class="fa-solid fa-paper-plane"></i> Send Test
+              </button>
+            </div>
+            <div id="ea_birthday_result" style="margin-top:10px;font-size:12px;display:none;padding:10px 14px;border-radius:8px;border-left:3px solid;"></div>
           </div>
         </div>
       </div>
@@ -7158,21 +7210,32 @@
       }
 
       // BIRTHDAY: inject upcoming birthdays
+      // FIX: midnight-normalised comparison so diff===0 always means today
       (function() {
-        if (typeof users === "undefined" || !users.length) return;
-        var today = new Date();
+        if (!users || !users.length) return;
+        var now   = new Date();
+        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        var bdayAlerts = [];
         users.forEach(function(u) {
           if (!u.DOB || String(u.Role||"").toLowerCase() === "admin") return;
-          var parts, mm, dd;
-          if (/^\d{2}-\d{2}-\d{4}$/.test(u.DOB)) { parts = u.DOB.split("-"); dd=Number(parts[0]); mm=Number(parts[1]); }
-          else if (/^\d{4}-\d{2}-\d{2}$/.test(u.DOB)) { parts = u.DOB.split("-"); dd=Number(parts[2]); mm=Number(parts[1]); }
-          else return;
+          var dob = String(u.DOB||"").trim();
+          var dd, mm, parts;
+          if      (/^\d{2}-\d{2}-\d{4}$/.test(dob)) { parts=dob.split("-"); dd=Number(parts[0]); mm=Number(parts[1]); }
+          else if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) { parts=dob.split("-"); dd=Number(parts[2]); mm=Number(parts[1]); }
+          else if (dob.indexOf("T")>=0||dob.indexOf("Z")>=0) {
+            var _d=new Date(dob); if(isNaN(_d)) return;
+            dd=_d.getUTCDate(); mm=_d.getUTCMonth()+1;
+          } else return;
           var bday = new Date(today.getFullYear(), mm-1, dd);
-          if (bday < today) bday.setFullYear(today.getFullYear()+1);
+          if (bday < today) bday = new Date(today.getFullYear()+1, mm-1, dd);
           var diff = Math.round((bday - today) / 86400000);
-          if (diff === 0) alerts.push({ type:"birthday", text:"🎂 Today is " + u.Name + "'s birthday!", sub:"Consider sending a greeting" });
-          else if (diff <= 7) alerts.push({ type:"birthday", text:"🎂 " + u.Name + "'s birthday in " + diff + " day" + (diff>1?"s":""), sub:"" });
+          if (diff === 0)      bdayAlerts.push({ type:"birthday", diff:0, text:"🎂 Today is " + u.Name + "'s birthday!", sub:"Birthday email will be sent automatically if enabled" });
+          else if (diff === 1) bdayAlerts.push({ type:"birthday", diff:1, text:"🎂 " + u.Name + "'s birthday is tomorrow!", sub:"" });
+          else if (diff <= 7)  bdayAlerts.push({ type:"birthday", diff:diff, text:"🎂 " + u.Name + "'s birthday in " + diff + " days", sub:"" });
         });
+        // Sort by diff ascending, then prepend to alerts so birthdays show first
+        bdayAlerts.sort(function(a,b){ return a.diff - b.diff; });
+        bdayAlerts.forEach(function(a){ alerts.unshift(a); });
       })();
 
       // All clear
@@ -11776,16 +11839,21 @@
 
       getCached("getEmailSettings").then(function (s) {
         // FIX: use strict === true (Apps Script now returns proper booleans)
-        var receiptOn = s === true || (s && s.auto_receipt === true);
-        var monthlyOn = s === true || (s && s.monthly_report === true);
-        var tReceipt = document.getElementById("toggle_auto_receipt");
-        var tMonthly = document.getElementById("toggle_monthly_report");
-        if (tReceipt) { tReceipt.checked = receiptOn; tReceipt.disabled = false; }
-        if (tMonthly) { tMonthly.checked = monthlyOn; tMonthly.disabled = false; }
-        _updateToggleStatus("auto_receipt", receiptOn);
+        var receiptOn  = s === true || (s && s.auto_receipt    === true);
+        var monthlyOn  = s === true || (s && s.monthly_report  === true);
+        var birthdayOn = s && s.birthday_email === true;
+        var tReceipt  = document.getElementById("toggle_auto_receipt");
+        var tMonthly  = document.getElementById("toggle_monthly_report");
+        var tBirthday = document.getElementById("toggle_birthday_email");
+        if (tReceipt)  { tReceipt.checked  = receiptOn;  tReceipt.disabled  = false; }
+        if (tMonthly)  { tMonthly.checked  = monthlyOn;  tMonthly.disabled  = false; }
+        if (tBirthday) { tBirthday.checked = birthdayOn; tBirthday.disabled = false; }
+        _updateToggleStatus("auto_receipt",   receiptOn);
         _updateToggleStatus("monthly_report", monthlyOn);
-        _updateCardStyle("ea_card_receipt", receiptOn);
-        _updateCardStyle("ea_card_monthly", monthlyOn);
+        _updateToggleStatus("birthday_email", birthdayOn);
+        _updateCardStyle("ea_card_receipt",  receiptOn);
+        _updateCardStyle("ea_card_monthly",  monthlyOn);
+        _updateCardStyle("ea_card_birthday", birthdayOn);
         // Load saved logo URL
         if (s && typeof s === "object" && s.logo_email_url) {
           var logoEl = document.getElementById("ea_logo_url");
@@ -11799,12 +11867,13 @@
         }
       }).catch(function () {
         // Fetch failed — show OFF state, re-enable toggles
-        ["toggle_auto_receipt", "toggle_monthly_report"].forEach(function (id) {
+        ["toggle_auto_receipt", "toggle_monthly_report", "toggle_birthday_email"].forEach(function (id) {
           var el = document.getElementById(id);
           if (el) { el.checked = false; el.disabled = false; }
         });
-        _updateToggleStatus("auto_receipt", false);
+        _updateToggleStatus("auto_receipt",   false);
         _updateToggleStatus("monthly_report", false);
+        _updateToggleStatus("birthday_email", false);
         var el = document.getElementById("ea_quota_display");
         if (el) el.innerHTML = "<span style='color:#f87171;'>Cannot reach server — check Apps Script deployment</span>";
       });
@@ -11845,8 +11914,9 @@
     }
     function _updateToggleStatus(key, isOn) {
       var statusMap = {
-        "auto_receipt": "ea_receipt_status",
-        "monthly_report": "ea_monthly_status"
+        "auto_receipt":   "ea_receipt_status",
+        "monthly_report": "ea_monthly_status",
+        "birthday_email": "ea_birthday_status"
       };
       var el = document.getElementById(statusMap[key]);
       if (!el) return;
@@ -11868,7 +11938,9 @@
 
     function saveEmailToggle(key, value) {
       // Show saving indicator
-      const cardId = key === "auto_receipt" ? "ea_card_receipt" : "ea_card_monthly";
+      var cardMap = { "auto_receipt": "ea_card_receipt", "monthly_report": "ea_card_monthly", "birthday_email": "ea_card_birthday" };
+      var labelMap = { "auto_receipt": "Auto Receipt Email", "monthly_report": "Monthly Report", "birthday_email": "Birthday Email" };
+      const cardId = cardMap[key] || "ea_card_receipt";
       const card = document.getElementById(cardId);
       if (card) card.style.opacity = "0.6";
 
@@ -11876,12 +11948,11 @@
         .then(function (res) {
           if (card) card.style.opacity = "1";
           if (res && res.status === "ok") {
-            toast(value ? "✅ " + (key === "auto_receipt" ? "Auto Receipt Email" : "Monthly Report") + " enabled" : "⭕ Disabled", "");
+            toast(value ? "✅ " + (labelMap[key] || key) + " enabled" : "⭕ Disabled", "");
             _updateToggleStatus(key, value);
-            _updateCardStyle(key === "auto_receipt" ? "ea_card_receipt" : "ea_card_monthly", value);
+            _updateCardStyle(cardMap[key] || cardId, value);
           } else {
             toast("❌ Save failed — check Apps Script deployment", "error");
-            // Revert toggle
             const el = document.getElementById("toggle_" + key);
             if (el) el.checked = !value;
           }
@@ -11917,6 +11988,49 @@
         }
       }
       loadEmailSettings();
+      // Populate birthday user dropdown
+      var bSel = document.getElementById("ea_birthday_user");
+      if (bSel && bSel.options.length <= 1) {
+        var members = (typeof users !== "undefined" ? users : []).filter(function(u) {
+          return String(u.Role||"").toLowerCase() !== "admin" &&
+                 String(u.Status||"Active").toLowerCase() === "active";
+        });
+        members.sort(function(a,b){ return (a.Name||"").localeCompare(b.Name||""); });
+        members.forEach(function(u) {
+          var o = document.createElement("option");
+          o.value = u.UserId;
+          o.textContent = (u.Name||"Unknown") + (u.DOB ? " 🎂" : " (no DOB)") + (u.Email ? "" : " — no email");
+          if (!u.Email || !u.DOB) o.style.color = "#94a3b8";
+          bSel.appendChild(o);
+        });
+      }
+    }
+
+    function triggerTestBirthdayEmail() {
+      var userId = (document.getElementById("ea_birthday_user")||{}).value || "";
+      var res = document.getElementById("ea_birthday_result");
+      var btn = document.querySelector("[onclick='triggerTestBirthdayEmail()']");
+      if (!userId) { toast("Please select a member first", "warn"); return; }
+      if (res) { res.style.display = "block"; res.style.background = "#eff6ff"; res.style.borderLeftColor = "#3b82f6"; res.style.color = "#1e40af"; res.textContent = "⏳ Sending test birthday email..."; }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...'; }
+      postData({ action: "sendBirthdayEmails", isTest: "1", userId: userId })
+        .then(function(data) {
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Test'; }
+          var ok = data && (data.status === "success" || data.sent > 0);
+          if (res) {
+            res.style.background = ok ? "#f0fdf4" : "#fef2f2";
+            res.style.borderLeftColor = ok ? "#22c55e" : "#ef4444";
+            res.style.color = ok ? "#166534" : "#991b1b";
+            res.textContent = data ? data.message : "❌ Unknown error";
+          }
+          if (ok) toast("✅ Birthday test email sent!", "");
+          else toast("❌ Failed: " + (data&&data.message||"error"), "error");
+        })
+        .catch(function(err) {
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Test'; }
+          if (res) { res.style.background = "#fef2f2"; res.style.borderLeftColor = "#ef4444"; res.style.color = "#991b1b"; res.textContent = "❌ Network error: " + err.message; }
+          toast("❌ Network error", "error");
+        });
     }
 
     function triggerManualMonthlyReport() {
