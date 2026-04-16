@@ -4914,37 +4914,37 @@
             </div>
           </div>
 
-          <!-- Receipt Email Logo — placed here so it's clearly linked to Auto Receipt, not buried after How It Works -->
+          <!-- Email Logo — auto-loaded from Drive folder set in CFG.folderLogo -->
           <div style="margin-bottom:16px;background:#fff;border:1.5px solid #e0e7ff;border-left:4px solid #6366f1;border-radius:10px;padding:16px 20px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
               <i class="fa-solid fa-image" style="color:#6366f1;font-size:14px;"></i>
               <span style="font-weight:700;color:#334155;font-size:13px;">Email Logo</span>
-              <span style="font-size:11px;color:#6366f1;background:#eef2ff;border-radius:20px;padding:2px 9px;font-weight:600;">Auto Receipt &amp; Monthly Report</span>
+              <span style="font-size:11px;color:#6366f1;background:#eef2ff;border-radius:20px;padding:2px 9px;font-weight:600;">All Emails</span>
             </div>
-            <div style="font-size:12px;color:#64748b;margin-bottom:10px;line-height:1.6;">
-              Paste your Google Drive <strong>File ID</strong> or full Drive share link — the system builds the image URL automatically.
-              To get it: open the image in Drive → right-click → <em>Get link</em> → copy the ID from the URL (<code>…/d/<strong>FILE_ID</strong>/view</code>).
-              Leave blank to use the 🕉️ symbol fallback.
+
+            <!-- Live preview strip -->
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+              <div id="ea_logo_preview_wrap" style="width:56px;height:56px;border-radius:50%;border:2px solid #6366f1;overflow:hidden;flex-shrink:0;background:#eef2ff;display:flex;align-items:center;justify-content:center;">
+                <span id="ea_logo_fallback" style="font-size:26px;">🕉️</span>
+                <img id="ea_logo_preview_img" src="" alt="Logo" style="display:none;width:100%;height:100%;object-fit:cover;"
+                  onload="this.style.display='block';document.getElementById('ea_logo_fallback').style.display='none';"
+                  onerror="this.style.display='none';document.getElementById('ea_logo_fallback').style.display='block';" />
+              </div>
+              <div>
+                <div id="ea_logo_status_text" style="font-size:12px;font-weight:600;color:#334155;">Loading logo…</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px;">Used in: Auto Receipt · Monthly Report · Monthly Reminder · Birthday · Approval / Rejection emails</div>
+              </div>
             </div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <input id="ea_logo_url" type="text" placeholder="Paste Drive File ID or full Drive URL"
-                style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid #e0e7ff;border-radius:8px;font-size:12px;font-family:monospace;outline:none;"
-                onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e0e7ff'" />
-              <button onclick="saveLogoUrl()" style="background:#6366f1;padding:9px 18px;font-size:12px;flex-shrink:0;">
-                <i class="fa-solid fa-floppy-disk"></i> Save
-              </button>
-              <button onclick="previewLogoUrl()" style="background:#334155;padding:9px 14px;font-size:12px;flex-shrink:0;">
-                <i class="fa-solid fa-eye"></i> Preview
-              </button>
+
+            <!-- How-to instruction box -->
+            <div style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:8px;padding:11px 14px;font-size:12px;color:#3730a3;line-height:1.7;">
+              <i class="fa-solid fa-circle-info" style="margin-right:5px;"></i>
+              <strong>To change the logo:</strong> Open Google Drive → go to your <strong>Logo folder</strong> →
+              drop in a new image file (<code>logo.png</code> or <code>logo.jpg</code>). The system picks the
+              first image it finds automatically — no URL needed here.<br>
+              <span style="color:#64748b;">The folder ID is set in <code>CFG.folderLogo</code> inside the Apps Script.
+              If the folder is empty, all emails show the 🕉️ Om symbol instead.</span>
             </div>
-            <!-- Preview area: flex so image + error sit side-by-side cleanly -->
-            <div id="ea_logo_preview" style="margin-top:10px;display:none;align-items:center;gap:12px;">
-              <img id="ea_logo_img" src="" alt="Logo Preview"
-                style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #6366f1;flex-shrink:0;"
-                onerror="this.style.display='none';document.getElementById('ea_logo_err').style.display='block'" />
-              <span id="ea_logo_err" style="display:none;font-size:12px;color:#e74c3c;">⚠️ Could not load — check the File ID is correct and the image is shared publicly.</span>
-            </div>
-            <div id="ea_logo_status" style="margin-top:6px;font-size:11px;color:#94a3b8;"></div>
           </div>
 
           <!-- How It Works -->
@@ -11895,19 +11895,9 @@
         _updateCardStyle("ea_card_receipt",  receiptOn);
         _updateCardStyle("ea_card_monthly",  monthlyOn);
         _updateCardStyle("ea_card_birthday", birthdayOn);
-        // Load saved logo URL
-        if (s && typeof s === "object" && s.logo_email_url) {
-          var logoEl = document.getElementById("ea_logo_url");
-          if (logoEl && !logoEl.value) {
-            // Show just the File ID (not the full lh3 URL) so admin sees something clean
-            var _savedId = _extractDriveFileId(s.logo_email_url) || s.logo_email_url;
-            logoEl.value = _savedId;
-            // Auto-show the preview immediately — no need to click Preview manually
-            previewLogoUrl();
-          }
-          var statusEl = document.getElementById("ea_logo_status");
-          if (statusEl) statusEl.textContent = "✅ Logo loaded from settings.";
-        }
+        // logo_email_url removed from settings — logo now auto-loaded from CFG.folderLogo
+        // Load live preview: call getLogoPreview action on Apps Script
+        _loadEmailLogoPreview();
         if (!s || typeof s !== "object") {
           var el = document.getElementById("ea_quota_display");
           if (el) el.innerHTML = "<span style='color:#f87171;'>Could not load settings — check Apps Script deployment &amp; redeploy</span>";
@@ -11938,62 +11928,34 @@
 
     // Extract a bare Drive File ID from whatever the admin pastes:
     // Accepts: bare ID, https://drive.google.com/file/d/ID/view, https://drive.google.com/open?id=ID
-    function _extractDriveFileId(input) {
-      var s = (input || "").trim();
-      // Full Drive URL patterns
-      var m = s.match(/\/d\/([a-zA-Z0-9_-]{10,})/)  // /d/FILE_ID
-           || s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/); // ?id=FILE_ID
-      if (m) return m[1];
-      // Already a bare File ID (no slashes, no protocol)
-      if (/^[a-zA-Z0-9_-]{10,}$/.test(s)) return s;
-      return null;
-    }
-    function saveLogoUrl() {
-      var raw = (document.getElementById("ea_logo_url") || {}).value || "";
-      var statusEl = document.getElementById("ea_logo_status");
-      var fileId = _extractDriveFileId(raw);
-      if (!raw.trim()) {
-        // Allow clearing the logo
-        fileId = "";
-      } else if (!fileId) {
-        if (statusEl) statusEl.textContent = "❌ Could not find a valid Drive File ID in what you pasted.";
-        toast("Paste a Drive File ID or Drive share link.", "warn"); return;
-      }
-      // Build the canonical URL that _getLogoUrl() in Apps Script expects
-      var logoUrl = fileId ? ("https://lh3.googleusercontent.com/d/" + fileId + "=w400") : "";
-      if (statusEl) statusEl.textContent = "Saving…";
-      postData({ action: "saveEmailSettings", key: "logo_email_url", value: logoUrl })
-        .then(function (r) {
-          if (r && r.status === "ok") {
-            if (statusEl) statusEl.textContent = "✅ Logo saved. New emails will use this image.";
-            mandirCacheBust("getEmailSettings");
-            toast("Logo saved.");
-          } else { if (statusEl) statusEl.textContent = "❌ Save failed."; }
-        }).catch(function (e) { if (statusEl) statusEl.textContent = "❌ " + e.message; });
-    }
-    function previewLogoUrl() {
-      var raw = (document.getElementById("ea_logo_url") || {}).value || "";
-      var wrap = document.getElementById("ea_logo_preview");
-      var img  = document.getElementById("ea_logo_img");
-      var err  = document.getElementById("ea_logo_err");
-      if (!raw.trim()) { toast("Enter a File ID or Drive URL first.", "warn"); return; }
-      var fileId = _extractDriveFileId(raw);
-      if (!fileId) { toast("Could not find a valid Drive File ID.", "warn"); return; }
-      if (!wrap || !img || !err) return;
-      img.style.display = "none"; err.style.display = "none"; wrap.style.display = "flex";
-      // Use the Apps Script getPhotoBase64 proxy so the browser never hits Drive directly
-      var _sess = JSON.parse(localStorage.getItem("session") || "{}");
-      postData({ action: "getPhotoBase64", fileId: fileId,
-                 sessionToken: _sess.sessionToken || "", userId: _sess.userId || "" })
+    // ── Email logo live preview — fetches the logo the server will use in emails
+    // Calls getPhotoBase64 with action=getEmailLogoPreview so it reads CFG.folderLogo
+    // and returns the first image found. Shows it in the admin card instantly.
+    function _loadEmailLogoPreview() {
+      var statusEl = document.getElementById("ea_logo_status_text");
+      var img      = document.getElementById("ea_logo_preview_img");
+      var fallback = document.getElementById("ea_logo_fallback");
+      if (statusEl) statusEl.textContent = "Loading logo from Drive folder…";
+      postData({ action: "getEmailLogoPreview" })
         .then(function (res) {
-          // getPhotoBase64 returns { status:"success", base64:"data:mime;base64,..." }
           if (res && res.status === "success" && res.base64) {
-            img.src = res.base64; // already a full data URI
-            img.style.display = "block";
+            if (img) {
+              img.src = res.base64;
+              img.style.display = "block";
+            }
+            if (fallback) fallback.style.display = "none";
+            if (statusEl) statusEl.innerHTML = "✅ <strong>Logo found</strong> — used in all emails";
           } else {
-            err.style.display = "block";
+            // No image in folder — Om symbol shows by default via CSS
+            if (img) img.style.display = "none";
+            if (fallback) fallback.style.display = "block";
+            if (statusEl) statusEl.innerHTML =
+              "🕉️ <span style='color:#64748b;'>No logo image found in folder — Om symbol used as fallback.<br>" +
+              "Add a logo.png to your Drive <strong>Logo folder</strong> (<code>CFG.folderLogo</code>) to use a custom logo.</span>";
           }
-        }).catch(function () { err.style.display = "block"; });
+        }).catch(function () {
+          if (statusEl) statusEl.innerHTML = "<span style='color:#f87171;'>❌ Could not reach server — check Apps Script deployment.</span>";
+        });
     }
     function _updateToggleStatus(key, isOn) {
       var statusMap = {
@@ -14284,7 +14246,7 @@
       'addContribution','addUser','addExpense','addEvent','addGoal','addOccasion',
       'addType','addExpenseType',
       'saveEditContrib','saveEditUser','saveEditEvent','saveEventExpense','saveEditGoal',
-      'saveAnnouncement','clearAnnouncement','saveChatbotSettings','saveLogoUrl',
+      'saveAnnouncement','clearAnnouncement','saveChatbotSettings',
       'saveWalkIn','saveAdminProfile','saveAdminNewPassword',
       'deleteExpense','deleteEvent','deleteGoal','deleteGalleryPhoto',
       'uploadGalleryPhoto','uploadExpenseReceipt','openReceiptAttach',
@@ -14311,7 +14273,7 @@
       addContribution: 'Saving…', addUser: 'Adding…', addExpense: 'Saving…',
       addEvent: 'Adding…', saveEditContrib: 'Saving…', saveEditUser: 'Saving…',
       saveEditEvent: 'Saving…', saveAnnouncement: 'Saving…', saveChatbotSettings: 'Saving…',
-      saveLogoUrl: 'Saving…', saveWalkIn: 'Saving…', saveAdminProfile: 'Saving…',
+      saveWalkIn: 'Saving…', saveAdminProfile: 'Saving…',
       saveAdminNewPassword: 'Updating…',
       deleteExpense: 'Deleting…', deleteEvent: 'Deleting…', deleteGoal: 'Deleting…',
       deleteGalleryPhoto: 'Deleting…',

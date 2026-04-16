@@ -20,11 +20,14 @@ const CFG = {
   tagline:       "Jai Shree Ram",
   thankYouMsg:   "Thank you for your generous contribution",
   emailDailyLimit: 90,           // Gmail free = 100/day; keep 10 buffer for OTPs
-  // Logo: place your logo at Image/logo.PNG in your web app folder.
-  // For emails, host logo.PNG on Google Drive (share publicly) and paste the
-  // direct image URL below. Format: https://lh3.googleusercontent.com/d/FILE_ID
-  // Leave empty to use the Om symbol fallback in emails.
-  logoEmailUrl: "https://lh3.googleusercontent.com/d/1S0RbjNkxhhGsTMI1fPlLSOlkLi87ZHhs",            // e.g. "https://lh3.googleusercontent.com/d/YOUR_FILE_ID"
+  // ── EMAIL LOGO (used in ALL emails: receipt, monthly report, reminder, birthday, approval)
+  // Drop any image file (logo.png / logo.jpg) into a dedicated Drive folder.
+  // The system auto-picks the first image it finds — no URL needed anywhere.
+  // Steps: Drive → New Folder → name it "Mandir Logo" → paste its folder ID below.
+  // If the folder is empty or ID is blank → emails fall back to the 🕉️ Om symbol.
+  // NOTE: Cannot use Image/logo.PNG from the web app — email clients have no access to
+  //       the Apps Script server. A public Drive folder is the only option.
+  folderLogo: "1WYmrWAufRhNbboMXzSCvljZ6jqprmZ7M",   // ← Paste your Drive Logo folder ID here (e.g. "1AbCdEfGhIjKlMnO...")
 
   // ── PHOTO STORAGE FOLDERS (Google Drive folder IDs)
   // Create 3 sub-folders inside your main Drive folder, then paste their IDs here.
@@ -370,10 +373,10 @@ function getEmailSettings() {
   });
   return {
     // FIX: === "1" exact string match — "!== 0" was always true for Number 1
-    auto_receipt:    map["auto_receipt"]    === "1",
-    monthly_report:  map["monthly_report"]  === "1",
-    birthday_email:  map["birthday_email"]  === "1",
-    logo_email_url:  map["logo_email_url"]  || ""
+    auto_receipt:   map["auto_receipt"]   === "1",
+    monthly_report: map["monthly_report"] === "1",
+    birthday_email: map["birthday_email"] === "1"
+    // logo_email_url removed — logo is now auto-loaded from CFG.folderLogo (Drive folder)
   };
 }
 
@@ -474,23 +477,44 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
   return { status: "ok", sent: sent, skipped: skipped, quotaRemaining: quota.remaining };
 }
 
-// ── Logo HTML helper for emails
-// MUST #6: Read logo URL from SETTINGS sheet (falls back to CFG then Om symbol)
+// ── Logo URL helper — used by ALL email types
+// (auto receipt, monthly summary, monthly reminder, contribution reminder,
+//  birthday email, approval/rejection emails — every _logoHtml() call)
+//
+// Scans CFG.folderLogo (a Drive folder) for the first image file and returns
+// a public lh3 URL. Result is cached in-memory for the script execution so
+// multiple emails in one batch run never hit Drive API more than once.
+// Falls back to "" which triggers the 🕉️ Om symbol in _logoHtml().
+//
+// ⚠️  WHY NOT Image/logo.PNG?
+//   That file lives inside the Apps Script web-app container — external email
+//   clients (Gmail, Outlook, etc.) have zero access to it. Email <img> tags
+//   need a public HTTPS URL. Drive is the only option already in this setup.
+
+var _cachedLogoUrl = null;  // null = not yet fetched this run; "" = no image found
+
 function _getLogoUrl() {
+  if (_cachedLogoUrl !== null) return _cachedLogoUrl;   // serve from cache
   try {
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEETS.SETTINGS);
-    if (sheet) {
-      const data = sheet.getDataRange().getValues();
-      for (let i = 0; i < data.length; i++) {
-        if (String(data[i][0]||"").trim() === "logo_email_url") {
-          const url = String(data[i][1]||"").trim();
-          if (url) return url;
+    if (CFG.folderLogo) {
+      const folder = DriveApp.getFolderById(CFG.folderLogo);
+      const files  = folder.getFiles();
+      while (files.hasNext()) {
+        const f    = files.next();
+        const mime = f.getMimeType() || "";
+        if (mime.startsWith("image/")) {
+          // Make publicly viewable so email clients can load it
+          f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          _cachedLogoUrl = "https://lh3.googleusercontent.com/d/" + f.getId() + "=w400";
+          return _cachedLogoUrl;
         }
       }
     }
-  } catch(e) {}
-  return CFG.logoEmailUrl || "";
+  } catch(e) {
+    Logger.log("_getLogoUrl error: " + e.message);
+  }
+  _cachedLogoUrl = "";   // cache the "no logo" result too
+  return "";
 }
 
 function _logoHtml() {
@@ -769,6 +793,8 @@ function doGet(e) {
     "logAudit",
     // Photo proxy — prevent unauthenticated Drive file access
     "getPhotoBase64",
+    // Email logo preview — reads CFG.folderLogo, requires active admin session
+    "getEmailLogoPreview",
     // Sensitive reads — private user/financial/system data
     "getAllData","getContributions","getExpenses","getEventData","getYearConfig",
     "getUsers","getUsersByStatus","getPendingUsers","getPendingCount",
@@ -991,11 +1017,10 @@ function doGet(e) {
   }
   else if (action === "saveEmailSettings") {
     // Admin passes: action=saveEmailSettings&key=auto_receipt&value=1
-    const key = sanitize(e.parameter.key || "", 30);
-    // FIX: logo_email_url is a URL (up to 500 chars); toggles are "0"/"1" (2 chars)
-    const valueMaxLen = (key === "logo_email_url") ? 500 : 2;
-    const value = sanitize(e.parameter.value || "0", valueMaxLen);
-    const allowed = ["auto_receipt", "monthly_report", "logo_email_url", "birthday_email"];
+    const key      = sanitize(e.parameter.key || "", 30);
+    const value    = sanitize(e.parameter.value || "0", 2);   // toggles only: "0" or "1"
+    const allowed  = ["auto_receipt", "monthly_report", "birthday_email"];
+    // logo_email_url removed — logo is now auto-loaded from CFG.folderLogo (Drive folder)
     if (allowed.indexOf(key) !== -1) {
       result = saveEmailSettings(key, value);
     } else {
@@ -2218,6 +2243,19 @@ function doGet(e) {
   else if (action === "getPhotoBase64") {
     const fileId = sanitize(e.parameter.fileId, 200);
     result = getPhotoBase64(fileId);
+  }
+
+  // Returns the logo image (as base64) from CFG.folderLogo for the admin preview card.
+  // Uses the same _getLogoUrl() logic so the preview exactly matches what emails will show.
+  else if (action === "getEmailLogoPreview") {
+    const logoUrl = _getLogoUrl();
+    if (!logoUrl) {
+      result = { status: "none", message: "No image found in CFG.folderLogo — Om symbol will be used." };
+    } else {
+      // Extract the file ID from the lh3 URL and proxy it through getPhotoBase64
+      const m = logoUrl.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+      result = m ? getPhotoBase64(m[1]) : { status: "error", message: "Could not parse logo file ID." };
+    }
   }
 
   else { result = { error: "Invalid action: " + action }; }
