@@ -4914,6 +4914,39 @@
             </div>
           </div>
 
+          <!-- Receipt Email Logo — placed here so it's clearly linked to Auto Receipt, not buried after How It Works -->
+          <div style="margin-bottom:16px;background:#fff;border:1.5px solid #e0e7ff;border-left:4px solid #6366f1;border-radius:10px;padding:16px 20px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <i class="fa-solid fa-image" style="color:#6366f1;font-size:14px;"></i>
+              <span style="font-weight:700;color:#334155;font-size:13px;">Email Logo</span>
+              <span style="font-size:11px;color:#6366f1;background:#eef2ff;border-radius:20px;padding:2px 9px;font-weight:600;">Auto Receipt &amp; Monthly Report</span>
+            </div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:10px;line-height:1.6;">
+              Paste your Google Drive <strong>File ID</strong> or full Drive share link — the system builds the image URL automatically.
+              To get it: open the image in Drive → right-click → <em>Get link</em> → copy the ID from the URL (<code>…/d/<strong>FILE_ID</strong>/view</code>).
+              Leave blank to use the 🕉️ symbol fallback.
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input id="ea_logo_url" type="text" placeholder="Paste Drive File ID or full Drive URL"
+                style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid #e0e7ff;border-radius:8px;font-size:12px;font-family:monospace;outline:none;"
+                onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e0e7ff'" />
+              <button onclick="saveLogoUrl()" style="background:#6366f1;padding:9px 18px;font-size:12px;flex-shrink:0;">
+                <i class="fa-solid fa-floppy-disk"></i> Save
+              </button>
+              <button onclick="previewLogoUrl()" style="background:#334155;padding:9px 14px;font-size:12px;flex-shrink:0;">
+                <i class="fa-solid fa-eye"></i> Preview
+              </button>
+            </div>
+            <!-- Preview area: flex so image + error sit side-by-side cleanly -->
+            <div id="ea_logo_preview" style="margin-top:10px;display:none;align-items:center;gap:12px;">
+              <img id="ea_logo_img" src="" alt="Logo Preview"
+                style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #6366f1;flex-shrink:0;"
+                onerror="this.style.display='none';document.getElementById('ea_logo_err').style.display='block'" />
+              <span id="ea_logo_err" style="display:none;font-size:12px;color:#e74c3c;">⚠️ Could not load — check the File ID is correct and the image is shared publicly.</span>
+            </div>
+            <div id="ea_logo_status" style="margin-top:6px;font-size:11px;color:#94a3b8;"></div>
+          </div>
+
           <!-- How It Works -->
           <div style="background:#f8fafc;border-radius:10px;padding:16px 20px;border:1px solid #e2e8f0;">
             <div style="font-weight:700;color:#334155;font-size:13px;margin-bottom:12px;"><i
@@ -4958,38 +4991,7 @@
             </div>
           </div>
 
-          <!-- Logo URL Setting -->
-          <div
-            style="margin-top:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;">
-            <div style="font-weight:700;color:#334155;font-size:13px;margin-bottom:6px;">
-              <i class="fa-solid fa-image" style="color:#6366f1;margin-right:6px;"></i>Receipt Email Logo URL
-            </div>
-            <div style="font-size:12px;color:#64748b;margin-bottom:10px;">
-              Paste the publicly accessible image URL for the temple logo used in all email receipts.
-              Host on Google Drive → share publicly → use <code>lh3.googleusercontent.com/d/FILE_ID=w400</code> format.
-              Leave blank to use the 🕉️ symbol fallback.
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <input id="ea_logo_url" type="url" placeholder="https://lh3.googleusercontent.com/d/YOUR_FILE_ID=w400"
-                style="flex:1;min-width:260px;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:monospace;outline:none;"
-                onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e2e8f0'" />
-              <button onclick="saveLogoUrl()" style="background:#6366f1;padding:9px 18px;font-size:12px;flex-shrink:0;">
-                <i class="fa-solid fa-floppy-disk"></i> Save
-              </button>
-              <button onclick="previewLogoUrl()"
-                style="background:#334155;padding:9px 14px;font-size:12px;flex-shrink:0;">
-                <i class="fa-solid fa-eye"></i> Preview
-              </button>
-            </div>
-            <div id="ea_logo_preview" style="margin-top:10px;display:none;">
-              <img id="ea_logo_img" src="" alt="Logo Preview"
-                style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #6366f1;"
-                onerror="this.style.display='none';document.getElementById('ea_logo_err').style.display='block'" />
-              <span id="ea_logo_err" style="display:none;font-size:12px;color:#e74c3c;">⚠️ Could not load — check URL is
-                publicly accessible.</span>
-            </div>
-            <div id="ea_logo_status" style="margin-top:6px;font-size:11px;color:#94a3b8;"></div>
-          </div>
+
 
           <!-- Manual Send Test -->
           <div
@@ -8420,10 +8422,13 @@
             </button>` : `
             <button class="btn-sm" onclick="event.stopPropagation();openEditUser('${u.UserId}')"><i class="fa-solid fa-pen"></i></button>
             <button class="btn-sm btn-danger" onclick="event.stopPropagation();deleteUser('${u.UserId}')"><i class="fa-solid fa-trash"></i></button>`;
+        const _fbSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23f7a01a'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='white' font-size='14' font-family='Arial'%3E%26%23128100%3B%3C/text%3E%3C/svg%3E";
         return `
       <tr class="${rowClass}" onclick="viewUser('${u.UserId}')" title="Click to view details">
         <td onclick="event.stopPropagation();openEditUser('${u.UserId}')" title="Click to edit user" style="cursor:pointer;">
-          <img src="${u.PhotoURL ? escapeHtml(_driveImgSrc(u.PhotoURL)) : ""}" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23f7a01a\'/></svg>'"
+          <img src="${u.PhotoURL ? escapeHtml(_driveImgSrc(u.PhotoURL)) : _fbSvg}"
+               data-userid="${escapeHtml(String(u.UserId))}"
+               onerror="this.onerror=null;this.src='${_fbSvg}'"
                width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;"/>
         </td>
         <td><b>${escapeHtml(u.Name || "")}</b></td>
@@ -8436,6 +8441,17 @@
       </tr>`;
       }).join("");
       _buildPagination("users_pagination", page, total, "_gotoUsersPage");
+      // Lazy-load photos via Apps Script proxy to avoid Drive CORS/429 issues
+      items.forEach(function(u) {
+        if (!u.PhotoURL) return;
+        var fileId = _adminExtractDriveFileId(u.PhotoURL);
+        if (!fileId) return;
+        _fetchAdminPhotoBase64(u.PhotoURL).then(function(b64) {
+          if (!b64) return;
+          var img = document.querySelector('img[data-userid="' + u.UserId + '"]');
+          if (img) img.src = b64;
+        }).catch(function(){});
+      });
     }
 
     function viewUser(id) {
@@ -8469,6 +8485,31 @@
         ],
         `openEditUser('${id}')`
       );
+    }
+
+    /* ── DOB format helpers ──────────────────────────────────────────────
+       Sheet stores DOB as DD-MM-YYYY.  <input type="date"> needs YYYY-MM-DD.
+       These two functions convert between the formats safely.
+    ──────────────────────────────────────────────────────────────────── */
+    function _dobToInputVal(dob) {
+      if (!dob) return "";
+      // DD-MM-YYYY → YYYY-MM-DD
+      if (/^\d{2}-\d{2}-\d{4}$/.test(dob)) {
+        var p = dob.split("-");
+        return p[2] + "-" + p[1] + "-" + p[0];
+      }
+      // Already YYYY-MM-DD — return as-is
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) return dob;
+      return "";
+    }
+    function _inputValToDob(val) {
+      if (!val) return "";
+      // YYYY-MM-DD → DD-MM-YYYY
+      if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+        var p = val.split("-");
+        return p[2] + "-" + p[1] + "-" + p[0];
+      }
+      return val;
     }
 
     function openEditUser(id) {
@@ -8576,7 +8617,7 @@
         <label class="_fl">Date of Birth
           <span style="color:#bbb;font-weight:400;font-size:10px;">— for birthday alerts on dashboard</span>
         </label>
-        <input class="_fi" type="date" id="eu_dob" value="${escapeHtml(u.DOB || '')}" style="margin-bottom:0;"/>
+        <input class="_fi" type="date" id="eu_dob" value="${escapeHtml(_dobToInputVal(u.DOB || ''))}" style="margin-bottom:0;"/>
       </div>
       <div class="_mft">
         <button class="_mbtn" style="background:#999;" onclick="closeModal();_adminPendingCroppedB64='';">Cancel</button>
@@ -8606,7 +8647,7 @@
               Email: document.getElementById("eu_email").value,
               Status: document.getElementById("eu_status").value,
               MonthlyTarget: Number(document.getElementById("eu_monthly_target")?.value || 0),
-              DOB: document.getElementById("eu_dob")?.value || "",
+              DOB: _inputValToDob(document.getElementById("eu_dob")?.value || ""),
               AdminName: s.name,
               base64: _adminPendingCroppedB64,
               fileName: "User_" + id + "_" + Date.now() + ".jpg",
@@ -8637,7 +8678,7 @@
           Password: "",
           PhotoURL: photoURL,
           MonthlyTarget: Number(document.getElementById("eu_monthly_target")?.value || 0),
-          DOB: document.getElementById("eu_dob")?.value || "",
+          DOB: _inputValToDob(document.getElementById("eu_dob")?.value || ""),
           AdminName: s.name,
         });
         toast(
@@ -11857,9 +11898,15 @@
         // Load saved logo URL
         if (s && typeof s === "object" && s.logo_email_url) {
           var logoEl = document.getElementById("ea_logo_url");
-          if (logoEl && !logoEl.value) logoEl.value = s.logo_email_url;
+          if (logoEl && !logoEl.value) {
+            // Show just the File ID (not the full lh3 URL) so admin sees something clean
+            var _savedId = _extractDriveFileId(s.logo_email_url) || s.logo_email_url;
+            logoEl.value = _savedId;
+            // Auto-show the preview immediately — no need to click Preview manually
+            previewLogoUrl();
+          }
           var statusEl = document.getElementById("ea_logo_status");
-          if (statusEl) statusEl.textContent = "✅ Logo URL loaded from settings.";
+          if (statusEl) statusEl.textContent = "✅ Logo loaded from settings.";
         }
         if (!s || typeof s !== "object") {
           var el = document.getElementById("ea_quota_display");
@@ -11889,28 +11936,64 @@
       }).catch(function () { });
     }
 
+    // Extract a bare Drive File ID from whatever the admin pastes:
+    // Accepts: bare ID, https://drive.google.com/file/d/ID/view, https://drive.google.com/open?id=ID
+    function _extractDriveFileId(input) {
+      var s = (input || "").trim();
+      // Full Drive URL patterns
+      var m = s.match(/\/d\/([a-zA-Z0-9_-]{10,})/)  // /d/FILE_ID
+           || s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/); // ?id=FILE_ID
+      if (m) return m[1];
+      // Already a bare File ID (no slashes, no protocol)
+      if (/^[a-zA-Z0-9_-]{10,}$/.test(s)) return s;
+      return null;
+    }
     function saveLogoUrl() {
-      const url = (document.getElementById("ea_logo_url") || {}).value || "";
-      const statusEl = document.getElementById("ea_logo_status");
+      var raw = (document.getElementById("ea_logo_url") || {}).value || "";
+      var statusEl = document.getElementById("ea_logo_status");
+      var fileId = _extractDriveFileId(raw);
+      if (!raw.trim()) {
+        // Allow clearing the logo
+        fileId = "";
+      } else if (!fileId) {
+        if (statusEl) statusEl.textContent = "❌ Could not find a valid Drive File ID in what you pasted.";
+        toast("Paste a Drive File ID or Drive share link.", "warn"); return;
+      }
+      // Build the canonical URL that _getLogoUrl() in Apps Script expects
+      var logoUrl = fileId ? ("https://lh3.googleusercontent.com/d/" + fileId + "=w400") : "";
       if (statusEl) statusEl.textContent = "Saving…";
-      postData({ action: "saveEmailSettings", key: "logo_email_url", value: url.trim() })
+      postData({ action: "saveEmailSettings", key: "logo_email_url", value: logoUrl })
         .then(function (r) {
           if (r && r.status === "ok") {
-            if (statusEl) statusEl.textContent = "✅ Logo URL saved. New emails will use this image.";
+            if (statusEl) statusEl.textContent = "✅ Logo saved. New emails will use this image.";
             mandirCacheBust("getEmailSettings");
-            toast("Logo URL saved.");
+            toast("Logo saved.");
           } else { if (statusEl) statusEl.textContent = "❌ Save failed."; }
         }).catch(function (e) { if (statusEl) statusEl.textContent = "❌ " + e.message; });
     }
     function previewLogoUrl() {
-      const url = (document.getElementById("ea_logo_url") || {}).value || "";
-      const wrap = document.getElementById("ea_logo_preview");
-      const img = document.getElementById("ea_logo_img");
-      const err = document.getElementById("ea_logo_err");
-      if (!url.trim()) { toast("Enter a URL first.", "warn"); return; }
+      var raw = (document.getElementById("ea_logo_url") || {}).value || "";
+      var wrap = document.getElementById("ea_logo_preview");
+      var img  = document.getElementById("ea_logo_img");
+      var err  = document.getElementById("ea_logo_err");
+      if (!raw.trim()) { toast("Enter a File ID or Drive URL first.", "warn"); return; }
+      var fileId = _extractDriveFileId(raw);
+      if (!fileId) { toast("Could not find a valid Drive File ID.", "warn"); return; }
       if (!wrap || !img || !err) return;
-      img.style.display = "block"; err.style.display = "none";
-      img.src = url.trim(); wrap.style.display = "block";
+      img.style.display = "none"; err.style.display = "none"; wrap.style.display = "flex";
+      // Use the Apps Script getPhotoBase64 proxy so the browser never hits Drive directly
+      var _sess = JSON.parse(localStorage.getItem("session") || "{}");
+      postData({ action: "getPhotoBase64", fileId: fileId,
+                 sessionToken: _sess.sessionToken || "", userId: _sess.userId || "" })
+        .then(function (res) {
+          // getPhotoBase64 returns { status:"success", base64:"data:mime;base64,..." }
+          if (res && res.status === "success" && res.base64) {
+            img.src = res.base64; // already a full data URI
+            img.style.display = "block";
+          } else {
+            err.style.display = "block";
+          }
+        }).catch(function () { err.style.display = "block"; });
     }
     function _updateToggleStatus(key, isOn) {
       var statusMap = {

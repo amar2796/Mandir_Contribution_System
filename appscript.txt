@@ -372,7 +372,8 @@ function getEmailSettings() {
     // FIX: === "1" exact string match — "!== 0" was always true for Number 1
     auto_receipt:    map["auto_receipt"]    === "1",
     monthly_report:  map["monthly_report"]  === "1",
-    birthday_email:  map["birthday_email"]  === "1"
+    birthday_email:  map["birthday_email"]  === "1",
+    logo_email_url:  map["logo_email_url"]  || ""
   };
 }
 
@@ -990,8 +991,10 @@ function doGet(e) {
   }
   else if (action === "saveEmailSettings") {
     // Admin passes: action=saveEmailSettings&key=auto_receipt&value=1
-    const key   = sanitize(e.parameter.key   || "", 30);
-    const value = sanitize(e.parameter.value || "0", 2);
+    const key = sanitize(e.parameter.key || "", 30);
+    // FIX: logo_email_url is a URL (up to 500 chars); toggles are "0"/"1" (2 chars)
+    const valueMaxLen = (key === "logo_email_url") ? 500 : 2;
+    const value = sanitize(e.parameter.value || "0", valueMaxLen);
     const allowed = ["auto_receipt", "monthly_report", "logo_email_url", "birthday_email"];
     if (allowed.indexOf(key) !== -1) {
       result = saveEmailSettings(key, value);
