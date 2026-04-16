@@ -3554,6 +3554,23 @@
     /* ── Birthday celebration global keyframes (body-level elements need these) ── */
     @keyframes _bdayPetal{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(108vh) rotate(420deg);opacity:0}}
     @keyframes _bdaySpark{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-92vh) scale(0.2);opacity:0}}
+
+    .map-container iframe {
+        transition: filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: filter;
+    }
+
+    /* Dark mode: Invert colors and tweak hue to match your gold/brown theme */
+    body.user-dark .map-container iframe {
+      filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%) saturate(1.5);
+      border: none;
+    }
+
+    /* Optional: Add a subtle gold glow to the map border in dark mode */
+    body.user-dark .map-container {
+      border-color: rgba(247, 160, 26, 0.4) !important;
+      box-shadow: 0 0 15px rgba(247, 160, 26, 0.1) !important;
+    }
   </style>
   <!-- ── Anti-FOUC: apply dark class BEFORE first paint to prevent white flash ── -->
   <script>
@@ -3616,13 +3633,11 @@
     </div>
     <div class="header-right">
       <!-- Dark mode toggle switch -->
-      <div id="userDarkBtn" onclick="toggleUserDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode" role="switch" aria-checked="false" tabindex="0"
-        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleUserDarkMode();}"
-        class="dm-toggle" style="cursor:pointer;flex-shrink:0;">
-        <span class="dm-icon dm-icon-sun">☀️</span>
-        <span class="dm-knob"></span>
-        <span class="dm-icon dm-icon-moon">🌙</span>
-      </div>
+        <button id="userDarkBtn" onclick="toggleUserDarkMode()" 
+          style="display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:12px; border:2px solid var(--gold); background:var(--white); cursor:pointer; font-weight:700; min-width:110px;">
+    <span id="darkIcon">☀️</span>
+    <span id="darkText" style="font-size:14px; color:var(--ink-mid);">Light Mode</span>
+  </button>
       <div class="hdr-avatar-wrap">
         <img id="hdr_photo" class="hdr-avatar" src="Image/logo.PNG" loading="eager" decoding="async"
           onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',40);"
@@ -3924,9 +3939,17 @@
       <div class="sec-lbl"><i class="fa-solid fa-chart-bar"></i> Statistics</div>
       <div class="grid-2">
         <div class="card">
-          <div class="card-hdr">
+          <div class="card-hdr" style="display:flex; justify-content:space-between; align-items:center;">
             <div class="card-title"><i class="fa-solid fa-calendar-days"></i> Month-wise</div>
-            <select id="summaryYear" class="inl-sel" onchange="renderSummaries()"></select>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <label for="summaryYear" style="font-size:12px; font-weight:700; color:var(--ink-soft);">Select Year:</label>
+              <div style="position:relative;">
+                <select id="summaryYear" class="inl-sel" onchange="renderSummaries()" 
+                        style="padding:6px 24px 6px 10px; border:2px solid var(--gold); background:#fff; font-weight:bold;">
+                </select>
+                <i class="fa-solid fa-caret-down" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--gold);"></i>
+              </div>
+            </div>
           </div>
           <div class="card-body" style="padding-top:10px;padding-bottom:8px;">
             <div id="monthSummary"></div>
@@ -4137,18 +4160,25 @@
                 <a id="templeEmail" href="" style="font-size:14px;font-weight:600;color:var(--gold);text-decoration:none;"></a>
               </div>
             </div>
-            <div style="display:flex;align-items:center;gap:12px;">
-              <i class="fa-solid fa-location-dot" style="color:var(--gold);font-size:1.2rem;width:22px;text-align:center;"></i>
-              <div>
-                <div style="font-size:11px;color:var(--ink-faint);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Address</div>
-                <a id="templeAddress" href="#" target="_blank" rel="noopener"
-                  style="font-size:13px;color:var(--ink-mid);text-decoration:none;display:flex;align-items:center;gap:5px;cursor:pointer;transition:color .2s;"
-                  onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--ink-mid)'">
-                  <span id="templeAddressText"></span>
-                  <span style="font-size:10px;background:var(--gold);color:#fff;border-radius:4px;padding:1px 5px;font-weight:700;white-space:nowrap;flex-shrink:0;">
-                    <i class="fa-solid fa-map-location-dot" style="font-size:9px;"></i> Open Map
-                  </span>
-                </a>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <i class="fa-solid fa-location-dot" style="color:var(--gold); font-size:1.2rem; width:22px; text-align:center;"></i>
+                <div>
+                  <div style="font-size:11px; color:var(--ink-faint); font-weight:600; text-transform:uppercase;">Address</div>
+                  <div id="templeAddressText" style="font-size:13px; color:var(--ink-mid); font-weight:500;"></div>
+                </div>
+              </div>
+            
+              <div class="map-container" style="width:100%; border-radius:12px; overflow:hidden; border:1.5px solid var(--gold-dim); box-shadow:var(--sh-sm); height:220px; position:relative; background:#eee;">
+                <iframe 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3576.167950147388!2d82.20519597492734!3d26.321060585267084!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399a790bd4e8dff3%3A0x93c61c2049ae55f2!2sHanuman%20Mandir!5e0!3m2!1sen!2sin!4v1776331902479!5m2!1sen!2sin" 
+                  width="100%" 
+                  height="100%" 
+                  style="border:0; vertical-align: middle;" 
+                  allowfullscreen="" 
+                  loading="lazy" 
+                  referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
               </div>
             </div>
           </div>
@@ -6699,21 +6729,21 @@
     })();
 
     function toggleUserDarkMode() {
-      const isDark = document.body.classList.toggle("user-dark");
-      // Update browser chrome color
-      const metaTheme = document.getElementById("metaThemeColor");
-      if (metaTheme) metaTheme.content = isDark ? "#08090f" : "#ffffff";
-      // Mark explicit user preference
-      document.body.classList.toggle("user-light", !isDark);
-      localStorage.setItem("mandir_user_dark", isDark ? "1" : "0");
-      const btn = document.getElementById("userDarkBtn");
-      if (btn) {
-        btn.classList.toggle("is-dark", isDark);
-        btn.setAttribute("aria-checked", isDark ? "true" : "false");
-        btn.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
-        btn.setAttribute("title", isDark ? "Switch to light mode" : "Switch to dark mode");
-      }
-    }
+  const isDark = document.body.classList.toggle("user-dark");
+  const text = document.getElementById("darkText");
+  const icon = document.getElementById("darkIcon");
+  
+  // Update Labels for simple understanding
+  if (isDark) {
+    text.innerText = "Dark Mode";
+    icon.innerText = "🌙";
+    localStorage.setItem("mandir_user_dark", "1");
+  } else {
+    text.innerText = "Light Mode";
+    icon.innerText = "☀️";
+    localStorage.setItem("mandir_user_dark", "0");
+  }
+}
     (function () {
       const stored = localStorage.getItem("mandir_user_dark");
       const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
