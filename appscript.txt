@@ -412,12 +412,22 @@ function saveEmailSettings(key, value) {
 //  Each member gets ONLY their own data. Privacy guaranteed.
 // ════════════════════════════════════════════════════════════════
 function sendMonthlyEndReports(overrideMonth, overrideYear) {
+  // ✅ FIX: When fired by a time-based trigger, Apps Script automatically passes a trigger
+  // event object as the first argument. This is a plain object (not a string), so we must
+  // ignore it — otherwise overrideMonth becomes {triggerUid:...} and shows as "[object Object]"
+  // in emails, AND the contribution filter always fails → every member gets emailed.
+  // Safe rule: only accept overrideMonth/overrideYear if they are actual strings/numbers.
+  var safeMonth = (typeof overrideMonth === "string" && overrideMonth.trim()) ? overrideMonth.trim() : null;
+  var safeYear  = (typeof overrideYear  === "string" && overrideYear.trim())  ? overrideYear.trim()
+                : (typeof overrideYear  === "number")                         ? String(overrideYear)
+                : null;
+
   const settings = getEmailSettings();
   if (!settings.monthly_report) {
     Logger.log("Monthly report is disabled. Skipping.");
     return { status: "ok", sent: 0, skipped: 0, message: "Disabled" };
   }
-  return _doSendMonthlyReports(overrideMonth, overrideYear);
+  return _doSendMonthlyReports(safeMonth, safeYear);
 }
 
 // Internal — also called by triggerMonthlyReport (manual admin trigger)
