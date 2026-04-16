@@ -438,11 +438,22 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
 
   let sent = 0, skipped = 0;
 
+  // ✅ FIX: ForMonth may be stored as a Date object in Google Sheets (not always a text string).
+  // When Sheets reads a date-formatted cell, it returns a JS Date — String(Date) gives
+  // "Mon Apr 01 2026 00:00:00 GMT+0530", which never matches "April".
+  // Normalize: if ForMonth is a Date, extract the month name using IST locale; else use as string.
+  function _normalizeMonth(val) {
+    if (val instanceof Date) {
+      return Utilities.formatDate(val, "GMT+5:30", "MMMM"); // e.g. "April"
+    }
+    return String(val || "").trim();
+  }
+
   const emailQueue = [];
   activeMembers.forEach(member => {
     const myContribs = contributions.filter(c =>
       String(c.UserId) === String(member.UserId) &&
-      String(c.ForMonth) === month &&
+      _normalizeMonth(c.ForMonth) === month &&
       String(c.Year) === year
     );
 
