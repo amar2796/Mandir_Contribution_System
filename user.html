@@ -1021,6 +1021,147 @@
       box-shadow: none;
     }
 
+    /* ─── BUTTON CLICK ANIMATIONS & RIPPLE ─── */
+
+    /* Ripple host — all interactive elements need relative + overflow:hidden */
+    button, .qa-btn, .pg-btn, .hdr-drop-item, .menu-item,
+    ._mbtn, .bs-close, #scrollTopBtn,
+    .req-edit-btn, .req-del-btn, ._bday-btn {
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ripple wave effect */
+    .btn-ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.45);
+      transform: scale(0);
+      animation: btnRippleAnim 0.55s cubic-bezier(.4,0,.2,1) forwards;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    @keyframes btnRippleAnim {
+      to {
+        transform: scale(4.5);
+        opacity: 0;
+      }
+    }
+
+    /* Dark ripple for ghost/light buttons and dropdown items */
+    .btn-ghost .btn-ripple,
+    .qa-ghost .btn-ripple,
+    .pg-btn .btn-ripple,
+    .hdr-drop-item .btn-ripple,
+    .bs-close .btn-ripple {
+      background: rgba(247,160,26,0.22);
+    }
+    /* Red ripple for danger/delete */
+    .btn-danger .btn-ripple,
+    .req-del-btn .btn-ripple {
+      background: rgba(239,68,68,0.28);
+    }
+
+    /* Pulse ring on click */
+    @keyframes btnPulseRing {
+      0%   { box-shadow: 0 0 0 0 rgba(247,160,26,0.55); }
+      70%  { box-shadow: 0 0 0 8px rgba(247,160,26,0); }
+      100% { box-shadow: 0 0 0 0 rgba(247,160,26,0); }
+    }
+    @keyframes btnPulseRingGreen {
+      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); }
+      70%  { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    }
+    @keyframes btnPulseRingBlue {
+      0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.55); }
+      70%  { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+    }
+    @keyframes btnPulseRingRed {
+      0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.55); }
+      70%  { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+      100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    }
+
+    button.btn-clicked         { animation: btnPulseRing 0.5s ease-out; }
+    button.btn-green.btn-clicked { animation: btnPulseRingGreen 0.5s ease-out; }
+    button.btn-blue.btn-clicked  { animation: btnPulseRingBlue 0.5s ease-out; }
+    button.btn-danger.btn-clicked{ animation: btnPulseRingRed 0.5s ease-out; }
+    .qa-btn.qa-green.btn-clicked { animation: btnPulseRingGreen 0.5s ease-out; }
+    .qa-btn.qa-gold.btn-clicked  { animation: btnPulseRing 0.5s ease-out; }
+
+    /* Loading spinner inside button */
+    @keyframes btnSpinAnim {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .btn-loading-spinner {
+      display: inline-block;
+      width: 13px;
+      height: 13px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: btnSpinAnim 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+    /* Spinner for ghost/light buttons */
+    .btn-ghost .btn-loading-spinner,
+    .qa-ghost .btn-loading-spinner {
+      border-color: rgba(100,116,139,0.35);
+      border-top-color: var(--gold);
+    }
+
+    /* Success checkmark flash */
+    @keyframes btnCheckFlash {
+      0%   { opacity:0; transform: scale(0.5); }
+      40%  { opacity:1; transform: scale(1.15); }
+      100% { opacity:0; transform: scale(1); }
+    }
+    .btn-check-flash {
+      display: inline-block;
+      animation: btnCheckFlash 0.7s ease forwards;
+    }
+
+    /* Bounce on quick actions */
+    @keyframes qaClickBounce {
+      0%   { transform: scale(1); }
+      35%  { transform: scale(0.93) translateY(2px); }
+      70%  { transform: scale(1.04) translateY(-2px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+    .qa-btn.btn-bounce {
+      animation: qaClickBounce 0.38s cubic-bezier(.4,0,.2,1) forwards;
+    }
+
+    /* Menu item tap flash */
+    @keyframes menuItemFlash {
+      0%   { background: rgba(247,160,26,0); }
+      30%  { background: rgba(247,160,26,0.12); }
+      100% { background: rgba(247,160,26,0); }
+    }
+    .menu-item.menu-clicked {
+      animation: menuItemFlash 0.4s ease forwards;
+    }
+
+    /* Pagination button pop */
+    @keyframes pgBtnPop {
+      0%   { transform: scale(1); }
+      45%  { transform: scale(0.88); }
+      100% { transform: scale(1); }
+    }
+    .pg-btn.pg-clicked {
+      animation: pgBtnPop 0.28s ease forwards;
+    }
+
+    /* Disabled state while loading */
+    button[data-loading="true"] {
+      pointer-events: none;
+      opacity: 0.75;
+    }
+
     /* ─── PAGINATION ─── */
     .pagination {
       display: flex;
@@ -7446,6 +7587,142 @@
     function _escHtml(s) {
       return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     }
+
+    /* ══════════════════════════════════════════════════════════════
+       UNIVERSAL BUTTON ANIMATION ENGINE  v2
+       Covers ALL interactive element types found in this dashboard:
+         1. <button> — all variants (gold, secondary, danger, green, blue, ghost, sm)
+         2. .qa-btn  — quick action pills (qa-gold, qa-green, qa-dark, qa-ghost)
+         3. .pg-btn  — pagination buttons
+         4. .menu-item — accordion menu rows
+         5. .hdr-drop-item — header dropdown items (Profile, Edit, ID Card, Logout)
+         6. ._mbtn   — modal footer action buttons
+         7. .bs-close — bottom sheet ✕ close button
+         8. #scrollTopBtn — scroll-to-top FAB
+         9. .req-edit-btn / .req-del-btn — contribution row edit/delete
+        10. ._bday-btn — birthday overlay dismiss button
+       Strategy: single event-delegated capture-phase listener,
+       unified ripple factory, per-type animation class.
+    ══════════════════════════════════════════════════════════════ */
+    (function() {
+
+      /* ── 1. Unified ripple factory ─────────────────────────────── */
+      function _spawnRipple(el, e) {
+        // Ensure element can clip the ripple
+        var cs = window.getComputedStyle(el);
+        if (cs.overflow !== "hidden" && cs.overflow !== "clip") {
+          el.style.overflow = "hidden";
+        }
+        var rect = el.getBoundingClientRect();
+        // Use touch coords on mobile, mouse coords on desktop
+        var cx = e.clientX;
+        var cy = e.clientY;
+        if (e.touches && e.touches.length) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+        cx = cx || rect.left + rect.width / 2;
+        cy = cy || rect.top  + rect.height / 2;
+        var size = Math.max(rect.width, rect.height) * 2.2;
+        var x = cx - rect.left - size / 2;
+        var y = cy - rect.top  - size / 2;
+        var r = document.createElement("span");
+        r.className = "btn-ripple";
+        r.style.cssText = "width:"+size+"px;height:"+size+"px;left:"+x+"px;top:"+y+"px;";
+        el.appendChild(r);
+        setTimeout(function() { r.remove(); }, 650);
+      }
+
+      /* ── 2. Determine the correct animation class per element type ── */
+      function _animClass(el) {
+        if (el.classList.contains("qa-btn"))       return "btn-bounce";
+        if (el.classList.contains("pg-btn"))       return "pg-clicked";
+        if (el.classList.contains("menu-item"))    return "menu-clicked";
+        if (el.classList.contains("hdr-drop-item"))return "menu-clicked";
+        if (el.id === "scrollTopBtn")              return "btn-clicked";
+        if (el.classList.contains("bs-close"))     return "pg-clicked";  // small circle pop
+        return "btn-clicked"; // default: pulse ring
+      }
+
+      /* ── 3. Apply pulse-ring variant based on button colour ──────── */
+      function _applyPulse(el) {
+        var cls = _animClass(el);
+        // For the default btn-clicked, pick ring colour from button variant
+        if (cls === "btn-clicked") {
+          if (el.classList.contains("btn-green") || el.classList.contains("qa-green"))
+            cls = "btn-clicked-green";
+          else if (el.classList.contains("btn-blue") || el.classList.contains("btn-blue"))
+            cls = "btn-clicked-blue";
+          else if (el.classList.contains("btn-danger") || el.classList.contains("req-del-btn"))
+            cls = "btn-clicked-red";
+        }
+        el.classList.remove(cls);
+        void el.offsetWidth; // force reflow → restart animation
+        el.classList.add(cls);
+        setTimeout(function() { el.classList.remove(cls); }, 520);
+      }
+
+      /* ── 4. Single capture-phase delegated listener ───────────────
+             Selector covers ALL button types in one shot.            */
+      var SELECTOR = [
+        "button",
+        ".qa-btn",
+        ".pg-btn",
+        ".menu-item",
+        ".hdr-drop-item",
+        "._mbtn",
+        ".bs-close",
+        "#scrollTopBtn",
+        ".req-edit-btn",
+        ".req-del-btn",
+        "._bday-btn"
+      ].join(", ");
+
+      document.addEventListener("click", function(e) {
+        var el = e.target.closest(SELECTOR);
+        if (!el) return;
+        // Skip disabled / already-loading buttons
+        if (el.disabled || el.dataset.loading === "true" || el.classList.contains("btn-loading")) return;
+
+        _spawnRipple(el, e);
+        _applyPulse(el);
+        // Haptic on mobile (silently ignored on desktop)
+        try { if (navigator.vibrate) navigator.vibrate(7); } catch(_) {}
+      }, true /* capture = fires before onclick, prevents conflicts */);
+
+      /* ── 5. Extra colour-specific pulse ring CSS injected once ──── */
+      var extraCSS = [
+        "@keyframes btnPulseGreen{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}",
+        "@keyframes btnPulseBlue{0%{box-shadow:0 0 0 0 rgba(59,130,246,.55)}70%{box-shadow:0 0 0 8px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}",
+        "@keyframes btnPulseRed{0%{box-shadow:0 0 0 0 rgba(239,68,68,.55)}70%{box-shadow:0 0 0 8px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}",
+        ".btn-clicked-green{animation:btnPulseGreen .5s ease-out!important}",
+        ".btn-clicked-blue{animation:btnPulseBlue .5s ease-out!important}",
+        ".btn-clicked-red{animation:btnPulseRed .5s ease-out!important}"
+      ].join("\n");
+      var s = document.createElement("style");
+      s.textContent = extraCSS;
+      document.head.appendChild(s);
+
+      /* ── 6. Global helpers (used by existing async submit handlers) ── */
+      window._btnSetLoading = function(btn, on, label) {
+        if (!btn) return;
+        if (on) {
+          btn.dataset.loading = "true";
+          btn.dataset.origHtml = btn.innerHTML;
+          btn.innerHTML = '<span class="btn-loading-spinner"></span> ' + (label || "Working…");
+        } else {
+          btn.dataset.loading = "";
+          if (btn.dataset.origHtml) { btn.innerHTML = btn.dataset.origHtml; }
+        }
+      };
+
+      window._btnFlashSuccess = function(btn, label) {
+        if (!btn) return;
+        var orig = btn.dataset.origHtml || btn.innerHTML;
+        btn.dataset.loading = "";
+        btn.innerHTML = '<span class="btn-check-flash">✅</span> ' + (label || "Done!");
+        setTimeout(function() { btn.innerHTML = orig; }, 1200);
+      };
+
+    })();
+    /* ══ END UNIVERSAL BUTTON ANIMATION ENGINE v2 ══ */
 
     let _editSlipB64 = "";
     function handleEditSlip(input) {

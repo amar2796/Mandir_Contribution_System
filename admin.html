@@ -3612,44 +3612,64 @@
               <i class="fa-solid fa-file-csv"></i> Export CSV
             </button>
           </h3>
-          <div class="filter-row" style="flex-wrap:wrap;gap:8px;">
-            <div>
-              <label style="font-size: 11px">Search</label><input class="search-bar" id="searchContrib" placeholder="🔍 Search name, mobile, amount, MNR-..."
-              onkeyup="_debouncedFilterContrib()" style="margin: 0;padding: 8px 10px;" />
+          <div class="ct-pf-panel" style="margin-bottom:14px;">
+            <div class="ct-pf-header">
+              <div class="ct-pf-title"><i class="fa-solid fa-sliders" style="color:#f7a01a;"></i> Filters <span style="font-size:10px;font-weight:400;color:#94a3b8;" id="cr_filterCount"></span></div>
+              <div class="ct-pf-hint">All filters combine together</div>
             </div>
-            <div>
-              <label style="font-size: 11px">From Date</label><input type="date" id="contribStart"
-                onchange="filterContributions()" style="margin: 0; padding: 8px 10px" />
+            <div class="ct-pf-g5" style="margin-bottom:8px;">
+              <div>
+                <span class="ct-pf-lbl">Year</span>
+                <select class="ct-pf-sel" id="cr_filterYear" onchange="filterContributions()">
+                  <option value="">All Years</option>
+                </select>
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Month</span>
+                <select class="ct-pf-sel" id="cr_filterMonth" onchange="filterContributions()">
+                  <option value="">All Months</option>
+                  <option>January</option><option>February</option><option>March</option>
+                  <option>April</option><option>May</option><option>June</option>
+                  <option>July</option><option>August</option><option>September</option>
+                  <option>October</option><option>November</option><option>December</option>
+                </select>
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Member / Name</span>
+                <input class="ct-pf-inp" id="cr_filterName" placeholder="Type name or mobile…" oninput="_debouncedFilterContrib()" />
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Tracking ID</span>
+                <input class="ct-pf-inp" id="cr_filterTrackID" placeholder="MNR-… or TRX-…" oninput="_debouncedFilterContrib()" />
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Contribution Type</span>
+                <select class="ct-pf-sel" id="filterContribType" onchange="filterContributions()">
+                  <option value="">All Types</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label style="font-size: 11px">To Date</label><input type="date" id="contribEnd"
-                onchange="filterContributions()" style="margin: 0; padding: 8px 10px" />
-            </div>
-            <div>
-              <label style="font-size:11px;">Type</label>
-              <select id="filterContribType" onchange="filterContributions()"
-                style="margin:0;padding:8px 10px;border:1.5px solid #e8e8e8;border-radius:8px;font-size:13px;">
-                <option value="">All Types</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:11px;">Payment</label>
-              <select id="filterContribMode" onchange="filterContributions()"
-                style="margin:0;padding:8px 10px;border:1.5px solid #e8e8e8;border-radius:8px;font-size:13px;">
-                <option value="">All Modes</option>
-                <option>UPI</option>
-                <option>Cash</option>
-                <option>Bank Transfer</option>
-                <option>Cheque</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:11px;">Action</label>
-              <button onclick="clearContribFilters()"
-              style="background:#f1f5f9;color:#334155; border:1px solid #e2e8f0;border-radius:8px;padding:0.5rem 9rem;font-size:12px;cursor:pointer;">
-              <i class="fa-solid fa-circle-xmark"></i> Clear
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;">
+              <div>
+                <span class="ct-pf-lbl">Occasion</span>
+                <select class="ct-pf-sel" id="cr_filterOccasion" onchange="filterContributions()">
+                  <option value="">All Occasions</option>
+                </select>
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Member Type</span>
+                <select class="ct-pf-sel" id="cr_filterMemberType" onchange="filterContributions()">
+                  <option value="">All</option>
+                  <option value="member">Members Only</option>
+                  <option value="walkin">Walk-in Only</option>
+                </select>
+              </div>
+              <button onclick="clearContribFilters()" style="background:transparent;border:1px solid #cbd5e1;color:#475569;border-radius:8px;padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;height:34px;white-space:nowrap;box-shadow:none;">
+                <i class="fa-solid fa-circle-xmark"></i> Clear All
               </button>
             </div>
+            <!-- Active filter tags -->
+            <div class="ct-tags" id="cr_activeTags" style="margin-top:8px;"></div>
           </div>
           <div class="table-responsive">
             <table>
@@ -5889,6 +5909,7 @@
       // DRAFT: restore contribution draft when navigating to contribution page
       if (id === "contributionPage") {
         setTimeout(function() { if (typeof _restoreDraft === "function") _restoreDraft(); }, 250);
+        setTimeout(function() { if (typeof _cr_buildFilterDropdowns === "function") _cr_buildFilterDropdowns(); }, 300);
       }
     }
 
@@ -6464,6 +6485,8 @@
         yearConfig   = allData.yearConfig   || [];
         // Sync dashboard local copies
         _dashSyncFromAdmin();
+        // Refresh Contribution Records filter dropdowns (Year / Type / Occasion)
+        if (typeof _cr_buildFilterDropdowns === "function") _cr_buildFilterDropdowns();
         // Refresh admin summary panels too
         loadSummary();
         const now = new Date().toLocaleTimeString("en-IN");
@@ -6474,7 +6497,7 @@
         toast("❌ Refresh failed: " + err.message, "error");
       } finally {
         document.getElementById("dash_loadingMsg").style.display = "none";
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Refresh Dashboard'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Refresh'; }
       }
     }
     function setLoading(show) {
@@ -7741,6 +7764,8 @@
         loadExpenseFilters();
         renderGoals();
         loadSummary();
+        // Populate Contribution Records filter dropdowns on initial load
+        setTimeout(function() { if (typeof _cr_buildFilterDropdowns === "function") _cr_buildFilterDropdowns(); }, 400);
         // Load contribution request badge count
         getData("getContributionRequests").then(function (res) {
           window._allRequests = Array.isArray(res) ? res : [];
@@ -8087,52 +8112,83 @@
     }
 
     function filterContributions() {
-      const txt = document
-        .getElementById("searchContrib")
-        .value.toLowerCase();
-      const start = document.getElementById("contribStart").value;
-      const end = document.getElementById("contribEnd").value;
-      const filtered = data.filter((c) => {
-        const user = users.find((u) => String(u.UserId) === String(c.UserId));
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
-        const walkInName = String(c.UserId).startsWith("WALKIN_")
-          ? (
-            String(c.Note || "")
-              .match(/Walk-in:\s*([^|]+)/)?.[1]
-              ?.trim() || ""
-          ).toLowerCase()
+      var yearVal  = (document.getElementById("cr_filterYear")       || {}).value || "";
+      var monthVal = (document.getElementById("cr_filterMonth")      || {}).value || "";
+      var nameTxt  = ((document.getElementById("cr_filterName")      || {}).value || "").toLowerCase().trim();
+      var trackTxt = ((document.getElementById("cr_filterTrackID")   || {}).value || "").toLowerCase().trim();
+      var typeVal  = (document.getElementById("filterContribType")   || {}).value || "";
+      var occVal   = (document.getElementById("cr_filterOccasion")   || {}).value || "";
+      var memType  = (document.getElementById("cr_filterMemberType") || {}).value || "";
+
+      var filtered = data.filter(function(c) {
+        var user = users.find(function(u) { return String(u.UserId) === String(c.UserId); });
+        var isWalkIn = String(c.UserId).startsWith("WALKIN_");
+        var displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        var walkInName = isWalkIn
+          ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "").toLowerCase()
           : "";
-        const nameMatch =
-          !txt ||
-          (user?.Name.toLowerCase() || "").includes(txt) ||
-          walkInName.includes(txt) ||
-          String(user?.Mobile || "").includes(txt) ||
-          String(c.Amount).includes(txt) ||
-          displayRID.toLowerCase().includes(txt) ||
-          (c.ReceiptID || "").toLowerCase().includes(txt);
-        let dateMatch = true;
-        if ((start || end) && c.PaymentDate) {
-          const _fmtD = formatPaymentDate(c.PaymentDate).split(" ")[0].split("-");
-          if (_fmtD.length === 3) {
-            const cDate = `${_fmtD[2]}-${_fmtD[1]}-${_fmtD[0]}`;
-            dateMatch = (!start || cDate >= start) && (!end || cDate <= end);
-          }
-        }
-        return nameMatch && dateMatch;
+        var memberName   = (user ? user.Name || "" : "").toLowerCase();
+        var memberMobile = String(user ? user.Mobile || "" : "");
+
+        if (yearVal  && String(c.Year) !== yearVal) return false;
+        if (monthVal && (c.ForMonth || "") !== monthVal) return false;
+        if (nameTxt  && !memberName.includes(nameTxt) && !walkInName.includes(nameTxt) && !memberMobile.includes(nameTxt)) return false;
+        if (trackTxt && !displayRID.toLowerCase().includes(trackTxt) && !(c.ReceiptID || "").toLowerCase().includes(trackTxt)) return false;
+        if (typeVal  && String(c.TypeId) !== typeVal) return false;
+        if (occVal   && String(c.OccasionId) !== occVal) return false;
+        if (memType === "member" && isWalkIn) return false;
+        if (memType === "walkin" && !isWalkIn) return false;
+        return true;
       });
+
+      var activeCount = [yearVal, monthVal, nameTxt, trackTxt, typeVal, occVal, memType].filter(Boolean).length;
+      var countEl = document.getElementById("cr_filterCount");
+      if (countEl) countEl.textContent = activeCount ? "(" + activeCount + " active)" : "";
+
+      // Build active filter tags (like dashboard tracker)
+      var tagsEl = document.getElementById("cr_activeTags");
+      if (tagsEl) {
+        var tags = [];
+        if (yearVal)  tags.push({ label: "Year: " + yearVal,   clear: function(){ document.getElementById("cr_filterYear").value = ""; filterContributions(); } });
+        if (monthVal) tags.push({ label: "Month: " + monthVal, clear: function(){ document.getElementById("cr_filterMonth").value = ""; filterContributions(); } });
+        if (nameTxt)  tags.push({ label: "Name: " + nameTxt,   clear: function(){ document.getElementById("cr_filterName").value = ""; filterContributions(); } });
+        if (trackTxt) tags.push({ label: "ID: " + trackTxt,    clear: function(){ document.getElementById("cr_filterTrackID").value = ""; filterContributions(); } });
+        if (typeVal) {
+          var allT = window.dash_types && window.dash_types.length ? window.dash_types : (window.types || []);
+          var tn = (allT.find(function(t){ return String(t.TypeId) === typeVal; }) || {}).TypeName || typeVal;
+          tags.push({ label: "Type: " + tn, clear: function(){ document.getElementById("filterContribType").value = ""; filterContributions(); } });
+        }
+        if (occVal) {
+          var allO = window.dash_occasions && window.dash_occasions.length ? window.dash_occasions : (window.occasions || []);
+          var on = (allO.find(function(o){ return String(o.OccasionId) === occVal; }) || {}).OccasionName || occVal;
+          tags.push({ label: "Occasion: " + on, clear: function(){ document.getElementById("cr_filterOccasion").value = ""; filterContributions(); } });
+        }
+        if (memType) tags.push({ label: "Type: " + (memType === "member" ? "Members Only" : "Walk-in Only"), clear: function(){ document.getElementById("cr_filterMemberType").value = ""; filterContributions(); } });
+
+        if (tags.length === 0) {
+          tagsEl.innerHTML = "";
+        } else {
+          tagsEl.innerHTML = tags.map(function(tag, i) {
+            return '<span class="ct-tag" style="display:inline-flex;align-items:center;gap:5px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:#334155;margin-right:4px;margin-bottom:4px;">' +
+              escapeHtml(tag.label) +
+              '<span onclick="window._cr_tags[' + i + ']()" style="cursor:pointer;color:#94a3b8;font-size:13px;line-height:1;font-weight:700;">×</span></span>';
+          }).join("");
+          window._cr_tags = tags.map(function(t){ return t.clear; });
+        }
+      }
+
       window._contribList = filtered;
       window._contribPage = 1;
       render(filtered);
     }
-    /* debounce text search — select/date inputs call filterContributions() directly (instant) */
+    /* debounce text inputs — select inputs call filterContributions() directly (instant) */
     var _filterContribDebounced = debounce(filterContributions, 280);
-    var _debouncedFilterContrib = _filterContribDebounced; // alias used by onkeyup in HTML
+    var _debouncedFilterContrib = _filterContribDebounced;
     document.addEventListener("DOMContentLoaded", function () {
-      var csrch = document.getElementById("searchContrib");
-      if (csrch) {
-        csrch.removeAttribute("onkeyup");
-        csrch.addEventListener("input", _filterContribDebounced);
-      }
+      ["cr_filterName", "cr_filterTrackID"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) { el.removeAttribute("oninput"); el.addEventListener("input", _filterContribDebounced); }
+      });
     });
 
     /* ── RENDER EXPENSES — view-only rows ── */
@@ -12853,76 +12909,47 @@
       }).catch(function () { });
     }
 
-    // ── H7: Extend filterContributions with new fields (type, mode, min, max)
-    // Wrap the existing filterContributions
-    document.addEventListener("DOMContentLoaded", function () {
-      const _origFilter = window.filterContributions;
-      if (typeof _origFilter === "function") {
-        window.filterContributions = function () {
-          _origFilter();
-          // Additional filters applied on top of existing logic
-          _applyExtraContribFilters();
-        };
-      }
-
-      // Debounced wrapper for min/max amount inputs (New B fix)
-      var _extraFilterDebounced = debounce(function () {
-        if (typeof filterContributions === "function") filterContributions();
-      }, 280);
-      ["filterContribMin", "filterContribMax"].forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el) {
-          el.removeAttribute("onkeyup");
-          el.removeAttribute("oninput");
-          el.addEventListener("input", _extraFilterDebounced);
-        }
-      });
-
-      // Populate type filter dropdown when types load
-      const _origLoadTypes = window.loadTypes || window.loadMasterData;
-
-      // Populate type dropdown from loaded data
-      function _populateContribTypeFilter() {
-        const sel = document.getElementById("filterContribType");
-        if (!sel || sel.options.length > 1) return;
-        const types = window._allTypes || [];
-        types.forEach(function (t) {
-          const opt = document.createElement("option");
-          opt.value = t.TypeId || t.TypeName;
-          opt.textContent = t.TypeName;
-          sel.appendChild(opt);
+    // ── H7: Populate Contribution Records filter dropdowns (year, type, occasion)
+    // Called from showPage() when contributionPage is opened — dash_ arrays are already populated by then
+    function _cr_buildFilterDropdowns() {
+      // Year
+      var yrSel = document.getElementById("cr_filterYear");
+      if (yrSel) {
+        var years = new Set();
+        (window.dash_contributions || data || []).forEach(function(c) {
+          var y = Number(c.Year); if (y > 2000) years.add(y);
         });
+        var sorted = Array.from(years).sort(function(a,b){ return b - a; });
+        yrSel.innerHTML = '<option value="">All Years</option>' +
+          sorted.map(function(y){ return '<option value="' + y + '">' + y + '</option>'; }).join("");
       }
-      // Try after a small delay (data may not be loaded yet)
-      setTimeout(_populateContribTypeFilter, 2000);
-    });
 
-    function _applyExtraContribFilters() {
-      const typeVal = (document.getElementById("filterContribType") || {}).value || "";
-      const modeVal = (document.getElementById("filterContribMode") || {}).value || "";
-      const minVal = parseFloat((document.getElementById("filterContribMin") || {}).value || "") || 0;
-      const maxVal = parseFloat((document.getElementById("filterContribMax") || {}).value || "") || Infinity;
-      if (!typeVal && !modeVal && !minVal && maxVal === Infinity) return; // nothing extra to filter
-      const rows = document.querySelectorAll("#tb tr");
-      rows.forEach(function (row) {
-        if (row.style.display === "none") return; // already hidden
-        const cells = row.querySelectorAll("td");
-        if (cells.length < 6) return;
-        const typeCell = cells[5] ? cells[5].textContent.trim() : "";
-        const amtCell = parseFloat((cells[2] ? cells[2].textContent.replace(/[₹,]/g, "") : "")) || 0;
-        if (typeVal && !typeCell.toLowerCase().includes(typeVal.toLowerCase())) { row.style.display = "none"; return; }
-        if (amtCell < minVal || amtCell > maxVal) { row.style.display = "none"; return; }
-        // Payment mode: search across all cells
-        if (modeVal) {
-          const rowText = row.textContent.toLowerCase();
-          if (!rowText.includes(modeVal.toLowerCase())) { row.style.display = "none"; return; }
-        }
-      });
+      // Contribution Type
+      var typeSel = document.getElementById("filterContribType");
+      if (typeSel) {
+        var curTypeVal = typeSel.value;
+        var allT = window.dash_types && window.dash_types.length ? window.dash_types : (window.types || []);
+        typeSel.innerHTML = '<option value="">All Types</option>' +
+          allT.map(function(t){ return '<option value="' + t.TypeId + '">' + escapeHtml(t.TypeName) + '</option>'; }).join("");
+        if (curTypeVal) typeSel.value = curTypeVal;
+      }
+
+      // Occasion
+      var occSel = document.getElementById("cr_filterOccasion");
+      if (occSel) {
+        var curOccVal = occSel.value;
+        var allO = window.dash_occasions && window.dash_occasions.length ? window.dash_occasions : (window.occasions || []);
+        occSel.innerHTML = '<option value="">All Occasions</option>' +
+          allO.map(function(o){ return '<option value="' + o.OccasionId + '">' + escapeHtml(o.OccasionName) + '</option>'; }).join("");
+        if (curOccVal) occSel.value = curOccVal;
+      }
     }
 
+    function _applyExtraContribFilters() { /* no-op — logic now inside filterContributions() */ }
+
     function clearContribFilters() {
-      ["searchContrib", "contribStart", "contribEnd", "filterContribType", "filterContribMode", "filterContribMin", "filterContribMax"]
-        .forEach(function (id) { const el = document.getElementById(id); if (el) el.value = ""; });
+      ["cr_filterYear","cr_filterMonth","cr_filterName","cr_filterTrackID","filterContribType","cr_filterOccasion","cr_filterMemberType"]
+        .forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ""; });
       if (typeof filterContributions === "function") filterContributions();
     }
 
