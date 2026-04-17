@@ -1962,11 +1962,58 @@ function doGet(e) {
       // Receipt counter
       checks["receipt_counter"] = parseInt(props.getProperty("RECEIPT_COUNTER") || "0", 10);
       checks["receipt_year"]    = props.getProperty("RECEIPT_YEAR") || "—";
+      
 
       // Email quota
       checks["email_used"]      = quota.used;
       checks["email_limit"]     = quota.limit;
       checks["email_remaining"] = quota.remaining;
+      // ── Row counts for each sheet ──
+      requiredSheets.forEach(function(name) {
+        var s = ss.getSheetByName(name);
+        checks["sheet_rows_" + name] = s ? Math.max(0, s.getLastRow() - 1) : 0;
+      });
+
+      // ── Column integrity check per sheet ──
+      var expectedCols = {
+        "USERS":                 ["UserId","Name","Mobile","Role","Password","Email","Status","SessionToken","Village","Address","RegisteredAt","PhotoURL","MonthlyTarget","LastLogin","DOB"],
+        "CONTRIBUTION_REQUESTS": ["ReqId","UserId","Amount","PaymentMode","ForMonth","Year","Note","UtrRef","Status","RequestedAt","SlipURL","RejectionNote"],
+        "BROADCAST":             ["BcId","Type","Priority","Title","Message","Time","AdminName"],
+        "CONTRIBUTIONS":         ["Id","UserId","Amount","PaymentDate","ForMonth","Year","TypeId","OccasionId","Note","ReceiptID","PaymentMode"],
+        "EXPENSES":              ["Id","Title","Amount","PaymentDate","Year","ExpenseTypeId","ForMonth","ReceiptURL","ReceiptURLs"],
+        "GOALS":                 ["GoalId","GoalName","TargetAmount","CurrentAmount","Status","CreatedAt"],
+        "TYPES":                 ["TypeId","TypeName","SortOrder"],
+        "OCCASIONS":             ["OccasionId","OccasionName","SortOrder"],
+        "EXPENSE_TYPES":         ["ExpenseTypeId","Name","SortOrder"],
+        "EVENTS":                ["EventId","EventName","Category","StartDate","EndDate","Budget","Status","Description","CreatedAt","AdminName"],
+        "EVENT_EXPENSES":        ["Id","EventId","Title","Amount","PaymentDate","ExpenseTypeId","ForMonth","Note","AdminName"],
+        "GALLERY":               ["ImageId","Title","PhotoURL","Priority","Status","CreatedAt","Tags"],
+        "SETTINGS":              ["Key","Value","UpdatedAt"],
+        "FEEDBACK":              ["Timestamp","Name","Mobile","Address","Message","Status"],
+        "CHATBOT_CONFIG":        ["Key","Value","UpdatedAt"],
+        "AUDIT_LOGS":            ["Timestamp","UserAdmin","Action","Details","Reason","DeviceInfo"],
+        "ANNOUNCEMENT":          ["AnnId","Message","Badge","Icon","Color","Status","AdminName","CreatedAt"],
+        "YEAR_CONFIG":           ["Year","OpeningBalance"]
+      };
+
+      Object.keys(expectedCols).forEach(function(name) {
+        var s = ss.getSheetByName(name);
+        if (!s) { checks["sheet_col_" + name] = "Sheet missing"; return; }
+        var lastCol = s.getLastColumn();
+        if (lastCol === 0) { checks["sheet_col_" + name] = "Sheet is empty"; return; }
+        var actual   = s.getRange(1, 1, 1, lastCol).getValues()[0].map(function(h){ return String(h).trim(); });
+        var expected = expectedCols[name];
+        var missing  = expected.filter(function(c){ return actual.indexOf(c) === -1; });
+        var extra    = actual.filter(function(c){ return c !== "" && expected.indexOf(c) === -1; });
+        if (missing.length === 0 && extra.length === 0) {
+          checks["sheet_col_" + name] = true;
+        } else {
+          var msg = [];
+          if (missing.length > 0) msg.push("Missing: " + missing.join(", "));
+          if (extra.length > 0)   msg.push("Unknown: " + extra.join(", "));
+          checks["sheet_col_" + name] = msg.join(" | ");
+        }
+      });
 
       // Backup — find latest backup in Mandir_Backups folder
       let lastBackup = "Never";

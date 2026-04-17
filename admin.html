@@ -2852,6 +2852,13 @@
               <div id="_grsResults" style="margin-top:8px;max-height:220px;overflow-y:auto;"></div>
             </div>
           </div>
+          <!-- H14: Health status indicator in header — shown after silent login check -->
+          <div id="hc_hdr_wrap" style="display:none;position:relative;cursor:pointer;padding:7px 9px;background:rgba(0,0,0,0.06);border-radius:8px;align-items:center;justify-content:center;"
+            onclick="showPage('healthCheckPage', document.getElementById('nav_health'))"
+            title="System Health — click to view">
+            <i class="fa-solid fa-heart-pulse" style="font-size:13px;color:#64748b;"></i>
+            <span id="hc_hdr_dot" style="position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;border:1.5px solid #fff;display:none;"></span>
+          </div>
           <div>
             <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark/light mode"
               style="flex-shrink:0;background:rgba(0,0,0,0.06);border:none;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:14px;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1),background 0.2s;">
@@ -5310,37 +5317,76 @@
       </div>
       <!-- HEALTH CHECK PAGE (H14) -->
       <div id="healthCheckPage" class="page">
+
+        <!-- Header Card -->
         <div class="card" style="margin-bottom:18px;">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-            <h3 style="margin:0;"><i class="fa-solid fa-heart-pulse" style="color:#e74c3c;"></i> System Health Check
-            </h3>
-            <button onclick="runHealthCheck()"
-              style="background:#334155;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
-              <i class="fa-solid fa-rotate-right"></i> Run Check
-            </button>
+            <h3 style="margin:0;"><i class="fa-solid fa-heart-pulse" style="color:#e74c3c;"></i> System Health Check</h3>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;cursor:pointer;user-select:none;">
+                <input type="checkbox" id="hc_autorefresh" onchange="hcToggleAutoRefresh()" style="cursor:pointer;accent-color:#334155;">
+                Auto-refresh
+              </label>
+              <select id="hc_interval" onchange="hcToggleAutoRefresh()" title="Refresh interval"
+                style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #e2e8f0;color:#334155;display:none;font-family:Poppins,sans-serif;">
+                <option value="300000">Every 5 min</option>
+                <option value="600000">Every 10 min</option>
+                <option value="900000">Every 15 min</option>
+              </select>
+              <button onclick="runHealthCheck()"
+                style="background:#334155;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+                <i class="fa-solid fa-rotate-right"></i> Run Check
+              </button>
+            </div>
           </div>
-          <p style="color:#64748b;font-size:12px;margin:8px 0 0;">Verifies all sheets exist, shows backup date, email
-            quota, receipt counter, and system version.</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:8px;">
+            <p style="color:#64748b;font-size:12px;margin:0;">Verifies all sheets exist, column names match, backup date, email quota, receipt counter and system version.</p>
+            <span id="hc_last_checked" style="font-size:11px;color:#94a3b8;white-space:nowrap;"></span>
+          </div>
         </div>
+
+        <!-- Overall Status Banner -->
+        <div id="hc_overall_banner" style="display:none;align-items:center;gap:12px;border-radius:12px;padding:14px 18px;margin-bottom:14px;">
+          <span id="hc_overall_icon" style="font-size:1.4rem;flex-shrink:0;"></span>
+          <div>
+            <div id="hc_overall_title" style="font-weight:700;font-size:14px;color:#1e293b;"></div>
+            <div id="hc_overall_detail" style="font-size:12px;margin-top:2px;color:#475569;"></div>
+          </div>
+        </div>
+
+        <!-- Loading -->
         <div id="hc_loading" style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;display:none;">
           <i class="fa-solid fa-spinner fa-spin"></i> Running health check…
         </div>
+
+        <!-- Results -->
         <div id="hc_results" style="display:none;">
+
+          <!-- Sheet Status + Column Integrity -->
           <div class="card" style="margin-bottom:12px;">
-            <h4 style="margin:0 0 14px;color:#334155;"><i class="fa-solid fa-database" style="color:#f7a01a;"></i> Sheet
-              Status</h4>
-            <div id="hc_sheets" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
+            <h4 style="margin:0 0 14px;color:#334155;"><i class="fa-solid fa-database" style="color:#f7a01a;"></i> Sheet Status</h4>
+            <div id="hc_sheets" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;"></div>
+            <!-- Column Integrity — shown only if backend returns sheet_col_* keys -->
+            <div id="hc_col_section" style="display:none;margin-top:14px;border-top:1px solid #f1f5f9;padding-top:12px;">
+              <div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:8px;">
+                <i class="fa-solid fa-table-columns" style="color:#8b5cf6;margin-right:5px;"></i> Column Integrity
+              </div>
+              <div id="hc_col_details" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;"></div>
             </div>
           </div>
-          <div
-            style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px;">
+
+          <!-- Stats Grid -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px;">
             <div class="card-box" style="text-align:center;">
               <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Receipt Counter</div>
               <div id="hc_receipt" style="font-size:1.3rem;font-weight:700;color:#334155;">—</div>
             </div>
-            <div class="card-box" style="text-align:center;">
+            <div id="hc_email_card" class="card-box" style="text-align:center;transition:background 0.4s,border 0.4s;">
               <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Email Used Today</div>
-              <div id="hc_email" style="font-size:1.3rem;font-weight:700;color:#334155;">—</div>
+              <div id="hc_email" style="font-size:1.1rem;font-weight:700;color:#334155;">—</div>
+              <div id="hc_email_bar_wrap" style="display:none;margin-top:8px;background:#e2e8f0;border-radius:4px;height:5px;overflow:hidden;">
+                <div id="hc_email_bar" style="height:5px;border-radius:4px;background:#22c55e;width:0%;transition:width 0.6s ease,background 0.4s;"></div>
+              </div>
             </div>
             <div class="card-box" style="text-align:center;">
               <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Last Backup</div>
@@ -5351,6 +5397,7 @@
               <div id="hc_version" style="font-size:1.3rem;font-weight:700;color:#334155;">—</div>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -12577,6 +12624,10 @@
           if (id === "contributionRequestsPage") loadContributionRequests();
         };
       }
+      // ── H14: Run silent health check ~3s after login (non-blocking, no spinner) ──
+      setTimeout(function() {
+        if (typeof _hcSilentLoginCheck === "function") _hcSilentLoginCheck();
+      }, 3000);
     });
 
     // ── L3: Shortcut help popup
@@ -12929,39 +12980,207 @@
       toast("✅ Annual report PDF downloaded.");
     }
 
-    // ── H14: Run health check
+    // ── H14: Run health check (enhanced)
     function runHealthCheck() {
-      const loading = document.getElementById("hc_loading");
-      const results = document.getElementById("hc_results");
+      var loading = document.getElementById("hc_loading");
+      var results = document.getElementById("hc_results");
+      var banner  = document.getElementById("hc_overall_banner");
       if (loading) loading.style.display = "block";
       if (results) results.style.display = "none";
-      getData("getHealthCheck").then(function (res) {
+      if (banner)  banner.style.display  = "none";
+      getData("getHealthCheck").then(function(res) {
         if (loading) loading.style.display = "none";
-        if (!res || res.status !== "ok") { toast("Health check failed: " + (res && res.message || "Unknown error"), "error"); return; }
+        if (!res || res.status !== "ok") {
+          toast("Health check failed: " + (res && res.message || "Unknown error"), "error");
+          return;
+        }
         if (results) results.style.display = "block";
-        const checks = res.checks || {};
-        // Sheets
-        const sheetsEl = document.getElementById("hc_sheets");
+        var checks = res.checks || {};
+
+        // ── Last checked timestamp ──
+        var lcEl = document.getElementById("hc_last_checked");
+        if (lcEl) lcEl.textContent = "Last checked: " + new Date().toLocaleTimeString("en-IN", {hour:"2-digit", minute:"2-digit"});
+
+        // ── Sheet Status (with optional row counts if backend returns sheet_rows_<name>) ──
+        var sheetsEl = document.getElementById("hc_sheets");
         if (sheetsEl) {
           sheetsEl.innerHTML = "";
-          Object.keys(checks).filter(k => k.startsWith("sheet_")).forEach(function (k) {
-            const name = k.replace("sheet_", "");
-            const ok = checks[k];
-            const div = document.createElement("div");
-            div.style.cssText = "background:" + (ok ? "#f0fdf4" : "#fef2f2") + ";border:1px solid " + (ok ? "#86efac" : "#fca5a5") + ";border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;color:" + (ok ? "#15803d" : "#991b1b") + ";";
-            div.textContent = (ok ? "✅ " : "❌ ") + name;
-            sheetsEl.appendChild(div);
-          });
+          Object.keys(checks)
+            .filter(function(k) { return k.startsWith("sheet_") && !k.startsWith("sheet_rows_") && !k.startsWith("sheet_col"); })
+            .forEach(function(k) {
+              var name   = k.replace("sheet_", "");
+              var ok     = checks[k];
+              var rows   = checks["sheet_rows_" + name];
+              var rowTxt = (rows !== undefined) ? " · " + rows + " rows" : "";
+              var div = document.createElement("div");
+              div.style.cssText = "background:" + (ok ? "#f0fdf4" : "#fef2f2") + ";border:1px solid " +
+                (ok ? "#86efac" : "#fca5a5") + ";border-radius:8px;padding:8px 12px;" +
+                "font-size:12px;font-weight:600;color:" + (ok ? "#15803d" : "#991b1b") + ";";
+              div.textContent = (ok ? "✅ " : "❌ ") + name + rowTxt;
+              sheetsEl.appendChild(div);
+            });
         }
-        const set = function (id, val) { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+        // ── Column Integrity (only if backend returns sheet_col_<name> keys) ──
+        var colSection = document.getElementById("hc_col_section");
+        var colDetails = document.getElementById("hc_col_details");
+        var colKeys    = Object.keys(checks).filter(function(k) { return k.startsWith("sheet_col_"); });
+        if (colKeys.length > 0 && colSection && colDetails) {
+          colSection.style.display = "block";
+          colDetails.innerHTML = "";
+          colKeys.forEach(function(k) {
+            var name    = k.replace("sheet_col_", "");
+            var colOk   = (checks[k] === true || checks[k] === "ok");
+            var detail  = (typeof checks[k] === "string" && checks[k] !== "ok") ? checks[k] : null;
+            var div = document.createElement("div");
+            div.style.cssText = "background:" + (colOk ? "#f5f3ff" : "#fff7ed") + ";border:1px solid " +
+              (colOk ? "#c4b5fd" : "#fed7aa") + ";border-radius:8px;padding:8px 12px;" +
+              "font-size:12px;font-weight:600;color:" + (colOk ? "#5b21b6" : "#92400e") + ";";
+            div.innerHTML = (colOk ? "✅ " : "⚠️ ") + name +
+              (detail ? '<div style="font-weight:400;font-size:11px;margin-top:3px;">' + detail + "</div>" : "");
+            colDetails.appendChild(div);
+          });
+        } else if (colSection) {
+          colSection.style.display = "none";
+        }
+
+        // ── Receipt + Backup + Version ──
+        var set = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; };
         set("hc_receipt", checks.receipt_counter + " (" + checks.receipt_year + ")");
-        set("hc_email", checks.email_used + " / " + checks.email_limit + " used, " + checks.email_remaining + " remaining");
-        set("hc_backup", checks.last_backup || "Never");
+        set("hc_backup",  checks.last_backup || "Never");
         set("hc_version", checks.version || "—");
-      }).catch(function (err) {
+
+        // ── Email with color coding + progress bar ──
+        var emailEl   = document.getElementById("hc_email");
+        var emailCard = document.getElementById("hc_email_card");
+        var emailBar  = document.getElementById("hc_email_bar");
+        var emailBarW = document.getElementById("hc_email_bar_wrap");
+        if (emailEl) emailEl.textContent = checks.email_used + " / " + checks.email_limit + " used, " + checks.email_remaining + " remaining";
+        if (checks.email_limit && checks.email_used !== undefined) {
+          var pct = Math.min(100, Math.round((checks.email_used / checks.email_limit) * 100));
+          var emailBg  = pct >= 90 ? "#fef2f2" : pct >= 70 ? "#fffbeb" : "#f0fdf4";
+          var emailBdr = pct >= 90 ? "#fca5a5" : pct >= 70 ? "#fde68a" : "#86efac";
+          var barClr   = pct >= 90 ? "#ef4444"  : pct >= 70 ? "#f59e0b" : "#22c55e";
+          if (emailCard) { emailCard.style.background = emailBg; emailCard.style.border = "1px solid " + emailBdr; emailCard.style.borderRadius = "10px"; }
+          if (emailBarW) emailBarW.style.display = "block";
+          if (emailBar)  { emailBar.style.background = barClr; setTimeout(function(){ emailBar.style.width = pct + "%"; }, 50); }
+        }
+
+        // ── Compute issues & warnings for banner + badge ──
+        var issues   = [], warnings = [];
+        var missingSheets = Object.keys(checks).filter(function(k) {
+          return k.startsWith("sheet_") && !k.startsWith("sheet_rows_") && !k.startsWith("sheet_col") && !checks[k];
+        }).length;
+        var colMismatch = colKeys.filter(function(k) { return checks[k] !== true && checks[k] !== "ok"; }).length;
+        if (missingSheets > 0) issues.push(missingSheets + " sheet" + (missingSheets > 1 ? "s" : "") + " missing");
+        if (colMismatch   > 0) issues.push(colMismatch   + " column mismatch" + (colMismatch > 1 ? "es" : ""));
+        if (checks.email_limit && checks.email_used !== undefined) {
+          var ep = Math.round((checks.email_used / checks.email_limit) * 100);
+          if (ep >= 90) issues.push("email quota critical (" + checks.email_remaining + " left)");
+          else if (ep >= 70) warnings.push("email quota " + ep + "% used");
+        }
+        if (!checks.last_backup || checks.last_backup === "Never") warnings.push("no backup on record");
+
+        _hcRenderBanner(issues, warnings);
+        _hcSetBadge(issues, warnings);
+      }).catch(function(err) {
         if (loading) loading.style.display = "none";
         toast("Health check error: " + err.message, "error");
       });
+    }
+
+    // ── H14: Render overall status banner ──
+    function _hcRenderBanner(issues, warnings) {
+      var banner = document.getElementById("hc_overall_banner");
+      var icon   = document.getElementById("hc_overall_icon");
+      var title  = document.getElementById("hc_overall_title");
+      var detail = document.getElementById("hc_overall_detail");
+      if (!banner) return;
+      var cfg;
+      if (issues.length > 0) {
+        cfg = { bg:"#fef2f2", border:"#fca5a5", ico:"🔴", ttl:"Critical Issues Found", dtl: issues.join(" · ") };
+      } else if (warnings.length > 0) {
+        cfg = { bg:"#fffbeb", border:"#fde68a", ico:"🟡", ttl:"Warnings", dtl: warnings.join(" · ") };
+      } else {
+        cfg = { bg:"#f0fdf4", border:"#86efac", ico:"🟢", ttl:"All Systems Healthy", dtl:"All sheets exist, columns match, email quota is fine." };
+      }
+      banner.style.cssText = "display:flex;align-items:center;gap:12px;background:" + cfg.bg + ";border:1px solid " + cfg.border + ";border-radius:12px;padding:14px 18px;margin-bottom:14px;";
+      if (icon)   icon.textContent   = cfg.ico;
+      if (title)  title.textContent  = cfg.ttl;
+      if (detail) detail.textContent = cfg.dtl;
+    }
+
+    // ── H14: Update sidebar nav badge + header indicator ──
+    function _hcSetBadge(issues, warnings) {
+      var level  = issues.length > 0 ? "critical" : warnings.length > 0 ? "warning" : "ok";
+      var colors = { ok:"#22c55e", warning:"#f59e0b", critical:"#ef4444" };
+      var navEl  = document.getElementById("nav_health");
+      var dot    = document.getElementById("hc_hdr_dot");
+      var wrap   = document.getElementById("hc_hdr_wrap");
+      // Sidebar: small color dot appended to "System Health" nav item
+      if (navEl) {
+        var badge = navEl.querySelector("._hc_nav_badge");
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "_hc_nav_badge";
+          badge.style.cssText = "margin-left:auto;width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;box-shadow:0 0 4px rgba(0,0,0,0.2);";
+          navEl.appendChild(badge);
+        }
+        badge.style.background = colors[level];
+        badge.title = level === "ok" ? "All healthy" : (issues.concat(warnings)).join(", ");
+      }
+      // Header heartbeat icon
+      if (wrap) wrap.style.display = "flex";
+      if (dot)  { dot.style.display = "block"; dot.style.background = colors[level]; }
+    }
+
+    // ── H14: Auto-refresh toggle ──
+    var _hcRefreshTimer = null;
+    function hcToggleAutoRefresh() {
+      var cb  = document.getElementById("hc_autorefresh");
+      var sel = document.getElementById("hc_interval");
+      if (!cb) return;
+      if (_hcRefreshTimer) { clearInterval(_hcRefreshTimer); _hcRefreshTimer = null; }
+      if (cb.checked) {
+        if (sel) sel.style.display = "inline-block";
+        var ms = sel ? parseInt(sel.value, 10) : 300000;
+        _hcRefreshTimer = setInterval(function() { runHealthCheck(); }, ms);
+      } else {
+        if (sel) sel.style.display = "none";
+      }
+    }
+
+    // ── H14: Silent health check on login — no spinner, just badge + one toast ──
+    function _hcSilentLoginCheck() {
+      if (typeof getData !== "function") return;
+      getData("getHealthCheck").then(function(res) {
+        if (!res || res.status !== "ok") return; // fail silently
+        var checks        = res.checks || {};
+        var colKeys       = Object.keys(checks).filter(function(k) { return k.startsWith("sheet_col_"); });
+        var issues        = [], warnings = [];
+        var missingSheets = Object.keys(checks).filter(function(k) {
+          return k.startsWith("sheet_") && !k.startsWith("sheet_rows_") && !k.startsWith("sheet_col") && !checks[k];
+        }).length;
+        var colMismatch   = colKeys.filter(function(k) { return checks[k] !== true && checks[k] !== "ok"; }).length;
+        if (missingSheets > 0) issues.push(missingSheets + " sheet" + (missingSheets > 1 ? "s" : "") + " missing");
+        if (colMismatch   > 0) issues.push(colMismatch   + " column mismatch" + (colMismatch > 1 ? "es" : ""));
+        if (checks.email_limit && checks.email_used !== undefined) {
+          var ep = Math.round((checks.email_used / checks.email_limit) * 100);
+          if (ep >= 90) issues.push("email quota critical");
+          else if (ep >= 70) warnings.push("email quota " + ep + "% used");
+        }
+        if (!checks.last_backup || checks.last_backup === "Never") warnings.push("no backup on record");
+        _hcSetBadge(issues, warnings);
+        // One brief toast so admin knows status without visiting the page
+        if (typeof toast === "function") {
+          var msg = issues.length > 0
+            ? "⚠️ System Health: " + issues[0] + (issues.length > 1 ? " (+" + (issues.length - 1) + " more)" : "")
+            : warnings.length > 0
+            ? "🟡 System Health: " + warnings[0]
+            : "🟢 System Health: All systems healthy";
+          toast(msg, issues.length > 0 ? "error" : warnings.length > 0 ? "warning" : "success");
+        }
+      }).catch(function() { /* silent — do not interrupt admin if network unavailable */ });
     }
 
     // ── M15: Broadcast quota info
