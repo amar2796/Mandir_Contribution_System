@@ -54,8 +54,8 @@
     button.main-btn:hover{background:#5c2709;transform:translateY(-1px);}
     button.main-btn:disabled{background:#c4b9b0;cursor:not-allowed;transform:none;}
     /* SECONDARY BUTTON — ghost style, clearly less prominent than primary */
-    .retry-btn{width:100%;padding:10px;border:1.5px solid #d6cfc6;border-radius:10px;color:#666;font-family:"Poppins",sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;background:#fff;margin-bottom:10px;display:none;transition:all .2s ease;}
-    .retry-btn:hover{border-color:#999;color:#333;}
+    .retry-btn{width:100%;padding:11px;border:1.5px solid #f7a01a;border-radius:10px;color:#78350f;font-family:"Poppins",sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;background:#fffbf5;margin-bottom:10px;display:none;transition:all .2s ease;}
+    .retry-btn:hover{background:#fde68a;border-color:#e8920a;color:#5c2709;transform:translateY(-1px);}
     /* Register row */
     .reg-row-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fffbf5;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:0;}
     .reg-row-card .reg-text{font-size:12.5px;font-weight:700;color:#78350f;}
@@ -753,9 +753,30 @@ async function doLogin(){
       _loginFail();
     }
   }catch(err){
-    setMsg("loginMsg","❌ "+(err.message||"Connection error."),"error");
-    if((err.message||"").toLowerCase().includes("timed out")){
-      document.getElementById("retryBtn").style.display="block";
+    const errMsg = (err.message||"").toLowerCase();
+    let reason = "";
+    let icon = "fa-circle-exclamation";
+    if(errMsg.includes("timed out")||errMsg.includes("timeout")){
+      reason = "⏱️ Request timed out — the server took too long to respond.";
+      icon = "fa-clock";
+    } else if(errMsg.includes("network error")||errMsg.includes("failed to fetch")||errMsg.includes("networkerror")){
+      reason = "📶 Network error — check your internet connection and try again.";
+      icon = "fa-wifi";
+    } else if(errMsg.includes("offline")||!navigator.onLine){
+      reason = "📴 You appear to be offline — please check your connection.";
+      icon = "fa-wifi";
+    } else if(errMsg.includes("load")||errMsg.includes("script")){
+      reason = "🌐 Could not reach the server — you may have a weak connection.";
+      icon = "fa-signal";
+    } else {
+      reason = "⚠️ Connection error — please try again.";
+    }
+    setMsg("loginMsg","❌ "+reason,"error");
+    // Always show retry button for network/connection errors
+    const retryBtn = document.getElementById("retryBtn");
+    if(retryBtn){
+      retryBtn.style.display="block";
+      retryBtn.innerHTML='<i class="fa-solid fa-rotate-right"></i> Retry Login';
     }
   }finally{
     btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-right-to-bracket"></i> Secure Login';
