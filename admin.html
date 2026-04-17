@@ -3614,8 +3614,17 @@
           </h3>
           <div class="ct-pf-panel" style="margin-bottom:14px;">
             <div class="ct-pf-header">
-              <div class="ct-pf-title"><i class="fa-solid fa-sliders" style="color:#f7a01a;"></i> Filters <span style="font-size:10px;font-weight:400;color:#94a3b8;" id="cr_filterCount"></span></div>
-              <div class="ct-pf-hint">All filters combine together</div>
+              <div class="ct-pf-title">
+                <i class="fa-solid fa-sliders" style="color:#f7a01a;"></i>
+                Filters
+                <span style="font-size:10px;font-weight:400;color:#94a3b8;" id="cr_filterCount"></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span class="ct-pf-hint">All filters combine together</span>
+                <button onclick="clearContribFilters()" style="background:transparent;border:1.5px solid #e2e8f0;color:#64748b;border-radius:7px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;box-shadow:none;display:flex;align-items:center;gap:5px;line-height:1;transition:border-color .2s,color .2s;" onmouseover="this.style.borderColor='#f7a01a';this.style.color='#f7a01a';" onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#64748b';">
+                  <i class="fa-solid fa-rotate-left" style="font-size:10px;"></i> Clear All
+                </button>
+              </div>
             </div>
             <div class="ct-pf-g5" style="margin-bottom:8px;">
               <div>
@@ -3649,7 +3658,7 @@
                 </select>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;">
+            <div class="ct-pf-g5">
               <div>
                 <span class="ct-pf-lbl">Occasion</span>
                 <select class="ct-pf-sel" id="cr_filterOccasion" onchange="filterContributions()">
@@ -3664,9 +3673,6 @@
                   <option value="walkin">Walk-in Only</option>
                 </select>
               </div>
-              <button onclick="clearContribFilters()" style="background:transparent;border:1px solid #cbd5e1;color:#475569;border-radius:8px;padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;height:34px;white-space:nowrap;box-shadow:none;">
-                <i class="fa-solid fa-circle-xmark"></i> Clear All
-              </button>
             </div>
             <!-- Active filter tags -->
             <div class="ct-tags" id="cr_activeTags" style="margin-top:8px;"></div>
@@ -3735,19 +3741,53 @@
               <i class="fa-solid fa-file-csv"></i> Export CSV
             </button>
           </h3>
-          <div class="filter-row" style="margin-bottom: 12px">
-            <input class="search-bar" id="searchExpense" placeholder="🔍 Search title, type, month..."
-              onkeyup="filterExpenses()" style="margin: 0" />
-            <div>
-              <label style="font-size: 11px">Year</label>
-              <select id="expFilterYear" onchange="filterExpenses()" style="margin: 0; padding: 8px 10px"></select>
+          <div class="ct-pf-panel" style="margin-bottom:14px;">
+            <div class="ct-pf-header">
+              <div class="ct-pf-title"><i class="fa-solid fa-sliders" style="color:#e74c3c;"></i> Filters <span style="font-size:10px;font-weight:400;color:#94a3b8;" id="exp_filterCount"></span></div>
+              <div class="ct-pf-hint">All filters combine together</div>
             </div>
-            <div>
-              <label style="font-size: 11px">Month</label>
-              <select id="expFilterMonth" onchange="filterExpenses()" style="margin: 0; padding: 8px 10px">
-                <option value="">All Months</option>
-              </select>
+            <div class="ct-pf-g5" style="margin-bottom:8px;">
+              <div>
+                <span class="ct-pf-lbl">Year</span>
+                <select class="ct-pf-sel" id="expFilterYear" onchange="filterExpenses()">
+                  <option value="">All Years</option>
+                </select>
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Month</span>
+                <select class="ct-pf-sel" id="expFilterMonth" onchange="filterExpenses()">
+                  <option value="">All Months</option>
+                  <option>January</option><option>February</option><option>March</option>
+                  <option>April</option><option>May</option><option>June</option>
+                  <option>July</option><option>August</option><option>September</option>
+                  <option>October</option><option>November</option><option>December</option>
+                </select>
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Title / Search</span>
+                <input class="ct-pf-inp" id="searchExpense" placeholder="Search title…" oninput="_filterExpensesDebounced()" />
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Expense Type</span>
+                <select class="ct-pf-sel" id="expFilterType" onchange="filterExpenses()">
+                  <option value="">All Types</option>
+                </select>
+              </div>
+              <div>
+                <span class="ct-pf-lbl">Amount Range</span>
+                <div style="display:flex;gap:4px;">
+                  <input class="ct-pf-inp" id="expFilterAmtMin" placeholder="₹ Min" type="number" min="0" oninput="_filterExpensesDebounced()" style="margin:0;" />
+                  <input class="ct-pf-inp" id="expFilterAmtMax" placeholder="₹ Max" type="number" min="0" oninput="_filterExpensesDebounced()" style="margin:0;" />
+                </div>
+              </div>
             </div>
+            <div style="display:flex;justify-content:flex-end;">
+              <button onclick="clearExpenseFilters()" style="background:transparent;border:1px solid #cbd5e1;color:#475569;border-radius:8px;padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;height:34px;white-space:nowrap;box-shadow:none;">
+                <i class="fa-solid fa-circle-xmark"></i> Clear All
+              </button>
+            </div>
+            <!-- Active filter tags -->
+            <div class="ct-tags" id="exp_activeTags" style="margin-top:8px;"></div>
           </div>
           <div class="table-responsive">
             <table>
@@ -7840,6 +7880,7 @@
       document.getElementById("expenseType").innerHTML = expenseTypes
         .map((e) => `<option value="${e.ExpenseTypeId}">${e.Name}</option>`)
         .join("");
+      if (typeof _exp_populateTypeDropdown === "function") _exp_populateTypeDropdown();
     }
     function loadOccasions() {
       document.getElementById("occasion").innerHTML =
@@ -8283,37 +8324,72 @@
     }
 
     function filterExpenses() {
-      const txt = (
-        document.getElementById("searchExpense")?.value || ""
-      ).toLowerCase();
-      const yr = document.getElementById("expFilterYear")?.value || "";
-      const mo = document.getElementById("expFilterMonth")?.value || "";
+      const txt = (document.getElementById("searchExpense")?.value || "").toLowerCase();
+      const yr  = document.getElementById("expFilterYear")?.value || "";
+      const mo  = document.getElementById("expFilterMonth")?.value || "";
+      const tp  = document.getElementById("expFilterType")?.value || "";
+      const amtMin = parseFloat(document.getElementById("expFilterAmtMin")?.value) || 0;
+      const amtMax = parseFloat(document.getElementById("expFilterAmtMax")?.value) || Infinity;
+
       const filtered = expenses.filter((e) => {
-        let tName =
-          expenseTypes.find(
-            (t) => String(t.ExpenseTypeId) === String(e.ExpenseTypeId)
-          )?.Name || "";
+        let tName = expenseTypes.find((t) => String(t.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "";
         let mn = e.ForMonth || e.Note || "";
-        const textMatch =
-          !txt ||
-          (e.Title || "").toLowerCase().includes(txt) ||
-          tName.toLowerCase().includes(txt) ||
-          mn.toLowerCase().includes(txt) ||
-          String(e.Amount).includes(txt);
-        const yearMatch = !yr || String(e.Year) === yr;
+        const amt = Number(e.Amount || 0);
+        const textMatch  = !txt || (e.Title||"").toLowerCase().includes(txt) || tName.toLowerCase().includes(txt) || mn.toLowerCase().includes(txt) || String(e.Amount).includes(txt);
+        const yearMatch  = !yr || String(e.Year) === yr;
         const monthMatch = !mo || mn === mo;
-        return textMatch && yearMatch && monthMatch;
+        const typeMatch  = !tp || String(e.ExpenseTypeId) === tp;
+        const amtMatch   = amt >= amtMin && amt <= amtMax;
+        return textMatch && yearMatch && monthMatch && typeMatch && amtMatch;
       });
+
       renderExpenses(filtered);
+      _exp_renderActiveTags({ txt, yr, mo, tp, amtMin: document.getElementById("expFilterAmtMin")?.value || "", amtMax: document.getElementById("expFilterAmtMax")?.value || "" });
     }
-    /* debounce text search only; select dropdowns call filterExpenses() directly (instant is fine) */
+
+    function _exp_renderActiveTags(f) {
+      var box = document.getElementById("exp_activeTags");
+      var cnt = document.getElementById("exp_filterCount");
+      if (!box) return;
+      var tags = [];
+      if (f.txt)    tags.push({ label: "Search: " + f.txt,     clear: function(){ document.getElementById("searchExpense").value=""; filterExpenses(); } });
+      if (f.yr)     tags.push({ label: "Year: " + f.yr,         clear: function(){ document.getElementById("expFilterYear").value=""; filterExpenses(); } });
+      if (f.mo)     tags.push({ label: "Month: " + f.mo,        clear: function(){ document.getElementById("expFilterMonth").value=""; filterExpenses(); } });
+      if (f.tp) {
+        var tpName = expenseTypes.find(function(t){ return String(t.ExpenseTypeId)===f.tp; })?.Name || f.tp;
+        tags.push({ label: "Type: " + tpName, clear: function(){ document.getElementById("expFilterType").value=""; filterExpenses(); } });
+      }
+      if (f.amtMin) tags.push({ label: "Min ₹" + f.amtMin,     clear: function(){ document.getElementById("expFilterAmtMin").value=""; filterExpenses(); } });
+      if (f.amtMax) tags.push({ label: "Max ₹" + f.amtMax,     clear: function(){ document.getElementById("expFilterAmtMax").value=""; filterExpenses(); } });
+      if (cnt) cnt.textContent = tags.length ? "(" + tags.length + " active)" : "";
+      box.innerHTML = tags.map(function(t, i){
+        return '<span style="display:inline-flex;align-items:center;gap:4px;background:#fef9ec;border:1px solid #fde68a;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;color:#92400e;cursor:pointer;" onclick="window._expClearTag(' + i + ')">' +
+               escapeHtml(t.label) + ' <i class="fa-solid fa-xmark" style="font-size:9px;"></i></span>';
+      }).join("");
+      window._expClearTag = function(i){ if(tags[i]) tags[i].clear(); };
+    }
+
+    function clearExpenseFilters() {
+      ["searchExpense","expFilterYear","expFilterMonth","expFilterType","expFilterAmtMin","expFilterAmtMax"].forEach(function(id){
+        var el = document.getElementById(id); if(el) el.value = "";
+      });
+      filterExpenses();
+    }
+
+    function _exp_populateTypeDropdown() {
+      var sel = document.getElementById("expFilterType");
+      if (!sel) return;
+      var cur = sel.value;
+      sel.innerHTML = '<option value="">All Types</option>' +
+        expenseTypes.map(function(t){ return '<option value="' + escapeHtml(String(t.ExpenseTypeId)) + '">' + escapeHtml(t.Name || "") + '</option>'; }).join("");
+      if (cur) sel.value = cur;
+    }
+
+    /* debounce for text/amount inputs */
     var _filterExpensesDebounced = debounce(filterExpenses, 280);
     document.addEventListener("DOMContentLoaded", function () {
       var expSrch = document.getElementById("searchExpense");
-      if (expSrch) {
-        expSrch.removeAttribute("onkeyup");
-        expSrch.addEventListener("input", _filterExpensesDebounced);
-      }
+      if (expSrch) expSrch.removeAttribute("onkeyup");
     });
 
     function viewExpense(id) {
@@ -14704,7 +14780,7 @@
             banner.innerHTML =
               '<span><i class="fa-solid fa-clock-rotate-left" style="margin-right:6px;"></i>' +
               'Draft restored from your last session</span>' +
-              '<button onclick="localStorage.removeItem('' + _DRAFT_KEY + '');this.parentElement.remove();" ' +
+              '<button onclick="localStorage.removeItem(\'' + _DRAFT_KEY + '\');this.parentElement.remove();"' +
               'style="background:none;border:none;color:#92400e;cursor:pointer;font-size:12px;' +
               'font-weight:700;padding:0;box-shadow:none;">✕ Clear</button>';
             var firstCard = contribPage.querySelector(".card");

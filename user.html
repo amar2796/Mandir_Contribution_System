@@ -24,9 +24,14 @@
   <!-- Browser chrome color matches app theme -->
   <meta name="theme-color" content="#ffffff" id="metaThemeColor">
   <meta name="color-scheme" content="light dark"><!-- Title is set dynamically via APP.name in _setUserVersion() -->
-  <link
+  <!-- Google Fonts: async load (non-render-blocking) -->
+  <link rel="preload"
     href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap"
-    rel="stylesheet" />
+    as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" />
+  </noscript>
   <!-- Font Awesome: preload then load both sheets together -->
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -78,9 +83,13 @@
       scroll-behavior: smooth;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+
     body {
       font-family: var(--font-b);
-      background: #eef1f8;
+      background: var(--bg, #eef1f8);
       color: var(--ink);
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
@@ -534,12 +543,7 @@
       border: 1px solid rgba(247, 160, 26, 0.1);
       transition: box-shadow var(--t), transform var(--t), border-color var(--t);
       overflow: hidden;
-      contain: layout style;
-    }
-    .card:hover {
-      box-shadow: var(--sh-md);
-      border-color: rgba(247, 160, 26, 0.2);
-      transform: translateY(-2px);
+      contain: layout style paint;
     }
 
     .req-edit-btn:hover {
@@ -2353,9 +2357,7 @@
       box-shadow: var(--sh-sm);
       overflow: hidden;
       transition: border-color var(--t), box-shadow var(--t), transform var(--t);
-      contain: layout style;
-    }
-    .menu-acc-wrap:hover {
+      contain: layout style paint;
       border-color: rgba(247,160,26,0.35);
       box-shadow: var(--sh-md);
       transform: translateY(-1px);
@@ -3224,8 +3226,7 @@
 
     /* ─── LIGHT MODE QUALITY IMPROVEMENTS ─── */
 
-    /* 1. Body background — use CSS var so it's always correct */
-    body { background: var(--bg, #eef1f8); }
+    /* 1. Body background — already set on body rule above using var(--bg) */
 
     /* 2. Input/select/textarea — unified with CSS vars */
     .f-grp input, .f-grp select,
@@ -3571,6 +3572,35 @@
       border-color: rgba(247, 160, 26, 0.4) !important;
       box-shadow: 0 0 15px rgba(247, 160, 26, 0.1) !important;
     }
+
+    /* ── Inline message feedback — replaces JS inline style dark-mode branching ── */
+    .msg-ok {
+      background: #eafaf1;
+      color: #1e8449;
+      border-left-color: #22c55e;
+    }
+    .msg-err {
+      background: #fdedec;
+      color: #c0392b;
+      border-left-color: #e74c3c;
+    }
+    body.user-dark .msg-ok {
+      background: rgba(20, 83, 45, 0.55);
+      color: #86efac;
+    }
+    body.user-dark .msg-err {
+      background: rgba(69, 10, 10, 0.55);
+      color: #fca5a5;
+    }
+
+    /* ── CSS-only focus gold ring — replaces onfocus/onblur inline JS handlers ── */
+    .f-input-gold:focus,
+    .f-input-gold:focus-visible {
+      border-color: var(--gold) !important;
+      box-shadow: 0 0 0 3px rgba(247, 160, 26, 0.12) !important;
+      background: var(--white) !important;
+      outline: none;
+    }
   </style>
   <!-- ── Anti-FOUC: apply dark class BEFORE first paint to prevent white flash ── -->
   <script>
@@ -3730,7 +3760,7 @@
       </button>
       <button class="qa-btn qa-gold" id="btnAnnualReceipt"
         onclick="_confirmPdfDownload('annual')" title="Download your annual contribution statement — useful for tax records" aria-label="Download annual receipt PDF">
-        <i class="fa-solid fa-file-invoice"></i> Annual Contribution Statement
+        <i class="fa-solid fa-file-invoice"></i> Annual Contribution Report
       </button>
       <button class="qa-btn qa-ghost" id="btnFullPDF"
         onclick="_confirmPdfDownload('full')" aria-label="Download full contributions PDF">
@@ -4019,7 +4049,7 @@
               <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
                 <i class="fa-solid fa-calendar-days" style="color:#f7a01a;font-size:10px;"></i> Month <span style="color:#ef4444;">*</span>
               </label>
-              <select id="pr_month" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor=document.body.classList.contains('user-dark')?'#2d3748':'#e2e8f0'">
+              <select id="pr_month" class="f-input-gold" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;">
                 <option value="">Select Month</option>
               </select>
             </div>
@@ -4029,9 +4059,8 @@
               </label>
               <div style="position:relative;">
                 <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#78350f;">₹</span>
-                <input type="number" id="pr_amount" placeholder="0" min="1"
-                  style="width:100%;padding:10px 12px 10px 26px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
-                  onfocus="this.style.borderColor='var(--gold)';this.style.background='#fff'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'"/>
+                <input type="number" id="pr_amount" placeholder="0" min="1" class="f-input-gold"
+                  style="width:100%;padding:10px 12px 10px 26px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"/>
               </div>
             </div>
           </div>
@@ -4041,7 +4070,7 @@
             <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:8px;">
               <i class="fa-solid fa-wallet" style="color:#f7a01a;font-size:10px;"></i> Payment Mode
             </label>
-            <select id="pr_mode" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e2e8f0'">
+            <select id="pr_mode" class="f-input-gold" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;">
             </select>
           </div>
 
@@ -4051,9 +4080,8 @@
               <i class="fa-solid fa-hashtag" style="color:#f7a01a;font-size:10px;"></i> UTR / Reference No.
               <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
             </label>
-            <input type="text" id="pr_utr" placeholder="UPI transaction ID or cheque number"
-              style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
-              onfocus="this.style.borderColor='var(--gold)';this.style.background='#fff'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'"/>
+            <input type="text" id="pr_utr" placeholder="UPI transaction ID or cheque number" class="f-input-gold"
+              style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"/>
           </div>
 
           <!-- Row 4: Note -->
@@ -4062,9 +4090,8 @@
               <i class="fa-solid fa-pen-to-square" style="color:#f7a01a;font-size:10px;"></i> Note
               <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
             </label>
-            <input type="text" id="pr_note" placeholder="Any additional info for admin..." maxlength="200"
-              style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"
-              onfocus="this.style.borderColor='var(--gold)';this.style.background='#fff'" onblur="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'"/>
+            <input type="text" id="pr_note" placeholder="Any additional info for admin..." maxlength="200" class="f-input-gold"
+              style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"/>
           </div>
 
           <!-- Row 5: Payment Slip upload -->
@@ -4126,7 +4153,7 @@
             </div>
             <div class="f-grp">
               <label>Message</label>
-              <textarea id="fb_message" placeholder="Write your feedback here…" maxlength="1000" style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:var(--font-b);font-size:13px;resize:vertical;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+              <textarea id="fb_message" placeholder="Write your feedback here…" maxlength="1000" class="f-input-gold" style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:var(--font-b);font-size:13px;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
             </div>
           </div>
           <div id="fbMsg" style="font-size:12px;margin:8px 0;display:none;"></div>
@@ -4170,15 +4197,10 @@
               </div>
             
               <div class="map-container" style="width:100%; border-radius:12px; overflow:hidden; border:1.5px solid var(--gold-dim); box-shadow:var(--sh-sm); height:220px; position:relative; background:#eee;">
-                <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3576.167950147388!2d82.20519597492734!3d26.321060585267084!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399a790bd4e8dff3%3A0x93c61c2049ae55f2!2sHanuman%20Mandir!5e0!3m2!1sen!2sin!4v1776331902479!5m2!1sen!2sin" 
-                  width="100%" 
-                  height="100%" 
-                  style="border:0; vertical-align: middle;" 
-                  allowfullscreen="" 
-                  loading="lazy" 
-                  referrerpolicy="no-referrer-when-downgrade">
-                </iframe>
+                <!-- Map iframe injected lazily when Contact panel opens — see _lazyLoadPanel -->
+                <div id="mapPlaceholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;gap:8px;">
+                  <i class="fa-solid fa-map-location-dot" style="color:var(--gold);"></i> Map loads on open…
+                </div>
               </div>
             </div>
           </div>
@@ -4266,7 +4288,7 @@
     const _sCache = { v: null, t: 0 };
     function _sess() {
       const now = Date.now();
-      if (_sCache.v && now - _sCache.t < 2000) return _sCache.v; // 2s cache
+      if (_sCache.v && now - _sCache.t < 25000) return _sCache.v; // 25s cache
       try {
         _sCache.v = JSON.parse(localStorage.getItem("session") || "null");
         _sCache.t = now;
@@ -4680,9 +4702,8 @@
                 </div>
                 <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">New Mobile Number</label>
                 <!-- Input full width -->
-                <input id="_mobileNewInput" type="tel" inputmode="numeric" maxlength="10" placeholder="Enter 10-digit mobile number"
+                <input id="_mobileNewInput" type="tel" inputmode="numeric" maxlength="10" placeholder="Enter 10-digit mobile number" class="f-input-gold"
                   style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:15px;font-weight:600;letter-spacing:1.5px;outline:none;box-sizing:border-box;margin-bottom:10px;"
-                  onfocus="this.style.borderColor='#f7a01a';this.style.boxShadow='0 0 0 3px rgba(247,160,26,0.12)'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'"
                   onkeydown="if(event.key==='Enter') _mobileSendOTP()"/>
                 <!-- Button full width below -->
                 <button id="_mobileSendOtpBtn" onclick="_mobileSendOTP()" style="width:100%;padding:11px;background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(247,160,26,0.35);display:flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box;margin-bottom:8px;">
@@ -4713,9 +4734,8 @@
                 </div>
                 <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Enter OTP from your email</label>
                 <!-- OTP input full width -->
-                <input id="_mobileOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="— — — — — —"
+                <input id="_mobileOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="— — — — — —" class="f-input-gold"
                   style="width:100%;padding:13px 14px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:22px;font-weight:700;letter-spacing:8px;text-align:center;outline:none;box-sizing:border-box;margin-bottom:10px;"
-                  onfocus="this.style.borderColor='#f7a01a';this.style.boxShadow='0 0 0 3px rgba(247,160,26,0.12)'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'"
                   onkeydown="if(event.key==='Enter') _mobileVerifyOTP()"/>
                 <!-- Verify button full width -->
                 <button id="_mobileVerifyBtn" onclick="_mobileVerifyOTP()" style="width:100%;padding:11px;background:linear-gradient(135deg,#27ae60,#1e9e52);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(39,174,96,0.3);display:flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box;margin-bottom:10px;">
@@ -4761,9 +4781,8 @@
       if (!el) return;
       el.textContent = msg;
       el.style.display = "block";
-      el.style.background = ok ? (document.body.classList.contains("user-dark") ? "rgba(20,83,45,0.55)" : "#eafaf1") : (document.body.classList.contains("user-dark") ? "rgba(69,10,10,0.55)" : "#fdedec");
-      el.style.color = ok ? (document.body.classList.contains("user-dark") ? "#86efac" : "#1e8449") : (document.body.classList.contains("user-dark") ? "#fca5a5" : "#c0392b");
-      el.style.borderLeftColor = ok ? "#22c55e" : "#e74c3c";
+      el.classList.toggle("msg-ok",  !!ok);
+      el.classList.toggle("msg-err", !ok);
     }
 
     // STEP 2: Validate new number and send OTP
@@ -5477,6 +5496,22 @@
       if (id === "panelPayment") {
         try { _loadUserContribRequests(); } catch(e) { console.error("[panelPayment] _loadUserContribRequests failed:", e); }
       }
+      if (id === "panelContact") {
+        // Lazy-inject Google Maps iframe only on first open
+        var placeholder = document.getElementById("mapPlaceholder");
+        if (placeholder) {
+          var mapContainer = placeholder.parentNode;
+          var iframe = document.createElement("iframe");
+          iframe.src = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3576.167950147388!2d82.20519597492734!3d26.321060585267084!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399a790bd4e8dff3%3A0x93c61c2049ae55f2!2sHanuman%20Mandir!5e0!3m2!1sen!2sin!4v1776331902479!5m2!1sen!2sin";
+          iframe.width = "100%";
+          iframe.height = "100%";
+          iframe.style.cssText = "border:0;vertical-align:middle;";
+          iframe.allowFullscreen = true;
+          iframe.loading = "lazy";
+          iframe.referrerPolicy = "no-referrer-when-downgrade";
+          mapContainer.replaceChild(iframe, placeholder);
+        }
+      }
     }
 
     function _toggleAccordion(id) {
@@ -6106,7 +6141,7 @@
         try {
           LOGO = await loadImageAsBase64("image/logo.png");
         } catch (e) {
-          console.log("Logo load failed");
+          // Logo load failed — receipt will render without logo image
         }
 
         // ✅ Load profile photo via Apps Script proxy (solves CORS block on Drive URLs)
@@ -7130,9 +7165,8 @@
         if (msgEl) {
           msgEl.textContent = msg;
           msgEl.style.display = "block";
-          msgEl.style.background = ok ? (document.body.classList.contains("user-dark") ? "rgba(20,83,45,0.55)" : "#eafaf1") : (document.body.classList.contains("user-dark") ? "rgba(69,10,10,0.55)" : "#fdedec");
-          msgEl.style.color = ok ? (document.body.classList.contains("user-dark") ? "#86efac" : "#1e8449") : (document.body.classList.contains("user-dark") ? "#fca5a5" : "#c0392b");
-          msgEl.style.borderLeftColor = ok ? "#22c55e" : "#e74c3c";
+          msgEl.classList.toggle("msg-ok",  !!ok);
+          msgEl.classList.toggle("msg-err", !ok);
         }
       };
       if (!month) { show("Please select a month.", false); return; }
@@ -7657,7 +7691,7 @@
         r.className = "btn-ripple";
         r.style.cssText = "width:"+size+"px;height:"+size+"px;left:"+x+"px;top:"+y+"px;";
         el.appendChild(r);
-        setTimeout(function() { r.remove(); }, 650);
+        r.addEventListener("animationend", function() { r.remove(); }, { once: true });
       }
 
       /* ── 2. Determine the correct animation class per element type ── */
@@ -7671,18 +7705,9 @@
         return "btn-clicked"; // default: pulse ring
       }
 
-      /* ── 3. Apply pulse-ring variant based on button colour ──────── */
+      /* ── 3. Apply pulse-ring — existing stylesheet handles colour via compound selectors ── */
       function _applyPulse(el) {
         var cls = _animClass(el);
-        // For the default btn-clicked, pick ring colour from button variant
-        if (cls === "btn-clicked") {
-          if (el.classList.contains("btn-green") || el.classList.contains("qa-green"))
-            cls = "btn-clicked-green";
-          else if (el.classList.contains("btn-blue") || el.classList.contains("btn-blue"))
-            cls = "btn-clicked-blue";
-          else if (el.classList.contains("btn-danger") || el.classList.contains("req-del-btn"))
-            cls = "btn-clicked-red";
-        }
         el.classList.remove(cls);
         void el.offsetWidth; // force reflow → restart animation
         el.classList.add(cls);
@@ -7717,18 +7742,7 @@
         try { if (navigator.vibrate) navigator.vibrate(7); } catch(_) {}
       }, true /* capture = fires before onclick, prevents conflicts */);
 
-      /* ── 5. Extra colour-specific pulse ring CSS injected once ──── */
-      var extraCSS = [
-        "@keyframes btnPulseGreen{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}",
-        "@keyframes btnPulseBlue{0%{box-shadow:0 0 0 0 rgba(59,130,246,.55)}70%{box-shadow:0 0 0 8px rgba(59,130,246,0)}100%{box-shadow:0 0 0 0 rgba(59,130,246,0)}}",
-        "@keyframes btnPulseRed{0%{box-shadow:0 0 0 0 rgba(239,68,68,.55)}70%{box-shadow:0 0 0 8px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}",
-        ".btn-clicked-green{animation:btnPulseGreen .5s ease-out!important}",
-        ".btn-clicked-blue{animation:btnPulseBlue .5s ease-out!important}",
-        ".btn-clicked-red{animation:btnPulseRed .5s ease-out!important}"
-      ].join("\n");
-      var s = document.createElement("style");
-      s.textContent = extraCSS;
-      document.head.appendChild(s);
+      /* ── 5. Colour-specific pulse keyframes live in the main <style> block above ── */
 
       /* ── 6. Global helpers (used by existing async submit handlers) ── */
       window._btnSetLoading = function(btn, on, label) {
@@ -7784,9 +7798,8 @@
       const show = (msg, ok) => {
         if (msgEl) {
           msgEl.textContent = msg; msgEl.style.display = "block";
-          msgEl.style.background = ok ? (document.body.classList.contains("user-dark") ? "rgba(20,83,45,0.55)" : "#eafaf1") : (document.body.classList.contains("user-dark") ? "rgba(69,10,10,0.55)" : "#fdedec");
-          msgEl.style.color = ok ? (document.body.classList.contains("user-dark") ? "#86efac" : "#1e8449") : (document.body.classList.contains("user-dark") ? "#fca5a5" : "#c0392b");
-          msgEl.style.borderLeftColor = ok ? "#22c55e" : "#e74c3c";
+          msgEl.classList.toggle("msg-ok",  !!ok);
+          msgEl.classList.toggle("msg-err", !ok);
         }
       };
       if (!month) { show("Please select a month.", false); return; }
