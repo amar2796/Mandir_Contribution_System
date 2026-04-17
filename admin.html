@@ -2509,13 +2509,24 @@
   </div>
 
   <div id="loadingOverlay">
-    <div class="spinner"></div>
-    <div style="
-          font-family: Poppins, sans-serif;
-          color: #334155;
-          font-weight: 600;
-        ">
-      Loading data...
+    <!-- Normal loading state -->
+    <div id="loadingOverlay_loading">
+      <div class="spinner"></div>
+      <div style="font-family:Poppins,sans-serif;color:#334155;font-weight:600;">Loading data...</div>
+    </div>
+    <!-- Error / retry state -->
+    <div id="loadingOverlay_error" style="display:none;flex-direction:column;align-items:center;gap:14px;max-width:360px;width:90%;text-align:center;">
+      <div style="width:58px;height:58px;border-radius:50%;background:#fff3cd;border:2px solid #f7a01a;display:flex;align-items:center;justify-content:center;font-size:1.6rem;">⚠️</div>
+      <div style="font-family:Poppins,sans-serif;font-size:1rem;font-weight:700;color:#78350f;">Could Not Load Data</div>
+      <div id="loadingOverlay_reason" style="font-family:Poppins,sans-serif;font-size:13px;color:#555;background:#fffbf5;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;line-height:1.6;width:100%;"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+        <button id="loadingOverlay_retryBtn" onclick="init()" style="background:#f7a01a;color:#fff;border:none;border-radius:10px;padding:12px;font-family:Poppins,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-shadow:0 4px 12px rgba(247,160,26,0.35);">
+          <i class="fa-solid fa-rotate-right"></i> Retry
+        </button>
+        <button onclick="location.replace('login.html')" style="background:#fff;color:#78350f;border:1.5px solid #f7a01a;border-radius:10px;padding:10px;font-family:Poppins,sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;width:100%;box-shadow:none;">
+          <i class="fa-solid fa-right-to-bracket"></i> Back to Login
+        </button>
+      </div>
     </div>
   </div>
 
@@ -6581,13 +6592,66 @@
         if (lbl) lbl.textContent = "Last refreshed: " + now;
         toast("✅ Dashboard data refreshed.");
       } catch (err) {
-        toast("❌ Refresh failed: " + err.message, "error");
+        const c = _classifyNetworkError(err);
+        toast("❌ Refresh failed: " + c.icon + " " + c.title + " — " + c.detail, "error");
       } finally {
         document.getElementById("dash_loadingMsg").style.display = "none";
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Refresh'; }
       }
     }
+    /* ── Classify network errors into human-readable reason strings ── */
+    function _classifyNetworkError(err) {
+      const msg = (err && err.message ? err.message : String(err || "")).toLowerCase();
+      if (!navigator.onLine) {
+        return { icon: "📴", title: "No Internet Connection", detail: "You appear to be offline. Please check your Wi-Fi or mobile data and try again." };
+      }
+      if (msg.includes("timed out") || msg.includes("timeout") || msg.includes("time out")) {
+        return { icon: "⏱️", title: "Request Timed Out", detail: "The server took too long to respond. This can happen when the server is under load or your connection is slow. Please try again." };
+      }
+      if (msg.includes("network") || msg.includes("failed to fetch") || msg.includes("networkerror")) {
+        return { icon: "📶", title: "Network Error", detail: "A network error occurred while contacting the server. Check your internet connection and try again." };
+      }
+      if (msg.includes("load") || msg.includes("script") || msg.includes("onerror")) {
+        return { icon: "🌐", title: "Server Unreachable", detail: "Could not reach the server. You may have a weak connection, or the server may be temporarily unavailable." };
+      }
+      if (msg.includes("quota") || msg.includes("rate limit") || msg.includes("429")) {
+        return { icon: "🚦", title: "Too Many Requests", detail: "The server has temporarily limited requests. Please wait a moment and try again." };
+      }
+      if (msg.includes("401") || msg.includes("403") || msg.includes("unauthorized") || msg.includes("forbidden")) {
+        return { icon: "🔒", title: "Access Denied", detail: "Your session may have expired or you don't have permission. Try logging in again." };
+      }
+      if (msg.includes("500") || msg.includes("server error")) {
+        return { icon: "🔧", title: "Server Error", detail: "The server encountered an internal error. Please try again in a moment." };
+      }
+      return { icon: "⚠️", title: "Connection Error", detail: "An unexpected error occurred: " + (err && err.message ? err.message : String(err || "Unknown error")) + ". Please try again." };
+    }
+
+    /* ── Show error state inside loadingOverlay with specific reason ── */
+    function _showLoadingError(err) {
+      const classified = _classifyNetworkError(err);
+      const loadEl  = document.getElementById("loadingOverlay_loading");
+      const errEl   = document.getElementById("loadingOverlay_error");
+      const reasonEl = document.getElementById("loadingOverlay_reason");
+      if (loadEl)  loadEl.style.display = "none";
+      if (errEl)   errEl.style.display  = "flex";
+      if (reasonEl) reasonEl.innerHTML =
+        "<strong style='color:#78350f;'>" + classified.icon + " " + classified.title + "</strong><br/>" +
+        "<span style='color:#666;'>" + classified.detail + "</span>";
+      // Make sure the overlay stays visible
+      const overlay = document.getElementById("loadingOverlay");
+      if (overlay && !overlay.classList.contains("show")) overlay.classList.add("show");
+    }
+
+    /* ── Reset loadingOverlay back to normal loading state ── */
+    function _resetLoadingOverlay() {
+      const loadEl = document.getElementById("loadingOverlay_loading");
+      const errEl  = document.getElementById("loadingOverlay_error");
+      if (loadEl) loadEl.style.display = "";
+      if (errEl)  errEl.style.display  = "none";
+    }
+
     function setLoading(show) {
+      if (show) _resetLoadingOverlay(); // reset to spinner when starting fresh
       document
         .getElementById("loadingOverlay")
         .classList.toggle("show", show);
@@ -6734,8 +6798,16 @@
         })
         .catch(function (err) {
           _ysShow("ys_error");
-          document.getElementById("ys_error").textContent =
-            "Network error: " + (err.message || err);
+          const c = _classifyNetworkError(err);
+          const el = document.getElementById("ys_error");
+          if (el) el.innerHTML =
+            "<div style='text-align:center;padding:8px 0;'>" +
+            "<div style='font-size:1.8rem;margin-bottom:6px;'>" + c.icon + "</div>" +
+            "<div style='font-weight:700;color:#78350f;margin-bottom:4px;'>" + c.title + "</div>" +
+            "<div style='font-size:12px;color:#555;margin-bottom:12px;'>" + c.detail + "</div>" +
+            "<button onclick='loadYearSummary()' style='background:#f7a01a;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-family:Poppins,sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 8px rgba(247,160,26,0.3);'>" +
+            "<i class=\"fa-solid fa-rotate-right\"></i> Retry</button>" +
+            "</div>";
         });
     }
 
@@ -7823,6 +7895,7 @@
     async function init() {
       // Preserve scroll position so saves don't jump user to top
       const _scrollY = window.scrollY;
+      _resetLoadingOverlay();
       setLoading(true);
       try {
         let allData = (await getCached("getAllData")) || {};
@@ -7868,9 +7941,15 @@
           }, 2 * 60 * 1000);
         }
       } catch (err) {
-        toast("Failed to load data: " + err.message, "error");
+        // Show specific error reason in the loading overlay with a Retry button
+        _showLoadingError(err);
+        return; // keep overlay open — user will click Retry
       } finally {
-        setLoading(false);
+        // Only hide overlay if we didn't hit an error (error path returns early above)
+        const errEl = document.getElementById("loadingOverlay_error");
+        if (!errEl || errEl.style.display === "none") {
+          setLoading(false);
+        }
         // Restore scroll position after re-render
         requestAnimationFrame(() => window.scrollTo(0, _scrollY));
       }
