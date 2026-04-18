@@ -1607,45 +1607,315 @@
       border-top: 1.5px solid rgba(247,160,26,0.1) !important;
     }
 
-    /* ─── FULL-PAGE LOADING / ERROR OVERLAY ─── */
+    /* ════════════════════════════════════════════════════════════════
+       FULL-PAGE LOADING OVERLAY — Premium Temple Edition
+       Palette mirrors login.html: cream #f5f0e8 · brown #78350f · gold #f7a01a
+    ════════════════════════════════════════════════════════════════ */
     #userLoadingOverlay {
       display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(241, 244, 250, 0.92);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
+      position: fixed; inset: 0;
       z-index: 8000;
-      touch-action: none;
+      touch-action: none; overflow: hidden;
+      /* Rich layered warm background */
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 38%, rgba(247,160,26,0.11) 0%, transparent 70%),
+        radial-gradient(ellipse 100% 60% at 80% 90%, rgba(120,53,14,0.07) 0%, transparent 60%),
+        linear-gradient(155deg, #fdf8f0 0%, #f7efe0 35%, #f0e5d0 70%, #e8d9be 100%);
     }
+
+    /* Ornate corner flourish — top-left */
+    #userLoadingOverlay::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 220px; height: 220px;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(247,160,26,0.18) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    /* Ornate corner flourish — bottom-right */
+    #userLoadingOverlay::after {
+      content: '';
+      position: absolute; bottom: 0; right: 0;
+      width: 260px; height: 260px;
+      background:
+        radial-gradient(circle at 100% 100%, rgba(120,53,14,0.10) 0%, transparent 55%);
+      pointer-events: none;
+    }
+
     #userLoadingOverlay.show { display: block; }
-    #userLoadingOverlay > .ulo-inner {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-      width: 90%;
-      max-width: 340px;
-      text-align: center;
+
+    /* ── Decorative SVG border rings (injected via JS below) ── */
+    .ulo-bg-ring {
+      position: absolute; border-radius: 50%;
+      border: 1px solid rgba(247,160,26,0.12);
+      pointer-events: none; transform: translate(-50%,-50%);
+      top: 50%; left: 50%;
     }
-    .ulo-spinner {
-      width: 44px; height: 44px;
-      border: 4px solid rgba(247,160,26,0.22);
-      border-top-color: var(--gold);
-      border-radius: 50%;
-      animation: spin .8s linear infinite;
+
+    /* ── Card — deep shadow, warm glass effect ── */
+    #userLoadingOverlay > .ulo-inner {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex; flex-direction: column; align-items: center;
+      width: min(88vw, 340px);
+      text-align: center; z-index: 2;
+      background: rgba(255,251,245,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 28px;
+      border: 1px solid rgba(247,160,26,0.45);
+      box-shadow:
+        0 2px 0 rgba(255,255,255,0.9) inset,
+        0 -1px 0 rgba(247,160,26,0.15) inset,
+        0 20px 60px rgba(120,53,14,0.18),
+        0 6px 20px rgba(120,53,14,0.10),
+        0 1px 4px rgba(120,53,14,0.08);
+      padding: 0;
+      overflow: hidden;
+      animation: _ulo_cardIn 0.5s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes _ulo_cardIn {
+      from { opacity: 0; transform: translate(-50%,-48%) scale(0.96); }
+      to   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    }
+
+    /* ── Card top band — rich brown header ── */
+    .ulo-card-header {
+      width: 100%;
+      background: linear-gradient(135deg, #3d1800 0%, #5c2709 50%, #78350f 100%);
+      padding: 26px 28px 20px;
+      position: relative; overflow: hidden;
+    }
+    /* Subtle sheen line across header */
+    .ulo-card-header::before {
+      content: '';
+      position: absolute; top: 0; left: -40%; width: 180%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    }
+    /* Faint Om watermark in header */
+    .ulo-card-header::after {
+      content: '🕉';
+      position: absolute; right: -10px; top: -14px;
+      font-size: 80px; opacity: 0.06; pointer-events: none;
+      line-height: 1;
+    }
+
+    /* ── Om symbol — large, centred in header ── */
+    .ulo-temple-symbol {
+      font-size: 48px; line-height: 1;
+      margin-bottom: 10px; position: relative; z-index: 1;
+      filter: drop-shadow(0 2px 14px rgba(247,160,26,0.55));
+      animation: _ulo_pulse 3s ease-in-out infinite;
+      display: block;
+    }
+    @keyframes _ulo_pulse {
+      0%,100% { transform: scale(1);    filter: drop-shadow(0 2px 14px rgba(247,160,26,0.45)); }
+      50%      { transform: scale(1.06); filter: drop-shadow(0 2px 22px rgba(247,160,26,0.75)); }
+    }
+
+    /* ── Temple name + tagline in header ── */
+    .ulo-temple-name {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 16px; font-weight: 700;
+      color: #fde68a;
+      letter-spacing: 3.5px; text-transform: uppercase;
+      position: relative; z-index: 1; margin-bottom: 4px;
+    }
+    .ulo-tagline {
+      font-size: 12px; color: rgba(253,230,138,0.65);
+      letter-spacing: 0.8px; font-weight: 400;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Ornate gold divider with diamond ── */
+    .ulo-divider {
+      width: 100%; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; margin: 0;
+      background: linear-gradient(90deg, #3d1800, #78350f);
       flex-shrink: 0;
     }
+    .ulo-divider::before, .ulo-divider::after {
+      content: '';
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(247,160,26,0.6));
+    }
+    .ulo-divider::after {
+      background: linear-gradient(90deg, rgba(247,160,26,0.6), transparent);
+    }
+    .ulo-divider-diamond {
+      width: 7px; height: 7px;
+      background: #f7a01a;
+      transform: rotate(45deg);
+      box-shadow: 0 0 6px rgba(247,160,26,0.7);
+      flex-shrink: 0;
+    }
+
+    /* ── Body content area ── */
+    .ulo-card-body {
+      width: 100%; padding: 22px 26px 24px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+
+    /* ── Arc spinner — double ring ── */
+    .ulo-arc-wrap {
+      position: relative; width: 76px; height: 76px;
+      margin-bottom: 4px; flex-shrink: 0;
+    }
+    .ulo-arc-wrap svg { position: absolute; inset: 0; overflow: visible; }
+    /* Outer track */
+    .ulo-arc-track-outer { fill: none; stroke: rgba(247,160,26,0.15); stroke-width: 3; }
+    /* Outer spinning arc */
+    .ulo-arc-fill-outer {
+      fill: none; stroke: #f7a01a; stroke-width: 3; stroke-linecap: round;
+      stroke-dasharray: 200; stroke-dashoffset: 200;
+      animation: _ulo_arc_outer 2.2s ease-in-out infinite;
+      filter: drop-shadow(0 0 4px rgba(247,160,26,0.6));
+    }
+    @keyframes _ulo_arc_outer {
+      0%   { stroke-dashoffset: 200; opacity: 0.4; }
+      50%  { stroke-dashoffset: 55;  opacity: 1;   }
+      100% { stroke-dashoffset: 200; opacity: 0.4; }
+    }
+    /* Inner track */
+    .ulo-arc-track-inner { fill: none; stroke: rgba(120,53,14,0.12); stroke-width: 2; }
+    /* Inner counter-spinning arc */
+    .ulo-arc-fill-inner {
+      fill: none; stroke: rgba(120,53,14,0.5); stroke-width: 2; stroke-linecap: round;
+      stroke-dasharray: 120; stroke-dashoffset: 120;
+      animation: _ulo_arc_inner 1.6s ease-in-out infinite reverse;
+    }
+    @keyframes _ulo_arc_inner {
+      0%   { stroke-dashoffset: 120; opacity: 0.3; }
+      50%  { stroke-dashoffset: 30;  opacity: 0.8; }
+      100% { stroke-dashoffset: 120; opacity: 0.3; }
+    }
+    .ulo-namaskar {
+      font-size: 22px; position: absolute;
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      animation: _ulo_nm 3s ease-in-out infinite;
+    }
+    @keyframes _ulo_nm {
+      0%,100% { opacity: 0.75; }
+      50%      { opacity: 1; }
+    }
+
+    /* ── Step label ── */
     .ulo-loading-label {
       font-family: var(--font-b);
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--ink-mid);
+      font-size: 12.5px; font-weight: 600;
+      color: #78350f; letter-spacing: 0.2px;
+      margin-top: 10px; margin-bottom: 18px;
+      min-height: 18px;
+      transition: opacity 0.22s ease;
     }
+
+    /* ── Step pills (replaces plain dots — more informative) ── */
+    .ulo-steps-dots {
+      display: flex; gap: 4px; margin-bottom: 12px;
+    }
+    .ulo-sdot {
+      height: 4px; border-radius: 4px;
+      background: rgba(247,160,26,0.2);
+      transition: background 0.4s, width 0.4s, box-shadow 0.4s;
+      width: 18px;
+    }
+    .ulo-sdot.done {
+      background: #f7a01a;
+      box-shadow: 0 1px 4px rgba(247,160,26,0.4);
+    }
+    .ulo-sdot.active {
+      background: #78350f;
+      width: 32px;
+      box-shadow: 0 1px 6px rgba(120,53,14,0.4);
+      animation: _ulo_pill_glow 1s ease-in-out infinite;
+    }
+    @keyframes _ulo_pill_glow {
+      0%,100% { box-shadow: 0 1px 4px rgba(120,53,14,0.3); }
+      50%      { box-shadow: 0 1px 10px rgba(120,53,14,0.6); }
+    }
+
+    /* ── Progress track ── */
+    .ulo-progress-wrap {
+      width: 100%; height: 7px;
+      background: rgba(247,160,26,0.15);
+      border-radius: 7px; position: relative;
+      margin-bottom: 9px; overflow: hidden;
+    }
+    /* shimmer on the track itself */
+    .ulo-progress-wrap::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+      background-size: 200% 100%;
+      animation: _ulo_track_sheen 2.5s linear infinite;
+    }
+    @keyframes _ulo_track_sheen {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    .ulo-progress-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #92400e 0%, #c97a00 40%, #f7a01a 75%, #fbbf24 100%);
+      border-radius: 7px;
+      transition: width 0.6s cubic-bezier(.4,0,.2,1);
+      position: relative; z-index: 1;
+    }
+    /* Glowing leading edge */
+    .ulo-progress-bar::after {
+      content: '';
+      position: absolute; right: 0; top: 0; bottom: 0;
+      width: 28px;
+      background: linear-gradient(90deg, transparent, rgba(255,220,120,0.7));
+      border-radius: 0 7px 7px 0;
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .ulo-progress-bar.active::after { opacity: 1; }
+
+    /* ── Step counter row ── */
+    .ulo-step-row {
+      display: flex; justify-content: space-between; align-items: center;
+      width: 100%;
+    }
+    .ulo-step-done {
+      font-size: 10.5px; color: #92400e;
+      font-family: var(--font-b); font-weight: 700;
+    }
+    .ulo-pct-badge {
+      font-size: 10px; font-weight: 700;
+      color: #78350f;
+      background: rgba(247,160,26,0.15);
+      border: 1px solid rgba(247,160,26,0.3);
+      border-radius: 20px; padding: 1px 8px;
+      font-family: var(--font-b);
+      transition: opacity 0.3s;
+    }
+    .ulo-step-remain {
+      font-size: 10.5px; color: #b8a090;
+      font-family: var(--font-b);
+    }
+
+    /* ── Dark mode ── */
+    body.user-dark #userLoadingOverlay {
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 38%, rgba(247,160,26,0.07) 0%, transparent 70%),
+        linear-gradient(155deg, #1c0a00 0%, #150600 50%, #0d0300 100%) !important;
+    }
+    body.user-dark #userLoadingOverlay > .ulo-inner {
+      background: rgba(28,12,2,0.92) !important;
+      border-color: rgba(247,160,26,0.3) !important;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 6px 20px rgba(0,0,0,0.35) !important;
+    }
+    body.user-dark .ulo-temple-name   { color: #fde68a !important; }
+    body.user-dark .ulo-tagline       { color: rgba(253,230,138,0.5) !important; }
+    body.user-dark .ulo-loading-label { color: #fbbf24 !important; }
+    body.user-dark .ulo-step-done     { color: #f7a01a !important; }
+    body.user-dark .ulo-step-remain   { color: rgba(247,160,26,0.35) !important; }
+    body.user-dark .ulo-pct-badge     { color: #fde68a !important; background: rgba(247,160,26,0.12) !important; }
+    body.user-dark .ulo-progress-wrap { background: rgba(247,160,26,0.1) !important; }
+    body.user-dark .ulo-sdot          { background: rgba(247,160,26,0.15) !important; }
+    body.user-dark .ulo-sdot.done     { background: #f7a01a !important; }
+    body.user-dark .ulo-sdot.active   { background: #fde68a !important; }
     /* ── Error state (hidden until needed) ── */
     #ulo_error {
       display: none;
@@ -1725,10 +1995,6 @@
       display: none;
     }
     /* ── Dark mode overrides ── */
-    body.user-dark #userLoadingOverlay {
-      background: rgba(8, 9, 15, 0.92) !important;
-    }
-    body.user-dark .ulo-loading-label { color: #94a3b8 !important; }
     body.user-dark .ulo-err-icon { background: #1e1207 !important; border-color: rgba(247,160,26,0.4) !important; }
     body.user-dark .ulo-err-title { color: #fde68a !important; }
     body.user-dark #ulo_reason { background: #1a1005 !important; border-color: rgba(247,160,26,0.28) !important; color: #94a3b8 !important; }
@@ -4437,10 +4703,52 @@
        _doUserRetry() is defined in the retry engine below. -->
   <div id="userLoadingOverlay" role="status" aria-live="polite">
     <div class="ulo-inner">
-      <!-- Normal loading state -->
+      <!-- Normal loading state — Premium Temple Edition -->
       <div id="ulo_loading">
-        <div class="ulo-spinner"></div>
-        <div class="ulo-loading-label">Loading your dashboard…</div>
+        <!-- Rich brown header band -->
+        <div class="ulo-card-header">
+          <span class="ulo-temple-symbol">🕉️</span>
+          <div class="ulo-temple-name">Mandir</div>
+          <div class="ulo-tagline">॥ जय श्री राम ॥</div>
+        </div>
+        <!-- Ornate divider -->
+        <div class="ulo-divider"><div class="ulo-divider-diamond"></div></div>
+        <!-- Body -->
+        <div class="ulo-card-body">
+          <!-- Double-ring arc spinner -->
+          <div class="ulo-arc-wrap">
+            <svg viewBox="0 0 76 76" xmlns="http://www.w3.org/2000/svg">
+              <!-- outer ring -->
+              <circle class="ulo-arc-track-outer" cx="38" cy="38" r="34"/>
+              <circle class="ulo-arc-fill-outer"  cx="38" cy="38" r="34" transform="rotate(-90 38 38)"/>
+              <!-- inner ring -->
+              <circle class="ulo-arc-track-inner" cx="38" cy="38" r="24"/>
+              <circle class="ulo-arc-fill-inner"  cx="38" cy="38" r="24" transform="rotate(90 38 38)"/>
+            </svg>
+            <div class="ulo-namaskar">🙏</div>
+          </div>
+          <!-- Step label -->
+          <div class="ulo-loading-label" id="ulo_step_label">Connecting…</div>
+          <!-- Pill-style step indicators -->
+          <div class="ulo-steps-dots" id="ulo_step_dots">
+            <div class="ulo-sdot active" data-step="0"></div>
+            <div class="ulo-sdot" data-step="1"></div>
+            <div class="ulo-sdot" data-step="2"></div>
+            <div class="ulo-sdot" data-step="3"></div>
+            <div class="ulo-sdot" data-step="4"></div>
+            <div class="ulo-sdot" data-step="5"></div>
+          </div>
+          <!-- Progress track -->
+          <div class="ulo-progress-wrap">
+            <div class="ulo-progress-bar active" id="ulo_prog_bar"></div>
+          </div>
+          <!-- Counter row -->
+          <div class="ulo-step-row">
+            <span class="ulo-step-done"   id="ulo_step_done">0 of 6 done</span>
+            <span class="ulo-pct-badge"   id="ulo_pct_badge">0%</span>
+            <span class="ulo-step-remain" id="ulo_step_remain">6 remaining</span>
+          </div>
+        </div>
       </div>
       <!-- Error / retry state (hidden until an error occurs) -->
       <div id="ulo_error">
@@ -5276,32 +5584,38 @@
        the session already has the updated values). Falls back to a full
        getData only if the local patch cannot find the user record. */
     async function _refreshAfterProfileSave() {
+      // Lightweight post-save refresh: patches in-memory data and re-renders
+      // visible UI without showing the full loading overlay.
       const s = _sess();
-      if (s) {
-        // Patch the in-memory record directly — avoids a full allData round-trip
-        const idx = (users || []).findIndex(function(u) { return String(u.UserId) === String(s.userId); });
-        if (idx !== -1) {
-          users[idx].Name      = s.name  || users[idx].Name;
-          users[idx].Email     = s.email || users[idx].Email;
-          // PhotoURL was already updated in saveProfile before session save
+      if (!s) return;
+      try {
+        // Patch in-memory user record directly — avoids a full round-trip
+        const uIdx = (users || []).findIndex(function(u) { return String(u.UserId) === String(s.userId); });
+        if (uIdx !== -1) {
+          users[uIdx].Name  = s.name  || users[uIdx].Name;
+          users[uIdx].Email = s.email || users[uIdx].Email;
+          // PhotoURL already updated in saveProfile before session save
         } else {
-          // Record not found locally — fall back to a lightweight re-fetch
-          try {
-            const fresh = await getData("allData");
-            if (fresh && Array.isArray(fresh.users)) {
-              users = fresh.users;
-              contributions = Array.isArray(fresh.contributions) ? fresh.contributions : contributions;
-              goals = Array.isArray(fresh.goals) ? fresh.goals : goals;
-            }
-          } catch (e) { console.warn("[_refreshAfterProfileSave] Re-fetch failed:", e); }
+          // Record not found locally — full re-fetch as fallback
+          if (typeof mandirCacheBust === "function") mandirCacheBust("getAllData");
+          const fresh = (await getCached("getAllData")) || {};
+          users            = fresh.users            || users;
+          allContributions = fresh.contributions    || allContributions;
+          allGoals         = fresh.goals            || allGoals;
+          data = allContributions.filter(function(c) { return String(c.UserId) === String(s.userId); });
         }
+        // Re-render header name/avatar and hero stats
+        const myProfile = (users || []).find(function(u) { return String(u.UserId) === String(s.userId); });
+        if (myProfile) updateHeader(myProfile, s);
+        calculateTotal();
+        _renderRecentActivity();
+        renderGoals(allGoals);
+      } catch (e) {
+        console.error("[_refreshAfterProfileSave] Failed:", e);
+        toast("❌ Could not refresh data. Please pull to refresh.", "error");
       }
-      // Rebuild header name + avatar without any overlay
-      try { _setUserVersion(); } catch (e) {}
-      // Reset lazy-load flags so panels reload on next open
-      _contribReqsLoaded = false;
-      // Re-render visible panels if already open
-      try { renderDashboard(); } catch (e) {}
+      // Reset all lazy-load flags so every panel reloads fresh data on next open
+      _recordsLoaded = false; _statsLoaded = false; _eventsLoaded = false; _contribReqsLoaded = false;
     }
 
     /* ═══ CHANGE PASSWORD ════════════════════════════════════════════
@@ -5563,6 +5877,75 @@
     /* ── 3. Overlay helpers ───────────────────────────────────────── */
     var _uloRetryCount = 0;
 
+    /* ── Step-progress engine ──────────────────────────────────────
+       Steps (0-based):
+         0  Connecting to server
+         1  Fetching member data
+         2  Processing your records
+         3  Building your dashboard
+         4  Loading recent activity
+         5  Almost there!
+    ──────────────────────────────────────────────────────────────── */
+    var _ULO_STEPS = [
+      "Connecting to server…",
+      "Fetching member data…",
+      "Processing your records…",
+      "Building your dashboard…",
+      "Loading recent activity…",
+      "Almost there…"
+    ];
+    var _uloCurrentStep = 0;
+
+    function _uloStep(stepIndex) {
+      _uloCurrentStep = stepIndex;
+      var total = _ULO_STEPS.length;
+      var pct   = Math.round((stepIndex / total) * 100);
+
+      // label
+      var lbl = document.getElementById("ulo_step_label");
+      if (lbl) { lbl.style.opacity = "0"; setTimeout(function() { lbl.textContent = _ULO_STEPS[stepIndex] || ""; lbl.style.opacity = "1"; }, 150); }
+
+      // progress bar
+      var bar = document.getElementById("ulo_prog_bar");
+      if (bar) bar.style.width = pct + "%";
+
+      // pct badge
+      var badge = document.getElementById("ulo_pct_badge");
+      if (badge) badge.textContent = pct + "%";
+
+      // dots (now pill-style)
+      var dots = document.querySelectorAll("#ulo_step_dots .ulo-sdot");
+      dots.forEach(function(d, i) {
+        d.classList.remove("done", "active");
+        if (i < stepIndex)       d.classList.add("done");
+        else if (i === stepIndex) d.classList.add("active");
+      });
+
+      // counter
+      var doneEl   = document.getElementById("ulo_step_done");
+      var remainEl = document.getElementById("ulo_step_remain");
+      var done     = stepIndex;
+      var remain   = total - stepIndex;
+      if (doneEl)   doneEl.textContent   = done + " of " + total + " done";
+      if (remainEl) remainEl.textContent = remain + " remaining";
+    }
+
+    function _uloStepComplete() {
+      var total = _ULO_STEPS.length;
+      var bar   = document.getElementById("ulo_prog_bar");
+      if (bar) { bar.style.width = "100%"; bar.classList.remove("active"); }
+      var badge = document.getElementById("ulo_pct_badge");
+      if (badge) badge.textContent = "100%";
+      var dots = document.querySelectorAll("#ulo_step_dots .ulo-sdot");
+      dots.forEach(function(d) { d.classList.remove("active"); d.classList.add("done"); });
+      var lbl = document.getElementById("ulo_step_label");
+      if (lbl) { lbl.style.opacity = "0"; setTimeout(function() { lbl.textContent = "Ready! ✓"; lbl.style.opacity = "1"; }, 100); }
+      var doneEl   = document.getElementById("ulo_step_done");
+      var remainEl = document.getElementById("ulo_step_remain");
+      if (doneEl)   doneEl.textContent   = total + " of " + total + " done";
+      if (remainEl) remainEl.textContent = "0 remaining";
+    }
+
     function _showUserLoadingOverlay() {
       // Reset to spinner state
       var loadEl = document.getElementById("ulo_loading");
@@ -5573,6 +5956,12 @@
       if (errEl)  errEl.classList.remove("show");
       if (pill)   pill.style.display = "none";
       if (btn)    { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry'; btn.style.opacity = "1"; }
+      // Reset step progress + pct badge + progress bar active glow
+      var bar = document.getElementById("ulo_prog_bar");
+      if (bar) bar.classList.add("active");
+      var badge = document.getElementById("ulo_pct_badge");
+      if (badge) badge.textContent = "0%";
+      _uloStep(0);
       var overlay = document.getElementById("userLoadingOverlay");
       if (overlay) overlay.classList.add("show");
     }
@@ -5626,13 +6015,17 @@
     async function init() {
       _showUserLoadingOverlay();
       try {
+        _uloStep(0); // Connecting to server…
         let allData = (await getCached("getAllData")) || {};
+        _uloStep(1); // Fetching member data…
         let s = _sess();
         if (!s) { location.replace("login.html"); return; }
+        _uloStep(2); // Processing your records…
         users = allData.users || []; types = allData.types || []; occasions = allData.occasions || [];
         allContributions = allData.contributions || []; allGoals = allData.goals || [];
         data = allContributions.filter(c => String(c.UserId) === String(s.userId));
         let myProfile = users.find(u => String(u.UserId) === String(s.userId));
+        _uloStep(3); // Building your dashboard…
         updateHeader(myProfile, s);
         calculateTotal();
 
@@ -5642,6 +6035,7 @@
         if (heroSkel) heroSkel.style.display = "none";
         if (heroContent) { heroContent.style.display = "block"; heroContent.style.animation = "slideUp .35s ease"; }
 
+        _uloStep(4); // Loading recent activity…
         // ── Only render what is visible on home screen
         _renderRecentActivity();
         renderGoals(allGoals);
@@ -5676,12 +6070,14 @@
           } catch(e) { /* silently ignore any birthday logic error */ }
         })();
 
+        _uloStep(5); // Almost there…
         // ── Broadcasts in background — separate API call, don't block UI
         renderBroadcasts();
 
-        // ── Success: reset retry counter and hide overlay
+        // ── Success: mark complete, reset retry counter, hide overlay
         _uloRetryCount = 0;
-        _hideUserLoadingOverlay();
+        _uloStepComplete();
+        setTimeout(_hideUserLoadingOverlay, 400);
 
         // ── Everything else is deferred to panel open (records, stats, filters)
 
@@ -7003,7 +7399,12 @@
         // Re-measure accordion height now that real content has been injected
         _remeasureAccordion("panelEvents");
       }).catch(function () {
-        container.innerHTML = '<div class="card" style="text-align:center;color:var(--ink-faint);padding:16px;font-size:13px;">Could not load events.</div>';
+        container.innerHTML = '<div class="card" style="text-align:center;padding:20px 16px;">'
+          + '<i class="fa-solid fa-triangle-exclamation" style="font-size:1.4rem;color:#f59e0b;display:block;margin-bottom:8px;"></i>'
+          + '<div style="font-size:13px;color:var(--ink-soft);font-weight:500;margin-bottom:10px;">Could not load events. Tap to retry.</div>'
+          + '<button onclick="_eventsLoaded=false;_loadUserEvents()" style="background:var(--gold);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;">'
+          + '<i class="fa-solid fa-rotate-right"></i> Retry</button>'
+          + '</div>';
         _remeasureAccordion("panelEvents");
       });
     }
@@ -7714,8 +8115,10 @@
       if (_prSlipB64) {
         show("⏳ Uploading payment slip...", true);
         try {
+          const _slipCtrl1 = new AbortController();
+          const _slipTid1 = setTimeout(function() { _slipCtrl1.abort(); }, 60000);
           const slipRes = await fetch(API_URL, {
-            method: "POST",
+            method: "POST", signal: _slipCtrl1.signal,
             body: JSON.stringify({
               action: "uploadPaymentSlip",
               UserId: s.userId,
@@ -7724,9 +8127,13 @@
               sessionToken: s.sessionToken || ""
             })
           });
+          clearTimeout(_slipTid1);
           const slipData = await slipRes.json();
           if (slipData && slipData.status === "success") slipUrl = slipData.slipUrl || "";
-        } catch (e) { console.error("[submitPaymentRequest] Slip upload error:", e); /* slip upload failed, continue without it */ }
+        } catch (e) {
+          console.error("[submitPaymentRequest] Slip upload error:", e);
+          show(e.name === "AbortError" ? "❌ Slip upload timed out. Submitting without slip." : "❌ Slip upload failed. Submitting without slip.", false);
+        }
       }
 
       try {
@@ -8438,8 +8845,10 @@
       if (_editSlipB64) {
         show("⏳ Uploading new slip...", true);
         try {
+          const _slipCtrl2 = new AbortController();
+          const _slipTid2 = setTimeout(function() { _slipCtrl2.abort(); }, 60000);
           const slipRes = await fetch(API_URL, {
-            method: "POST",
+            method: "POST", signal: _slipCtrl2.signal,
             body: JSON.stringify({
               action: "uploadPaymentSlip",
               UserId: s.userId,
@@ -8449,9 +8858,13 @@
               sessionToken: s.sessionToken || ""
             })
           });
+          clearTimeout(_slipTid2);
           const slipData = await slipRes.json();
           if (slipData && slipData.status === "success") slipUrl = slipData.slipUrl || slipUrl;
-        } catch (e) { console.error("[saveEditContribRequest] Slip upload error:", e); /* keep existing slip url */ }
+        } catch (e) {
+          console.error("[saveEditContribRequest] Slip upload error:", e);
+          show(e.name === "AbortError" ? "❌ Slip upload timed out. Saving without new slip." : "❌ Slip upload failed. Keeping existing slip.", false);
+        }
       }
 
       try {

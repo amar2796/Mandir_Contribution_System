@@ -561,18 +561,7 @@
         z-index: 200;
       }
 
-      /* Receipt popup: fixed below header on mobile, full usable width */
-      #_grsBox {
-        position: fixed !important;
-        left: 10px !important;
-        right: 10px !important;
-        top: 62px !important;   /* updated dynamically by _grsToggle via JS */
-        width: auto !important;
-        max-width: none !important;
-        transform: none !important;
-        border-radius: 14px !important;
-        box-shadow: 0 12px 36px rgba(0,0,0,0.18) !important;
-      }
+
 
 
 
@@ -2881,8 +2870,11 @@
             <span id="hc_hdr_dot" style="position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#22c55e;border:1.5px solid #fff;display:none;z-index:1;"></span>
           </div>
 
-          <!-- Receipt search — icon-only, same size -->
-          <div id="_grsWrapSlot" style="position:relative;flex-shrink:0;"></div>
+          <!-- Receipt Search -->
+          <button onclick="grsOpen()" title="Search Receipt"
+            style="width:34px;height:34px;background:rgba(0,0,0,0.06);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:none;color:#f7a01a;font-size:14px;flex-shrink:0;">
+            <i class="fa-solid fa-receipt"></i>
+          </button>
 
           <!-- Dark mode toggle — same size -->
           <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark/light mode"
@@ -15154,236 +15146,258 @@
   </script>
 
 
+  <!-- ══ RECEIPT SEARCH MODAL ══ -->
+  <script>
+  (function () {
+    "use strict";
+
+    /*
+      GLOBAL RECEIPT SEARCH — clean modal approach
+      Works on desktop and mobile.
+      Opens as a centered overlay. Closes ONLY via ✕ button,
+      Escape key, or tapping the dark backdrop — never on input focus/type.
+    */
+
+    var _found = null;
+
+    /* Build modal DOM once */
+    function _build() {
+      if (document.getElementById('grsModal')) return;
+
+      var el = document.createElement('div');
+      el.id = 'grsModal';
+      el.style.cssText = [
+        'display:none',
+        'position:fixed',
+        'inset:0',
+        'z-index:999999',
+        'background:rgba(0,0,0,0.5)',
+        'align-items:center',
+        'justify-content:center',
+        'padding:16px',
+        'box-sizing:border-box'
+      ].join(';');
+
+      el.innerHTML =
+        '<div id="grsPanel" style="'
+          + 'background:#fff;border-radius:16px;width:100%;max-width:420px;'
+          + 'box-shadow:0 24px 64px rgba(0,0,0,0.35);overflow:hidden;'
+          + 'font-family:Poppins,sans-serif;'
+        + '">'
+          /* title bar */
+          + '<div style="background:#fdf8f0;border-bottom:1px solid #f0e8d8;'
+          + 'padding:13px 16px;display:flex;align-items:center;justify-content:space-between;">'
+            + '<span style="font-size:11px;font-weight:700;color:#b0935a;'
+            + 'text-transform:uppercase;letter-spacing:1px;">&#x1F9FE; Receipt Lookup</span>'
+            + '<button id="grsCloseBtn" style="background:none;border:none;cursor:pointer;'
+            + 'color:#aaa;font-size:22px;line-height:1;padding:0;box-shadow:none;'
+            + 'width:30px;height:30px;display:flex;align-items:center;justify-content:center;'
+            + 'border-radius:50%;">&#x2715;</button>'
+          + '</div>'
+          /* input row */
+          + '<div style="padding:16px 16px 8px;">'
+            + '<div style="display:flex;gap:8px;align-items:center;">'
+              + '<input id="grsInput" type="text"'
+              + ' placeholder="Enter Tracking ID e.g. MNR-001"'
+              + ' autocomplete="off" autocorrect="off"'
+              + ' autocapitalize="characters" spellcheck="false"'
+              + ' style="flex:1;min-width:0;padding:11px 13px;'
+              + 'border:1.5px solid #e0dbd4;border-radius:9px;'
+              + 'font-size:14px;font-family:Poppins,sans-serif;outline:none;'
+              + 'color:#334155;background:#fdfcfa;box-sizing:border-box;margin:0;"/>'
+              + '<button id="grsSearchBtn" style="padding:11px 15px;border-radius:9px;'
+              + 'background:#f7a01a;color:#fff;border:none;cursor:pointer;'
+              + 'font-size:15px;box-shadow:none;flex-shrink:0;">'
+              + '<i class="fa-solid fa-magnifying-glass"></i></button>'
+            + '</div>'
+            + '<div id="grsResult" style="margin-top:12px;margin-bottom:4px;"></div>'
+          + '</div>'
+        + '</div>';
+
+      document.body.appendChild(el);
+
+      /* ── wire events via addEventListener — no inline onclick ── */
+
+      /* close button */
+      document.getElementById('grsCloseBtn').addEventListener('click', function () {
+        window.grsClose();
+      });
+
+      /* search button */
+      document.getElementById('grsSearchBtn').addEventListener('click', function () {
+        _lookup();
+      });
+
+      /* input: Enter = search, Escape = close. stopPropagation on all input events
+         so NOTHING outside this listener ever sees them */
+      var inp = document.getElementById('grsInput');
+      ['click','mousedown','touchstart','touchend','focus','blur','keyup','input'].forEach(function (ev) {
+        inp.addEventListener(ev, function (e) { e.stopPropagation(); }, ev === 'touchstart' || ev === 'touchend' ? {passive:true} : false);
+      });
+      inp.addEventListener('keydown', function (e) {
+        e.stopPropagation();
+        if (e.key === 'Enter')  _lookup();
+        if (e.key === 'Escape') window.grsClose();
+      });
+      inp.addEventListener('focus', function () { this.style.borderColor = '#f7a01a'; });
+      inp.addEventListener('blur',  function () { this.style.borderColor = '#e0dbd4'; });
+
+      /* panel: stop all propagation so backdrop click only fires outside panel */
+      var panel = document.getElementById('grsPanel');
+      ['click','mousedown','touchstart','touchend'].forEach(function (ev) {
+        panel.addEventListener(ev, function (e) { e.stopPropagation(); }, ev === 'touchstart' || ev === 'touchend' ? {passive:true} : false);
+      });
+
+      /* backdrop click closes */
+      el.addEventListener('mousedown', function (e) {
+        if (e.target === el) window.grsClose();
+      });
+      el.addEventListener('touchend', function (e) {
+        if (e.target === el) { e.preventDefault(); window.grsClose(); }
+      });
+
+      /* Escape key closes */
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && el.style.display !== 'none') window.grsClose();
+      });
+    }
+
+    /* ── Open ── */
+    window.grsOpen = function () {
+      _build();
+      var modal = document.getElementById('grsModal');
+      var inp   = document.getElementById('grsInput');
+      var res   = document.getElementById('grsResult');
+      _found = null;
+      if (inp) inp.value = '';
+      if (res) res.innerHTML = '';
+      modal.style.display = 'flex';
+      /* longer delay on mobile so keyboard doesn't fight with the opening animation */
+      setTimeout(function () { if (inp) inp.focus(); }, window.innerWidth <= 768 ? 350 : 80);
+    };
+
+    /* ── Close ── */
+    window.grsClose = function () {
+      var modal = document.getElementById('grsModal');
+      if (modal) modal.style.display = 'none';
+    };
+
+    /* ── Lookup ── */
+    function _lookup() {
+      var inp = document.getElementById('grsInput');
+      var res = document.getElementById('grsResult');
+      if (!inp || !res) return;
+      var val = (inp.value || '').trim();
+      if (!val) {
+        res.innerHTML = '<p style="font-size:12px;color:#e67e22;margin:4px 0;">&#x26A0; Please enter a Tracking ID.</p>';
+        return;
+      }
+
+      var PREFIX = (typeof APP !== 'undefined' && APP.receiptPrefix) ? APP.receiptPrefix : 'MNR';
+      var vl    = val.toLowerCase();
+      var toTrx = vl.replace(new RegExp('^' + PREFIX.toLowerCase() + '-'), 'trx-');
+      var toMnr = vl.replace(/^trx-/, PREFIX.toLowerCase() + '-');
+      var hit   = null;
+
+      /* search _rcptStore */
+      var store = window._rcptStore || window._receiptStore || {};
+      Object.keys(store).forEach(function (rid) {
+        if (hit) return;
+        var d = store[rid]; if (!d) return;
+        var rl = (rid || '').toLowerCase();
+        var cl = ((d.c && d.c.ReceiptID) || '').toLowerCase();
+        if (rl===vl||cl===vl||rl===toTrx||cl===toTrx||rl===toMnr||cl===toMnr)
+          hit = { rid:rid, c:d.c, userName:d.userName, typeName:d.typeName };
+      });
+
+      /* fallback: main data array */
+      if (!hit && typeof data !== 'undefined') {
+        data.forEach(function (c) {
+          if (hit || !c.ReceiptID) return;
+          var rl = c.ReceiptID.toLowerCase();
+          var rd = rl.replace(/^trx-/, PREFIX.toLowerCase() + '-');
+          if (rl===vl||rd===vl||rl===toTrx||rd===toTrx||rl===toMnr||rd===toMnr) {
+            var u = (typeof users !== 'undefined') ? users.find(function (x) { return String(x.UserId) === String(c.UserId); }) : null;
+            var t = (typeof contribTypes !== 'undefined') ? contribTypes.find(function (x) { return String(x.TypeId) === String(c.TypeId); }) : null;
+            hit = { rid:c.ReceiptID, c:c,
+              userName: u ? u.Name : (c.WalkInName || 'Walk-in'),
+              typeName: t ? t.TypeName : (c.TypeId || '--') };
+          }
+        });
+      }
+
+      /* not found */
+      if (!hit) {
+        res.innerHTML =
+          '<div style="background:#fff8f8;border:1px solid #fcd4d4;border-radius:10px;padding:14px;text-align:center;">'
+          + '<div style="font-size:22px;margin-bottom:6px;">&#x274C;</div>'
+          + '<div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:4px;">Receipt Not Found</div>'
+          + '<div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">No record for <b style="color:#475569;">' + val + '</b></div>'
+          + '<button id="grsTryBtn" style="background:#f1f5f9;color:#475569;border:none;padding:7px 18px;'
+          + 'border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;box-shadow:none;'
+          + 'font-family:Poppins,sans-serif;">&#x1F504; Try Again</button>'
+          + '</div>';
+        document.getElementById('grsTryBtn').addEventListener('click', function () {
+          var i = document.getElementById('grsInput');
+          var r = document.getElementById('grsResult');
+          if (i) { i.value = ''; i.focus(); }
+          if (r) r.innerHTML = '';
+        });
+        return;
+      }
+
+      /* found */
+      _found = hit;
+      var c2   = hit.c;
+      var dRID = (c2.ReceiptID || hit.rid).replace(/^TRX-/i, PREFIX + '-').toUpperCase();
+      var amt  = c2.Amount ? '&#8377;' + Number(c2.Amount).toLocaleString('en-IN') : '--';
+      var mon  = (c2.ForMonth || '') + (c2.Year ? ' ' + c2.Year : '');
+
+      res.innerHTML =
+        '<div style="border:1px solid #fde68a;border-radius:10px;overflow:hidden;">'
+        + '<div style="background:linear-gradient(90deg,#f7a01a,#f5b942);padding:9px 13px;'
+        + 'display:flex;align-items:center;justify-content:space-between;">'
+          + '<span style="font-family:monospace;font-size:12px;font-weight:800;color:#fff;">&#x1F9FE; ' + dRID + '</span>'
+          + '<span style="font-size:12px;font-weight:700;color:#fff;">' + amt + '</span>'
+        + '</div>'
+        + '<div style="background:#fffdf5;padding:10px 13px;font-size:12px;color:#334155;line-height:2;">'
+          + '<div style="display:flex;"><span style="color:#a09070;min-width:56px;">Donor</span><b>' + (hit.userName || '--') + '</b></div>'
+          + '<div style="display:flex;"><span style="color:#a09070;min-width:56px;">Period</span>' + (mon || '--') + '</div>'
+          + '<div style="display:flex;"><span style="color:#a09070;min-width:56px;">Date</span>' + (c2.PaymentDate || '--') + '</div>'
+          + '<div style="display:flex;"><span style="color:#a09070;min-width:56px;">Type</span>' + (hit.typeName || '--') + '</div>'
+        + '</div>'
+        + '<div style="padding:10px 13px;background:#fffdf5;border-top:1px solid #fde68a;">'
+          + '<button id="grsViewBtn" style="width:100%;padding:11px 0;'
+          + 'background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;border:none;'
+          + 'border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;'
+          + 'font-family:Poppins,sans-serif;box-shadow:0 3px 10px rgba(247,160,26,0.3);'
+          + 'display:flex;align-items:center;justify-content:center;gap:8px;">'
+          + '<i class="fa-solid fa-receipt"></i> View Receipt</button>'
+        + '</div>'
+        + '</div>';
+
+      document.getElementById('grsViewBtn').addEventListener('click', function () { _open(); });
+    }
+
+    /* ── Open receipt modal ── */
+    function _open() {
+      if (!_found) return;
+      window.grsClose();
+      var store = window._rcptStore || {};
+      if (store[_found.rid] && typeof showReceiptById === 'function') { showReceiptById(_found.rid); return; }
+      if (typeof showReceipt === 'function') { showReceipt(_found.c, _found.userName, _found.typeName, _found.occasionName, true); return; }
+      if (!window._rcptStore) window._rcptStore = {};
+      window._rcptStore[_found.rid] = { c:_found.c, userName:_found.userName, typeName:_found.typeName };
+      if (typeof showReceiptById === 'function') showReceiptById(_found.rid);
+    }
+
+  }());
+  </script>
+
   <!-- ══ NEW FEATURES: Receipt Search · Undo Delete · Print Receipt · Offline · Draft · Birthday ══ -->
   <script>
   (function() {
     "use strict";
-    var _grsLastFound = null; // stores last lookup result for View Receipt
-
-    /* ================================== FEATURE 1 - GLOBAL RECEIPT SEARCH ===
-       Header Receipt pill -> enter Tracking ID -> found: View Receipt (full width);
-       not found: red error card + Try Again. Print is inside receipt modal.
-    ========================================================================= */
-
-    function _injectReceiptSearchPill() {
-      // Use the pre-placed slot in the header (between health & darkmode)
-      var slot = document.getElementById('_grsWrapSlot');
-      if (!slot || document.getElementById('_grsWrap')) return;
-      // inject slide-in animation + mobile-responsive styles
-      if (!document.getElementById('_grsStyle')) {
-        var s = document.createElement('style'); s.id = '_grsStyle';
-        s.textContent =
-          '@keyframes _grsSlide{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}'
-          // Desktop only: dropdown anchored below the button, right-aligned.
-          // Mobile override is handled by the stylesheet @media(max-width:768px) block.
-          + '#_grsBox{'
-          +   'display:none;position:absolute;right:0;top:calc(100% + 6px);'
-          +   'background:#fff;border-radius:12px;border:1px solid #ede9e3;width:280px;'
-          +   'box-shadow:0 8px 26px rgba(0,0,0,0.13);z-index:99999;overflow:hidden;'
-          +   'animation:_grsSlide .14s ease;'
-          + '}';
-        document.head.appendChild(s);
-      }
-      var wrap = document.createElement('div');
-      wrap.id = '_grsWrap';
-      wrap.style.cssText = 'position:relative;flex-shrink:0;display:inline-flex;';
-      wrap.innerHTML =
-        // icon-only 34x34 button — matches health & darkmode exactly
-        '<button id="_grsToggleBtn" onclick="_grsToggle()" title="Search Receipt by Tracking ID"'
-        +' style="width:34px;height:34px;background:rgba(0,0,0,0.06);border:none;'
-        +'border-radius:8px;cursor:pointer;display:flex;align-items:center;'
-        +'justify-content:center;padding:0;box-shadow:none;color:#f7a01a;'
-        +'font-size:14px;transition:background 0.2s;">'
-        +'<i class="fa-solid fa-receipt"></i>'
-        +'</button>'
-        // popup panel — positioned via CSS (desktop: absolute; mobile: fixed)
-        +'<div id="_grsBox">'
-          // header bar
-          +'<div style="background:#fdf8f0;border-bottom:1px solid #f0e8d8;padding:10px 14px;'
-          +'display:flex;align-items:center;justify-content:space-between;">'
-            +'<span style="font-size:10px;font-weight:700;color:#b0935a;text-transform:uppercase;letter-spacing:1.1px;">&#x1F9FE; Receipt Lookup</span>'
-            +'<span onclick="_grsClose()" title="Close"'
-            +' style="cursor:pointer;color:#c0a878;font-size:16px;width:24px;height:24px;'
-            +'display:flex;align-items:center;justify-content:center;'
-            +'border-radius:50%;transition:background 0.15s;"'
-            +' onmouseover="this.style.background=\'#f0e0c0\'" onmouseout="this.style.background=\'transparent\'">&#x2715;</span>'
-          +'</div>'
-          // input area
-          +'<div style="padding:12px 14px;">'
-            +'<div style="display:flex;gap:7px;align-items:center;">'
-              +'<input id="_grsInput" placeholder="Enter Tracking ID e.g. MNR-001"'
-              +' style="flex:1;min-width:0;padding:9px 12px;border:1.5px solid #e8e2d9;border-radius:8px;'
-              +'font-size:13px;font-family:Poppins,sans-serif;outline:none;'
-              +'color:#334155;background:#fdfcfa;box-sizing:border-box;"'
-              +' onfocus="this.style.borderColor=\'#f7a01a\'" onblur="this.style.borderColor=\'#e8e2d9\'"'
-              +' onkeydown="if(event.key===\'Enter\')_grsLookup();if(event.key===\'Escape\')_grsClose()"/>'
-              +'<button onclick="_grsLookup()"'
-              +' style="padding:9px 12px;border-radius:8px;background:#f7a01a;color:#fff;border:none;'
-              +'cursor:pointer;font-size:14px;box-shadow:none;flex-shrink:0;"'
-              +' onmouseover="this.style.background=\'#e8920a\'" onmouseout="this.style.background=\'#f7a01a\'">'
-              +'<i class="fa-solid fa-magnifying-glass"></i></button>'
-            +'</div>'
-            +'<div id="_grsResult" style="margin-top:9px;"></div>'
-          +'</div>'
-        +'</div>';
-      // Mount into the pre-placed slot
-      slot.innerHTML = ''; slot.appendChild(wrap);
-      document.addEventListener('click', function(e) {
-        if (!wrap.contains(e.target)) _grsClose();
-      });
-    }
-
-    window._grsToggle = function() {
-      var box = document.getElementById('_grsBox');
-      if (!box) return;
-      if (box.style.display !== 'none') { _grsClose(); return; }
-      box.style.display = 'block';
-
-      // Mobile: measure actual header height and pin popup just below it
-      if (window.innerWidth <= 768) {
-        var hdr = document.querySelector('.header');
-        var hdrBottom = hdr ? Math.round(hdr.getBoundingClientRect().bottom) : 62;
-        box.style.top = (hdrBottom + 4) + 'px';
-
-        // Dim backdrop so tapping outside closes it
-        if (!document.getElementById('_grsBdrop')) {
-          var bd = document.createElement('div');
-          bd.id = '_grsBdrop';
-          bd.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.22);';
-          bd.addEventListener('click', _grsClose);
-          document.body.appendChild(bd);
-        }
-      }
-
-      var inp = document.getElementById('_grsInput');
-      if (inp) { inp.value = ''; setTimeout(function(){ inp.focus(); }, 80); }
-      document.getElementById('_grsResult').innerHTML = '';
-    };
-
-    window._grsClose = function() {
-      var box = document.getElementById('_grsBox');
-      if (box) { box.style.display = 'none'; box.style.top = ''; }
-      // Remove mobile backdrop
-      var bd = document.getElementById('_grsBdrop');
-      if (bd) bd.remove();
-    };
-
-    window._grsLookup = function() {
-      var inp = document.getElementById('_grsInput');
-      var res = document.getElementById('_grsResult');
-      if (!inp || !res) return;
-      var val = inp.value.trim();
-      if (!val) {
-        res.innerHTML = '<div style="font-size:11.5px;color:#e67e22;padding:3px 1px;">&#x26A0; Please enter a Tracking ID.</div>';
-        return;
-      }
-      var APP_PREFIX = (typeof APP !== 'undefined' && APP.receiptPrefix) ? APP.receiptPrefix : 'MNR';
-      var valLow = val.toLowerCase();
-      var trxVar = valLow.replace(new RegExp('^' + APP_PREFIX.toLowerCase() + '-'), 'trx-');
-      var mnrVar = valLow.replace(/^trx-/, APP_PREFIX.toLowerCase() + '-');
-      var found  = null;
-      // 1. _rcptStore
-      var store = window._rcptStore || window._receiptStore || {};
-      Object.keys(store).forEach(function(rid) {
-        if (found) return;
-        var d = store[rid]; if (!d) return;
-        var rl = (rid||'').toLowerCase(), cl = ((d.c&&d.c.ReceiptID)||'').toLowerCase();
-        if (rl===valLow||cl===valLow||rl===trxVar||cl===trxVar||rl===mnrVar||cl===mnrVar)
-          found = {rid:rid,c:d.c,userName:d.userName,typeName:d.typeName};
-      });
-      // 2. main data array
-      if (!found && typeof data !== 'undefined') {
-        data.forEach(function(c) {
-          if (found||!c.ReceiptID) return;
-          var rl = c.ReceiptID.toLowerCase();
-          var rd = rl.replace(/^trx-/, APP_PREFIX.toLowerCase()+'-');
-          if (rl===valLow||rd===valLow||rl===trxVar||rd===trxVar||rl===mnrVar||rd===mnrVar) {
-            var u=(typeof users!=='undefined')?users.find(function(x){return String(x.UserId)===String(c.UserId);}):null;
-            var t=(typeof contribTypes!=='undefined')?contribTypes.find(function(x){return String(x.TypeId)===String(c.TypeId);}):null;
-            found={rid:c.ReceiptID,c:c,
-              userName:u?u.Name:(c.WalkInName||'Walk-in'),
-              typeName:t?t.TypeName:(c.TypeId||'--')};
-          }
-        });
-      }
-      // ── NOT FOUND ──
-      if (!found) {
-        res.innerHTML =
-          '<div style="background:#fff8f8;border:1px solid #fcd4d4;border-radius:8px;padding:10px;text-align:center;">'
-          +'<div style="font-size:16px;margin-bottom:4px;">&#x274C;</div>'
-          +'<div style="font-size:11.5px;font-weight:700;color:#dc2626;margin-bottom:2px;">Receipt Not Found</div>'
-          +'<div style="font-size:10.5px;color:#94a3b8;margin-bottom:8px;">No record for <b style="color:#475569;">' + val + '</b></div>'
-          +'<button onclick="document.getElementById(\'_grsInput\').value=\'\';document.getElementById(\'_grsResult\').innerHTML=\'\';document.getElementById(\'_grsInput\').focus();"'
-          +' style="background:#f1f5f9;color:#475569;border:none;padding:5px 13px;border-radius:6px;'
-          +'cursor:pointer;font-size:11px;font-weight:600;box-shadow:none;font-family:Poppins,sans-serif;">'
-          +'&#x1F504; Try Again</button></div>';
-        return;
-      }
-      // ── FOUND ──
-      _grsLastFound = found; // save for _grsOpenReceipt
-      var c2   = found.c;
-      var dRID = (c2.ReceiptID||found.rid).replace(/^TRX-/i,APP_PREFIX+'-').toUpperCase();
-      var amt  = c2.Amount?'&#8377;'+Number(c2.Amount).toLocaleString('en-IN'):'--';
-      var mon  = (c2.ForMonth||'')+(c2.Year?' '+c2.Year:'');
-      var dt   = c2.PaymentDate||'--';
-      res.innerHTML =
-        '<div style="border:1px solid #fde68a;border-radius:8px;overflow:hidden;">'
-        // amber header strip
-        +'<div style="background:linear-gradient(90deg,#f7a01a,#f5b942);padding:7px 11px;'
-        +'display:flex;align-items:center;justify-content:space-between;">'
-          +'<span style="font-family:monospace;font-size:11.5px;font-weight:800;color:#fff;">&#x1F9FE; '+dRID+'</span>'
-          +'<span style="font-size:11.5px;font-weight:700;color:#fff;">'+amt+'</span>'
-        +'</div>'
-        // detail rows
-        +'<div style="background:#fffdf5;padding:8px 11px;font-size:11.5px;color:#334155;line-height:1.95;">'
-          +'<div style="display:flex;"><span style="color:#a09070;min-width:52px;">Donor</span><b>'+(found.userName||'--')+'</b></div>'
-          +'<div style="display:flex;"><span style="color:#a09070;min-width:52px;">Period</span>'+(mon||'--')+'</div>'
-          +'<div style="display:flex;"><span style="color:#a09070;min-width:52px;">Date</span>'+dt+'</div>'
-          +'<div style="display:flex;"><span style="color:#a09070;min-width:52px;">Type</span>'+(found.typeName||'--')+'</div>'
-        +'</div>'
-        // single full-width View Receipt button
-        +'<div style="padding:8px 11px;background:#fffdf5;border-top:1px solid #fde68a;">'
-          +'<button onclick="_grsOpenReceipt()"'
-          +' style="width:100%;padding:9px 0;background:linear-gradient(135deg,#f7a01a,#e8920a);'
-          +'color:#fff;border:none;border-radius:7px;cursor:pointer;'
-          +'font-size:12.5px;font-weight:700;font-family:Poppins,sans-serif;'
-          +'box-shadow:0 3px 10px rgba(247,160,26,0.3);'
-          +'display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity 0.2s;"'
-          +' onmouseover="this.style.opacity=\'0.88\'" onmouseout="this.style.opacity=\'1\'">'
-          +'<i class="fa-solid fa-receipt"></i> View Receipt'
-          +'</button>'
-        +'</div>'
-        +'</div>';
-    };
-
-    window._grsOpenReceipt = function() {
-      var f = _grsLastFound;
-      if (!f) return;
-      _grsClose();
-      // Try _rcptStore first (populated when table is rendered)
-      var store = window._rcptStore || {};
-      if (store[f.rid]) {
-        if (typeof showReceiptById === 'function') { showReceiptById(f.rid); return; }
-      }
-      // Fallback: call showReceipt directly with data we already have
-      if (typeof showReceipt === 'function') {
-        showReceipt(f.c, f.userName, f.typeName, f.occasionName, true);
-        return;
-      }
-      // Last resort: store it ourselves and call showReceiptById
-      if (!window._rcptStore) window._rcptStore = {};
-      window._rcptStore[f.rid] = {c:f.c, userName:f.userName, typeName:f.typeName, occasionName:f.occasionName};
-      if (typeof showReceiptById === 'function') showReceiptById(f.rid);
-    };
-
-    // Wire on load
-    if (document.readyState === 'complete') {
-      _injectReceiptSearchPill();
-    } else {
-      document.addEventListener('DOMContentLoaded', _injectReceiptSearchPill);
-    }
-
-
     /* ════════════════════════════════════════════════════════
        FEATURE 3 — UNDO LAST DELETE (30-second window)
        Works for contributions and goals. In-memory only.
