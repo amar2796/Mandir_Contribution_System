@@ -561,13 +561,17 @@
         z-index: 200;
       }
 
-      /* Receipt popup: on mobile open to the left so it doesn't overflow screen */
+      /* Receipt popup: fixed below header on mobile, full usable width */
       #_grsBox {
-        right: auto !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: 92vw !important;
-        max-width: 320px !important;
+        position: fixed !important;
+        left: 10px !important;
+        right: 10px !important;
+        top: 62px !important;   /* updated dynamically by _grsToggle via JS */
+        width: auto !important;
+        max-width: none !important;
+        transform: none !important;
+        border-radius: 14px !important;
+        box-shadow: 0 12px 36px rgba(0,0,0,0.18) !important;
       }
 
 
@@ -5431,13 +5435,205 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script>
-    // Fallback: if app.js failed to load, smartRefresh would be undefined
-    // and every save/delete would silently break after the API call.
-    if (typeof smartRefresh !== "function") {
-      window.smartRefresh = function() {
-        if (typeof init === "function") init();
-      };
+    /* ═══════════════════════════════════════════════════════════════════
+       ADMIN SMART REFRESH — extends app.js smartRefresh
+       ─────────────────────────────────────────────────────────────────
+       HOW IT WORKS (zero duplication with app.js):
+         1. app.js smartRefresh already handles:
+              getCached("getAllData") → updates all globals → calls basic
+              render fns → calls _dashSyncFromAdmin at the end.
+            It also has _CACHE_BUST_ON_WRITE which auto-busts the right
+            cache keys the moment any postData() succeeds — so we never
+            need to manually bust cache here.
+
+         2. This wrapper runs AFTER app.js's version completes and adds
+            the admin-specific UI calls that app.js doesn't know about:
+              contributions → _cr_buildFilterDropdowns, ct_ tracker dropdowns,
+                              renderGoals (goals show collected totals),
+                              updateSidebarSummary, request badge, YearlySummary bust
+              expenses      → _exp_populateTypeDropdown, _et_buildTypeSelect,
+                              _et_buildYearSelect, updateSidebarSummary, YearlySummary bust
+              users         → loadSummary (total-members card),
+                              bk_user bulk-insert dropdown rebuild
+              types         → _cr_buildFilterDropdowns (type filter in records)
+              occasions     → _cr_buildFilterDropdowns (occasion filter in records)
+              expenseTypes  → _exp_populateTypeDropdown, _et_buildTypeSelect,
+                              _et_buildYearSelect
+              all           → everything above + _ct_buildOccasionSelect
+
+         3. Falls back to init() if app.js original is unavailable.
+    ═══════════════════════════════════════════════════════════════════ */
+
+    /* ── Save the app.js original BEFORE overriding ── */
+    window._origSmartRefresh = (typeof smartRefresh === "function") ? smartRefresh : null;
+
+    /* ── Safe no-op caller: only invokes fn if it exists, swallows errors ── */
+    function _sr_call(fn) {
+      if (typeof fn === "function") {
+        try { fn(); } catch(e) { console.warn("[smartRefresh] " + (fn.name || "?") + ":", e); }
+      }
     }
+
+    /* ─────────────────────────────────────────────────────────────────
+       Extra UI calls per entity — these are what app.js is missing.
+       Each function is called AFTER app.js's own render calls finish.
+    ───────────────────────────────────────────────────────────────── */
+    var _srExtra = {
+
+      contributions: function() {
+        // Contribution records: power-filter dropdowns (type, occasion, year, user)
+        _sr_call(_cr_buildFilterDropdowns);
+        // Contribution tracker (ct_) dropdowns
+        _sr_call(_ct_buildYearSelect);
+        _sr_call(_ct_buildTypeSelect);
+        _sr_call(_ct_buildOccasionSelect);
+        // Goals table shows collected totals from contributions
+        _sr_call(renderGoals);
+        // Sidebar live totals
+        _sr_call(updateSidebarSummary);
+        // Bust yearly summary so next open is fresh
+        mandirCacheBust("getYearlySummary");
+        // Refresh pending-request badge quietly
+        getData("getContributionRequests").then(function(res) {
+          window._allRequests = Array.isArray(res) ? res : [];
+          _sr_call(_updateReqBadge);
+        }).catch(function(){});
+      },
+
+      expenses: function() {
+        // Expense-form type dropdown
+        _sr_call(_exp_populateTypeDropdown);
+        // Expense tracker (et_) dropdowns
+        _sr_call(_et_buildTypeSelect);
+        _sr_call(_et_buildYearSelect);
+        // Sidebar live totals
+        _sr_call(updateSidebarSummary);
+        // Bust yearly summary
+        mandirCacheBust("getYearlySummary");
+      },
+
+      users: function() {
+        // Summary card shows total-members count
+        _sr_call(loadSummary);
+        // Bulk-insert user dropdown (separate from the main loadUsers() select)
+        var bkUser = document.getElementById("bk_user");
+        if (bkUser && typeof users !== "undefined") {
+          bkUser.innerHTML = users
+            .filter(function(u) {
+              return u.Role !== "Admin" &&
+                     String(u.Status || "").toLowerCase() === "active";
+            })
+            .map(function(u) {
+              return '<option value="' + u.UserId + '">' +
+                     escapeHtml(u.Name) + '</option>';
+            })
+            .join("");
+        }
+      },
+
+      types: function() {
+        // Contribution records type-filter dropdown
+        _sr_call(_cr_buildFilterDropdowns);
+      },
+
+      occasions: function() {
+        // Contribution records occasion-filter dropdown
+        _sr_call(_cr_buildFilterDropdowns);
+      },
+
+      expenseTypes: function() {
+        // Expense-form type dropdown + tracker dropdowns
+        _sr_call(_exp_populateTypeDropdown);
+        _sr_call(_et_buildTypeSelect);
+        _sr_call(_et_buildYearSelect);
+      },
+
+      goals: function() {
+        /* app.js already calls renderGoals() — nothing extra needed */
+      },
+
+      events: function() {
+        /* app.js does not handle events; cache bust is via _CACHE_BUST_ON_WRITE */
+        _sr_call(loadEvents);
+      },
+
+      summary: function() {
+        _sr_call(loadSummary);
+        _sr_call(updateSidebarSummary);
+      },
+
+      all: function() {
+        // Run all extras
+        _sr_call(_cr_buildFilterDropdowns);
+        _sr_call(_ct_buildYearSelect);
+        _sr_call(_ct_buildTypeSelect);
+        _sr_call(_ct_buildOccasionSelect);
+        _sr_call(renderGoals);
+        _sr_call(_exp_populateTypeDropdown);
+        _sr_call(_et_buildTypeSelect);
+        _sr_call(_et_buildYearSelect);
+        _sr_call(updateSidebarSummary);
+        _sr_call(loadSummary);
+        _sr_call(loadEvents);
+        mandirCacheBust("getYearlySummary");
+        getData("getContributionRequests").then(function(res) {
+          window._allRequests = Array.isArray(res) ? res : [];
+          _sr_call(_updateReqBadge);
+        }).catch(function(){});
+        // Rebuild bulk-insert dropdown
+        var bkUser = document.getElementById("bk_user");
+        if (bkUser && typeof users !== "undefined") {
+          bkUser.innerHTML = users
+            .filter(function(u) {
+              return u.Role !== "Admin" &&
+                     String(u.Status || "").toLowerCase() === "active";
+            })
+            .map(function(u) {
+              return '<option value="' + u.UserId + '">' +
+                     escapeHtml(u.Name) + '</option>';
+            })
+            .join("");
+        }
+      }
+    };
+
+    /**
+     * window.smartRefresh(entity)
+     *
+     * Overrides app.js version to add admin-panel extras.
+     * Execution order:
+     *   1. app.js smartRefresh  → getCached → globals update → basic renders
+     *                          → _dashSyncFromAdmin (dashboard cascade)
+     *   2. _srExtra[entity]    → admin-specific dropdowns, sidebar, badge, etc.
+     *
+     * Cache busting is handled automatically by _CACHE_BUST_ON_WRITE in app.js
+     * the moment postData() resolves — no manual busting needed here.
+     *
+     * All 28 call-sites (smartRefresh("contributions") etc.) work unchanged.
+     */
+    window.smartRefresh = function(entity) {
+      entity = entity || "all";
+
+      // Step 1 — run app.js original (async, returns a Promise)
+      var origResult = (typeof window._origSmartRefresh === "function")
+        ? window._origSmartRefresh(entity)
+        : (typeof init === "function" ? init() : Promise.resolve());
+
+      // Step 2 — after original finishes, fire admin extras
+      Promise.resolve(origResult).then(function() {
+        var extraFn = _srExtra[entity] || _srExtra["all"];
+        try { extraFn(); } catch(e) {
+          console.warn("[smartRefresh extra '" + entity + "']", e);
+        }
+      }).catch(function(e) {
+        // If app.js original failed, still try the extras (globals may be stale but UI should update)
+        console.warn("[smartRefresh orig failed for '" + entity + "', running extras anyway]", e);
+        var extraFn = _srExtra[entity] || _srExtra["all"];
+        try { extraFn(); } catch(e2) { console.warn("[smartRefresh extra fallback]", e2); }
+        // Last resort: full init
+        if (typeof init === "function") setTimeout(init, 200);
+      });
+    };
     /* ═══════════════════════════════════════════════════════════════
        PERFORMANCE UTILITIES
        ─ debounce : prevents search functions firing on every keystroke
@@ -5514,8 +5710,9 @@
       localStorage.setItem("session", JSON.stringify(s));
       return true;
     }
-    // Alias so all checkSession() call-sites resolve correctly
-    var checkSession = _checkAdminSession;
+    // checkSession() is defined in app.js (line 620) — no alias needed here.
+    // The earlier alias (var checkSession = _checkAdminSession) was WRONG:
+    // it overrode the working app.js function with undefined. Removed.
 
     if (!_checkAdminSession()) {
       /* stop */
@@ -8351,10 +8548,14 @@
           toast("✅ Contribution updated.");
           closeModal();
           smartRefresh("contributions");
-          updateLocalData("contributions", id, {
-            Amount: amt, ForMonth: mon, Year: yr,
-            TypeId: typ, OccasionId: occ, Note: note, PaymentMode: mode,
-          });
+          // updateLocalData is an optimistic patch from app.js — skipped here
+          // because smartRefresh now re-fetches fresh data from API directly.
+          if (typeof updateLocalData === "function") {
+            updateLocalData("contributions", id, {
+              Amount: amt, ForMonth: mon, Year: yr,
+              TypeId: typ, OccasionId: occ, Note: note, PaymentMode: mode,
+            });
+          }
         } else toast("❌ Update failed.", "error");
       } catch (err) {
         toast("❌ " + err.message, "error");
@@ -14968,10 +15169,19 @@
       // Use the pre-placed slot in the header (between health & darkmode)
       var slot = document.getElementById('_grsWrapSlot');
       if (!slot || document.getElementById('_grsWrap')) return;
-      // inject slide-in animation
+      // inject slide-in animation + mobile-responsive styles
       if (!document.getElementById('_grsStyle')) {
         var s = document.createElement('style'); s.id = '_grsStyle';
-        s.textContent = '@keyframes _grsSlide{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}';
+        s.textContent =
+          '@keyframes _grsSlide{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}'
+          // Desktop only: dropdown anchored below the button, right-aligned.
+          // Mobile override is handled by the stylesheet @media(max-width:768px) block.
+          + '#_grsBox{'
+          +   'display:none;position:absolute;right:0;top:calc(100% + 6px);'
+          +   'background:#fff;border-radius:12px;border:1px solid #ede9e3;width:280px;'
+          +   'box-shadow:0 8px 26px rgba(0,0,0,0.13);z-index:99999;overflow:hidden;'
+          +   'animation:_grsSlide .14s ease;'
+          + '}';
         document.head.appendChild(s);
       }
       var wrap = document.createElement('div');
@@ -14986,36 +15196,34 @@
         +'font-size:14px;transition:background 0.2s;">'
         +'<i class="fa-solid fa-receipt"></i>'
         +'</button>'
-        // popup panel — opens below, aligned right
-        +'<div id="_grsBox" style="display:none;position:absolute;right:0;top:calc(100% + 6px);'
-        +'background:#fff;border-radius:12px;border:1px solid #ede9e3;width:260px;'
-        +'box-shadow:0 8px 26px rgba(0,0,0,0.13);z-index:99999;overflow:hidden;animation:_grsSlide .14s ease;">'
+        // popup panel — positioned via CSS (desktop: absolute; mobile: fixed)
+        +'<div id="_grsBox">'
           // header bar
-          +'<div style="background:#fdf8f0;border-bottom:1px solid #f0e8d8;padding:9px 12px;'
+          +'<div style="background:#fdf8f0;border-bottom:1px solid #f0e8d8;padding:10px 14px;'
           +'display:flex;align-items:center;justify-content:space-between;">'
             +'<span style="font-size:10px;font-weight:700;color:#b0935a;text-transform:uppercase;letter-spacing:1.1px;">&#x1F9FE; Receipt Lookup</span>'
             +'<span onclick="_grsClose()" title="Close"'
-            +' style="cursor:pointer;color:#c0a878;font-size:13px;width:18px;height:18px;'
+            +' style="cursor:pointer;color:#c0a878;font-size:16px;width:24px;height:24px;'
             +'display:flex;align-items:center;justify-content:center;'
             +'border-radius:50%;transition:background 0.15s;"'
             +' onmouseover="this.style.background=\'#f0e0c0\'" onmouseout="this.style.background=\'transparent\'">&#x2715;</span>'
           +'</div>'
           // input area
-          +'<div style="padding:11px 12px;">'
-            +'<div style="display:flex;gap:6px;align-items:center;">'
+          +'<div style="padding:12px 14px;">'
+            +'<div style="display:flex;gap:7px;align-items:center;">'
               +'<input id="_grsInput" placeholder="Enter Tracking ID e.g. MNR-001"'
-              +' style="flex:1;padding:7px 10px;border:1.5px solid #e8e2d9;border-radius:7px;'
-              +'font-size:12px;font-family:Poppins,sans-serif;outline:none;'
+              +' style="flex:1;min-width:0;padding:9px 12px;border:1.5px solid #e8e2d9;border-radius:8px;'
+              +'font-size:13px;font-family:Poppins,sans-serif;outline:none;'
               +'color:#334155;background:#fdfcfa;box-sizing:border-box;"'
               +' onfocus="this.style.borderColor=\'#f7a01a\'" onblur="this.style.borderColor=\'#e8e2d9\'"'
               +' onkeydown="if(event.key===\'Enter\')_grsLookup();if(event.key===\'Escape\')_grsClose()"/>'
               +'<button onclick="_grsLookup()"'
-              +' style="padding:7px 10px;border-radius:7px;background:#f7a01a;color:#fff;border:none;'
-              +'cursor:pointer;font-size:12px;box-shadow:none;flex-shrink:0;"'
+              +' style="padding:9px 12px;border-radius:8px;background:#f7a01a;color:#fff;border:none;'
+              +'cursor:pointer;font-size:14px;box-shadow:none;flex-shrink:0;"'
               +' onmouseover="this.style.background=\'#e8920a\'" onmouseout="this.style.background=\'#f7a01a\'">'
               +'<i class="fa-solid fa-magnifying-glass"></i></button>'
             +'</div>'
-            +'<div id="_grsResult" style="margin-top:8px;"></div>'
+            +'<div id="_grsResult" style="margin-top:9px;"></div>'
           +'</div>'
         +'</div>';
       // Mount into the pre-placed slot
@@ -15030,14 +15238,34 @@
       if (!box) return;
       if (box.style.display !== 'none') { _grsClose(); return; }
       box.style.display = 'block';
+
+      // Mobile: measure actual header height and pin popup just below it
+      if (window.innerWidth <= 768) {
+        var hdr = document.querySelector('.header');
+        var hdrBottom = hdr ? Math.round(hdr.getBoundingClientRect().bottom) : 62;
+        box.style.top = (hdrBottom + 4) + 'px';
+
+        // Dim backdrop so tapping outside closes it
+        if (!document.getElementById('_grsBdrop')) {
+          var bd = document.createElement('div');
+          bd.id = '_grsBdrop';
+          bd.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.22);';
+          bd.addEventListener('click', _grsClose);
+          document.body.appendChild(bd);
+        }
+      }
+
       var inp = document.getElementById('_grsInput');
-      if (inp) { inp.value = ''; inp.focus(); }
+      if (inp) { inp.value = ''; setTimeout(function(){ inp.focus(); }, 80); }
       document.getElementById('_grsResult').innerHTML = '';
     };
 
     window._grsClose = function() {
       var box = document.getElementById('_grsBox');
-      if (box) box.style.display = 'none';
+      if (box) { box.style.display = 'none'; box.style.top = ''; }
+      // Remove mobile backdrop
+      var bd = document.getElementById('_grsBdrop');
+      if (bd) bd.remove();
     };
 
     window._grsLookup = function() {
