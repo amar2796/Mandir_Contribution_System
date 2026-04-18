@@ -1607,6 +1607,134 @@
       border-top: 1.5px solid rgba(247,160,26,0.1) !important;
     }
 
+    /* ─── FULL-PAGE LOADING / ERROR OVERLAY ─── */
+    #userLoadingOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(241, 244, 250, 0.92);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 8000;
+      touch-action: none;
+    }
+    #userLoadingOverlay.show { display: block; }
+    #userLoadingOverlay > .ulo-inner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 90%;
+      max-width: 340px;
+      text-align: center;
+    }
+    .ulo-spinner {
+      width: 44px; height: 44px;
+      border: 4px solid rgba(247,160,26,0.22);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      flex-shrink: 0;
+    }
+    .ulo-loading-label {
+      font-family: var(--font-b);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-mid);
+    }
+    /* ── Error state (hidden until needed) ── */
+    #ulo_error {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+    }
+    #ulo_error.show { display: flex; }
+    .ulo-err-icon {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: #fff8ed;
+      border: 2px solid rgba(247,160,26,0.55);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.7rem;
+      box-shadow: 0 4px 16px rgba(247,160,26,0.18);
+    }
+    .ulo-err-title {
+      font-family: var(--font-h);
+      font-size: 1rem;
+      font-weight: 700;
+      color: #78350f;
+    }
+    #ulo_reason {
+      font-family: var(--font-b);
+      font-size: 13px;
+      color: #555;
+      background: #fffbf5;
+      border: 1px solid rgba(247,160,26,0.38);
+      border-radius: 10px;
+      padding: 12px 16px;
+      line-height: 1.65;
+      width: 100%;
+    }
+    .ulo-retry-btn {
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-family: var(--font-b);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      box-shadow: 0 4px 14px rgba(247,160,26,0.38);
+      transition: background var(--t), box-shadow var(--t), transform var(--t);
+    }
+    .ulo-retry-btn:hover { background: #e8920a; box-shadow: 0 6px 20px rgba(247,160,26,0.48); }
+    .ulo-retry-btn:active { transform: scale(0.97); }
+    .ulo-retry-btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+    .ulo-login-btn {
+      background: #fff;
+      color: #78350f;
+      border: 1.5px solid rgba(247,160,26,0.55);
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-family: var(--font-b);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: none;
+      transition: background var(--t), border-color var(--t);
+    }
+    .ulo-login-btn:hover { background: #fffbf5; border-color: var(--gold); }
+    /* ── Attempt counter pill ── */
+    #ulo_attempt_pill {
+      font-size: 11px;
+      color: var(--ink-faint);
+      font-family: var(--font-b);
+      display: none;
+    }
+    /* ── Dark mode overrides ── */
+    body.user-dark #userLoadingOverlay {
+      background: rgba(8, 9, 15, 0.92) !important;
+    }
+    body.user-dark .ulo-loading-label { color: #94a3b8 !important; }
+    body.user-dark .ulo-err-icon { background: #1e1207 !important; border-color: rgba(247,160,26,0.4) !important; }
+    body.user-dark .ulo-err-title { color: #fde68a !important; }
+    body.user-dark #ulo_reason { background: #1a1005 !important; border-color: rgba(247,160,26,0.28) !important; color: #94a3b8 !important; }
+    body.user-dark .ulo-login-btn { background: #0f172a !important; color: #fde68a !important; border-color: rgba(247,160,26,0.4) !important; }
+    body.user-dark .ulo-login-btn:hover { background: #1a1005 !important; }
+
     /* ─── PULL TO REFRESH ─── */
     #ptr-indicator {
       position: fixed;
@@ -2708,6 +2836,9 @@
       100% { left: 120%; }
     }
 
+    /* Suppress shimmer on fully-funded goals — no animation needed */
+    .goal-fill--done::after { animation: none !important; opacity: 0; }
+
     /* 9. Recent activity dot — subtle pulse on latest item */
     .ra-item:first-child .ra-dot-gold {
       animation: dot-pulse 2s ease-in-out infinite;
@@ -2783,6 +2914,11 @@
       position: sticky;
       top: 0;
       z-index: 2;
+      /* Background must sit on th directly for sticky to paint correctly on scroll */
+      background: linear-gradient(135deg, #1e293b 0%, #2d1a00 60%, #1e293b 100%);
+    }
+    body.user-dark .t-wrap thead th {
+      background: linear-gradient(135deg, #0d1117 0%, #1a1000 60%, #0d1117 100%) !important;
     }
 
     /* 19. Mobile: card hover → subtle scale instead of translateY (feels more native) */
@@ -3552,9 +3688,19 @@
       .ptr-spin { animation: none !important; }
     }
 
-    /* ── Birthday celebration global keyframes (body-level elements need these) ── */
-    @keyframes _bdayPetal{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(108vh) rotate(420deg);opacity:0}}
-    @keyframes _bdaySpark{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-92vh) scale(0.2);opacity:0}}
+    /* ── Utility classes: replaces the 6 most-repeated inline style patterns ──
+       Reduces HTML payload and speeds up style recalculation on list renders   */
+    ._u-icon-sm{width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;}
+    ._u-gold-icon{color:#f7a01a;font-size:11px;}
+    ._u-gold-icon-xs{color:#f7a01a;font-size:10px;}
+    ._u-field-label{font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;}
+    ._u-meta{color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;flex-shrink:0;}
+    ._u-meta-ns{color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;}
+    ._u-input{width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;}
+    ._u-flex-1{flex:1;min-width:0;}
+    ._u-row-sep{border-bottom:1px solid rgba(247,160,26,0.12);}
+    ._u-sec-head{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;}
+    ._u-icon-md{width:28px;height:28px;background:rgba(247,160,26,0.18);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
 
     .map-container iframe {
         transition: filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -3600,6 +3746,65 @@
       box-shadow: 0 0 0 3px rgba(247, 160, 26, 0.12) !important;
       background: var(--white) !important;
       outline: none;
+    }
+    /* ── Modal form fields: always left-aligned, full-width, consistent ── */
+    ._mbdy { text-align: left !important; }
+    ._fl {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 5px;
+    }
+    ._fi {
+      width: 100%;
+      display: block;
+      padding: 10px 13px;
+      border: 1.5px solid rgba(247,160,26,0.22);
+      border-radius: 8px;
+      font-family: var(--font-b);
+      font-size: 13px;
+      color: var(--ink);
+      background: var(--bg);
+      outline: none;
+      margin-bottom: 14px;
+      box-sizing: border-box;
+      transition: border-color var(--t), box-shadow var(--t);
+    }
+    ._fi:focus {
+      border-color: var(--gold);
+      background: var(--white);
+      box-shadow: 0 0 0 3px var(--gold-dim);
+    }
+    body.user-dark ._fi {
+      background: #0d1117 !important;
+      color: #e2e8f0 !important;
+      border-color: #2d3748 !important;
+    }
+    body.user-dark ._fi:focus {
+      background: #111827 !important;
+      border-color: var(--gold) !important;
+    }
+    body.user-dark ._fl { color: #64748b !important; }
+    /* ── Edit profile inline inputs: dark mode text color fix ── */
+    body.user-dark #ep_name,
+    body.user-dark #ep_email,
+    body.user-dark #ep_village,
+    body.user-dark #ep_address,
+    body.user-dark #ep_dob {
+      color: #e2e8f0 !important;
+    }
+    body.user-dark #ep_name::placeholder,
+    body.user-dark #ep_email::placeholder,
+    body.user-dark #ep_village::placeholder,
+    body.user-dark #ep_address::placeholder {
+      color: #475569 !important;
+    }
+    /* _row icon badge warm background in dark */
+    body.user-dark ._row span[style*="background:#fff7ed"] {
+      background: rgba(247,160,26,0.12) !important;
     }
   </style>
   <!-- ── Anti-FOUC: apply dark class BEFORE first paint to prevent white flash ── -->
@@ -3663,11 +3868,12 @@
     </div>
     <div class="header-right">
       <!-- Dark mode toggle switch -->
-        <button id="userDarkBtn" onclick="toggleUserDarkMode()" 
-          style="display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:12px; border:2px solid var(--gold); background:var(--white); cursor:pointer; font-weight:700; min-width:110px;">
-    <span id="darkIcon">☀️</span>
-    <span id="darkText" style="font-size:14px; color:var(--ink-mid);">Light Mode</span>
-  </button>
+      <div class="dm-toggle" id="userDarkBtn" onclick="toggleUserDarkMode()" role="button" tabindex="0" title="Toggle dark mode"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleUserDarkMode();}">
+        <span class="dm-icon dm-icon-sun">☀️</span>
+        <span class="dm-knob"></span>
+        <span class="dm-icon dm-icon-moon">🌙</span>
+      </div>
       <div class="hdr-avatar-wrap">
         <img id="hdr_photo" class="hdr-avatar" src="Image/logo.PNG" loading="eager" decoding="async"
           onerror="this.onerror=null;this.src=_initialsAvatar(document.getElementById('hdr_name').innerText||'?',40);"
@@ -4047,7 +4253,7 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
             <div>
               <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
-                <i class="fa-solid fa-calendar-days" style="color:#f7a01a;font-size:10px;"></i> Month <span style="color:#ef4444;">*</span>
+                <i class="fa-solid fa-calendar-days" class="_u-gold-icon-xs"></i> Month <span style="color:#ef4444;">*</span>
               </label>
               <select id="pr_month" class="f-input-gold" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;">
                 <option value="">Select Month</option>
@@ -4055,7 +4261,7 @@
             </div>
             <div>
               <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
-                <i class="fa-solid fa-indian-rupee-sign" style="color:#f7a01a;font-size:10px;"></i> Amount <span style="color:#ef4444;">*</span>
+                <i class="fa-solid fa-indian-rupee-sign" class="_u-gold-icon-xs"></i> Amount <span style="color:#ef4444;">*</span>
               </label>
               <div style="position:relative;">
                 <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#78350f;">₹</span>
@@ -4068,7 +4274,7 @@
           <!-- Row 2: Payment Mode — pill selector -->
           <div style="margin-bottom:12px;">
             <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:8px;">
-              <i class="fa-solid fa-wallet" style="color:#f7a01a;font-size:10px;"></i> Payment Mode
+              <i class="fa-solid fa-wallet" class="_u-gold-icon-xs"></i> Payment Mode
             </label>
             <select id="pr_mode" class="f-input-gold" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;">
             </select>
@@ -4077,7 +4283,7 @@
           <!-- Row 3: UTR Reference -->
           <div style="margin-bottom:12px;">
             <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
-              <i class="fa-solid fa-hashtag" style="color:#f7a01a;font-size:10px;"></i> UTR / Reference No.
+              <i class="fa-solid fa-hashtag" class="_u-gold-icon-xs"></i> UTR / Reference No.
               <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
             </label>
             <input type="text" id="pr_utr" placeholder="UPI transaction ID or cheque number" class="f-input-gold"
@@ -4087,7 +4293,7 @@
           <!-- Row 4: Note -->
           <div style="margin-bottom:14px;">
             <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
-              <i class="fa-solid fa-pen-to-square" style="color:#f7a01a;font-size:10px;"></i> Note
+              <i class="fa-solid fa-pen-to-square" class="_u-gold-icon-xs"></i> Note
               <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
             </label>
             <input type="text" id="pr_note" placeholder="Any additional info for admin..." maxlength="200" class="f-input-gold"
@@ -4097,7 +4303,7 @@
           <!-- Row 5: Payment Slip upload -->
           <div style="margin-bottom:16px;">
             <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
-              <i class="fa-solid fa-image" style="color:#f7a01a;font-size:10px;"></i> Payment Slip / Screenshot
+              <i class="fa-solid fa-image" class="_u-gold-icon-xs"></i> Payment Slip / Screenshot
               <span style="font-size:10px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span>
             </label>
             <div onclick="document.getElementById('pr_slip').click()"
@@ -4106,7 +4312,7 @@
               <div style="width:38px;height:38px;background:rgba(247,160,26,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <i class="fa-solid fa-cloud-arrow-up" style="color:#f7a01a;font-size:1.1rem;"></i>
               </div>
-              <div style="flex:1;min-width:0;">
+              <div class="_u-flex-1">
                 <div id="pr_slip_name" style="font-size:13px;color:#64748b;font-weight:500;">Tap to attach payment slip</div>
                 <div style="font-size:10.5px;color:#94a3b8;margin-top:1px;">JPG, PNG · Max 5 MB</div>
                 <div id="pr_slip_preview_wrap" style="display:none;margin-top:6px;">
@@ -4223,6 +4429,34 @@
     </div>
     <div class="bs-body" id="bsBody">
       <!-- panel content injected here dynamically -->
+    </div>
+  </div>
+
+  <!-- ══ Full-page loading / error overlay ══
+       Shown during init(), transitions to error state on failure.
+       _doUserRetry() is defined in the retry engine below. -->
+  <div id="userLoadingOverlay" role="status" aria-live="polite">
+    <div class="ulo-inner">
+      <!-- Normal loading state -->
+      <div id="ulo_loading">
+        <div class="ulo-spinner"></div>
+        <div class="ulo-loading-label">Loading your dashboard…</div>
+      </div>
+      <!-- Error / retry state (hidden until an error occurs) -->
+      <div id="ulo_error">
+        <div class="ulo-err-icon">⚠️</div>
+        <div class="ulo-err-title">Could Not Load Data</div>
+        <div id="ulo_reason"></div>
+        <span id="ulo_attempt_pill"></span>
+        <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+          <button class="ulo-retry-btn" id="ulo_retryBtn" onclick="_doUserRetry(this)">
+            <i class="fa-solid fa-rotate-right"></i> Retry
+          </button>
+          <button class="ulo-login-btn" onclick="location.replace('login.html')">
+            <i class="fa-solid fa-right-to-bracket"></i> Back to Login
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -4361,7 +4595,9 @@
 
     let users = [], types = [], occasions = [], data = [], allContributions = [], allGoals = [];
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const PAYMENT_MODES = ["UPI", "Cash", "Bank Transfer", "Cheque"]; // from constants.js pattern
+    // Use PAYMENT_MODES from constants.js if loaded; fall back to local copy so the
+    // payment modal always has values even if constants.js is updated independently.
+    const PAYMENT_MODES = (typeof window.PAYMENT_MODES !== "undefined" ? window.PAYMENT_MODES : ["UPI", "Cash", "Bank Transfer", "Cheque"]);
 
     function _fixDrivePhotoUrl(url) {
       if (!url) return "";
@@ -4400,7 +4636,9 @@
 
     // ── Fetch Drive photo as base64 via Apps Script proxy (solves CORS block) ─
     // Caches per PhotoURL so repeated calls (header + ID card) cost only 1 request
+    // Max 10 entries — FIFO eviction to prevent unbounded heap growth
     window._photoB64Cache = {};
+    window._photoB64CacheKeys = [];
     async function _fetchPhotoBase64(photoURL) {
       if (!photoURL) return null;
       if (window._photoB64Cache[photoURL]) return window._photoB64Cache[photoURL];
@@ -4410,7 +4648,13 @@
         const _s = JSON.parse(localStorage.getItem("session") || "null");
         const res = await postData({ action: "getPhotoBase64", fileId: fileId, userId: _s?.userId || "", sessionToken: _s?.sessionToken || "" });
         if (res && res.status === "success" && res.base64) {
+          // Evict oldest entry if cache is full
+          if (window._photoB64CacheKeys.length >= 10) {
+            var oldest = window._photoB64CacheKeys.shift();
+            delete window._photoB64Cache[oldest];
+          }
           window._photoB64Cache[photoURL] = res.base64;
+          window._photoB64CacheKeys.push(photoURL);
           return res.base64;
         }
       } catch (e) { /* fall through — initials will show */ }
@@ -4479,7 +4723,7 @@
       let st = String(myProfile.Status || "Active");
       let stC = st.toLowerCase() === "active" ? "#22c55e" : st.toLowerCase() === "pending" ? "#f59e0b" : "#ef4444";
       let html = `
-          <div class="_mhdr" style="background:linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);border-bottom:2px solid rgba(247,160,26,0.35);"><h3 style="color:#fff;display:flex;align-items:center;gap:8px;"><span style="width:28px;height:28px;background:rgba(247,160,26,0.18);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-id-card" style="color:#f7a01a;font-size:13px;"></i></span> My Profile</h3><button class="_mcls" onclick="closeModal()" style="color:rgba(255,255,255,0.6);font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:0;">×</button></div>
+          <div class="_mhdr" style="background:linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);border-bottom:2px solid rgba(247,160,26,0.35);"><h3 style="color:#fff;display:flex;align-items:center;gap:8px;"><span class="_u-icon-md"><i class="fa-solid fa-id-card" style="color:#f7a01a;font-size:13px;"></i></span> My Profile</h3><button class="_mcls" onclick="closeModal()" style="color:rgba(255,255,255,0.6);font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:0;">×</button></div>
           <div class="_mbdy" style="padding:0;">
             <div style="background:linear-gradient(180deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);padding:26px 20px 20px;text-align:center;position:relative;overflow:hidden;">
               <div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(247,160,26,0.15),transparent 70%);border-radius:50%;pointer-events:none;"></div>
@@ -4493,12 +4737,12 @@
               </div>
             </div>
             <div style="padding:10px 20px 16px;background:var(--white);">
-              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-mobile-screen" style="color:#f7a01a;font-size:11px;"></i></span> Mobile</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(String(myProfile.Mobile || "—"))}</span></div>
-              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-envelope" style="color:#f7a01a;font-size:11px;"></i></span> Email</span><span class="_rv" style="word-break:break-all;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Email || "—")}</span></div>
-              ${myProfile.Village ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-map-pin" style="color:#f7a01a;font-size:11px;"></i></span> Village</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Village)}</span></div>` : ""}
-              ${myProfile.Address ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-location-dot" style="color:#f7a01a;font-size:11px;"></i></span> Address</span><span class="_rv" style="white-space:pre-wrap;text-align:right;max-width:220px;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Address)}</span></div>` : ""}
-              ${myProfile.DOB ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-cake-candles" style="color:#f7a01a;font-size:11px;"></i></span> Date of Birth</span><span class="_rv" style="font-weight:600;color:#1e293b;">${(function(d){if(!d)return"—";if(d.indexOf("T")>=0||d.indexOf("Z")>=0){var x=new Date(d);if(!isNaN(x))return String(x.getUTCDate()).padStart(2,"0")+"-"+String(x.getUTCMonth()+1).padStart(2,"0")+"-"+x.getUTCFullYear();}if(/^\d{2}-\d{2}-\d{4}$/.test(d))return d;if(/^\d{4}-\d{2}-\d{2}$/.test(d)){var p=d.split("-");return p[2]+"-"+p[1]+"-"+p[0];}return d;})(myProfile.DOB)}</span></div>` : ""}
-              <div class="_row"><span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;"><span style="width:24px;height:24px;background:#fff7ed;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;"><i class="fa-solid fa-id-card" style="color:#f7a01a;font-size:11px;"></i></span> Member ID</span><span class="_rv" style="font-family:monospace;font-size:12px;font-weight:700;color:#3c1a00;letter-spacing:.5px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
+              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-mobile-screen" class="_u-gold-icon"></i></span> Mobile</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(String(myProfile.Mobile || "—"))}</span></div>
+              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-envelope" class="_u-gold-icon"></i></span> Email</span><span class="_rv" style="word-break:break-all;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Email || "—")}</span></div>
+              ${myProfile.Village ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-map-pin" class="_u-gold-icon"></i></span> Village</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Village)}</span></div>` : ""}
+              ${myProfile.Address ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-location-dot" class="_u-gold-icon"></i></span> Address</span><span class="_rv" style="white-space:pre-wrap;text-align:right;max-width:220px;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Address)}</span></div>` : ""}
+              ${myProfile.DOB ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-cake-candles" class="_u-gold-icon"></i></span> Date of Birth</span><span class="_rv" style="font-weight:600;color:#1e293b;">${(function(d){if(!d)return"—";if(d.indexOf("T")>=0||d.indexOf("Z")>=0){var x=new Date(d);if(!isNaN(x))return String(x.getUTCDate()).padStart(2,"0")+"-"+String(x.getUTCMonth()+1).padStart(2,"0")+"-"+x.getUTCFullYear();}if(/^\d{2}-\d{2}-\d{4}$/.test(d))return d;if(/^\d{4}-\d{2}-\d{2}$/.test(d)){var p=d.split("-");return p[2]+"-"+p[1]+"-"+p[0];}return d;})(myProfile.DOB)}</span></div>` : ""}
+              <div class="_row"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-id-card" class="_u-gold-icon"></i></span> Member ID</span><span class="_rv" style="font-family:monospace;font-size:12px;font-weight:700;color:#3c1a00;letter-spacing:.5px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
             </div>
           </div>
               <div class="_mft" style="flex-wrap:wrap;gap:8px;border-top:2px solid rgba(247,160,26,0.15);background:linear-gradient(90deg,rgba(247,160,26,0.04),transparent);">
@@ -4558,44 +4802,113 @@
       let photoSrc = previewB64 || _initialsAvatar(dN || "?", 88);
       let fb = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'><circle cx='44' cy='44' r='44' fill='%23f7a01a'/><text x='44' y='56' text-anchor='middle' fill='white' font-size='36' font-family='Arial'>&#128100;</text></svg>";
       let html = `
-          <div class="_mhdr" style="background:linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);border-bottom:2px solid rgba(247,160,26,0.35);"><h3 style="color:#fff;display:flex;align-items:center;gap:8px;"><span style="width:28px;height:28px;background:rgba(247,160,26,0.18);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-user-pen" style="color:var(--gold);font-size:13px;"></i></span> Edit Profile</h3><button class="_mcls" onclick="closeModal()" style="color:rgba(255,255,255,0.6);font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:0;">×</button></div>
-          <div class="_mbdy" style="text-align:center;">
-            <div style="position:relative;width:88px;margin:0 auto 10px;">
-              <img id="photoPreview" class="photo-preview" src="${escapeHtml(photoSrc)}" onerror="this.src='${fb}'" style="margin-bottom:0;"/>
-              <div onclick="pickPhoto()" style="position:absolute;bottom:2px;right:2px;width:28px;height:28px;background:#f7a01a;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);border:2.5px solid white;" title="Change Photo">
-                <i class="fa-solid fa-camera" style="color:white;font-size:11px;"></i>
-              </div>
-            </div>
-            <p style="font-size:11px;color:#aaa;margin:0 0 14px;">Tap the camera icon to change photo</p>
-            <input type="file" id="photoFile" accept="image/*" style="display:none;" onchange="handlePhotoSelected(this)"/>
-            <div style="text-align:left;">
-              <label class="_fl" for="ep_name">Full Name</label><input class="_fi" id="ep_name" value="${escapeHtml(dN)}" placeholder="Your name"/>
-              <label class="_fl" for="ep_email">Email</label><input class="_fi" id="ep_email" type="email" value="${escapeHtml(dE)}" placeholder="your@email.com"/>
-              <label class="_fl">Mobile Number</label>
-              <div style="background:var(--bg);border:1.5px solid rgba(247,160,26,0.22);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <i class="fa-solid fa-mobile-screen" style="color:#f7a01a;font-size:13px;"></i>
-                  <span style="color:var(--ink);font-size:13px;font-weight:600;letter-spacing:1px;">${escapeHtml(String(myProfile?.Mobile || "—"))}</span>
+          <div class="_mhdr" style="background:linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);border-bottom:2px solid rgba(247,160,26,0.35);"><h3 style="color:#fff;display:flex;align-items:center;gap:8px;"><span class="_u-icon-md"><i class="fa-solid fa-user-pen" style="color:#f7a01a;font-size:13px;"></i></span> Edit Profile</h3><button class="_mcls" onclick="closeModal()" style="color:rgba(255,255,255,0.6);font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:0;">×</button></div>
+          <div class="_mbdy" style="padding:0;">
+
+            <!-- Hero banner — matches My Profile exactly -->
+            <div style="background:linear-gradient(180deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);padding:22px 20px 18px;text-align:center;position:relative;overflow:hidden;">
+              <div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(247,160,26,0.15),transparent 70%);border-radius:50%;pointer-events:none;"></div>
+              <div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(247,160,26,0.4),transparent);"></div>
+              <div style="position:relative;width:82px;margin:0 auto 8px;">
+                <img id="photoPreview" src="${escapeHtml(photoSrc)}" onerror="this.src='${fb}'"
+                  style="width:82px;height:82px;border-radius:50%;object-fit:cover;border:3px solid #f7a01a;background:#eee;display:block;box-shadow:0 4px 20px rgba(247,160,26,0.45);"/>
+                <div onclick="pickPhoto()" title="Change Photo"
+                  style="position:absolute;bottom:2px;right:2px;width:26px;height:26px;background:#f7a01a;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);border:2px solid #fff;">
+                  <i class="fa-solid fa-camera" style="color:#fff;font-size:10px;"></i>
                 </div>
-                <span onclick="openUpdateMobileConfirm()" style="color:#3b82f6;font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap;">
-                  <i class="fa-solid fa-mobile-screen-button" style="margin-right:3px;"></i>Update Mobile
-                </span>
               </div>
-              <label class="_fl" for="ep_village" style="margin-top:0;">Village</label><input class="_fi" id="ep_village" value="${escapeHtml(dV)}" placeholder="Village name"/>
-              <label class="_fl" for="ep_address">Address</label><textarea class="_fi" id="ep_address" rows="2" placeholder="Full address" style="resize:vertical;min-height:52px;display:block;background:var(--bg);color:var(--ink);cursor:text;">${escapeHtml(dA)}</textarea>
-              <label class="_fl" for="ep_dob">Date of Birth <span style="font-size:10px;color:#aaa;font-weight:400;">(optional — for birthday alerts)</span></label>
-              <input class="_fi" id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}" style="cursor:pointer;"/>
-              <label class="_fl">Password</label>
-                  <div style="background:var(--bg);border:1.5px solid rgba(0,0,0,0.08);border-radius:8px;
-                    padding:10px 14px;display:flex;align-items:center;justify-content:space-between;
-                    margin-bottom:14px;">
-                    <span style="color:#aaa;letter-spacing:2px;font-size:14px;">••••••••</span>
-                    <span onclick="closeModal();openChangePassword()"
-                      style="color:#3b82f6;font-size:12px;font-weight:600;cursor:pointer;
-                      text-decoration:underline;white-space:nowrap;">
-                      <i class="fa-solid fa-key" style="margin-right:3px;"></i>Change
-                    </span>
-                  </div>
+              <div style="font-size:11px;color:rgba(247,160,26,0.65);margin:0;">Tap camera to change photo</div>
+            </div>
+            <input type="file" id="photoFile" accept="image/*" style="display:none;" onchange="handlePhotoSelected(this)"/>
+
+            <!-- Editable rows — same _row style as My Profile -->
+            <div style="padding:6px 20px 14px;background:var(--white);">
+
+              <!-- Full Name -->
+              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);align-items:center;">
+                <span class="_rl" class="_u-meta">
+                  <span class="_u-icon-sm">
+                    <i class="fa-solid fa-user" class="_u-gold-icon"></i>
+                  </span> Full Name
+                </span>
+                <input id="ep_name" value="${escapeHtml(dN)}" placeholder="Your name"
+                  style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
+              </div>
+
+              <!-- Email -->
+              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);align-items:center;">
+                <span class="_rl" class="_u-meta">
+                  <span class="_u-icon-sm">
+                    <i class="fa-solid fa-envelope" class="_u-gold-icon"></i>
+                  </span> Email
+                </span>
+                <input id="ep_email" type="email" value="${escapeHtml(dE)}" placeholder="your@email.com"
+                  style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
+              </div>
+
+              <!-- Mobile (read-only with update link) -->
+              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);align-items:center;">
+                <span class="_rl" class="_u-meta">
+                  <span class="_u-icon-sm">
+                    <i class="fa-solid fa-mobile-screen" class="_u-gold-icon"></i>
+                  </span> Mobile
+                </span>
+                <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;flex:1;min-width:0;">
+                  <span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:.5px;">${escapeHtml(String(myProfile?.Mobile || "—"))}</span>
+                  <span onclick="openUpdateMobileConfirm()" style="color:#3b82f6;font-size:11px;font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap;flex-shrink:0;">
+                    <i class="fa-solid fa-pen-to-square" style="font-size:10px;margin-right:2px;"></i>Update
+                  </span>
+                </div>
+              </div>
+
+              <!-- Village -->
+              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);align-items:center;">
+                <span class="_rl" class="_u-meta">
+                  <span class="_u-icon-sm">
+                    <i class="fa-solid fa-map-pin" class="_u-gold-icon"></i>
+                  </span> Village
+                </span>
+                <input id="ep_village" value="${escapeHtml(dV)}" placeholder="Village name"
+                  style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
+              </div>
+
+              <!-- Address -->
+              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);align-items:flex-start;padding-top:11px;padding-bottom:11px;">
+                <span class="_rl" style="color:#64748b;font-size:12.5px;display:flex;align-items:center;gap:7px;flex-shrink:0;margin-top:1px;">
+                  <span class="_u-icon-sm">
+                    <i class="fa-solid fa-location-dot" class="_u-gold-icon"></i>
+                  </span> Address
+                </span>
+                <textarea id="ep_address" rows="2" placeholder="Full address"
+                  style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;width:100%;min-width:0;font-family:var(--font-b);padding:0;resize:none;line-height:1.5;">${escapeHtml(dA)}</textarea>
+              </div>
+
+              <!-- Date of Birth -->
+              <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);align-items:center;">
+                <span class="_rl" class="_u-meta">
+                  <span class="_u-icon-sm">
+                    <i class="fa-solid fa-cake-candles" class="_u-gold-icon"></i>
+                  </span> Date of Birth
+                </span>
+                <input id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}"
+                  style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;font-family:var(--font-b);padding:0;cursor:pointer;min-width:0;"/>
+              </div>
+
+              <!-- Password -->
+              <div class="_row" style="align-items:center;">
+                <span class="_rl" class="_u-meta">
+                  <span class="_u-icon-sm">
+                    <i class="fa-solid fa-lock" class="_u-gold-icon"></i>
+                  </span> Password
+                </span>
+                <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;flex:1;">
+                  <span style="color:#aaa;letter-spacing:2px;font-size:13px;">••••••••</span>
+                  <span onclick="closeModal();openChangePassword()" style="color:#3b82f6;font-size:11px;font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap;flex-shrink:0;">
+                    <i class="fa-solid fa-key" style="font-size:10px;margin-right:2px;"></i>Change
+                  </span>
+                </div>
+              </div>
+
             </div>
           </div>
           <div class="_mft" style="border-top:2px solid rgba(247,160,26,0.15);background:linear-gradient(90deg,rgba(247,160,26,0.04),transparent);">
@@ -4940,15 +5253,55 @@
       if (_pendingCroppedB64) {
         toast("Uploading photo...", "warn");
         try {
-          let resp = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "uploadAndSaveProfile", UserId: s.userId, Name: name, Mobile: myProfile?.Mobile || "", Role: s.role, Password: "", Email: email, Village: village, Address: address, DOB: dob, Status: "Active", AdminName: name, base64: _pendingCroppedB64, fileName: "User_" + s.userId + "_" + Date.now() + ".jpg", oldPhotoURL: myProfile?.PhotoURL || "", sessionToken: s.sessionToken || "" }) });
+          const _uploadCtrl = new AbortController();
+          const _uploadTimer = setTimeout(function() { _uploadCtrl.abort(); }, 60000);
+          let resp = await fetch(API_URL, { method: "POST", signal: _uploadCtrl.signal, body: JSON.stringify({ action: "uploadAndSaveProfile", UserId: s.userId, Name: name, Mobile: myProfile?.Mobile || "", Role: s.role, Password: "", Email: email, Village: village, Address: address, DOB: dob, Status: "Active", AdminName: name, base64: _pendingCroppedB64, fileName: "User_" + s.userId + "_" + Date.now() + ".jpg", oldPhotoURL: myProfile?.PhotoURL || "", sessionToken: s.sessionToken || "" }) });
+          clearTimeout(_uploadTimer);
           let res = await resp.json(); if (res.status === "success") { photoURL = res.photoUrl; if (myProfile?.PhotoURL) delete window._photoB64Cache[myProfile.PhotoURL]; toast("✅ Photo uploaded!"); } else toast("Photo upload failed, profile still updating.", "warn");
-        } catch (e) { toast("Photo upload error: " + e.message, "warn"); }
+        } catch (e) {
+          if (e.name === "AbortError") { toast("Upload timed out. Try a smaller photo.", "error"); return; }
+          toast("Photo upload error: " + e.message, "warn");
+        }
       }
       try {
         let res = await postData({ action: "updateUser", UserId: s.userId, Name: name, Mobile: myProfile?.Mobile || "", Role: s.role, Status: myProfile?.Status || "Active", Email: email, Village: village, Address: address, DOB: dob, Password: "", PhotoURL: photoURL, AdminName: name, sessionToken: s.sessionToken || "" });
-        if (res.status === "updated") { s.name = name; s.email = email; s.expiry = Date.now() + 30 * 60 * 1000; localStorage.setItem("session", JSON.stringify(s)); _pendingCroppedB64 = ""; toast("✅ Profile updated!"); closeModal(); init(); }
+        if (res.status === "updated") { s.name = name; s.email = email; s.expiry = Date.now() + 30 * 60 * 1000; localStorage.setItem("session", JSON.stringify(s)); _pendingCroppedB64 = ""; toast("✅ Profile updated!"); closeModal(); _refreshAfterProfileSave(); }
         else toast("❌ Update failed.", "error");
       } catch (err) { toast("❌ " + err.message, "error"); }
+    }
+
+    /* Silent refresh after a successful profile save — avoids triggering
+       the full-screen loading overlay that init() would show.
+       Patches the in-memory users array directly (no API call needed —
+       the session already has the updated values). Falls back to a full
+       getData only if the local patch cannot find the user record. */
+    async function _refreshAfterProfileSave() {
+      const s = _sess();
+      if (s) {
+        // Patch the in-memory record directly — avoids a full allData round-trip
+        const idx = (users || []).findIndex(function(u) { return String(u.UserId) === String(s.userId); });
+        if (idx !== -1) {
+          users[idx].Name      = s.name  || users[idx].Name;
+          users[idx].Email     = s.email || users[idx].Email;
+          // PhotoURL was already updated in saveProfile before session save
+        } else {
+          // Record not found locally — fall back to a lightweight re-fetch
+          try {
+            const fresh = await getData("allData");
+            if (fresh && Array.isArray(fresh.users)) {
+              users = fresh.users;
+              contributions = Array.isArray(fresh.contributions) ? fresh.contributions : contributions;
+              goals = Array.isArray(fresh.goals) ? fresh.goals : goals;
+            }
+          } catch (e) { console.warn("[_refreshAfterProfileSave] Re-fetch failed:", e); }
+        }
+      }
+      // Rebuild header name + avatar without any overlay
+      try { _setUserVersion(); } catch (e) {}
+      // Reset lazy-load flags so panels reload on next open
+      _contribReqsLoaded = false;
+      // Re-render visible panels if already open
+      try { renderDashboard(); } catch (e) {}
     }
 
     /* ═══ CHANGE PASSWORD ════════════════════════════════════════════
@@ -4959,7 +5312,7 @@
     function openChangePassword() {
       const html = `
     <div class="_mhdr" style="background:linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%);border-bottom:2px solid rgba(247,160,26,0.35);">
-      <h3 style="color:#fff;display:flex;align-items:center;gap:8px;"><span style="width:28px;height:28px;background:rgba(247,160,26,0.18);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-key" style="color:#f7a01a;font-size:13px;"></i></span> Change Password</h3>
+      <h3 style="color:#fff;display:flex;align-items:center;gap:8px;"><span class="_u-icon-md"><i class="fa-solid fa-key" style="color:#f7a01a;font-size:13px;"></i></span> Change Password</h3>
       <button class="_mcls" onclick="closeModal()" style="color:rgba(255,255,255,0.6);font-size:20px;line-height:1;background:none;border:none;cursor:pointer;padding:0;">×</button>
     </div>
     <div class="_mbdy">
@@ -5130,7 +5483,148 @@
       }
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       RETRY ENGINE  — user.html
+       Mirrors the admin panel pattern but tuned for the user portal.
+       Key features:
+         • 12-second fetch timeout via AbortController
+         • Exponential back-off between auto-retries (0 → 3 → 7 s)
+         • Human-readable error classification (offline, timeout, 4xx, 5xx…)
+         • Full-page overlay with Spinner → Error+Retry transition
+         • Retry attempt counter shown to user
+         • _doUserRetry() exposed globally for overlay button
+         • Pull-to-refresh resets retry state before re-running init()
+    ══════════════════════════════════════════════════════════════ */
+
+    /* ── 1. Fetch with timeout (AbortController) ─────────────────
+       Wraps the existing getData / getCached calls indirectly.
+       getCached / getData in app.js use fetch() internally.
+       We patch window.fetch here so ALL requests get the timeout.   */
+    (function() {
+      var _nativeFetch = window.fetch;
+      var TIMEOUT_MS   = 12000; // 12 s — generous for slow App Script
+      window.fetch = function(input, init) {
+        // Only add timeout if caller hasn't already set a signal
+        if (init && init.signal) return _nativeFetch.call(this, input, init);
+        var controller = new AbortController();
+        var tid = setTimeout(function() { controller.abort(); }, TIMEOUT_MS);
+        var merged = Object.assign({}, init, { signal: controller.signal });
+        return _nativeFetch.call(this, input, merged).then(function(r) {
+          clearTimeout(tid); return r;
+        }, function(err) {
+          clearTimeout(tid);
+          // Translate AbortError → friendlier TimeoutError
+          if (err && err.name === "AbortError") {
+            var te = new Error("Request timed out after " + (TIMEOUT_MS/1000) + "s — server did not respond.");
+            te.name = "TimeoutError";
+            throw te;
+          }
+          throw err;
+        });
+      };
+    })();
+
+    /* ── 2. Error classifier — produces human-readable title + detail ── */
+    function _classifyUserNetworkError(err) {
+      var msg = (err && err.message ? err.message : String(err || "")).toLowerCase();
+      var name = (err && err.name ? err.name : "").toLowerCase();
+      if (!navigator.onLine) {
+        return { icon: "📴", title: "No Internet Connection",
+          detail: "You appear to be offline. Please check your Wi-Fi or mobile data, then tap Retry." };
+      }
+      if (name === "timeouterror" || msg.includes("timed out") || msg.includes("timeout") || msg.includes("time out")) {
+        return { icon: "⏱️", title: "Request Timed Out",
+          detail: "The server took too long to respond. This can happen on slow connections or when the server is busy. Please try again." };
+      }
+      if (msg.includes("failed to fetch") || msg.includes("networkerror") || msg.includes("network")) {
+        return { icon: "📶", title: "Network Error",
+          detail: "Could not reach the server. Check your internet connection and try again." };
+      }
+      if (msg.includes("401") || msg.includes("403") || msg.includes("unauthorized") || msg.includes("forbidden")) {
+        return { icon: "🔒", title: "Session Expired",
+          detail: "Your session has expired or you don't have access. Please log in again." };
+      }
+      if (msg.includes("429") || msg.includes("rate limit") || msg.includes("quota")) {
+        return { icon: "🚦", title: "Too Many Requests",
+          detail: "The server is temporarily limiting requests. Please wait a moment and try again." };
+      }
+      if (msg.includes("500") || msg.includes("server error") || msg.includes("internal")) {
+        return { icon: "🔧", title: "Server Error",
+          detail: "The server encountered an internal error. Please try again in a moment." };
+      }
+      if (msg.includes("script") || msg.includes("load") || msg.includes("unreachable")) {
+        return { icon: "🌐", title: "Server Unreachable",
+          detail: "Could not reach the server. You may have a weak connection, or the server may be temporarily unavailable." };
+      }
+      return { icon: "⚠️", title: "Connection Error",
+        detail: "An unexpected error occurred" + (err && err.message ? ": " + err.message : "") + ". Please try again." };
+    }
+
+    /* ── 3. Overlay helpers ───────────────────────────────────────── */
+    var _uloRetryCount = 0;
+
+    function _showUserLoadingOverlay() {
+      // Reset to spinner state
+      var loadEl = document.getElementById("ulo_loading");
+      var errEl  = document.getElementById("ulo_error");
+      var pill   = document.getElementById("ulo_attempt_pill");
+      var btn    = document.getElementById("ulo_retryBtn");
+      if (loadEl) { loadEl.style.display = "flex"; loadEl.style.flexDirection = "column"; loadEl.style.alignItems = "center"; loadEl.style.gap = "10px"; }
+      if (errEl)  errEl.classList.remove("show");
+      if (pill)   pill.style.display = "none";
+      if (btn)    { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry'; btn.style.opacity = "1"; }
+      var overlay = document.getElementById("userLoadingOverlay");
+      if (overlay) overlay.classList.add("show");
+    }
+
+    function _hideUserLoadingOverlay() {
+      var overlay = document.getElementById("userLoadingOverlay");
+      if (overlay) overlay.classList.remove("show");
+    }
+
+    function _showUserLoadingError(err) {
+      var classified = _classifyUserNetworkError(err);
+      var loadEl  = document.getElementById("ulo_loading");
+      var errEl   = document.getElementById("ulo_error");
+      var reasonEl = document.getElementById("ulo_reason");
+      var pill    = document.getElementById("ulo_attempt_pill");
+      var btn     = document.getElementById("ulo_retryBtn");
+
+      if (loadEl)  loadEl.style.display = "none";
+      if (errEl)   errEl.classList.add("show");
+      if (reasonEl) reasonEl.innerHTML =
+        "<strong style='color:#78350f;'>" + classified.icon + " " + classified.title + "</strong><br/>" +
+        "<span>" + classified.detail + "</span>";
+      if (pill && _uloRetryCount > 0) {
+        pill.textContent = "Attempt " + _uloRetryCount + " failed";
+        pill.style.display = "block";
+      }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry'; btn.style.opacity = "1"; }
+
+      // Keep overlay visible
+      var overlay = document.getElementById("userLoadingOverlay");
+      if (overlay && !overlay.classList.contains("show")) overlay.classList.add("show");
+    }
+
+    /* ── 4. Retry handler (called by overlay button) ─────────────── */
+    window._doUserRetry = function(btn) {
+      if (btn && btn.disabled) return;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Retrying…';
+        btn.style.opacity = "0.8";
+      }
+      _uloRetryCount++;
+      // Small delay so UI repaints before heavy init() runs
+      setTimeout(function() {
+        _showUserLoadingOverlay(); // reset to spinner
+        init();
+      }, 180);
+    };
+
+    /* ── 5. Main init — now with overlay + error handling ─────────── */
     async function init() {
+      _showUserLoadingOverlay();
       try {
         let allData = (await getCached("getAllData")) || {};
         let s = _sess();
@@ -5185,9 +5679,17 @@
         // ── Broadcasts in background — separate API call, don't block UI
         renderBroadcasts();
 
+        // ── Success: reset retry counter and hide overlay
+        _uloRetryCount = 0;
+        _hideUserLoadingOverlay();
+
         // ── Everything else is deferred to panel open (records, stats, filters)
 
-      } catch (err) { console.error("[init] Failed to load dashboard data:", err); toast("Failed to load your data. Please refresh the page.", "error"); }
+      } catch (err) {
+        console.error("[init] Failed to load dashboard data:", err);
+        _showUserLoadingError(err);
+        // overlay stays open — user will click Retry
+      }
     }
 
     function renderGoals(goals) {
@@ -5202,7 +5704,7 @@
           let sp = pct >= 100 ? `<span class="goal-pill" style="background:rgba(34,197,94,0.13);color:#16a34a;">✓ Achieved</span>` : `<span class="goal-pill" style="background:rgba(247,160,26,0.12);color:#f7a01a;">${pct}% funded</span>`;
           return `<div class="goal-item" style="border-left-color:${bc};">
               <div class="goal-top"><div class="goal-name"><i class="fa-solid fa-bullseye" style="color:${bc};font-size:11px;"></i> ${escapeHtml(g.GoalName)}</div>${sp}</div>
-              <div class="goal-track"><div class="goal-fill" style="width:${pct}%;background:linear-gradient(90deg,${bc}cc,${bc});"></div></div>
+              <div class="goal-track"><div class="goal-fill${pct >= 100 ? ' goal-fill--done' : ''}" style="width:${pct}%;background:linear-gradient(90deg,${bc}cc,${bc});"></div></div>
               <div class="goal-nums"><span>Collected: <b style="color:${bc};">₹${fmt(col)}</b></span><span>Target: <b>₹${fmt(tgt)}</b></span></div>
             </div>`;
         }).join("");
@@ -5218,7 +5720,9 @@
         try { const r = await getData("getBroadcasts"); bs = Array.isArray(r) ? r : []; } catch (e) { console.error("[renderBroadcasts] Fetch error:", e); bs = []; }
         // Filter out blank entries before caching
         bs = bs.filter(function (b) { return (b.title || "").trim() || (b.message || "").trim(); });
-        c.dataset.bsCached = JSON.stringify(bs);
+        // Only cache if fetch actually returned data — avoids persisting an empty
+        // array on network error (which would prevent future retries from re-fetching)
+        if (bs.length > 0) c.dataset.bsCached = JSON.stringify(bs);
       }
       if (bs.length === 0) { c.innerHTML = ""; return; }
       const showAll = c.dataset.showAll === "1";
@@ -5565,8 +6069,9 @@
         accBtn.classList.add("acc-open");
         accBtn.setAttribute("aria-expanded", "true");
         accBody.classList.add("acc-open");
-        // Animate to content height
-        accBody.style.maxHeight = accInner.scrollHeight + 80 + "px";
+        // Read scrollHeight once to avoid multiple forced reflows
+        var _accH = accInner.scrollHeight + 80;
+        accBody.style.maxHeight = _accH + "px";
         _accActivePanel = id;
 
         // Scroll the header into view smoothly
@@ -5771,12 +6276,15 @@
             _statsLoaded = false;
             _eventsLoaded = false;
             _contribReqsLoaded = false;
+            // Reset retry counter so fresh pull-to-refresh starts from attempt 1
+            _uloRetryCount = 0;
             if (typeof init === "function") init().then(function() {
               indicator.classList.remove("ptr-visible");
               spinner.classList.remove("spinning");
             }).catch(function() {
               indicator.classList.remove("ptr-visible");
               spinner.classList.remove("spinning");
+              // Overlay already shows error state from inside init()
             });
           } catch(e) {
             indicator.classList.remove("ptr-visible");
@@ -5865,7 +6373,7 @@
         }).join("");
         return '<div class="ra-item ra-item-noclk" style="cursor:default;position:relative;">'
           + '<div class="ra-dot ra-dot-gold"></div>'
-          + '<div style="flex:1;min-width:0;">'
+          + '<div class="_u-flex-1">'
           + '<div class="ra-month">' + escapeHtml(c.ForMonth || "—") + " " + (c.Year || "") + '</div>'
           + '<div class="ra-type">' + escapeHtml(type) + '</div>'
           + '</div>'
@@ -6292,8 +6800,33 @@
       }
     }
 
-    init();
-    (function () { const s = _sess(); if (s && s.userId) broadcastSessionRevoke(s.userId); })();
+    // ── Safe init() bootstrap
+    // init() handles all its own errors via the overlay.
+    // This outer guard fires if app.js itself failed to load, or an unexpected throw escapes.
+    if (typeof init === "function") {
+      init().catch(function(e) {
+        // Should not normally reach here — init() catches internally.
+        console.error("[startup] Unhandled rejection from init():", e);
+        if (typeof _showUserLoadingError === "function") { _showUserLoadingError(e); }
+      });
+    } else {
+      // app.js failed to load — show error directly in the overlay
+      console.error("[startup] init() not defined — app.js may have failed to load.");
+      (function() {
+        var ov = document.getElementById("userLoadingOverlay");
+        var reason = document.getElementById("ulo_reason");
+        var loadEl = document.getElementById("ulo_loading");
+        var errEl  = document.getElementById("ulo_error");
+        if (ov && errEl) {
+          if (loadEl) loadEl.style.display = "none";
+          errEl.classList.add("show");
+          if (reason) reason.innerHTML = "<strong style='color:#78350f;'>⚠️ App Failed to Load</strong><br/><span>A required script could not be loaded. Check your connection and tap Retry, or try a hard refresh.</span>";
+          ov.classList.add("show");
+        }
+      })();
+    }
+    // ── broadcastSessionRevoke — guarded so a missing app.js doesn't crash the page
+    (function () { try { const s = _sess(); if (s && s.userId && typeof broadcastSessionRevoke === "function") broadcastSessionRevoke(s.userId); } catch(e) {} })();
     //    1. Auto-load jsPDF if not loaded (fixes "PDF library not loaded" error)
     //    2. Enhance QR data to include name + amount + date
     //    3. Sync receipt header to brown/gold dashboard theme
@@ -6359,30 +6892,20 @@
     //  USER.HTML — All priority changes JS
     // ════════════════════════════════════════════════════════════
 
-    // ── H12: Restore remember-me session if available
-    (function () {
-      try {
-        const RKEY = "mandir_remember_token";
-        const raw = localStorage.getItem(RKEY);
-        if (!raw) return;
-        const t = JSON.parse(raw);
-        if (!t || Date.now() > t.expiry) { localStorage.removeItem(RKEY); return; }
-        // Valid token — restore session expiry
-        const sess = _sess();
-        if (sess) {
-          sess.expiry = Date.now() + 30 * 60 * 1000;
-          localStorage.setItem("session", JSON.stringify(sess));
-        }
-      } catch (e) { }
-    })();
+    // NOTE: H12 remember-me restore is handled by the session guard IIFE immediately
+    // after app.js loads. The duplicate here has been removed to avoid redundant
+    // localStorage reads on every page load.
 
     // ── Hook into init to populate hero pill after data loads
+    // _origInit() is the retry-aware init(). It never rejects — errors go to the overlay.
     const _origInit = window.init;
     if (typeof _origInit === "function") {
       window.init = async function () {
         await _origInit();
+        // Skip post-init work if the overlay is still visible (error state)
+        var _ov = document.getElementById("userLoadingOverlay");
+        if (_ov && _ov.classList.contains("show")) return;
         _setUserVersion();
-        // Events, records, stats, payment requests — all lazy-loaded on panel open
         // Hero pill — show member status
         try {
           const s2 = (_sess() || {});
@@ -6467,7 +6990,7 @@
             + '<div style="display:flex;gap:13px;align-items:flex-start;padding:14px 16px;">'
             + '<div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,' + color + '22,' + color + '11);border:1.5px solid ' + color + '44;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'
             + '<i class="fa-solid ' + icon + '" style="color:' + color + ';font-size:17px;"></i></div>'
-            + '<div style="flex:1;min-width:0;">'
+            + '<div class="_u-flex-1">'
             + '<div style="font-family:var(--font-h);font-weight:700;font-size:14px;color:var(--ink);margin-bottom:3px;">' + escapeHtml(ev.EventName || ev.Name || "") + '</div>'
             + '<div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;display:flex;align-items:center;gap:5px;">'
             + '<i class="fa-solid fa-calendar" style="color:' + color + ';font-size:10px;"></i>'
@@ -6553,7 +7076,7 @@
             <div style="width:38px;height:38px;background:rgba(247,160,26,0.18);border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <i class="fa-solid ${iconClass}" style="color:#f7a01a;font-size:1rem;"></i>
             </div>
-            <div style="flex:1;min-width:0;">
+            <div class="_u-flex-1">
               <div style="font-weight:700;font-size:13.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
               <div style="font-size:10px;color:rgba(247,160,26,0.65);margin-top:1px;">Download confirmation</div>
             </div>
@@ -6565,19 +7088,28 @@
             <div style="width:52px;height:52px;background:rgba(247,160,26,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
               <i class="fa-solid fa-file-arrow-down" style="color:#f7a01a;font-size:1.4rem;"></i>
             </div>
-            <div style="font-size:15px;font-weight:700;color:${txtMain};margin-bottom:6px;">Download PDF?</div>
-            <div style="font-size:12.5px;color:${txtSub};line-height:1.6;">Your <strong style="color:${txtMain};">${title}</strong> will be saved to your device automatically.</div>
+            <div style="font-size:15px;font-weight:700;color:${txtMain};margin-bottom:8px;">Download PDF?</div>
+            <div style="font-size:12.5px;color:${txtSub};line-height:1.7;margin-bottom:4px;">
+              ${isAnnual
+                ? `Your <strong style="color:${txtMain};">Annual Contribution Statement</strong> for the current year will be downloaded. This official document is useful for tax records and personal reference.`
+                : `Your <strong style="color:${txtMain};">Full Contribution History</strong> will be downloaded as a PDF — includes all records based on your current filters. Useful for auditing or personal archives.`
+              }
+            </div>
+            <div style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;background:rgba(247,160,26,0.08);border:1px solid rgba(247,160,26,0.18);border-radius:8px;padding:5px 11px;">
+              <i class="fa-solid fa-shield-halved" class="_u-gold-icon-xs"></i>
+              <span style="font-size:10.5px;color:${txtSub};font-weight:500;">Saved directly to your device</span>
+            </div>
           </div>
 
           <!-- Yes / No buttons -->
-          <div style="padding:16px 18px 20px;display:flex;gap:10px;">
+          <div style="padding:18px 18px 22px;display:flex;gap:10px;justify-content:center;">
             <button onclick="document.getElementById('_pdfConfirmOverlay').remove()"
-              style="flex:1;padding:12px;background:${isDark ? "#1e293b" : "#f1f5f9"};color:${txtSub};border:1.5px solid ${isDark ? "#334155" : "#e2e8f0"};border-radius:11px;font-family:var(--font-b);font-size:14px;font-weight:700;cursor:pointer;box-shadow:none;">
-              No
+              style="min-width:120px;padding:12px 20px;background:${isDark ? "#1e293b" : "#f1f5f9"};color:${txtSub};border:1.5px solid ${isDark ? "#334155" : "#e2e8f0"};border-radius:11px;font-family:var(--font-b);font-size:14px;font-weight:700;cursor:pointer;box-shadow:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+              <i class="fa-solid fa-xmark" style="font-size:12px;"></i> No
             </button>
             <button id="_pdfConfirmBtn" onclick="_doPdfDownload('${type}')"
-              style="flex:1;padding:12px;background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;border:none;border-radius:11px;font-family:var(--font-b);font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(247,160,26,0.38);">
-              Yes
+              style="min-width:140px;padding:12px 20px;background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;border:none;border-radius:11px;font-family:var(--font-b);font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(247,160,26,0.38);display:inline-flex;align-items:center;justify-content:center;gap:6px;">
+              <i class="fa-solid fa-download" style="font-size:12px;"></i> Yes, Download
             </button>
           </div>
 
@@ -6765,18 +7297,26 @@
 
     function toggleUserDarkMode() {
   const isDark = document.body.classList.toggle("user-dark");
-  const text = document.getElementById("darkText");
-  const icon = document.getElementById("darkIcon");
-  
-  // Update Labels for simple understanding
+  const btn = document.getElementById("userDarkBtn");
+
   if (isDark) {
-    text.innerText = "Dark Mode";
-    icon.innerText = "🌙";
     localStorage.setItem("mandir_user_dark", "1");
+    if (btn) {
+      btn.classList.add("is-dark");
+      btn.setAttribute("aria-checked", "true");
+      btn.setAttribute("title", "Switch to light mode");
+    }
+    const mt = document.getElementById("metaThemeColor");
+    if (mt) mt.content = "#08090f";
   } else {
-    text.innerText = "Light Mode";
-    icon.innerText = "☀️";
     localStorage.setItem("mandir_user_dark", "0");
+    if (btn) {
+      btn.classList.remove("is-dark");
+      btn.setAttribute("aria-checked", "false");
+      btn.setAttribute("title", "Switch to dark mode");
+    }
+    const mt = document.getElementById("metaThemeColor");
+    if (mt) mt.content = "#ffffff";
   }
 }
     (function () {
@@ -7102,11 +7642,8 @@
       window.addEventListener("scroll", _onScroll, { passive: true });
     })();
 
-    // ── Direct bootstrap calls
-    window.addEventListener("load", function () {
-      _setUserVersion();
-      // Events, records, stats, payment requests — all lazy-loaded on panel open
-    });
+    // NOTE: _setUserVersion() is called inside the wrapped init() in the next script block.
+    // The duplicate window.load listener was removed to prevent double DOM writes.
 
 
     function _populateTempleContact() {
@@ -7126,7 +7663,7 @@
       if (prMonth && prMonth.options.length <= 1) {
         months.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; prMonth.appendChild(o); });
       }
-      // Populate payment mode dropdown from PAYMENT_MODES constant
+      // Populate payment mode dropdown — uses PAYMENT_MODES (sourced from constants.js if available)
       const prMode = document.getElementById("pr_mode");
       if (prMode && prMode.options.length === 0) {
         PAYMENT_MODES.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; prMode.appendChild(o); });
@@ -7254,6 +7791,7 @@
           </div>`;
           return;
         }
+        _contribReqsLoaded = true;
         section.style.display = "block";
         listEl.innerHTML = visible.map(function (r) {
           const st = String(r.Status || "Pending");
@@ -7281,7 +7819,7 @@
           return `<div class="card" style="margin-bottom:10px;border-left:4px solid ${stColor};">
               <div class="card-body" style="padding:12px 16px;">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;">
-                  <div style="flex:1;min-width:0;">
+                  <div class="_u-flex-1">
                     <div style="font-size:13px;font-weight:700;color:var(--ink);">₹ ${fmt(r.Amount || 0)} — ${escapeHtml(r.ForMonth || "")} ${escapeHtml(String(r.Year || ""))}</div>
                     <div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">${escapeHtml(r.PaymentMode || "")} · ${dateStr}</div>
                     ${r.UtrRef ? `<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Ref: ${escapeHtml(r.UtrRef)}</div>` : ""}
@@ -7303,8 +7841,20 @@
               </div>
             </div>`;
         }).join("");
-      } catch (e) { console.error("[loadUserContribRequests] Error:", e); section.style.display = "none"; }
-      _contribReqsLoaded = true;
+      } catch (e) {
+        console.error("[loadUserContribRequests] Error:", e);
+        section.style.display = "block";
+        listEl.innerHTML = `<div class="card" style="margin-bottom:10px;">
+          <div class="card-body" style="text-align:center;padding:22px 16px;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size:1.4rem;color:#ef4444;display:block;margin-bottom:8px;"></i>
+            <div style="font-size:13px;color:#ef4444;font-weight:600;margin-bottom:10px;">Could not load requests.</div>
+            <button onclick="_contribReqsLoaded=false;_loadUserContribRequests();" style="background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;border:none;border-radius:20px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;">
+              <i class="fa-solid fa-rotate-right"></i> Retry
+            </button>
+          </div>
+        </div>`;
+        // _contribReqsLoaded intentionally left false so retry is possible
+      }
     }
 
     // ── Edit button with loading state
@@ -7407,28 +7957,28 @@
           <div style="padding:16px;display:flex;flex-direction:column;gap:11px;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div>
-                <label for="_ecr_month" style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Month *</label>
-                <select id="_ecr_month" style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;"><option value="">Select</option>${moOptions}</select>
+                <label for="_ecr_month" class="_u-field-label">Month *</label>
+                <select id="_ecr_month" class="_u-input"><option value="">Select</option>${moOptions}</select>
               </div>
               <div>
-                <label for="_ecr_amount" style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Amount (₹) *</label>
-                <input type="number" id="_ecr_amount" value="${escapeHtml(String(req.Amount || ""))}" min="1" style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;"/>
+                <label for="_ecr_amount" class="_u-field-label">Amount (₹) *</label>
+                <input type="number" id="_ecr_amount" value="${escapeHtml(String(req.Amount || ""))}" min="1" class="_u-input"/>
               </div>
             </div>
             <div>
-              <label for="_ecr_mode" style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Payment Mode</label>
-              <select id="_ecr_mode" style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;">${modeOptions}</select>
+              <label for="_ecr_mode" class="_u-field-label">Payment Mode</label>
+              <select id="_ecr_mode" class="_u-input">${modeOptions}</select>
             </div>
             <div>
-              <label for="_ecr_utr" style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">UTR / Reference (optional)</label>
-              <input type="text" id="_ecr_utr" value="${escapeHtml(String(req.UtrRef || ""))}" placeholder="UPI transaction ID or cheque number" style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;"/>
+              <label for="_ecr_utr" class="_u-field-label">UTR / Reference (optional)</label>
+              <input type="text" id="_ecr_utr" value="${escapeHtml(String(req.UtrRef || ""))}" placeholder="UPI transaction ID or cheque number" class="_u-input"/>
             </div>
             <div>
-              <label for="_ecr_note" style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Note (optional)</label>
-              <input type="text" id="_ecr_note" value="${escapeHtml(String(req.Note || ""))}" maxlength="200" placeholder="Any additional info..." style="width:100%;padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;"/>
+              <label for="_ecr_note" class="_u-field-label">Note (optional)</label>
+              <input type="text" id="_ecr_note" value="${escapeHtml(String(req.Note || ""))}" maxlength="200" placeholder="Any additional info..." class="_u-input"/>
             </div>
             <div>
-              <label style="font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px;">Replace Payment Slip (optional)</label>
+              <label class="_u-field-label">Replace Payment Slip (optional)</label>
               <div style="border:1.5px dashed #e2e8f0;border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;background:var(--bg);cursor:pointer;" onclick="document.getElementById('_ecr_slip').click()">
                 <i class="fa-solid fa-image" style="color:var(--gold);font-size:1rem;"></i>
                 <div style="flex:1;">
@@ -7611,35 +8161,111 @@
         window.addEventListener("resize", resize);
       })();
 
-      // ── Flower petals raining from top ──
-      var petals = ["🌸","🌺","🌼","🪷","🌹","✨","🌻"];
-      for (var i = 0; i < 30; i++) {
-        (function(idx) {
-          setTimeout(function() {
-            var ov = document.getElementById("_bdayCelebOverlay"); if (!ov) return;
-            var p = document.createElement("div");
-            p.textContent = petals[Math.floor(Math.random() * petals.length)];
-            p.style.cssText = "position:fixed;pointer-events:none;z-index:100001;left:" + (Math.random() * 96) + "vw;top:-30px;font-size:" + (Math.random() * 10 + 13) + "px;opacity:1;animation:_bdayPetal " + (Math.random() * 4 + 5) + "s linear " + (Math.random() * 1.5) + "s forwards;";
-            document.body.appendChild(p);
-            setTimeout(function(){ p.remove(); }, 9000);
-          }, idx * 250);
-        })(i);
-      }
+      // ── Petals + sparks: single canvas draw loop (replaces 75 DOM nodes) ──
+      // Cap particle count on low-end devices (< 4 CPU cores)
+      var _isLowEnd = (navigator.hardwareConcurrency || 4) < 4;
+      var _petalCount = _isLowEnd ? 12 : 30;
+      var _sparkCount = _isLowEnd ? 18 : 45;
+      var _petalEmoji = ["🌸","🌺","🌼","🪷","🌹","✨","🌻"];
+      var _sparkRgb = [[247,160,26],[253,230,138],[251,191,36],[255,255,255],[251,146,60]];
 
-      // ── Gold sparks rising from bottom ──
-      var sparkColors = ["#f7a01a","#fde68a","#fbbf24","#fff","#fb923c"];
-      for (var k = 0; k < 45; k++) {
-        (function(idx) {
-          setTimeout(function() {
-            var ov = document.getElementById("_bdayCelebOverlay"); if (!ov) return;
-            var sp = document.createElement("div");
-            var sz = Math.random() * 8 + 3;
-            sp.style.cssText = "position:fixed;pointer-events:none;z-index:100001;border-radius:50%;left:" + (Math.random() * 100) + "vw;top:" + (70 + Math.random() * 30) + "vh;width:" + sz + "px;height:" + sz + "px;background:" + sparkColors[Math.floor(Math.random() * sparkColors.length)] + ";animation:_bdaySpark " + (Math.random() * 2.5 + 1.5) + "s linear " + (Math.random() * 1.5) + "s forwards;";
-            document.body.appendChild(sp);
-            setTimeout(function(){ sp.remove(); }, 6000);
-          }, idx * 70);
-        })(k);
-      }
+      (function() {
+        var pc = document.createElement("canvas");
+        pc.style.cssText = "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:100001;";
+        document.body.appendChild(pc);
+        var pctx = pc.getContext("2d");
+        var PW, PH;
+        function _pcResize() { PW = pc.width = window.innerWidth; PH = pc.height = window.innerHeight; }
+        _pcResize();
+        window.addEventListener("resize", _pcResize, { passive: true });
+
+        // Build petal objects
+        var _petals = [];
+        for (var i = 0; i < _petalCount; i++) {
+          _petals.push({
+            emoji: _petalEmoji[Math.floor(Math.random() * _petalEmoji.length)],
+            x: Math.random() * PW,
+            y: -30 - Math.random() * 200,
+            vy: Math.random() * 1.2 + 0.8,
+            vx: (Math.random() - 0.5) * 0.6,
+            rot: Math.random() * Math.PI * 2,
+            vrot: (Math.random() - 0.5) * 0.06,
+            size: Math.random() * 10 + 13,
+            alpha: 1,
+            delay: Math.random() * 180   // frames of delay before appearing
+          });
+        }
+        // Build spark objects (rise from bottom)
+        var _sparks = [];
+        for (var k = 0; k < _sparkCount; k++) {
+          var sc = _sparkRgb[Math.floor(Math.random() * _sparkRgb.length)];
+          _sparks.push({
+            x: Math.random() * PW,
+            y: PH + Math.random() * 80,
+            vy: -(Math.random() * 1.8 + 0.8),
+            r: Math.random() * 4 + 1.5,
+            alpha: Math.random() * 0.5 + 0.5,
+            color: sc,
+            delay: Math.floor(Math.random() * 120)
+          });
+        }
+
+        var _pcId;
+        var _pcFrame = 0;
+        function _pcDraw() {
+          if (!document.getElementById("_bdayCelebOverlay")) {
+            cancelAnimationFrame(_pcId);
+            pc.remove();
+            return;
+          }
+          _pcFrame++;
+          pctx.clearRect(0, 0, PW, PH);
+
+          // Draw petals
+          for (var i = 0; i < _petals.length; i++) {
+            var p = _petals[i];
+            if (_pcFrame < p.delay) continue;
+            p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+            if (p.y > PH + 40) { p.y = -30; p.x = Math.random() * PW; p.alpha = 1; }
+            pctx.save();
+            pctx.globalAlpha = p.alpha;
+            pctx.translate(p.x, p.y);
+            pctx.rotate(p.rot);
+            pctx.font = p.size + "px serif";
+            pctx.textAlign = "center";
+            pctx.textBaseline = "middle";
+            pctx.fillText(p.emoji, 0, 0);
+            pctx.restore();
+          }
+          // Draw sparks
+          for (var k = 0; k < _sparks.length; k++) {
+            var s = _sparks[k];
+            if (_pcFrame < s.delay) continue;
+            s.y += s.vy;
+            s.alpha -= 0.004;
+            if (s.alpha <= 0 || s.y < -20) {
+              s.y = PH + Math.random() * 60;
+              s.x = Math.random() * PW;
+              s.alpha = Math.random() * 0.5 + 0.5;
+            }
+            pctx.beginPath();
+            pctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            pctx.fillStyle = "rgba(" + s.color[0] + "," + s.color[1] + "," + s.color[2] + "," + s.alpha + ")";
+            pctx.fill();
+          }
+          _pcId = requestAnimationFrame(_pcDraw);
+        }
+        _pcDraw();
+
+        // Cancel and clean up particle canvas on overlay dismiss
+        var _origDismiss = overlay.querySelector("._bday-btn");
+        if (_origDismiss) {
+          _origDismiss.addEventListener("click", function() {
+            cancelAnimationFrame(_pcId);
+            setTimeout(function() { pc.remove(); }, 600);
+          }, { once: true });
+        }
+      })();
 
       // ── Auto-dismiss after 18 seconds ──
       setTimeout(function(){
@@ -7858,4 +8484,5 @@
   </script>
 </body>
 
+</html>
 </html>

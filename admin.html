@@ -483,14 +483,21 @@
       height: 100%;
       background: rgba(255, 255, 255, 0.85);
       z-index: 9999;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      gap: 15px;
     }
 
     #loadingOverlay.show {
+      display: block;
+    }
+
+    #loadingOverlay > div {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
     }
 
     .spinner {
@@ -553,6 +560,17 @@
         top: 0;
         z-index: 200;
       }
+
+      /* Receipt popup: on mobile open to the left so it doesn't overflow screen */
+      #_grsBox {
+        right: auto !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 92vw !important;
+        max-width: 320px !important;
+      }
+
+
 
       .grid-layout {
         gap: 10px;
@@ -2520,7 +2538,7 @@
       <div style="font-family:Poppins,sans-serif;font-size:1rem;font-weight:700;color:#78350f;">Could Not Load Data</div>
       <div id="loadingOverlay_reason" style="font-family:Poppins,sans-serif;font-size:13px;color:#555;background:#fffbf5;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;line-height:1.6;width:100%;"></div>
       <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
-        <button id="loadingOverlay_retryBtn" onclick="init()" style="background:#f7a01a;color:#fff;border:none;border-radius:10px;padding:12px;font-family:Poppins,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-shadow:0 4px 12px rgba(247,160,26,0.35);">
+        <button id="loadingOverlay_retryBtn" onclick="_doRetry(this)" style="background:#f7a01a;color:#fff;border:none;border-radius:10px;padding:12px;font-family:Poppins,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-shadow:0 4px 12px rgba(247,160,26,0.35);">
           <i class="fa-solid fa-rotate-right"></i> Retry
         </button>
         <button onclick="location.replace('login.html')" style="background:#fff;color:#78350f;border:1.5px solid #f7a01a;border-radius:10px;padding:10px;font-family:Poppins,sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;width:100%;box-shadow:none;">
@@ -2847,35 +2865,26 @@
         </div>
         <!-- Right: Avatar + dropdown -->
 
-        <div style="position: relative;flex-shrink: 0; display: flex;justify-content: space-between;gap: 13px;">
-          <!-- RECEIPT SEARCH — static HTML, always visible -->
-          <div id="_grsWrap" style="position:relative;flex-shrink:0;">
-            <button id="_grsToggleBtn" onclick="window._grsToggle()" title="Search by Receipt ID"
-              style="background:rgba(247,160,26,0.1);border:1.5px solid rgba(247,160,26,0.35);border-radius:8px;padding:7px 11px;cursor:pointer;color:#f7a01a;font-size:13px;box-shadow:none;display:flex;align-items:center;gap:5px;">
-              <i class="fa-solid fa-receipt" style="font-size:13px;"></i>
-              <span style="font-size:11px;font-weight:600;">Receipt</span>
-            </button>
-            <div id="_grsBox" style="display:none;position:fixed;top:58px;right:12px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.22);border:1.5px solid #e8e8e8;padding:14px 16px;width:290px;z-index:99999;">
-              <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">&#x1F9FE; Receipt Quick Find</div>
-              <input id="_grsInput" placeholder="Type MNR-001 or member name..."
-                style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:Poppins,sans-serif;outline:none;box-sizing:border-box;"
-                oninput="window._grsSearch(this.value)" />
-              <div id="_grsResults" style="margin-top:8px;max-height:220px;overflow-y:auto;"></div>
-            </div>
-          </div>
-          <!-- H14: Health status indicator in header — shown after silent login check -->
-          <div id="hc_hdr_wrap" style="display:none;position:relative;cursor:pointer;padding:7px 9px;background:rgba(0,0,0,0.06);border-radius:8px;align-items:center;justify-content:center;"
+        <div style="position:relative;flex-shrink:0;display:flex;align-items:center;gap:6px;">
+
+          <!-- H14: Health icon — same size as all header icons -->
+          <div id="hc_hdr_wrap" style="display:none;position:relative;cursor:pointer;"
             onclick="showPage('healthCheckPage', document.getElementById('nav_health'))"
             title="System Health — click to view">
-            <i class="fa-solid fa-heart-pulse" style="font-size:13px;color:#64748b;"></i>
-            <span id="hc_hdr_dot" style="position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;border:1.5px solid #fff;display:none;"></span>
-          </div>
-          <div>
-            <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark/light mode"
-              style="flex-shrink:0;background:rgba(0,0,0,0.06);border:none;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:14px;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1),background 0.2s;">
-              🌙
+            <button style="width:34px;height:34px;background:rgba(0,0,0,0.06);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:none;">
+              <i class="fa-solid fa-heart-pulse" style="font-size:14px;color:#64748b;"></i>
             </button>
+            <span id="hc_hdr_dot" style="position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#22c55e;border:1.5px solid #fff;display:none;z-index:1;"></span>
           </div>
+
+          <!-- Receipt search — icon-only, same size -->
+          <div id="_grsWrapSlot" style="position:relative;flex-shrink:0;"></div>
+
+          <!-- Dark mode toggle — same size -->
+          <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark/light mode"
+            style="width:34px;height:34px;background:rgba(0,0,0,0.06);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:none;font-size:15px;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1),background 0.2s;">
+            🌙
+          </button>
           <div>
             <img id="adminAvatar" src=""
               onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'><circle cx=\'20\' cy=\'20\' r=\'20\' fill=\'%23f7a01a\'/><text x=\'20\' y=\'26\' text-anchor=\'middle\' fill=\'white\' font-size=\'18\' font-family=\'Arial\'>&#128100;</text></svg>'"
@@ -4001,7 +4010,7 @@
 
         <!-- Summary totals row (filled by JS) -->
         <div id="ys_totals"
-          style="display:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;">
+          style="display:none;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;">
           <div class="card-box" style="text-align:center;">
             <h4 style="font-size:11px;color:#64748b;margin:0 0 6px;">Total Years</h4>
             <h2 id="ys_t_years" style="color:#334155;font-size:1.4rem;margin:0;">—</h2>
@@ -4463,7 +4472,7 @@
           </div>
 
           <!-- Summary Badges -->
-          <div id="tr_summary" style="display:none;gap:12px;flex-wrap:wrap;margin-bottom:14px;display:flex;">
+          <div id="tr_summary" style="display:none;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
             <div
               style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
               <div style="font-size:1.5rem;font-weight:700;color:#16a34a;" id="tr_paid_count">0</div>
@@ -5422,6 +5431,13 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script>
+    // Fallback: if app.js failed to load, smartRefresh would be undefined
+    // and every save/delete would silently break after the API call.
+    if (typeof smartRefresh !== "function") {
+      window.smartRefresh = function() {
+        if (typeof init === "function") init();
+      };
+    }
     /* ═══════════════════════════════════════════════════════════════
        PERFORMANCE UTILITIES
        ─ debounce : prevents search functions firing on every keystroke
@@ -5498,6 +5514,9 @@
       localStorage.setItem("session", JSON.stringify(s));
       return true;
     }
+    // Alias so all checkSession() call-sites resolve correctly
+    var checkSession = _checkAdminSession;
+
     if (!_checkAdminSession()) {
       /* stop */
     }
@@ -5589,6 +5608,28 @@
     // ── Fetch Drive photo as base64 via Apps Script proxy (solves CORS/429 block) ─
     // Caches per PhotoURL so header + profile modal share 1 backend request per session
     window._adminPhotoB64Cache = {};
+
+    // Lazy-load Drive images set with data-drivesrc (avoids NS_BINDING_ABORTED)
+    window._lazyLoadDriveImgs = function(container) {
+      var imgs = (container || document).querySelectorAll('img[data-drivesrc]');
+      imgs.forEach(function(img) {
+        if (img.dataset.loaded) return;
+        img.dataset.loaded = '1';
+        var rawURL = img.dataset.rawphoto || '';
+        var thumb  = img.dataset.drivesrc  || '';
+        if (!rawURL && !thumb) return;
+        (async function() {
+          try {
+            if (rawURL) {
+              var b64 = await _fetchAdminPhotoBase64(rawURL);
+              if (b64 && img.isConnected) { img.src = b64; return; }
+            }
+          } catch(e) {}
+          if (thumb && img.isConnected) img.src = thumb;
+        })();
+      });
+    };
+
     async function _fetchAdminPhotoBase64(photoURL) {
       if (!photoURL) return null;
       if (window._adminPhotoB64Cache[photoURL]) return window._adminPhotoB64Cache[photoURL];
@@ -5727,7 +5768,9 @@
       let s = JSON.parse(localStorage.getItem("session") || "null");
       if (!s) { toast("Session expired.", "error"); return; }
       let myProfile = users.find((u) => String(u.UserId) === String(s.userId));
-      let photoSrc = previewB64 || (myProfile?.PhotoURL ? _driveImgSrc(myProfile.PhotoURL) : "") || "";
+      // Use previewB64 directly if available; for Drive URLs load async after modal opens
+      let photoSrc = previewB64 || ""; // Drive photo loaded async below to avoid NS_BINDING_ABORTED
+      let _rawPhotoURL = myProfile?.PhotoURL || "";
       let dN = prefillName     !== undefined ? prefillName     : myProfile?.Name    || s.name  || "";
       let dE = prefillEmail    !== undefined ? prefillEmail    : myProfile?.Email   || s.email || "";
       let dV = prefillVillage  !== undefined ? prefillVillage  : myProfile?.Village || "";
@@ -5781,6 +5824,21 @@
           <button class="_mbtn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);box-shadow:0 3px 10px rgba(247,160,26,0.35);" onclick="saveAdminProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
         </div>`;
       openModal(html, "460px");
+      // Async-load avatar after modal is in DOM — avoids NS_BINDING_ABORTED
+      if (!previewB64 && _rawPhotoURL) {
+        setTimeout(async function() {
+          var imgEl = document.getElementById("adminPhotoPreview");
+          if (!imgEl) return;
+          // Try base64 proxy first
+          try {
+            var b64 = await _fetchAdminPhotoBase64(_rawPhotoURL);
+            if (b64 && imgEl.isConnected) { imgEl.src = b64; return; }
+          } catch(e) {}
+          // Fallback: thumbnail URL (may work if user has Google cookies)
+          var thumb = _driveImgSrc(_rawPhotoURL);
+          if (thumb && imgEl.isConnected) imgEl.src = thumb;
+        }, 80);
+      }
     }
 
     function handleAdminSelfPhotoSelected(input) {
@@ -5907,6 +5965,7 @@
 
     async function saveAdminProfile() {
       let s = JSON.parse(localStorage.getItem("session"));
+      if (!s) { toast("Session expired. Please log in again.", "error"); return; }
       let myProfile = users.find((u) => String(u.UserId) === String(s.userId));
       let name    = (document.getElementById("asp_name")?.value    || "").trim();
       let email   = (document.getElementById("asp_email")?.value   || "").trim();
@@ -6642,12 +6701,30 @@
       if (overlay && !overlay.classList.contains("show")) overlay.classList.add("show");
     }
 
+    /* ── Retry handler — prevents double-fire, shows feedback ── */
+    window._doRetry = function(btn) {
+      if (btn && btn.disabled) return; // prevent double-click
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Retrying...';
+        btn.style.opacity = '0.8';
+      }
+      // Small delay so UI updates before heavy init() runs
+      setTimeout(function() {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry'; btn.style.opacity = '1'; }
+        init();
+      }, 150);
+    };
+
     /* ── Reset loadingOverlay back to normal loading state ── */
     function _resetLoadingOverlay() {
       const loadEl = document.getElementById("loadingOverlay_loading");
       const errEl  = document.getElementById("loadingOverlay_error");
-      if (loadEl) loadEl.style.display = "";
+      if (loadEl) { loadEl.style.display = "flex"; loadEl.style.flexDirection = "column"; loadEl.style.alignItems = "center"; loadEl.style.gap = "15px"; }
       if (errEl)  errEl.style.display  = "none";
+      // Re-enable retry button if it was disabled
+      var btn = document.getElementById("loadingOverlay_retryBtn");
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry'; btn.style.opacity = '1'; }
     }
 
     function setLoading(show) {
@@ -7940,6 +8017,12 @@
             }).catch(function(){});
           }, 2 * 60 * 1000);
         }
+        // Auto-run health check once after data loads so the header
+        // heartbeat dot shows the correct status colour from login
+        if (!window._hcRanOnce && typeof runHealthCheck === "function") {
+          window._hcRanOnce = true;
+          setTimeout(runHealthCheck, 1500);
+        }
       } catch (err) {
         // Show specific error reason in the loading overlay with a Retry button
         _showLoadingError(err);
@@ -8684,10 +8767,10 @@
         return `
       <tr class="${rowClass}" onclick="viewUser('${u.UserId}')" title="Click to view details">
         <td onclick="event.stopPropagation();openEditUser('${u.UserId}')" title="Click to edit user" style="cursor:pointer;">
-          <img src="${u.PhotoURL ? escapeHtml(_driveImgSrc(u.PhotoURL)) : _fbSvg}"
+          <img src="${u.PhotoURL ? '' : _fbSvg}"
                data-userid="${escapeHtml(String(u.UserId))}"
                onerror="this.onerror=null;this.src='${_fbSvg}'"
-               width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;"/>
+               width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;display:block;"/>
         </td>
         <td><b>${escapeHtml(u.Name || "")}</b></td>
         <td>${escapeHtml(String(u.Mobile || ""))}</td>
@@ -8825,7 +8908,8 @@
     ) {
       let u = users.find((x) => String(x.UserId) === String(id));
       if (!u) return;
-      let photoSrc = previewB64 || (u.PhotoURL ? _driveImgSrc(u.PhotoURL) : "") || "";
+      let photoSrc = previewB64 || ""; // Drive URL loaded async to avoid NS_BINDING_ABORTED
+      let _euRawPhotoURL = u.PhotoURL || "";
       let html = `
       <div class="_mhdr"><h3><i class="fa-solid fa-user-pen"></i> Edit User</h3><button class="_mcls" onclick="closeModal()">×</button></div>
       <div class="_mbdy">
@@ -8882,10 +8966,24 @@
         <button class="_mbtn" style="background:#f7a01a;" onclick="saveEditUser('${id}')"><i class="fa-solid fa-check"></i> Save Changes</button>
       </div>`;
       openModal(html, "460px");
+      // Async-load user avatar — avoids NS_BINDING_ABORTED on Drive URLs
+      if (!previewB64 && _euRawPhotoURL) {
+        setTimeout(async function() {
+          var imgEl = document.getElementById('eu_photoPreview');
+          if (!imgEl || !imgEl.isConnected) return;
+          try {
+            var b64 = await _fetchAdminPhotoBase64(_euRawPhotoURL);
+            if (b64 && imgEl.isConnected) { imgEl.src = b64; return; }
+          } catch(e) {}
+          var thumb = _driveImgSrc(_euRawPhotoURL);
+          if (thumb && imgEl.isConnected) imgEl.src = thumb;
+        }, 80);
+      }
     }
 
     async function saveEditUser(id) {
       let s = JSON.parse(localStorage.getItem("session"));
+      if (!s) { toast("Session expired. Please log in again.", "error"); return; }
       let u = users.find((x) => String(x.UserId) === String(id));
       let photoURL = u?.PhotoURL || "";
 
@@ -9433,7 +9531,7 @@
       }
       let amount = document.getElementById("amount").value;
       let year = document.getElementById("contribYear").value;
-      if (!userId || !amount || amount <= 0)
+      if (!userId || !amount || Number(amount) <= 0)
         return toast("Please select a user and enter a valid amount.", "error");
 
       // Collect all values for preview
@@ -9536,7 +9634,7 @@
       const userId = document.getElementById("prev_user").value;
       const amount = document.getElementById("prev_amount").value;
       const year = document.getElementById("prev_year").value;
-      if (!userId || !amount || amount <= 0) {
+      if (!userId || !amount || Number(amount) <= 0) {
         if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
         return toast("Please select a user and enter a valid amount.", "error");
       }
@@ -9996,15 +10094,27 @@
       if (!checkSession()) return;
       const _u = users.find(u => String(u.UserId) === String(id));
       const _uName = _u ? `"${_u.Name}"` : "this user";
+      const _undoSaved = _u ? JSON.parse(JSON.stringify(_u)) : null;
       confirmModal(`Delete ${_uName}? This cannot be undone.`, async () => {
         try {
           const _s = JSON.parse(localStorage.getItem("session") || "{}");
           let res = await postData({ action: "deleteUser", UserId: id, sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
-          toast(
-            res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            res.status === "deleted" ? "" : "error"
-          );
-          smartRefresh("users");
+          if (res.status === "deleted") {
+            smartRefresh("users");
+            if (_undoSaved && typeof _showUndoToast === "function") {
+              _showUndoToast(_uName.replace(/"/g, ""), function() {
+                var payload = Object.assign({ action: "addUser" }, _undoSaved);
+                postData(payload).then(function() {
+                  smartRefresh("users");
+                  toast("↩ User restored.");
+                });
+              });
+            } else {
+              toast("✅ Deleted.");
+            }
+          } else {
+            toast("❌ Failed.", "error");
+          }
         } catch (err) {
           toast("❌ " + err.message, "error");
         }
@@ -10026,14 +10136,27 @@
       }
     }
     async function deleteType(id) {
+      const _t = (types || []).find(t => String(t.TypeId) === String(id));
+      const _undoLabel = _t ? (_t.TypeName || "Type") : "Type";
+      const _undoSaved = _t ? JSON.parse(JSON.stringify(_t)) : null;
       confirmModal("Delete this contribution type?", async () => {
         try {
           let r = await postData({ action: "deleteType", TypeId: id });
-          toast(
-            r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            r.status === "deleted" ? "" : "error"
-          );
-          smartRefresh("types");
+          if (r.status === "deleted") {
+            smartRefresh("types");
+            if (_undoSaved && typeof _showUndoToast === "function") {
+              _showUndoToast(_undoLabel, function() {
+                postData({ action: "addType", TypeName: _undoSaved.TypeName }).then(function() {
+                  smartRefresh("types");
+                  toast("↩ Type restored.");
+                });
+              });
+            } else {
+              toast("✅ Deleted.");
+            }
+          } else {
+            toast("❌ Failed.", "error");
+          }
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
@@ -10055,17 +10178,27 @@
       }
     }
     async function deleteOccasion(id) {
+      const _o = (occasions || []).find(o => String(o.OccasionId) === String(id));
+      const _undoLabel = _o ? (_o.OccasionName || "Occasion") : "Occasion";
+      const _undoSaved = _o ? JSON.parse(JSON.stringify(_o)) : null;
       confirmModal("Delete this occasion?", async () => {
         try {
-          let r = await postData({
-            action: "deleteOccasion",
-            OccasionId: id,
-          });
-          toast(
-            r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            r.status === "deleted" ? "" : "error"
-          );
-          smartRefresh("occasions");
+          let r = await postData({ action: "deleteOccasion", OccasionId: id });
+          if (r.status === "deleted") {
+            smartRefresh("occasions");
+            if (_undoSaved && typeof _showUndoToast === "function") {
+              _showUndoToast(_undoLabel, function() {
+                postData({ action: "addOccasion", OccasionName: _undoSaved.OccasionName }).then(function() {
+                  smartRefresh("occasions");
+                  toast("↩ Occasion restored.");
+                });
+              });
+            } else {
+              toast("✅ Deleted.");
+            }
+          } else {
+            toast("❌ Failed.", "error");
+          }
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
@@ -10087,17 +10220,27 @@
       }
     }
     async function deleteExpenseType(id) {
+      const _et = (expenseTypes || []).find(e => String(e.ExpenseTypeId) === String(id));
+      const _undoLabel = _et ? (_et.Name || "Expense Type") : "Expense Type";
+      const _undoSaved = _et ? JSON.parse(JSON.stringify(_et)) : null;
       confirmModal("Delete this expense type?", async () => {
         try {
-          let r = await postData({
-            action: "deleteExpenseType",
-            ExpenseTypeId: id,
-          });
-          toast(
-            r.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            r.status === "deleted" ? "" : "error"
-          );
-          smartRefresh("expenseTypes");
+          let r = await postData({ action: "deleteExpenseType", ExpenseTypeId: id });
+          if (r.status === "deleted") {
+            smartRefresh("expenseTypes");
+            if (_undoSaved && typeof _showUndoToast === "function") {
+              _showUndoToast(_undoLabel, function() {
+                postData({ action: "addExpenseType", Name: _undoSaved.Name }).then(function() {
+                  smartRefresh("expenseTypes");
+                  toast("↩ Expense type restored.");
+                });
+              });
+            } else {
+              toast("✅ Deleted.");
+            }
+          } else {
+            toast("❌ Failed.", "error");
+          }
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
@@ -10728,14 +10871,28 @@
     }
 
     async function deleteGoal(id) {
+      const _undoG = (goals || []).find(g => String(g.GoalId) === String(id));
+      const _undoLabel = _undoG ? (_undoG.GoalName || "Goal") : "Goal";
+      const _undoSaved = _undoG ? JSON.parse(JSON.stringify(_undoG)) : null;
       confirmModal("Delete this goal?", async () => {
         try {
           let res = await postData({ action: "deleteGoal", GoalId: id });
-          toast(
-            res.status === "deleted" ? "✅ Deleted." : "❌ Failed.",
-            res.status === "deleted" ? "" : "error"
-          );
-          smartRefresh("goals");
+          if (res.status === "deleted") {
+            smartRefresh("goals");
+            if (_undoSaved && typeof _showUndoToast === "function") {
+              _showUndoToast(_undoLabel, function() {
+                var payload = Object.assign({ action: "addGoal" }, _undoSaved);
+                postData(payload).then(function() {
+                  smartRefresh("goals");
+                  toast("↩ Goal restored.");
+                });
+              });
+            } else {
+              toast("✅ Deleted.");
+            }
+          } else {
+            toast("❌ Failed.", "error");
+          }
         } catch (e) {
           toast("❌ " + e.message, "error");
         }
@@ -12820,8 +12977,8 @@
           : '<span style="color:#aaa;font-size:11px;">—</span>';
         const rejNote = r.RejectionNote ? '<br><span style="font-size:10px;color:#ef4444;">Reason: ' + escapeHtml(r.RejectionNote) + '</span>' : "";
         const actBtns = st === "Pending"
-          ? '<button onclick="_approveContribRequest(' + i + ')" style="background:#22c55e;padding:5px 10px;font-size:11px;border-radius:6px;margin-right:4px;"><i class="fa-solid fa-check"></i> Approve</button>'
-          + '<button onclick="_rejectContribRequest(' + i + ')" style="background:#ef4444;padding:5px 10px;font-size:11px;border-radius:6px;"><i class="fa-solid fa-xmark"></i> Reject</button>'
+          ? '<button onclick="_approveContribRequest(' + JSON.stringify(r.ReqId) + ')" style="background:#22c55e;padding:5px 10px;font-size:11px;border-radius:6px;margin-right:4px;"><i class="fa-solid fa-check"></i> Approve</button>'
+          + '<button onclick="_rejectContribRequest(' + JSON.stringify(r.ReqId) + ')" style="background:#ef4444;padding:5px 10px;font-size:11px;border-radius:6px;"><i class="fa-solid fa-xmark"></i> Reject</button>'
           : '<span style="font-size:11px;color:#94a3b8;">' + st + '</span>';
         return '<tr>'
           + '<td>' + (i + 1) + '</td>'
@@ -12839,8 +12996,8 @@
       _buildPagination("req_pagination", page, total, "_gotoReqPage");
     }
 
-    function _approveContribRequest(idx) {
-      const r = (window._reqListRendered || [])[idx];
+    function _approveContribRequest(reqId) {
+      const r = (window._reqListRendered || []).find(function(x) { return String(x.ReqId) === String(reqId); });
       if (!r) return;
       const u = (users || []).find(function (u) { return String(u.UserId) === String(r.UserId); });
       const name = u ? u.Name : "this member";
@@ -12916,8 +13073,8 @@
       }
     }
 
-    function _rejectContribRequest(idx) {
-      const r = (window._reqListRendered || [])[idx];
+    function _rejectContribRequest(reqId) {
+      const r = (window._reqListRendered || []).find(function(x) { return String(x.ReqId) === String(reqId); });
       if (!r) return;
       const u = (users || []).find(function (u) { return String(u.UserId) === String(r.UserId); });
       const name = u ? u.Name : "this member";
@@ -13008,7 +13165,8 @@
       const headers = Object.keys(_backupData[0]).join(",");
       const rows = _backupData.map(r => Object.values(r).map(v => '"' + String(v || "").replace(/"/g, '""') + '"').join(",")).join("\n");
       const csv = headers + "\n" + rows;
-      const blob = new Blob([csv], { type: "text/csv" });
+      const bom = "\uFEFF";
+      const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = "Mandir_Backup_" + new Date().toISOString().slice(0, 10) + ".csv";
@@ -14799,141 +14957,202 @@
   <script>
   (function() {
     "use strict";
+    var _grsLastFound = null; // stores last lookup result for View Receipt
 
-    /* ════════════════════════════════════════════════════════
-       FEATURE 1 — GLOBAL RECEIPT SEARCH
-       Floating pill in header — type MNR-001, finds & opens receipt.
-       Completely isolated from all other logic.
-    ════════════════════════════════════════════════════════ */
+    /* ================================== FEATURE 1 - GLOBAL RECEIPT SEARCH ===
+       Header Receipt pill -> enter Tracking ID -> found: View Receipt (full width);
+       not found: red error card + Try Again. Print is inside receipt modal.
+    ========================================================================= */
+
     function _injectReceiptSearchPill() {
-      var header = document.querySelector(".header");
-      if (!header || document.getElementById("_grsWrap")) return;
-
-      var wrap = document.createElement("div");
-      wrap.id = "_grsWrap";
-      wrap.style.cssText = "position:relative;flex-shrink:0;";
-      wrap.innerHTML =
-        '<button id="_grsToggleBtn" title="Search by Receipt ID" onclick="_grsToggle()" ' +
-        'style="background:rgba(247,160,26,0.1);border:1.5px solid rgba(247,160,26,0.35);' +
-        'border-radius:8px;padding:7px 11px;cursor:pointer;color:#f7a01a;font-size:13px;' +
-        'box-shadow:none;transition:all 0.2s;display:flex;align-items:center;gap:6px;">' +
-        '<i class="fa-solid fa-magnifying-glass"></i>' +
-        '<span style="font-size:11px;font-weight:600;display:none;" id="_grsBtnLabel">Receipt</span>' +
-        '</button>' +
-        '<div id="_grsBox" style="display:none;position:absolute;right:0;top:calc(100% + 8px);' +
-        'background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);' +
-        'border:1.5px solid #f0f0f0;padding:12px 14px;min-width:270px;z-index:9999;">' +
-        '<div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;' +
-        'letter-spacing:1px;margin-bottom:8px;">🧾 Receipt Quick Find</div>' +
-        '<input id="_grsInput" placeholder="Type MNR-001 or TRX-..." ' +
-        'style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;' +
-        'font-size:13px;font-family:Poppins,sans-serif;outline:none;box-sizing:border-box;" ' +
-        'oninput="_grsSearch(this.value)" onkeydown="if(event.key==='Escape')_grsClose()"/>' +
-        '<div id="_grsResults" style="margin-top:8px;max-height:200px;overflow-y:auto;"></div>' +
-        '</div>';
-
-        // Insert directly before the right-side group in the header
-      var rightGroup = header.querySelector('[style*="position: relative"]') ||
-                       header.querySelector('[style*="position:relative"]');
-      if (rightGroup) {
-        header.insertBefore(wrap, rightGroup);
-      } else {
-        header.appendChild(wrap);
+      // Use the pre-placed slot in the header (between health & darkmode)
+      var slot = document.getElementById('_grsWrapSlot');
+      if (!slot || document.getElementById('_grsWrap')) return;
+      // inject slide-in animation
+      if (!document.getElementById('_grsStyle')) {
+        var s = document.createElement('style'); s.id = '_grsStyle';
+        s.textContent = '@keyframes _grsSlide{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}';
+        document.head.appendChild(s);
       }
-
-      // Close on outside click
-      document.addEventListener("click", function(e) {
+      var wrap = document.createElement('div');
+      wrap.id = '_grsWrap';
+      wrap.style.cssText = 'position:relative;flex-shrink:0;display:inline-flex;';
+      wrap.innerHTML =
+        // icon-only 34x34 button — matches health & darkmode exactly
+        '<button id="_grsToggleBtn" onclick="_grsToggle()" title="Search Receipt by Tracking ID"'
+        +' style="width:34px;height:34px;background:rgba(0,0,0,0.06);border:none;'
+        +'border-radius:8px;cursor:pointer;display:flex;align-items:center;'
+        +'justify-content:center;padding:0;box-shadow:none;color:#f7a01a;'
+        +'font-size:14px;transition:background 0.2s;">'
+        +'<i class="fa-solid fa-receipt"></i>'
+        +'</button>'
+        // popup panel — opens below, aligned right
+        +'<div id="_grsBox" style="display:none;position:absolute;right:0;top:calc(100% + 6px);'
+        +'background:#fff;border-radius:12px;border:1px solid #ede9e3;width:260px;'
+        +'box-shadow:0 8px 26px rgba(0,0,0,0.13);z-index:99999;overflow:hidden;animation:_grsSlide .14s ease;">'
+          // header bar
+          +'<div style="background:#fdf8f0;border-bottom:1px solid #f0e8d8;padding:9px 12px;'
+          +'display:flex;align-items:center;justify-content:space-between;">'
+            +'<span style="font-size:10px;font-weight:700;color:#b0935a;text-transform:uppercase;letter-spacing:1.1px;">&#x1F9FE; Receipt Lookup</span>'
+            +'<span onclick="_grsClose()" title="Close"'
+            +' style="cursor:pointer;color:#c0a878;font-size:13px;width:18px;height:18px;'
+            +'display:flex;align-items:center;justify-content:center;'
+            +'border-radius:50%;transition:background 0.15s;"'
+            +' onmouseover="this.style.background=\'#f0e0c0\'" onmouseout="this.style.background=\'transparent\'">&#x2715;</span>'
+          +'</div>'
+          // input area
+          +'<div style="padding:11px 12px;">'
+            +'<div style="display:flex;gap:6px;align-items:center;">'
+              +'<input id="_grsInput" placeholder="Enter Tracking ID e.g. MNR-001"'
+              +' style="flex:1;padding:7px 10px;border:1.5px solid #e8e2d9;border-radius:7px;'
+              +'font-size:12px;font-family:Poppins,sans-serif;outline:none;'
+              +'color:#334155;background:#fdfcfa;box-sizing:border-box;"'
+              +' onfocus="this.style.borderColor=\'#f7a01a\'" onblur="this.style.borderColor=\'#e8e2d9\'"'
+              +' onkeydown="if(event.key===\'Enter\')_grsLookup();if(event.key===\'Escape\')_grsClose()"/>'
+              +'<button onclick="_grsLookup()"'
+              +' style="padding:7px 10px;border-radius:7px;background:#f7a01a;color:#fff;border:none;'
+              +'cursor:pointer;font-size:12px;box-shadow:none;flex-shrink:0;"'
+              +' onmouseover="this.style.background=\'#e8920a\'" onmouseout="this.style.background=\'#f7a01a\'">'
+              +'<i class="fa-solid fa-magnifying-glass"></i></button>'
+            +'</div>'
+            +'<div id="_grsResult" style="margin-top:8px;"></div>'
+          +'</div>'
+        +'</div>';
+      // Mount into the pre-placed slot
+      slot.innerHTML = ''; slot.appendChild(wrap);
+      document.addEventListener('click', function(e) {
         if (!wrap.contains(e.target)) _grsClose();
       });
     }
 
     window._grsToggle = function() {
-      var box = document.getElementById("_grsBox");
+      var box = document.getElementById('_grsBox');
       if (!box) return;
-      var open = box.style.display !== "none";
-      box.style.display = open ? "none" : "block";
-      if (!open) {
-        var inp = document.getElementById("_grsInput");
-        if (inp) { inp.value = ""; inp.focus(); }
-        document.getElementById("_grsResults").innerHTML = "";
-      }
+      if (box.style.display !== 'none') { _grsClose(); return; }
+      box.style.display = 'block';
+      var inp = document.getElementById('_grsInput');
+      if (inp) { inp.value = ''; inp.focus(); }
+      document.getElementById('_grsResult').innerHTML = '';
     };
 
     window._grsClose = function() {
-      var box = document.getElementById("_grsBox");
-      if (box) box.style.display = "none";
+      var box = document.getElementById('_grsBox');
+      if (box) box.style.display = 'none';
     };
 
-    window._grsSearch = function(val) {
-      var res = document.getElementById("_grsResults");
-      if (!res) return;
-      val = (val || "").trim().toLowerCase();
-      if (!val) { res.innerHTML = ""; return; }
-
-      // Search in receipt store (_receiptStore in app.js)
-      var store = window._receiptStore || {};
-      var matches = [];
+    window._grsLookup = function() {
+      var inp = document.getElementById('_grsInput');
+      var res = document.getElementById('_grsResult');
+      if (!inp || !res) return;
+      var val = inp.value.trim();
+      if (!val) {
+        res.innerHTML = '<div style="font-size:11.5px;color:#e67e22;padding:3px 1px;">&#x26A0; Please enter a Tracking ID.</div>';
+        return;
+      }
+      var APP_PREFIX = (typeof APP !== 'undefined' && APP.receiptPrefix) ? APP.receiptPrefix : 'MNR';
+      var valLow = val.toLowerCase();
+      var trxVar = valLow.replace(new RegExp('^' + APP_PREFIX.toLowerCase() + '-'), 'trx-');
+      var mnrVar = valLow.replace(/^trx-/, APP_PREFIX.toLowerCase() + '-');
+      var found  = null;
+      // 1. _rcptStore
+      var store = window._rcptStore || window._receiptStore || {};
       Object.keys(store).forEach(function(rid) {
-        var d = store[rid];
-        if (!d) return;
-        var receiptId = ((d.c && d.c.ReceiptID) || rid).toLowerCase();
-        var name = (d.userName || "").toLowerCase();
-        if (receiptId.includes(val) || name.includes(val)) {
-          matches.push({ rid: rid, d: d });
-        }
+        if (found) return;
+        var d = store[rid]; if (!d) return;
+        var rl = (rid||'').toLowerCase(), cl = ((d.c&&d.c.ReceiptID)||'').toLowerCase();
+        if (rl===valLow||cl===valLow||rl===trxVar||cl===trxVar||rl===mnrVar||cl===mnrVar)
+          found = {rid:rid,c:d.c,userName:d.userName,typeName:d.typeName};
       });
-
-      // Also search main data array
-      if (typeof data !== "undefined") {
-        var APP_PREFIX = (typeof APP !== "undefined" && APP.receiptPrefix) ? APP.receiptPrefix : "MNR";
+      // 2. main data array
+      if (!found && typeof data !== 'undefined') {
         data.forEach(function(c) {
-          if (!c.ReceiptID) return;
-          var displayRid = c.ReceiptID.replace(/^TRX-/, APP_PREFIX + "-").toLowerCase();
-          if (displayRid.includes(val) || c.ReceiptID.toLowerCase().includes(val)) {
-            // Check not already in matches
-            if (!matches.some(function(m) { return m.rid === c.ReceiptID; })) {
-              var u = (typeof users !== "undefined") ? users.find(function(x) { return String(x.UserId) === String(c.UserId); }) : null;
-              matches.push({ rid: c.ReceiptID, label: displayRid.toUpperCase(), name: u ? u.Name : "Walk-in", amount: c.Amount, month: c.ForMonth });
-            }
+          if (found||!c.ReceiptID) return;
+          var rl = c.ReceiptID.toLowerCase();
+          var rd = rl.replace(/^trx-/, APP_PREFIX.toLowerCase()+'-');
+          if (rl===valLow||rd===valLow||rl===trxVar||rd===trxVar||rl===mnrVar||rd===mnrVar) {
+            var u=(typeof users!=='undefined')?users.find(function(x){return String(x.UserId)===String(c.UserId);}):null;
+            var t=(typeof contribTypes!=='undefined')?contribTypes.find(function(x){return String(x.TypeId)===String(c.TypeId);}):null;
+            found={rid:c.ReceiptID,c:c,
+              userName:u?u.Name:(c.WalkInName||'Walk-in'),
+              typeName:t?t.TypeName:(c.TypeId||'--')};
           }
         });
       }
-
-      if (!matches.length) {
-        res.innerHTML = '<div style="color:#94a3b8;font-size:12px;padding:8px 4px;">No receipt found for "' + val + '"</div>';
+      // ── NOT FOUND ──
+      if (!found) {
+        res.innerHTML =
+          '<div style="background:#fff8f8;border:1px solid #fcd4d4;border-radius:8px;padding:10px;text-align:center;">'
+          +'<div style="font-size:16px;margin-bottom:4px;">&#x274C;</div>'
+          +'<div style="font-size:11.5px;font-weight:700;color:#dc2626;margin-bottom:2px;">Receipt Not Found</div>'
+          +'<div style="font-size:10.5px;color:#94a3b8;margin-bottom:8px;">No record for <b style="color:#475569;">' + val + '</b></div>'
+          +'<button onclick="document.getElementById(\'_grsInput\').value=\'\';document.getElementById(\'_grsResult\').innerHTML=\'\';document.getElementById(\'_grsInput\').focus();"'
+          +' style="background:#f1f5f9;color:#475569;border:none;padding:5px 13px;border-radius:6px;'
+          +'cursor:pointer;font-size:11px;font-weight:600;box-shadow:none;font-family:Poppins,sans-serif;">'
+          +'&#x1F504; Try Again</button></div>';
         return;
       }
-
-      res.innerHTML = matches.slice(0, 8).map(function(m) {
-        var label = m.label || ((m.d && m.d.c && m.d.c.ReceiptID) || m.rid);
-        var name  = m.name || (m.d && m.d.userName) || "";
-        var amt   = m.amount || (m.d && m.d.c && m.d.c.Amount) || "";
-        var mo    = m.month  || (m.d && m.d.c && m.d.c.ForMonth) || "";
-        return '<div onclick="_grsOpen('' + m.rid + '')" style="display:flex;align-items:center;' +
-               'justify-content:space-between;padding:8px 10px;border-radius:8px;cursor:pointer;' +
-               'transition:background 0.15s;border:1px solid #f0f0f0;margin-bottom:5px;" ' +
-               'onmouseover="this.style.background='#fef9f0'" onmouseout="this.style.background='#fff'">' +
-               '<div><div style="font-size:11px;font-weight:700;color:#f7a01a;font-family:monospace;">' +
-               label + '</div><div style="font-size:11px;color:#334155;">' + name + (mo ? ' · ' + mo : '') + '</div></div>' +
-               (amt ? '<div style="font-size:12px;font-weight:700;color:#27ae60;">₹' + Number(amt).toLocaleString("en-IN") + '</div>' : '') +
-               '</div>';
-      }).join("");
+      // ── FOUND ──
+      _grsLastFound = found; // save for _grsOpenReceipt
+      var c2   = found.c;
+      var dRID = (c2.ReceiptID||found.rid).replace(/^TRX-/i,APP_PREFIX+'-').toUpperCase();
+      var amt  = c2.Amount?'&#8377;'+Number(c2.Amount).toLocaleString('en-IN'):'--';
+      var mon  = (c2.ForMonth||'')+(c2.Year?' '+c2.Year:'');
+      var dt   = c2.PaymentDate||'--';
+      res.innerHTML =
+        '<div style="border:1px solid #fde68a;border-radius:8px;overflow:hidden;">'
+        // amber header strip
+        +'<div style="background:linear-gradient(90deg,#f7a01a,#f5b942);padding:7px 11px;'
+        +'display:flex;align-items:center;justify-content:space-between;">'
+          +'<span style="font-family:monospace;font-size:11.5px;font-weight:800;color:#fff;">&#x1F9FE; '+dRID+'</span>'
+          +'<span style="font-size:11.5px;font-weight:700;color:#fff;">'+amt+'</span>'
+        +'</div>'
+        // detail rows
+        +'<div style="background:#fffdf5;padding:8px 11px;font-size:11.5px;color:#334155;line-height:1.95;">'
+          +'<div style="display:flex;"><span style="color:#a09070;min-width:52px;">Donor</span><b>'+(found.userName||'--')+'</b></div>'
+          +'<div style="display:flex;"><span style="color:#a09070;min-width:52px;">Period</span>'+(mon||'--')+'</div>'
+          +'<div style="display:flex;"><span style="color:#a09070;min-width:52px;">Date</span>'+dt+'</div>'
+          +'<div style="display:flex;"><span style="color:#a09070;min-width:52px;">Type</span>'+(found.typeName||'--')+'</div>'
+        +'</div>'
+        // single full-width View Receipt button
+        +'<div style="padding:8px 11px;background:#fffdf5;border-top:1px solid #fde68a;">'
+          +'<button onclick="_grsOpenReceipt()"'
+          +' style="width:100%;padding:9px 0;background:linear-gradient(135deg,#f7a01a,#e8920a);'
+          +'color:#fff;border:none;border-radius:7px;cursor:pointer;'
+          +'font-size:12.5px;font-weight:700;font-family:Poppins,sans-serif;'
+          +'box-shadow:0 3px 10px rgba(247,160,26,0.3);'
+          +'display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity 0.2s;"'
+          +' onmouseover="this.style.opacity=\'0.88\'" onmouseout="this.style.opacity=\'1\'">'
+          +'<i class="fa-solid fa-receipt"></i> View Receipt'
+          +'</button>'
+        +'</div>'
+        +'</div>';
     };
 
-    window._grsOpen = function(rid) {
+    window._grsOpenReceipt = function() {
+      var f = _grsLastFound;
+      if (!f) return;
       _grsClose();
-      if (typeof showReceiptById === "function") {
-        showReceiptById(rid);
-      } else if (typeof viewDashboardEntry === "function") {
-        viewDashboardEntry(rid);
+      // Try _rcptStore first (populated when table is rendered)
+      var store = window._rcptStore || {};
+      if (store[f.rid]) {
+        if (typeof showReceiptById === 'function') { showReceiptById(f.rid); return; }
       }
+      // Fallback: call showReceipt directly with data we already have
+      if (typeof showReceipt === 'function') {
+        showReceipt(f.c, f.userName, f.typeName, f.occasionName, true);
+        return;
+      }
+      // Last resort: store it ourselves and call showReceiptById
+      if (!window._rcptStore) window._rcptStore = {};
+      window._rcptStore[f.rid] = {c:f.c, userName:f.userName, typeName:f.typeName, occasionName:f.occasionName};
+      if (typeof showReceiptById === 'function') showReceiptById(f.rid);
     };
 
-    // Wire outside-click handler for receipt search
-    if (document.readyState === "complete") {
+    // Wire on load
+    if (document.readyState === 'complete') {
       _injectReceiptSearchPill();
     } else {
-      document.addEventListener("DOMContentLoaded", _injectReceiptSearchPill);
+      document.addEventListener('DOMContentLoaded', _injectReceiptSearchPill);
     }
 
 
@@ -15047,8 +15266,8 @@
         var el = document.getElementById(id);
         if (el) draft[id] = el.value;
       });
-      // Only save if something is filled
-      if (draft.amount || draft.note) {
+      // Save if any meaningful field is filled (not just amount/note)
+      if (draft.amount || draft.note || draft.user || draft.type || draft.month) {
         try { localStorage.setItem(_DRAFT_KEY, JSON.stringify(draft)); } catch(e) {}
       }
     }
