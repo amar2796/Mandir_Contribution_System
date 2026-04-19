@@ -54,8 +54,8 @@
     button.main-btn:hover{background:#5c2709;transform:translateY(-1px);}
     button.main-btn:disabled{background:#c4b9b0;cursor:not-allowed;transform:none;}
     /* SECONDARY BUTTON — ghost style, clearly less prominent than primary */
-    .retry-btn{width:100%;padding:10px;border:1.5px solid #d6cfc6;border-radius:10px;color:#666;font-family:"Poppins",sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;background:#fff;margin-bottom:10px;display:none;transition:all .2s ease;}
-    .retry-btn:hover{border-color:#999;color:#333;}
+    .retry-btn{width:100%;padding:11px;border:1.5px solid #f7a01a;border-radius:10px;color:#78350f;font-family:"Poppins",sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;background:#fffbf5;margin-bottom:10px;display:none;transition:all .2s ease;}
+    .retry-btn:hover{background:#fde68a;border-color:#e8920a;color:#5c2709;transform:translateY(-1px);}
     /* Register row */
     .reg-row-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fffbf5;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-bottom:0;}
     .reg-row-card .reg-text{font-size:12.5px;font-weight:700;color:#78350f;}
@@ -386,9 +386,14 @@
           <input type="text" id="reg_village" placeholder="Your village or town" maxlength="100"/>
         </div>
         <span class="field-label">Full Address <span style="color:#bbb;font-weight:400;">(optional)</span></span>
-        <div class="input-group" style="margin-bottom:16px;">
+        <div class="input-group" style="margin-bottom:4px;">
           <i class="icon fa-solid fa-map-pin" style="top:18px;transform:none;"></i>
           <input type="text" id="reg_address" placeholder="Street, locality, district..." maxlength="300" style="padding-left:44px;"/>
+        </div>
+        <span class="field-label">Date of Birth <span style="color:#bbb;font-weight:400;">(optional — for birthday alerts)</span></span>
+        <div class="input-group" style="margin-bottom:16px;">
+          <i class="icon fa-solid fa-cake-candles" style="top:50%;transform:translateY(-50%);"></i>
+          <input type="date" id="reg_dob" style="padding-left:44px;cursor:pointer;" max=""/>
         </div>
         <!-- T&C checkbox — collapsed into step 1 -->
         <div id="tcRow" style="display:flex;align-items:flex-start;gap:9px;margin-bottom:16px;background:#fffbf5;border:1.5px solid #fde68a;border-radius:10px;padding:10px 12px;">
@@ -748,9 +753,30 @@ async function doLogin(){
       _loginFail();
     }
   }catch(err){
-    setMsg("loginMsg","❌ "+(err.message||"Connection error."),"error");
-    if((err.message||"").toLowerCase().includes("timed out")){
-      document.getElementById("retryBtn").style.display="block";
+    const errMsg = (err.message||"").toLowerCase();
+    let reason = "";
+    let icon = "fa-circle-exclamation";
+    if(errMsg.includes("timed out")||errMsg.includes("timeout")){
+      reason = "⏱️ Request timed out — the server took too long to respond.";
+      icon = "fa-clock";
+    } else if(errMsg.includes("network error")||errMsg.includes("failed to fetch")||errMsg.includes("networkerror")){
+      reason = "📶 Network error — check your internet connection and try again.";
+      icon = "fa-wifi";
+    } else if(errMsg.includes("offline")||!navigator.onLine){
+      reason = "📴 You appear to be offline — please check your connection.";
+      icon = "fa-wifi";
+    } else if(errMsg.includes("load")||errMsg.includes("script")){
+      reason = "🌐 Could not reach the server — you may have a weak connection.";
+      icon = "fa-signal";
+    } else {
+      reason = "⚠️ Connection error — please try again.";
+    }
+    setMsg("loginMsg","❌ "+reason,"error");
+    // Always show retry button for network/connection errors
+    const retryBtn = document.getElementById("retryBtn");
+    if(retryBtn){
+      retryBtn.style.display="block";
+      retryBtn.innerHTML='<i class="fa-solid fa-rotate-right"></i> Retry Login';
     }
   }finally{
     btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-right-to-bracket"></i> Secure Login';
@@ -1007,7 +1033,7 @@ const REG_MAX_SENDS = 3, REG_LOCK_MS = 15 * 60 * 1000, REG_RESEND_COOLDOWN = 60;
 
 function openRegisterModal(){
   _reg = { otpKey:null, email:null, sendCount:0, sendLockUntil:0 };
-  ['reg_name','reg_mobile','reg_email','reg_password','reg_confirm','reg_village','reg_address'].forEach(id=>{
+  ['reg_name','reg_mobile','reg_email','reg_password','reg_confirm','reg_village','reg_address','reg_dob'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   clearFieldErrors();
@@ -1023,6 +1049,9 @@ function openRegisterModal(){
   document.getElementById('regHeader1').style.display='';
   document.getElementById('regHeader2').style.display='none';
   document.getElementById('registerModal').style.display='flex';
+  // Cap DOB picker at today — no future birthdates
+  const dobEl=document.getElementById('reg_dob');
+  if(dobEl) dobEl.max=new Date().toISOString().slice(0,10);
   setTimeout(()=>{const n=document.getElementById('reg_name');if(n)n.focus();},100);
 }
 function closeRegisterModal(){ document.getElementById('registerModal').style.display='none'; }
@@ -1163,12 +1192,15 @@ async function regVerifyAndSubmit(){
     const pwd=document.getElementById('reg_password').value;
     const village=document.getElementById('reg_village').value.trim();
     const address=document.getElementById('reg_address').value.trim();
+    const rawDob=document.getElementById('reg_dob')?.value||''; // YYYY-MM-DD from <input type="date">
+    // Convert YYYY-MM-DD → DD-MM-YYYY for consistent sheet storage
+    const dob=rawDob ? rawDob.split('-').reverse().join('-') : '';
     const hashedPwd=await sha256(pwd);
     const res=await postData({
       action:'registerUser',
       otpKey:_reg.otpKey, otp,
       Name:name, Mobile:mobile, Email:email,
-      Password:hashedPwd, Village:village, Address:address
+      Password:hashedPwd, Village:village, Address:address, DOB:dob
     });
     if(res&&res.status==='success'){
       clearInterval(_regResendInterval);

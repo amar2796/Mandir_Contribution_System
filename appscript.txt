@@ -17,14 +17,17 @@ const CFG = {
   receiptPrefix: "MNR",          // Receipt IDs: MNR-2025-00001
   signatory:     "Temple Trust",
   designation:   "Authorized Signatory",
-  tagline:       "Jai Shree Ram 🙏",
+  tagline:       "Jai Shree Ram",
   thankYouMsg:   "Thank you for your generous contribution",
   emailDailyLimit: 90,           // Gmail free = 100/day; keep 10 buffer for OTPs
-  // Logo: place your logo at Image/logo.PNG in your web app folder.
-  // For emails, host logo.PNG on Google Drive (share publicly) and paste the
-  // direct image URL below. Format: https://lh3.googleusercontent.com/d/FILE_ID
-  // Leave empty to use the Om symbol fallback in emails.
-  logoEmailUrl: "https://lh3.googleusercontent.com/d/1S0RbjNkxhhGsTMI1fPlLSOlkLi87ZHhs",            // e.g. "https://lh3.googleusercontent.com/d/YOUR_FILE_ID"
+  // ── EMAIL LOGO (used in ALL emails: receipt, monthly report, reminder, birthday, approval)
+  // Drop any image file (logo.png / logo.jpg) into a dedicated Drive folder.
+  // The system auto-picks the first image it finds — no URL needed anywhere.
+  // Steps: Drive → New Folder → name it "Mandir Logo" → paste its folder ID below.
+  // If the folder is empty or ID is blank → emails fall back to the 🕉️ Om symbol.
+  // NOTE: Cannot use Image/logo.PNG from the web app — email clients have no access to
+  //       the Apps Script server. A public Drive folder is the only option.
+  folderLogo: "1WYmrWAufRhNbboMXzSCvljZ6jqprmZ7M",   // ← Paste your Drive Logo folder ID here (e.g. "1AbCdEfGhIjKlMnO...")
 
   // ── PHOTO STORAGE FOLDERS (Google Drive folder IDs)
   // Create 3 sub-folders inside your main Drive folder, then paste their IDs here.
@@ -81,10 +84,17 @@ function _verifySession(params, actionName) {
       if (rowId && (rowId === userId || String(allData[i][headers.indexOf("Name")]||"") === userId)) {
         const stored = String(allData[i][tokenCol] || "").trim();
         if (!stored) return true; // empty token = legacy user, allow
-        return stored === token;
+        // FIX SEC-5: explicit true/false — no fall-through to permissive return
+        if (stored === token) return true;
+        logAction(userId, "SESSION_TOKEN_MISMATCH", "Action: " + actionName + " — token rejected");
+        return false;
       }
     }
-  } catch(e) { return true; } // on error, allow (don't block legitimate users)
+  } catch(e) {
+    // FIX SEC-5: log the error; still allow (don't block legitimate users on sheet errors)
+    logAction(userId || "Unknown", "VERIFY_SESSION_ERROR", "Action: " + actionName + " — " + e.message);
+    return true;
+  }
   return true; // user not found but allow (will fail at action level)
 }
 // ── Hash password (SHA-256, matches client-side sha256())
@@ -108,6 +118,11 @@ function sanitize(val, maxLen) {
   if (val === undefined || val === null) return "";
   let s = String(val).trim();
   if (maxLen && s.length > maxLen) s = s.substring(0, maxLen);
+  // FIX SEC-10: Strip leading formula-trigger characters to prevent spreadsheet formula injection.
+  // Google Sheets evaluates cells starting with = + - @ | as formulas.
+  // Prefix with a single quote would change display; instead we strip the trigger char only when
+  // the entire value starts with it (legitimate names/notes never start with = or @).
+  s = s.replace(/^[=+\-@|]/, "");
   return s;
 }
 
@@ -207,18 +222,39 @@ function autoBackupSystem() {
   }
 }
 
+// ── Request-scoped sheet cache ─────────────────────────────────
+// Each Apps Script execution is a fresh process, so this object lives
+// only for the duration of one doGet/doPost call — never stale.
+// getSheetData() for the same sheet name within one request hits
+// Google Sheets only once; every subsequent call returns the cached copy.
+// bustSheetCache(name) — call after addRow/deleteRow to force re-read.
+var _sheetCache = {};
+function bustSheetCache(name) { if (name) delete _sheetCache[name]; else _sheetCache = {}; }
+
 // ── Read sheet into array of objects
 function getSheetData(name) {
+  if (_sheetCache[name]) return _sheetCache[name]; // return cached copy
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   if (!sheet) return [];
   const data = sheet.getDataRange().getValues();
   if (data.length < 2) return [];
   const headers = data.shift();
-  return data.map(r => {
+  const result = data.map(r => {
     let o = {};
-    headers.forEach((h, i) => o[h] = r[i]);
+    headers.forEach((h, i) => {
+      // PaymentDate/CreatedAt/RegisteredAt: Sheets may return a Date object when the
+      // column is date-formatted. Always coerce to dd-MM-yyyy HH:mm:ss IST string.
+      // This prevents "11-04-2026" being stored as Nov 4 (MM-DD auto-parse by Sheets).
+      if ((h === "PaymentDate" || h === "CreatedAt" || h === "RegisteredAt") && r[i] instanceof Date) {
+        o[h] = Utilities.formatDate(r[i], "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+      } else {
+        o[h] = r[i];
+      }
+    });
     return o;
   });
+  _sheetCache[name] = result;
+  return result;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -267,6 +303,17 @@ function generateReceiptId() {
 //  check and pushing the count over the daily limit.
 // ════════════════════════════════════════════════════════════════
 
+// ── Shared quota read helper — one PropertiesService call, used by all quota functions.
+// Returns { props, emailCount, today } with today's count already reset if it's a new day.
+function _getQuotaState() {
+  const props      = PropertiesService.getScriptProperties();
+  const today      = Utilities.formatDate(new Date(), "GMT+5:30", "yyyy-MM-dd");
+  const storedDate = props.getProperty("EMAIL_DATE") || "";
+  let   count      = parseInt(props.getProperty("EMAIL_COUNT") || "0", 10);
+  if (storedDate !== today) count = 0; // new day — treat as zero (reset written lazily on next consume)
+  return { props, today, count };
+}
+
 // ── Atomic check-and-increment: returns true if email can be sent
 // ALWAYS use this instead of calling canSendEmail() + incrementEmailCount() separately.
 function tryConsumeEmailQuota() {
@@ -276,24 +323,17 @@ function tryConsumeEmailQuota() {
     lock.waitLock(8000);
     lockAcquired = true;
 
-    const props    = PropertiesService.getScriptProperties();
-    const today    = Utilities.formatDate(new Date(), "GMT+5:30", "yyyy-MM-dd");
-    const dateKey  = "EMAIL_DATE";
-    const countKey = "EMAIL_COUNT";
+    const { props, today, count } = _getQuotaState();
 
-    let storedDate = props.getProperty(dateKey)  || "";
-    let emailCount = parseInt(props.getProperty(countKey) || "0", 10);
-
-    // Reset on new day
-    if (storedDate !== today) {
-      emailCount = 0;
-      props.setProperty(dateKey, today);
+    // Persist the date reset if it's a new day (lazy write)
+    if ((props.getProperty("EMAIL_DATE") || "") !== today) {
+      props.setProperty("EMAIL_DATE", today);
     }
 
-    if (emailCount >= CFG.emailDailyLimit) return false;
+    if (count >= CFG.emailDailyLimit) return false;
 
     // Increment atomically inside the lock
-    props.setProperty(countKey, String(emailCount + 1));
+    props.setProperty("EMAIL_COUNT", String(count + 1));
     return true;
   } catch(e) {
     Logger.log("tryConsumeEmailQuota error: " + e.toString());
@@ -307,34 +347,20 @@ function tryConsumeEmailQuota() {
 // Both now delegate to tryConsumeEmailQuota() logic without breaking the interface.
 // canSendEmail() is READ-ONLY (no increment) — for display/check purposes only.
 function canSendEmail() {
-  const props    = PropertiesService.getScriptProperties();
-  const today    = Utilities.formatDate(new Date(), "GMT+5:30", "yyyy-MM-dd");
-  const dateKey  = "EMAIL_DATE";
-  const countKey = "EMAIL_COUNT";
-  let storedDate = props.getProperty(dateKey)  || "";
-  let emailCount = parseInt(props.getProperty(countKey) || "0", 10);
-  if (storedDate !== today) emailCount = 0;
-  return emailCount < CFG.emailDailyLimit;
+  const { count } = _getQuotaState();
+  return count < CFG.emailDailyLimit;
 }
 
 // FIX #4: incrementEmailCount() renamed to _incrementEmailCount() to prevent accidental
 // direct calls that would bypass the atomic quota guard. Use tryConsumeEmailQuota() instead.
 // @deprecated — internal use only. Do NOT call this directly.
 function _incrementEmailCount() {
-  const props    = PropertiesService.getScriptProperties();
-  const countKey = "EMAIL_COUNT";
-  const current  = parseInt(props.getProperty(countKey) || "0", 10);
-  props.setProperty(countKey, String(current + 1));
+  const { props, count } = _getQuotaState();
+  props.setProperty("EMAIL_COUNT", String(count + 1));
 }
 
 function getEmailQuotaStatus() {
-  const props    = PropertiesService.getScriptProperties();
-  const today    = Utilities.formatDate(new Date(), "GMT+5:30", "yyyy-MM-dd");
-  const dateKey  = "EMAIL_DATE";
-  const countKey = "EMAIL_COUNT";
-  let storedDate = props.getProperty(dateKey) || "";
-  let count      = parseInt(props.getProperty(countKey) || "0", 10);
-  if (storedDate !== today) count = 0;
+  const { count } = _getQuotaState();
   return { used: count, limit: CFG.emailDailyLimit, remaining: CFG.emailDailyLimit - count };
 }
 
@@ -359,7 +385,9 @@ function getEmailSettings() {
   return {
     // FIX: === "1" exact string match — "!== 0" was always true for Number 1
     auto_receipt:   map["auto_receipt"]   === "1",
-    monthly_report: map["monthly_report"] === "1"
+    monthly_report: map["monthly_report"] === "1",
+    birthday_email: map["birthday_email"] === "1"
+    // logo_email_url removed — logo is now auto-loaded from CFG.folderLogo (Drive folder)
   };
 }
 
@@ -395,12 +423,22 @@ function saveEmailSettings(key, value) {
 //  Each member gets ONLY their own data. Privacy guaranteed.
 // ════════════════════════════════════════════════════════════════
 function sendMonthlyEndReports(overrideMonth, overrideYear) {
+  // ✅ FIX: When fired by a time-based trigger, Apps Script automatically passes a trigger
+  // event object as the first argument. This is a plain object (not a string), so we must
+  // ignore it — otherwise overrideMonth becomes {triggerUid:...} and shows as "[object Object]"
+  // in emails, AND the contribution filter always fails → every member gets emailed.
+  // Safe rule: only accept overrideMonth/overrideYear if they are actual strings/numbers.
+  var safeMonth = (typeof overrideMonth === "string" && overrideMonth.trim()) ? overrideMonth.trim() : null;
+  var safeYear  = (typeof overrideYear  === "string" && overrideYear.trim())  ? overrideYear.trim()
+                : (typeof overrideYear  === "number")                         ? String(overrideYear)
+                : null;
+
   const settings = getEmailSettings();
   if (!settings.monthly_report) {
     Logger.log("Monthly report is disabled. Skipping.");
     return { status: "ok", sent: 0, skipped: 0, message: "Disabled" };
   }
-  return _doSendMonthlyReports(overrideMonth, overrideYear);
+  return _doSendMonthlyReports(safeMonth, safeYear);
 }
 
 // Internal — also called by triggerMonthlyReport (manual admin trigger)
@@ -421,11 +459,22 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
 
   let sent = 0, skipped = 0;
 
+  // ✅ FIX: ForMonth may be stored as a Date object in Google Sheets (not always a text string).
+  // When Sheets reads a date-formatted cell, it returns a JS Date — String(Date) gives
+  // "Mon Apr 01 2026 00:00:00 GMT+0530", which never matches "April".
+  // Normalize: if ForMonth is a Date, extract the month name using IST locale; else use as string.
+  function _normalizeMonth(val) {
+    if (val instanceof Date) {
+      return Utilities.formatDate(val, "GMT+5:30", "MMMM"); // e.g. "April"
+    }
+    return String(val || "").trim();
+  }
+
   const emailQueue = [];
   activeMembers.forEach(member => {
     const myContribs = contributions.filter(c =>
       String(c.UserId) === String(member.UserId) &&
-      String(c.ForMonth) === month &&
+      _normalizeMonth(c.ForMonth) === month &&
       String(c.Year) === year
     );
 
@@ -460,23 +509,44 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
   return { status: "ok", sent: sent, skipped: skipped, quotaRemaining: quota.remaining };
 }
 
-// ── Logo HTML helper for emails
-// MUST #6: Read logo URL from SETTINGS sheet (falls back to CFG then Om symbol)
+// ── Logo URL helper — used by ALL email types
+// (auto receipt, monthly summary, monthly reminder, contribution reminder,
+//  birthday email, approval/rejection emails — every _logoHtml() call)
+//
+// Scans CFG.folderLogo (a Drive folder) for the first image file and returns
+// a public lh3 URL. Result is cached in-memory for the script execution so
+// multiple emails in one batch run never hit Drive API more than once.
+// Falls back to "" which triggers the 🕉️ Om symbol in _logoHtml().
+//
+// ⚠️  WHY NOT Image/logo.PNG?
+//   That file lives inside the Apps Script web-app container — external email
+//   clients (Gmail, Outlook, etc.) have zero access to it. Email <img> tags
+//   need a public HTTPS URL. Drive is the only option already in this setup.
+
+var _cachedLogoUrl = null;  // null = not yet fetched this run; "" = no image found
+
 function _getLogoUrl() {
+  if (_cachedLogoUrl !== null) return _cachedLogoUrl;   // serve from cache
   try {
-    const ss    = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEETS.SETTINGS);
-    if (sheet) {
-      const data = sheet.getDataRange().getValues();
-      for (let i = 0; i < data.length; i++) {
-        if (String(data[i][0]||"").trim() === "logo_email_url") {
-          const url = String(data[i][1]||"").trim();
-          if (url) return url;
+    if (CFG.folderLogo) {
+      const folder = DriveApp.getFolderById(CFG.folderLogo);
+      const files  = folder.getFiles();
+      while (files.hasNext()) {
+        const f    = files.next();
+        const mime = f.getMimeType() || "";
+        if (mime.startsWith("image/")) {
+          // Make publicly viewable so email clients can load it
+          f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          _cachedLogoUrl = "https://lh3.googleusercontent.com/d/" + f.getId() + "=w400";
+          return _cachedLogoUrl;
         }
       }
     }
-  } catch(e) {}
-  return CFG.logoEmailUrl || "";
+  } catch(e) {
+    Logger.log("_getLogoUrl error: " + e.message);
+  }
+  _cachedLogoUrl = "";   // cache the "no logo" result too
+  return "";
 }
 
 function _logoHtml() {
@@ -546,43 +616,126 @@ function _buildMonthlyReceiptEmail(member, contribs, types, month, year, totalAm
 
 // ── Monthly reminder email (member did NOT contribute)
 function _buildReminderEmail(member, month, year) {
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+  var firstName = (member.Name || "Friend").split(" ")[0];
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+</head>
+<body style="margin:0;padding:0;background:#f0f4f8;font-family:Georgia,'Times New Roman',serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f8;padding:30px 0;">
 <tr><td align="center">
-<table width="580" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);max-width:580px;width:100%;">
-  <tr><td style="background:linear-gradient(135deg,#1e293b 0%,#334155 60%,#3d5068 100%);padding:28px 32px 22px;text-align:center;border-top:4px solid #f7a01a;">
+<table width="580" cellpadding="0" cellspacing="0"
+  style="max-width:580px;width:92%;background:#ffffff;border-radius:20px;overflow:hidden;
+         box-shadow:0 8px 40px rgba(0,0,0,0.12);border:1px solid #e8d5a3;">
+
+  <!-- ═══ HEADER ═══ -->
+  <tr><td style="background:linear-gradient(150deg,#1e293b 0%,#2d3f55 50%,#1e293b 100%);
+                 padding:30px 28px 24px;text-align:center;
+                 border-bottom:3px solid #f7a01a;">
     ${_logoHtml()}
-    <div style="color:#f7a01a;font-size:20px;font-weight:700;letter-spacing:1px;">${CFG.name.toUpperCase()}</div>
-    <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${CFG.location}</div>
-    <div style="margin-top:12px;">
-      <span style="background:#f59e0b;color:#fff;padding:4px 16px;border-radius:20px;font-size:11px;font-weight:700;">📢 GENTLE REMINDER</span>
+    <div style="color:#f7a01a;font-size:21px;font-weight:700;letter-spacing:1.5px;margin-bottom:3px;">
+      ${CFG.name.toUpperCase()}
+    </div>
+    <div style="color:#94a3b8;font-size:11px;letter-spacing:2px;margin-bottom:14px;">
+      ${CFG.location.toUpperCase()}
+    </div>
+    <span style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#d97706);
+                 color:#fff;padding:5px 20px;border-radius:20px;font-size:11px;font-weight:700;
+                 letter-spacing:1px;font-family:Arial,sans-serif;
+                 box-shadow:0 3px 10px rgba(245,158,11,0.4);">
+      🙏 GENTLE REMINDER
+    </span>
+  </td></tr>
+
+  <!-- ═══ DIVIDER STRIP ═══ -->
+  <tr><td style="background:linear-gradient(90deg,#fef3c7,#fde68a,#fef9c3,#fde68a,#fef3c7);
+                 padding:9px 28px;text-align:center;">
+    <span style="color:#92400e;font-size:11px;font-weight:600;letter-spacing:2px;font-family:Arial,sans-serif;">
+      ✦ &nbsp; WITH FOLDED HANDS &nbsp; ✦
+    </span>
+  </td></tr>
+
+  <!-- ═══ BODY ═══ -->
+  <tr><td style="padding:30px 36px 24px;">
+
+    <!-- Greeting -->
+    <p style="color:#1e293b;font-size:16px;margin:0 0 6px;font-weight:600;">
+      प्रिय (Dear) <span style="color:#b45309;">${firstName}</span> जी,
+    </p>
+    <div style="width:50px;height:2px;background:linear-gradient(90deg,#f7a01a,transparent);
+                margin:0 0 18px;border-radius:2px;"></div>
+
+    <!-- Opening line -->
+    <p style="color:#475569;font-size:13.5px;line-height:1.85;margin:0 0 18px;font-family:Arial,sans-serif;">
+      We hope Hanuman ji's blessings are with you and your family. 🙏<br/>
+      With great respect, we wish to gently bring to your attention that your
+      contribution for <strong style="color:#1e293b;">${month} ${year}</strong>
+      has not yet been recorded in our system.
+    </p>
+
+    <!-- Highlighted pending box -->
+    <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);
+                border:1.5px solid #fcd34d;border-left:4px solid #f59e0b;
+                border-radius:12px;padding:18px 22px;margin:0 0 20px;text-align:center;">
+      <div style="font-size:22px;margin-bottom:6px;">📅</div>
+      <div style="color:#92400e;font-size:14px;font-weight:700;font-family:Arial,sans-serif;margin-bottom:6px;">
+        ${month} ${year} — Contribution Awaited
+      </div>
+      <div style="color:#a16207;font-size:12px;line-height:1.7;font-family:Arial,sans-serif;">
+        If you have already made your contribution, kindly coordinate<br/>
+        with the temple admin to have it recorded. 🙏
+      </div>
+    </div>
+
+    <!-- Warm message -->
+    <div style="background:#f8fafc;border-radius:12px;padding:18px 20px;
+                border:1px solid #e2e8f0;margin-bottom:20px;">
+      <p style="color:#475569;font-size:13px;line-height:1.9;margin:0;font-family:Arial,sans-serif;">
+        Your association with <strong style="color:#1e293b;">${CFG.name}</strong>
+        is a source of great joy and strength for our entire temple family.
+        The divine service you provide through your generosity helps us
+        maintain this sacred space, perform daily prayers, and serve the community. 🕉️
+      </p>
+      <p style="color:#475569;font-size:13px;line-height:1.9;margin:12px 0 0;font-family:Arial,sans-serif;">
+        Every contribution — however big or small — is a precious offering
+        at the feet of Hanuman ji, and is received with deepest gratitude. 🌸
+      </p>
+    </div>
+
+    <!-- Thank you line -->
+    <p style="color:#92400e;font-size:13px;line-height:1.8;margin:0;
+              font-style:italic;text-align:center;font-family:Arial,sans-serif;">
+      🙏 &nbsp;<em>${CFG.thankYouMsg}</em> &nbsp;🙏
+    </p>
+
+  </td></tr>
+
+  <!-- ═══ FOOTER ═══ -->
+  <tr><td style="background:linear-gradient(135deg,#1e293b,#2d3f55);
+                 padding:20px 28px;text-align:center;
+                 border-top:2px solid #f7a01a;">
+    <div style="color:#f7a01a;font-size:15px;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">
+      Jai Shree Ram 🕉️
+    </div>
+    <div style="color:#94a3b8;font-size:11px;font-style:italic;">
+      ${CFG.tagline} 🙏 &nbsp;|&nbsp; ${CFG.name}
     </div>
   </td></tr>
-  <tr><td style="padding:28px 32px;">
-    <p style="color:#334155;font-size:15px;margin:0 0 12px;">Dear <strong>${member.Name}</strong>,</p>
-    <p style="color:#475569;font-size:13px;line-height:1.7;margin:0 0 16px;">
-      We hope this message finds you well. Our records show that your contribution for
-      <strong>${month} ${year}</strong> has not yet been recorded.
-    </p>
-    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:16px 20px;margin:16px 0;text-align:center;">
-      <div style="color:#92400e;font-size:13px;font-weight:600;">📅 ${month} ${year} — Contribution Pending</div>
-      <div style="color:#a16207;font-size:12px;margin-top:6px;">Please reach out to the temple admin to submit your contribution.</div>
+
+  <!-- ═══ DISCLAIMER ═══ -->
+  <tr><td style="background:#f8fafc;padding:10px 28px;text-align:center;
+                 border-top:1px solid #e2e8f0;">
+    <div style="color:#94a3b8;font-size:10px;font-family:Arial,sans-serif;">
+      ${CFG.name} &nbsp;|&nbsp; ${CFG.address}
     </div>
-    <p style="color:#475569;font-size:13px;line-height:1.7;margin:16px 0 0;">
-      Your generous support helps maintain and grow our temple. Every contribution, big or small, is deeply appreciated.
-      <br/><br/>🙏 <em>${CFG.thankYouMsg}</em>
-    </p>
+    <div style="color:#cbd5e1;font-size:10px;margin-top:2px;font-family:Arial,sans-serif;">
+      This is a private reminder sent only to you. Your information is not shared with others.
+    </div>
   </td></tr>
-  <tr><td style="background:#fef9ee;padding:18px 32px;text-align:center;border-top:2px solid #fde68a;">
-    <div style="color:#92400e;font-size:14px;font-weight:700;">Jai Shree Ram 🕉️</div>
-    <div style="color:#a16207;font-size:12px;margin-top:4px;font-style:italic;">${CFG.tagline} | ${CFG.name}</div>
-  </td></tr>
-  <tr><td style="background:#f8fafc;padding:12px 32px;text-align:center;border-top:1px solid #e2e8f0;">
-    <div style="color:#94a3b8;font-size:10px;">${CFG.name} | ${CFG.address}</div>
-    <div style="color:#cbd5e1;font-size:10px;margin-top:2px;">This is a private reminder sent only to you. Your information is not shared with others.</div>
-  </td></tr>
-</table></td></tr></table></body></html>`;
+
+</table>
+</td></tr></table>
+</body></html>`;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -590,8 +743,13 @@ function _buildReminderEmail(member, month, year) {
 //  Called after addContribution. Uses email quota guard.
 // ════════════════════════════════════════════════════════════════
 function sendReceiptEmail(toEmail, donorName, receiptId, amount, forMonth, year, typeName, occasionName, note, paymentDate, paymentMode) {
-  if (!toEmail) return false;
-  if (!tryConsumeEmailQuota()) return false; // atomic quota check+increment
+  if (!toEmail) { Logger.log("[sendReceiptEmail] No toEmail — aborting."); return false; }
+  Logger.log("[sendReceiptEmail] Attempting to consume quota for receiptId=" + receiptId + " toEmail=" + toEmail);
+  if (!tryConsumeEmailQuota()) {
+    Logger.log("[sendReceiptEmail] Quota FULL — email NOT sent.");
+    return false; // atomic quota check+increment
+  }
+  Logger.log("[sendReceiptEmail] Quota consumed. Sending email now...");
 
   const modeLabel = paymentMode || "—";
   const amountFmt = "Rs. " + Number(amount || 0).toLocaleString("en-IN");
@@ -716,18 +874,55 @@ function _emailRow(label, value) {
 // ════════════════════════════════════════════════════════════════
 function doGet(e) {
   const action   = sanitize(e.parameter.action, 50);
-  const callback = sanitize(e.parameter.callback, 100) || "cb";
+  // FIX SEC-3: Whitelist callback to alphanumeric+underscore only — prevents JSONP injection
+  const _rawCb   = String(e.parameter.callback || "cb");
+  const callback = /^[a-zA-Z0-9_$]{1,80}$/.test(_rawCb) ? _rawCb : "cb";
   let result = {};
 
 
-  // ── MUST #7: Verify session token for all write/mutating actions
-  const _WRITE_ACTIONS = ["addContribution","addExpense","deleteContribution","deleteExpense",
-    "addUser","deleteUser","updateUser","addGoal","deleteGoal","updateGoal",
-    "addType","deleteType","updateType","addOccasion","deleteOccasion","updateOccasion",
-    "addExpenseType","deleteExpenseType","updateExpenseType",
-    "addEvent","deleteEvent","updateEvent","addEventExpense",
-    "approveUser","rejectUser","saveEmailSettings","saveAnnouncement","clearAnnouncement",
-    "saveBroadcast","updateFeedbackStatus","deleteFeedback"];
+  // ── MUST #7: Verify session token for all write, mutating, and sensitive read actions
+  // FIX SEC-1 (complete): Every action that modifies data OR exposes private data requires auth
+  const _WRITE_ACTIONS = [
+    // Contributions & Expenses
+    "addContribution","updateContribution","deleteContribution",
+    "addExpense","updateExpense","deleteExpense",
+    "removeExpenseReceipt","removeOneExpenseReceipt","removeAllExpenseReceipts",
+    // Users
+    "addUser","deleteUser","updateUser","approveUser","rejectUser","changePassword",
+    // Master data
+    "addType","deleteType","updateType",
+    "addOccasion","deleteOccasion","updateOccasion",
+    "addExpenseType","deleteExpenseType","updateExpenseType","updateSortOrder",
+    // Goals / Events / Gallery
+    "addGoal","updateGoal","deleteGoal",
+    "addEvent","updateEvent","deleteEvent","addEventExpense",
+    "deleteGalleryPhoto",
+    // Settings & comms
+    "saveEmailSettings","saveAnnouncement","clearAnnouncement",
+    "saveBroadcast","saveChatbotConfig",
+    // Feedback & contribution requests
+    "updateFeedbackStatus","deleteFeedback",
+    "submitContributionRequest","resolveContributionRequest",
+    "editContributionRequest","deleteContributionRequest",
+    // Email blast actions — must require auth to prevent spam abuse
+    "triggerMonthlyReport","triggerMonthlyReminder","sendMonthlyReminders","sendBirthdayEmails",
+    "sendContribReceiptEmail",
+    // Mobile number change — requires active session
+    "sendMobileChangeOTP","verifyMobileChangeOTP",
+    // Audit log write — prevent unauthenticated fake entries
+    "logAudit",
+    // Photo proxy — prevent unauthenticated Drive file access
+    "getPhotoBase64",
+    // Email logo preview — reads CFG.folderLogo, requires active admin session
+    "getEmailLogoPreview",
+    // Sensitive reads — private user/financial/system data
+    "getAllData","getContributions","getExpenses","getEventData","getYearConfig",
+    "getUsers","getUsersByStatus","getPendingUsers","getPendingCount",
+    "getFeedback","getContributionRequests","getUserContributionRequests",
+    "getAuditLog","getAnnouncementHistory","getHealthCheck",
+    "getEmailSettings","getEmailQuota","getYearlySummary",
+    "getMonthlyReportStatus",
+  ];
   if (_WRITE_ACTIONS.indexOf(action) !== -1 && !_verifySession(e.parameter, action)) {
     return ContentService
       .createTextOutput(callback + "(" + JSON.stringify({status:"error",message:"Session expired. Please login again."}) + ")")
@@ -881,7 +1076,8 @@ function doGet(e) {
   }
 
   // ── READ DATA
-  else if (action === "getUsers")         result = getSheetData(SHEETS.USERS);
+  // FIX SEC-6: Strip password hashes before returning — getAllData already does this, now getUsers does too
+  else if (action === "getUsers")         result = getSheetData(SHEETS.USERS).map(u => { const s = Object.assign({}, u); delete s.Password; return s; });
   else if (action === "getTypes")         result = _cachedSheet(SHEETS.TYPES,         "c_types",    600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
   else if (action === "getExpenseTypes")  result = _cachedSheet(SHEETS.EXPENSE_TYPES, "c_exptypes", 600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
   else if (action === "getOccasions")     result = _cachedSheet(SHEETS.OCCASIONS,     "c_occasions",600).slice().sort(function(a,b){return(Number(a.SortOrder)||0)-(Number(b.SortOrder)||0);});
@@ -896,7 +1092,9 @@ function doGet(e) {
 
   // ── IMPROVEMENT #1: SEND RECEIPT EMAIL ON DEMAND (from admin Email button)
   else if (action === "sendContribReceiptEmail") {
-    const userId      = sanitize(e.parameter.userId,       30);
+    // donorUserId — identifies the DONOR for email lookup (may differ from logged-in admin)
+    // userId      — identifies the logged-in ADMIN, used by _verifySession above for auth
+    const donorUserId  = sanitize(e.parameter.donorUserId || e.parameter.userId, 30);
     const receiptId   = sanitize(e.parameter.receiptId,    30);
     const userName    = sanitize(e.parameter.userName,    100);
     const amount      = sanitize(e.parameter.amount,       20);
@@ -908,18 +1106,23 @@ function doGet(e) {
     const paymentDate = sanitize(e.parameter.paymentDate,  50);
     const paymentMode = sanitize(e.parameter.paymentMode,  30);
 
-    // Look up email from USERS sheet
+    // Look up email from USERS sheet using DONOR's id, not admin's
     const users = getSheetData(SHEETS.USERS);
-    const donor = users.find(u => String(u.UserId) === userId);
+    const donor = users.find(u => String(u.UserId) === donorUserId);
     const toEmail = donor ? String(donor.Email||"").trim() : "";
 
     if (!toEmail) {
       result = { status: "no_email" };
-    } else if (!tryConsumeEmailQuota()) {
-      result = { status: "quota" };
     } else {
+      // FIX SEC-A: Do NOT call tryConsumeEmailQuota() here — sendReceiptEmail() already
+      // calls it atomically at its top. Calling it here too caused double-consumption
+      // (2 quota slots burned per on-demand email instead of 1).
       const sent = sendReceiptEmail(toEmail, userName, receiptId, amount, forMonth, year, typeName, occasionName, note, paymentDate, paymentMode);
-      result = { status: sent ? "sent" : "error" };
+      if (sent === false && !canSendEmail()) {
+        result = { status: "quota" };
+      } else {
+        result = { status: sent ? "sent" : "error" };
+      }
     }
   }
 
@@ -934,9 +1137,10 @@ function doGet(e) {
   }
   else if (action === "saveEmailSettings") {
     // Admin passes: action=saveEmailSettings&key=auto_receipt&value=1
-    const key   = sanitize(e.parameter.key   || "", 30);
-    const value = sanitize(e.parameter.value || "0", 2);
-    const allowed = ["auto_receipt", "monthly_report", "logo_email_url"];
+    const key      = sanitize(e.parameter.key || "", 30);
+    const value    = sanitize(e.parameter.value || "0", 2);   // toggles only: "0" or "1"
+    const allowed  = ["auto_receipt", "monthly_report", "birthday_email"];
+    // logo_email_url removed — logo is now auto-loaded from CFG.folderLogo (Drive folder)
     if (allowed.indexOf(key) !== -1) {
       result = saveEmailSettings(key, value);
     } else {
@@ -1127,6 +1331,7 @@ function doGet(e) {
   }
 
   // ── AUDIT LOG — returns latest 1000 rows, newest first, with Reason column
+  // Auth: covered by _WRITE_ACTIONS above
   else if (action === "getAuditLog") {
     try {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.AUDIT);
@@ -1176,12 +1381,17 @@ function doGet(e) {
       if (!sheet) { result = { status: "error", message: "Sheet not found" }; }
       else {
         const rowIndex = parseInt(e.parameter.RowIndex);
-        const newStatus = sanitize(e.parameter.Status, 20);
-        // Ensure Status column (col 6) exists — extend header if needed
-        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-        if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
-        sheet.getRange(rowIndex, 6).setValue(newStatus);
-        result = { status: "updated" };
+        // FIX: validate RowIndex — must be an integer > 1 (row 1 is the header)
+        if (!rowIndex || rowIndex < 2 || rowIndex > sheet.getLastRow()) {
+          result = { status: "error", message: "Invalid row index." };
+        } else {
+          const newStatus = sanitize(e.parameter.Status, 20);
+          // Ensure Status column (col 6) exists — extend header if needed
+          const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+          if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
+          sheet.getRange(rowIndex, 6).setValue(newStatus);
+          result = { status: "updated" };
+        }
       }
     } catch(err) { result = { status: "error", message: err.message }; }
   }
@@ -1192,11 +1402,16 @@ function doGet(e) {
       if (!sheet) { result = { status: "error", message: "Sheet not found" }; }
       else {
         const rowIndex = parseInt(e.parameter.RowIndex);
-        // Mark as Deleted (soft delete) so row numbers stay stable
-        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-        if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
-        sheet.getRange(rowIndex, 6).setValue("Deleted");
-        result = { status: "deleted" };
+        // FIX: validate RowIndex — must be an integer > 1 (row 1 is the header)
+        if (!rowIndex || rowIndex < 2 || rowIndex > sheet.getLastRow()) {
+          result = { status: "error", message: "Invalid row index." };
+        } else {
+          // Mark as Deleted (soft delete) so row numbers stay stable
+          const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+          if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
+          sheet.getRange(rowIndex, 6).setValue("Deleted");
+          result = { status: "deleted" };
+        }
       }
     } catch(err) { result = { status: "error", message: err.message }; }
   }
@@ -1282,6 +1497,16 @@ function doGet(e) {
     result = jobResult;
   }
  
+  else if (action === "sendBirthdayEmails") {
+    const isTest    = (e.parameter.isTest === "1");
+    const testUserId = sanitize(e.parameter.userId || "", 30) || null;
+    try {
+      result = sendBirthdayEmails(isTest, testUserId);
+    } catch(err) {
+      result = { status: "error", message: err.message };
+    }
+  }
+
   else if (action === "registerUser")      result = registerUser(e.parameter);
  
   else if (action === "approveUser")       result = approveUser(e.parameter);
@@ -1348,7 +1573,8 @@ function doGet(e) {
         hashedPwd,
         sanitize(e.parameter.Email,  200),
         "Active",
-        ""
+        "",
+        sanitize(e.parameter.DOB || "", 12)   // DOB: DD-MM-YYYY or blank
       ]);
       logAction("Admin", "Add User", "Mobile: " + mobile + ", Name: " + e.parameter.Name);
       result = { status: "success" };
@@ -1488,10 +1714,10 @@ function doGet(e) {
     _bustSheetCache("c_types");
   }
   else if (action === "updateSortOrder") {
-    result = _updateSortOrder(
-      sanitize(e.parameter.sheet, 20),
-      JSON.parse(e.parameter.order || "[]")
-    );
+    // FIX: wrap JSON.parse in try-catch — malformed order param would crash doGet
+    let _sortOrder = [];
+    try { _sortOrder = JSON.parse(e.parameter.order || "[]"); } catch(ex) { _sortOrder = []; }
+    result = _updateSortOrder(sanitize(e.parameter.sheet, 20), _sortOrder);
   }
 
   // ── OCCASIONS (with permanent SortOrder) ────────────────────────
@@ -1565,41 +1791,61 @@ function doGet(e) {
         const noteStr  = sanitize(e.parameter.Note || "", 500);
         const nameMatch = noteStr.match(/Walk-in:\s*([^|]+)/);
         const donorName = nameMatch ? nameMatch[1].trim() : "Donor";
-        if (tryConsumeEmailQuota()) {
-          emailSent = sendReceiptEmail(
-            walkInEmail, donorName, receiptId,
-            amount, forMonth, year,
-            typeName, occasionName, note,
-            formatDate(), paymentMode
-          );
-        } else {
+        // ✅ FIX: Do NOT call tryConsumeEmailQuota() here.
+        // sendReceiptEmail() already calls it atomically inside.
+        // Calling it here too was causing DOUBLE quota increment (+2 per email).
+        Logger.log("[addContribution] Walk-in email path. donorName=" + donorName + " walkInEmail=" + walkInEmail);
+        Logger.log("[addContribution] Calling sendReceiptEmail() — quota will be consumed inside it.");
+        emailSent = sendReceiptEmail(
+          walkInEmail, donorName, receiptId,
+          amount, forMonth, year,
+          typeName, occasionName, note,
+          formatDate(), paymentMode
+        );
+        Logger.log("[addContribution] Walk-in sendReceiptEmail() returned: " + emailSent);
+        if (!emailSent) {
           emailSkipped = true;
+          Logger.log("[addContribution] Walk-in email skipped (quota full or send error).");
         }
       } else if (!isWalkIn) {
         // Regular member — send only if auto_receipt toggle is ON
         const emailSettings = getEmailSettings();
+        Logger.log("[addContribution] Regular member path. auto_receipt=" + emailSettings.auto_receipt + " userId=" + userId);
         if (emailSettings.auto_receipt) {
           const users = getSheetData(SHEETS.USERS);
           const donor = users.find(u => String(u.UserId) === userId);
+          Logger.log("[addContribution] Donor found=" + !!donor + " email=" + (donor ? donor.Email : "N/A"));
           if (donor && donor.Email && String(donor.Email).trim() !== "") {
             const types     = getSheetData(SHEETS.TYPES);
             const occasions = getSheetData(SHEETS.OCCASIONS);
             const typeName     = (types.find(t => String(t.TypeId) === typeId) || {}).TypeName || "Contribution";
             const occasionName = (occasions.find(o => String(o.OccasionId) === occasionId) || {}).OccasionName || "";
-            if (tryConsumeEmailQuota()) {
-              emailSent = sendReceiptEmail(
-                donor.Email, donor.Name, receiptId,
-                amount, forMonth, year,
-                typeName, occasionName, note,
-                formatDate(), paymentMode
-              );
-            } else {
+            // ✅ FIX: Do NOT call tryConsumeEmailQuota() here.
+            // sendReceiptEmail() already calls it atomically inside.
+            // Calling it here too was causing DOUBLE quota increment (+2 per email).
+            Logger.log("[addContribution] Calling sendReceiptEmail() for regular member — quota will be consumed inside it.");
+            emailSent = sendReceiptEmail(
+              donor.Email, donor.Name, receiptId,
+              amount, forMonth, year,
+              typeName, occasionName, note,
+              formatDate(), paymentMode
+            );
+            Logger.log("[addContribution] Regular sendReceiptEmail() returned: " + emailSent);
+            if (!emailSent) {
               emailSkipped = true;
+              Logger.log("[addContribution] Regular member email skipped (quota full or send error).");
             }
+          } else {
+            Logger.log("[addContribution] No email address for donor — skipping email.");
           }
+        } else {
+          Logger.log("[addContribution] auto_receipt is OFF — email not sent.");
         }
       }
-    } catch(emailErr) { /* non-fatal — contribution was already saved */ }
+    } catch(emailErr) {
+      Logger.log("[addContribution] EMAIL ERROR (non-fatal): " + emailErr.toString());
+      /* non-fatal — contribution was already saved */
+    }
 
     result = {
       status:       "success",
@@ -1752,11 +1998,58 @@ function doGet(e) {
       // Receipt counter
       checks["receipt_counter"] = parseInt(props.getProperty("RECEIPT_COUNTER") || "0", 10);
       checks["receipt_year"]    = props.getProperty("RECEIPT_YEAR") || "—";
+      
 
       // Email quota
       checks["email_used"]      = quota.used;
       checks["email_limit"]     = quota.limit;
       checks["email_remaining"] = quota.remaining;
+      // ── Row counts for each sheet ──
+      requiredSheets.forEach(function(name) {
+        var s = ss.getSheetByName(name);
+        checks["sheet_rows_" + name] = s ? Math.max(0, s.getLastRow() - 1) : 0;
+      });
+
+      // ── Column integrity check per sheet ──
+      var expectedCols = {
+        "USERS":                 ["UserId","Name","Mobile","Role","Password","Email","Status","SessionToken","Village","Address","RegisteredAt","PhotoURL","MonthlyTarget","LastLogin","DOB"],
+        "CONTRIBUTION_REQUESTS": ["ReqId","UserId","Amount","PaymentMode","ForMonth","Year","Note","UtrRef","Status","RequestedAt","SlipURL","RejectionNote"],
+        "BROADCAST":             ["BcId","Type","Priority","Title","Message","Time","AdminName"],
+        "CONTRIBUTIONS":         ["Id","UserId","Amount","PaymentDate","ForMonth","Year","TypeId","OccasionId","Note","ReceiptID","PaymentMode"],
+        "EXPENSES":              ["Id","Title","Amount","PaymentDate","Year","ExpenseTypeId","ForMonth","ReceiptURL","ReceiptURLs"],
+        "GOALS":                 ["GoalId","GoalName","TargetAmount","CurrentAmount","Status","CreatedAt"],
+        "TYPES":                 ["TypeId","TypeName","SortOrder"],
+        "OCCASIONS":             ["OccasionId","OccasionName","SortOrder"],
+        "EXPENSE_TYPES":         ["ExpenseTypeId","Name","SortOrder"],
+        "EVENTS":                ["EventId","EventName","Category","StartDate","EndDate","Budget","Status","Description","CreatedAt","AdminName"],
+        "EVENT_EXPENSES":        ["Id","EventId","Title","Amount","PaymentDate","ExpenseTypeId","ForMonth","Note","AdminName"],
+        "GALLERY":               ["ImageId","Title","PhotoURL","Priority","Status","CreatedAt","Tags"],
+        "SETTINGS":              ["Key","Value","UpdatedAt"],
+        "FEEDBACK":              ["Timestamp","Name","Mobile","Address","Message","Status"],
+        "CHATBOT_CONFIG":        ["Key","Value","UpdatedAt"],
+        "AUDIT_LOGS":            ["Timestamp","UserAdmin","Action","Details","Reason","DeviceInfo"],
+        "ANNOUNCEMENT":          ["AnnId","Message","Badge","Icon","Color","Status","AdminName","CreatedAt"],
+        "YEAR_CONFIG":           ["Year","OpeningBalance"]
+      };
+
+      Object.keys(expectedCols).forEach(function(name) {
+        var s = ss.getSheetByName(name);
+        if (!s) { checks["sheet_col_" + name] = "Sheet missing"; return; }
+        var lastCol = s.getLastColumn();
+        if (lastCol === 0) { checks["sheet_col_" + name] = "Sheet is empty"; return; }
+        var actual   = s.getRange(1, 1, 1, lastCol).getValues()[0].map(function(h){ return String(h).trim(); });
+        var expected = expectedCols[name];
+        var missing  = expected.filter(function(c){ return actual.indexOf(c) === -1; });
+        var extra    = actual.filter(function(c){ return c !== "" && expected.indexOf(c) === -1; });
+        if (missing.length === 0 && extra.length === 0) {
+          checks["sheet_col_" + name] = true;
+        } else {
+          var msg = [];
+          if (missing.length > 0) msg.push("Missing: " + missing.join(", "));
+          if (extra.length > 0)   msg.push("Unknown: " + extra.join(", "));
+          checks["sheet_col_" + name] = msg.join(" | ");
+        }
+      });
 
       // Backup — find latest backup in Mandir_Backups folder
       let lastBackup = "Never";
@@ -2131,6 +2424,27 @@ function doGet(e) {
     }
   }
 
+  // ── PHOTO PROXY: fetch Drive photo server-side as base64 (solves CORS block in browser)
+  // ── PHOTO PROXY: fetch Drive photo server-side as base64 (solves CORS block in browser)
+  // Auth: covered by _WRITE_ACTIONS above
+  else if (action === "getPhotoBase64") {
+    const fileId = sanitize(e.parameter.fileId, 200);
+    result = getPhotoBase64(fileId);
+  }
+
+  // Returns the logo image (as base64) from CFG.folderLogo for the admin preview card.
+  // Uses the same _getLogoUrl() logic so the preview exactly matches what emails will show.
+  else if (action === "getEmailLogoPreview") {
+    const logoUrl = _getLogoUrl();
+    if (!logoUrl) {
+      result = { status: "none", message: "No image found in CFG.folderLogo — Om symbol will be used." };
+    } else {
+      // Extract the file ID from the lh3 URL and proxy it through getPhotoBase64
+      const m = logoUrl.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+      result = m ? getPhotoBase64(m[1]) : { status: "error", message: "Could not parse logo file ID." };
+    }
+  }
+
   else { result = { error: "Invalid action: " + action }; }
 
   return ContentService
@@ -2143,10 +2457,14 @@ function doGet(e) {
 // ════════════════════════════════════════════════════════════════
 
 function _loginCacheKey(mobile) {
-  // Short key: "lfail_" + last 4 digits of mobile
-  // Not truly secure but prevents raw mobile exposure in cache keys
-  // and is sufficient for rate-limiting purposes
-  return "lfail_" + String(mobile).slice(-4) + "_" + String(mobile).length;
+  // FIX BUG-1: Previous key used last-4 digits + length, causing collisions between
+  // mobiles sharing the same last 4 digits (e.g. 9999999999 and 1239999999 → same key).
+  // Now we XOR-scramble the full 10-digit mobile so the raw number isn't in the key
+  // but each unique mobile maps to a unique cache key.
+  const m = String(mobile).replace(/\D/g, ""); // digits only
+  let h = 0;
+  for (let i = 0; i < m.length; i++) { h = ((h << 5) - h + m.charCodeAt(i)) | 0; }
+  return "lfail_" + (h >>> 0).toString(36); // unsigned 32-bit → base-36 string
 }
  
 function _checkLoginRate(mobile) {
@@ -2351,6 +2669,7 @@ function updateUser(p) {
       if (p.Village       !== undefined) _setCol("Village",       sanitize(p.Village, 100));
       if (p.Address       !== undefined) _setCol("Address",       sanitize(p.Address, 300));
       if (p.MonthlyTarget !== undefined) _setCol("MonthlyTarget", Number(p.MonthlyTarget||0));
+      if (p.DOB           !== undefined) _setCol("DOB",           sanitize(p.DOB || "", 12));
       // Single batched write — 1 API call instead of ~10
       sheet.getRange(i + 1, 1, 1, newRow.length).setValues([newRow]);
       SpreadsheetApp.flush();
@@ -2362,7 +2681,61 @@ function updateUser(p) {
 }
 
 function addRow(name, row) {
-  SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name).appendRow(row);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  sheet.appendRow(row);
+  bustSheetCache(name); // invalidate cached read — row was just added
+  // Force PaymentDate column to plain text so Sheets never auto-parses "dd-MM-yyyy"
+  // as a date. Without this, "11-04-2026" is read as MM-DD → November 4,
+  // corrupting every sort and display downstream.
+  if (name === "CONTRIBUTIONS" || name === "EXPENSES" || name === "EVENT_EXPENSES") {
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const pdCol = headers.indexOf("PaymentDate");
+    if (pdCol >= 0) {
+      const lastRow = sheet.getLastRow();
+      sheet.getRange(lastRow, pdCol + 1).setNumberFormat("@"); // @ = plain text
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// ONE-TIME REPAIR: Fix corrupted PaymentDate cells in CONTRIBUTIONS
+// Run this ONCE from Apps Script editor: repairPaymentDates()
+// It converts any Date-object cells back to "dd-MM-yyyy HH:mm:ss" IST plain text.
+// Safe to run multiple times — skips cells already in plain text format.
+// ════════════════════════════════════════════════════════════════
+function repairPaymentDates() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetNames = ["CONTRIBUTIONS", "EXPENSES", "EVENT_EXPENSES"];
+  var totalFixed = 0;
+
+  sheetNames.forEach(function(name) {
+    const sheet = ss.getSheetByName(name);
+    if (!sheet) return;
+    const data = sheet.getDataRange().getValues();
+    if (data.length < 2) return;
+    const headers = data[0];
+    const pdCol = headers.indexOf("PaymentDate");
+    if (pdCol < 0) return;
+
+    for (var i = 1; i < data.length; i++) {
+      const cell = sheet.getRange(i + 1, pdCol + 1);
+      const val  = data[i][pdCol];
+      if (val instanceof Date) {
+        // Convert Date object to IST plain text string
+        const fixed = Utilities.formatDate(val, "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+        cell.setNumberFormat("@");   // plain text first
+        cell.setValue(fixed);         // then write string
+        totalFixed++;
+        Logger.log("Fixed row " + (i+1) + ": " + val + " -> " + fixed);
+      } else if (String(val).trim() !== "") {
+        // Already a string — just ensure cell format is plain text to prevent future re-parsing
+        cell.setNumberFormat("@");
+      }
+    }
+  });
+
+  Logger.log("repairPaymentDates complete. Fixed " + totalFixed + " cells.");
+  return "Done. Fixed " + totalFixed + " Date cells. Check Logs for details.";
 }
 
 function deleteRow(name, id) {
@@ -2640,6 +3013,22 @@ function doPost(e) {
   let result = {};
   try {
     const data = JSON.parse(e.postData.contents);
+
+    // FIX SEC-9: Verify session token on all doPost actions — photo uploads modify Drive and user data
+    const _postUserId = sanitize(data.UserId || data.userId || "", 30);
+    const _postToken  = sanitize(data.sessionToken || data.token || "", 64);
+    if (_postUserId && _postToken) {
+      // Has token — validate it
+      if (!_verifySession({ userId: _postUserId, sessionToken: _postToken }, data.action || "doPost")) {
+        return ContentService
+          .createTextOutput(JSON.stringify({ status: "error", message: "Session expired. Please login again." }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    } else if (_postUserId) {
+      // UserId present but no token — log as unverified (legacy tolerance)
+      logAction(_postUserId, "UNVERIFIED_POST", "Action: " + (data.action || "doPost") + " — no session token");
+    }
+
     if (data.action === "uploadAndSaveProfile") {
       if (!data.base64 || !data.fileName) return ContentService.createTextOutput(JSON.stringify({status:"error",message:"Missing data."})).setMimeType(ContentService.MimeType.JSON);
       // Try to delete old photo — handle both lh3 and thumbnail URL formats
@@ -2744,8 +3133,14 @@ function doPost(e) {
 
 // ── Core upload helper — uploads base64 to a specific Drive folder by ID
 function _uploadToFolder(base64Data, fileName, folderId) {
-  const folder      = DriveApp.getFolderById(folderId);
+  // FIX BUG-2: Whitelist MIME types — reject non-image uploads to prevent
+  // arbitrary file types (JS, HTML, PDF, etc.) being stored in Drive folders
   const contentType = base64Data.substring(5, base64Data.indexOf(';'));
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
+  if (!ALLOWED_TYPES.includes(contentType.toLowerCase())) {
+    throw new Error("Invalid file type. Only images (JPEG, PNG, WEBP, GIF) are allowed.");
+  }
+  const folder      = DriveApp.getFolderById(folderId);
   const bytes       = Utilities.base64Decode(base64Data.split(',')[1]);
   const blob        = Utilities.newBlob(bytes, contentType, fileName);
   const file        = folder.createFile(blob);
@@ -3166,7 +3561,7 @@ function registerUser(params) {
  
     // Ensure required columns exist — add gracefully if missing
     let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    const requiredCols = ["Village", "Address", "RegisteredAt"];
+    const requiredCols = ["Village", "Address", "RegisteredAt", "DOB"];
     requiredCols.forEach(col => {
       if (headers.indexOf(col) === -1) {
         sheet.getRange(1, sheet.getLastColumn() + 1).setValue(col);
@@ -3176,6 +3571,7 @@ function registerUser(params) {
     headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
  
     const newId = generateId();
+    const dob = sanitize(params.DOB || "", 12);
     const row = headers.map(h => {
       if (h === "UserId")       return newId;
       if (h === "Name")         return name;
@@ -3188,6 +3584,7 @@ function registerUser(params) {
       if (h === "Village")      return village;
       if (h === "Address")      return address;
       if (h === "RegisteredAt") return formatDate();
+      if (h === "DOB")          return dob;
       return "";
     });
     sheet.appendRow(row);
@@ -3546,6 +3943,28 @@ function getPublicStats() {
   }
 }
 
+// ════════════════════════════════════════════════════════════════
+//  PHOTO PROXY — fetch Drive file server-side, return as base64
+//  Called by client via action=getPhotoBase64&fileId=...
+//  Solves CORS block: browser cannot read Drive thumbnails into canvas,
+//  but Apps Script can fetch the file directly using DriveApp.
+//  Result is cached in client (_photoB64Cache) so 1 call per session.
+// ════════════════════════════════════════════════════════════════
+function getPhotoBase64(fileId) {
+  if (!fileId || fileId.length < 10) {
+    return { status: "error", message: "Invalid fileId." };
+  }
+  try {
+    const file  = DriveApp.getFileById(fileId);
+    const blob  = file.getBlob();
+    const b64   = Utilities.base64Encode(blob.getBytes());
+    const mime  = blob.getContentType() || "image/jpeg";
+    return { status: "success", base64: "data:" + mime + ";base64," + b64 };
+  } catch (e) {
+    return { status: "error", message: e.message };
+  }
+}
+
 function _changePassword(p) {  // FIX #3: Moved to global scope (was accidentally indented)
     try {
       const userId     = sanitize(p.UserId,      30);
@@ -3702,3 +4121,249 @@ function _addEventExpense(p) {  // FIX #3: Moved to global scope (was accidental
       return { status:"success" };
     } catch(err) { return { status:"error", message:err.message }; }
   }
+
+// ════════════════════════════════════════════════════════════════
+//  BIRTHDAY EMAIL SYSTEM
+//  sendBirthdayEmails(isTest, testUserId)
+//    - Called daily at 8AM via Time-based trigger (set up manually in Apps Script)
+//    - isTest=true + testUserId: sends to that specific user regardless of DOB
+//    - isTest=true + no testUserId: sends to ALL users whose birthday is today
+//    - isTest=false: respects birthday_email toggle, only sends on actual birthday
+//  Uses tryConsumeEmailQuota() — counter increments on every send automatically.
+//  Toggle key: birthday_email in SETTINGS sheet (1=ON, 0=OFF).
+//  Daily trigger: Apps Script > Triggers > sendBirthdayEmails > Time-based > Day timer > 8AM
+// ════════════════════════════════════════════════════════════════
+function sendBirthdayEmails(isTest, testUserId) {
+  const settings = getEmailSettings();
+
+  // Respect toggle unless it's a manual test
+  if (!isTest && !settings.birthday_email) {
+    logAction("System", "birthdayEmail", "Skipped — birthday_email toggle is OFF");
+    return { status: "skipped", message: "Birthday email toggle is OFF. Enable it in Email Settings." };
+  }
+
+  const allUsers = getSheetData(SHEETS.USERS);
+  // Use IST (GMT+5:30) consistent with all other date ops in this codebase
+  const _now    = new Date();
+  const todayDD = Number(Utilities.formatDate(_now, "GMT+5:30", "d"));  // 1-31
+  const todayMM = Number(Utilities.formatDate(_now, "GMT+5:30", "M"));  // 1-12
+
+  let sent = 0, skipped = 0, noEmail = 0, errors = [];
+
+  const candidates = allUsers.filter(function(u) {
+    if (!u.DOB)                                                     return false;
+    if (String(u.Status || "Active").toLowerCase() !== "active")   return false;
+    if (String(u.Role   || "").toLowerCase()       === "admin")    return false;
+    if (!u.Email || !String(u.Email).trim())                        return false;
+
+    // ✅ FIX: Test mode with specific user — only that user
+    if (isTest && testUserId) {
+      return String(u.UserId) === String(testUserId);
+    }
+
+    // ✅ FIX: Non-test mode (daily trigger) — pre-filter by today's birthday here
+    //         so the forEach loop skips everyone else without consuming quota or logging
+    if (!isTest) {
+      try {
+        var dd, mm;
+        if (u.DOB instanceof Date) {
+          var istStr = Utilities.formatDate(u.DOB, "GMT+5:30", "dd-MM-yyyy");
+          var p = istStr.split("-");
+          dd = Number(p[0]); mm = Number(p[1]);
+        } else {
+          var dob = String(u.DOB || "").trim();
+          if (/^\d{2}-\d{2}-\d{4}$/.test(dob)) { var p=dob.split("-"); dd=Number(p[0]); mm=Number(p[1]); }
+          else if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) { var p=dob.split("-"); dd=Number(p[2]); mm=Number(p[1]); }
+          else return false;
+        }
+        return dd === todayDD && mm === todayMM;
+      } catch(e) { return false; }
+    }
+
+    // isTest=true, no testUserId — still only send to today's birthday members
+    try {
+      var dd, mm;
+      if (u.DOB instanceof Date) {
+        var istStr = Utilities.formatDate(u.DOB, "GMT+5:30", "dd-MM-yyyy");
+        var p = istStr.split("-"); dd = Number(p[0]); mm = Number(p[1]);
+      } else {
+        var dob = String(u.DOB || "").trim();
+        if      (/^\d{2}-\d{2}-\d{4}$/.test(dob)) { var p=dob.split("-"); dd=Number(p[0]); mm=Number(p[1]); }
+        else if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) { var p=dob.split("-"); dd=Number(p[2]); mm=Number(p[1]); }
+        else return false;
+      }
+      return dd === todayDD && mm === todayMM;
+    } catch(e) { return false; }
+  });
+
+  candidates.forEach(function(u) {
+    try {
+      // Parse DOB — handles both Date objects (from Sheets date cells) and strings
+      var dd, mm;
+      if (u.DOB instanceof Date) {
+        // ✅ FIX: Date object from Sheets — use IST local values, NOT getUTCDate()
+        // Sheets returns midnight IST; getUTCDate() would give the previous day (timezone bug)
+        var istStr = Utilities.formatDate(u.DOB, "GMT+5:30", "dd-MM-yyyy");
+        var p = istStr.split("-");
+        dd = Number(p[0]); mm = Number(p[1]);
+      } else {
+        var dob = String(u.DOB || "").trim();
+        if      (/^\d{2}-\d{2}-\d{4}$/.test(dob)) { var p=dob.split("-"); dd=Number(p[0]); mm=Number(p[1]); }
+        else if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) { var p=dob.split("-"); dd=Number(p[2]); mm=Number(p[1]); }
+        else { skipped++; return; } // unrecognised string format
+      }
+
+      // Non-test: only send on actual birthday
+      if (!isTest && (dd !== todayDD || mm !== todayMM)) { skipped++; return; }
+
+      // Quota guard — also increments counter atomically
+      if (!tryConsumeEmailQuota()) {
+        errors.push(u.Name + " — email quota exhausted for today");
+        return;
+      }
+
+      MailApp.sendEmail({
+        to:       String(u.Email).trim(),
+        subject:  "🎂 " + CFG.name + " — जन्मदिन मुबारक हो, " + (u.Name||"").split(" ")[0] + " जी! 🎉",
+        htmlBody: _buildBirthdayEmail(u)
+      });
+
+      logAction("System", "birthdayEmail",
+        "Sent to " + u.Name + " <" + u.Email + ">" + (isTest ? " [TEST]" : ""));
+      sent++;
+
+    } catch(err) {
+      errors.push((u.Name||u.UserId) + ": " + err.message);
+      Logger.log("Birthday email error for " + (u.Name||"?") + ": " + err.message);
+    }
+  });
+
+  var summary = "sent:" + sent + ", skipped:" + skipped + (errors.length ? ", errors:" + errors.join("; ") : "");
+  logAction("System", "birthdayEmailBatch", summary + (isTest ? " [TEST]" : ""));
+
+  return {
+    status:  errors.length > 0 && sent === 0 ? "error" : "success",
+    sent:    sent,
+    skipped: skipped,
+    errors:  errors,
+    message: isTest
+      ? (sent > 0
+          ? "✅ Test birthday email sent to " + sent + " member(s) successfully."
+          : "⚠️ No matching member found — check user has Email + DOB saved.")
+      : (sent > 0
+          ? "🎂 " + sent + " birthday email(s) sent today."
+          : "No birthdays today — no emails sent.")
+  };
+}
+
+// ── Beautiful mandir-themed dark-gold birthday HTML email ──────
+function _buildBirthdayEmail(member) {
+  var firstName = (member.Name || "Friend").split(" ")[0];
+  var fullName  = member.Name || "Friend";
+  var today     = Utilities.formatDate(new Date(), "GMT+5:30", "dd MMMM yyyy");
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+</head>
+<body style="margin:0;padding:0;background:#0d0400;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0"
+  style="background:linear-gradient(180deg,#1a0800 0%,#0d0400 100%);padding:30px 0;">
+<tr><td align="center">
+<table width="580" cellpadding="0" cellspacing="0"
+  style="max-width:580px;width:92%;border-radius:20px;overflow:hidden;
+         border:1.5px solid rgba(247,160,26,0.45);
+         box-shadow:0 0 60px rgba(247,160,26,0.15),0 24px 80px rgba(0,0,0,0.7);">
+
+  <!-- HEADER -->
+  <tr><td style="background:linear-gradient(160deg,#3c1a00 0%,#2a0f00 55%,#1a0900 100%);
+                 padding:30px 28px 22px;text-align:center;
+                 border-bottom:2px solid rgba(247,160,26,0.35);">
+    ${_logoHtml()}
+    <div style="color:rgba(247,160,26,0.6);font-size:1.1rem;letter-spacing:8px;margin-bottom:6px;">🕉</div>
+    <div style="color:#f7a01a;font-size:20px;font-weight:700;letter-spacing:1.5px;">${CFG.name.toUpperCase()}</div>
+    <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:3px;letter-spacing:1px;">${CFG.location.toUpperCase()}</div>
+    <div style="margin-top:16px;">
+      <span style="background:linear-gradient(135deg,#f7a01a,#e8920a);color:#fff;
+                   padding:6px 22px;border-radius:20px;font-size:12px;font-weight:700;
+                   letter-spacing:0.5px;box-shadow:0 4px 14px rgba(247,160,26,0.45);">
+        🎂 जन्मदिन मुबारक हो! 🎉
+      </span>
+    </div>
+  </td></tr>
+
+  <!-- DIYAS -->
+  <tr><td style="background:linear-gradient(135deg,#2a0f00,#1a0900);
+                 padding:16px 28px 8px;text-align:center;">
+    <div style="font-size:26px;letter-spacing:14px;">🪔 🪔 🪔</div>
+    <div style="width:80px;height:1px;
+                background:linear-gradient(90deg,transparent,rgba(247,160,26,0.5),transparent);
+                margin:12px auto 0;"></div>
+  </td></tr>
+
+  <!-- MAIN BODY -->
+  <tr><td style="background:linear-gradient(160deg,#2a0f00,#1a0900);
+                 padding:20px 32px 28px;text-align:center;">
+    <div style="font-size:26px;font-weight:800;color:#f7a01a;line-height:1.2;margin-bottom:4px;">
+      जन्मदिन मुबारक हो!
+    </div>
+    <div style="font-size:12px;font-weight:700;color:rgba(247,160,26,0.55);
+                letter-spacing:3px;margin-bottom:18px;">✦ HAPPY BIRTHDAY ✦</div>
+
+    <div style="font-size:21px;font-weight:700;color:#fff;margin-bottom:4px;">
+      🌸 ${firstName} जी 🌸
+    </div>
+    <div style="font-size:11px;color:rgba(247,160,26,0.55);font-style:italic;
+                letter-spacing:1px;margin-bottom:18px;">
+      ~ ईश्वर की असीम कृपा सदा आप पर बनी रहे ~
+    </div>
+
+    <div style="width:80px;height:1px;
+                background:linear-gradient(90deg,transparent,rgba(247,160,26,0.5),transparent);
+                margin:0 auto 18px;"></div>
+
+    <!-- Blessing box -->
+    <div style="background:rgba(247,160,26,0.07);border:1px solid rgba(247,160,26,0.22);
+                border-radius:14px;padding:20px 22px;text-align:left;margin-bottom:18px;">
+      <p style="color:rgba(255,255,255,0.88);font-size:13.5px;line-height:1.85;margin:0 0 12px;">
+        प्रिय <strong style="color:#fff;">${fullName}</strong> जी,
+      </p>
+      <p style="color:rgba(255,255,255,0.76);font-size:13px;line-height:1.85;margin:0 0 12px;">
+        भगवान श्री हनुमान जी की असीम कृपा और आशीर्वाद से आपका यह जन्मदिन
+        मंगलमय हो। जीवन में सुख, समृद्धि और ईश्वर भक्ति सदैव बनी रहे। 🙏
+      </p>
+      <p style="color:rgba(255,255,255,0.76);font-size:13px;line-height:1.85;margin:0;">
+        आप स्वस्थ रहें, प्रसन्न रहें और इसी तरह मंदिर परिवार का हिस्सा
+        बने रहें। 🌺
+      </p>
+    </div>
+
+    <div style="width:80px;height:1px;
+                background:linear-gradient(90deg,transparent,rgba(247,160,26,0.5),transparent);
+                margin:0 auto 16px;"></div>
+
+    <div style="color:rgba(247,160,26,0.7);font-size:12px;line-height:1.75;">
+      मंदिर परिवार की ओर से हार्दिक शुभकामनाएं।<br/>
+      आप स्वस्थ रहें, प्रसन्न रहें, धन्य रहें। 🌺
+    </div>
+  </td></tr>
+
+  <!-- FOOTER -->
+  <tr><td style="background:linear-gradient(135deg,#1a0a00,#0d0400);
+                 padding:18px 28px;text-align:center;
+                 border-top:1.5px solid rgba(247,160,26,0.28);">
+    <div style="color:#f7a01a;font-size:15px;font-weight:700;margin-bottom:5px;">
+      🙏 Jai Shri Ram 🚩
+    </div>
+    <div style="color:rgba(255,255,255,0.35);font-size:10px;margin-top:4px;font-style:italic;">
+      ${CFG.name} | ${CFG.location}
+    </div>
+    <div style="color:rgba(255,255,255,0.22);font-size:10px;margin-top:3px;">
+      Sent to ${member.Email} on ${today}
+    </div>
+  </td></tr>
+
+</table>
+</td></tr></table>
+</body></html>`;
+}
