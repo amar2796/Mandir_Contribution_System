@@ -157,7 +157,36 @@ function postData(data) {
     window._activeJsonpCount = (window._activeJsonpCount||0) + 1;
     function _fin(){ if(!done){ done=true; window._activeJsonpCount = Math.max(0,(window._activeJsonpCount||1)-1); } }
     window[cb]=function(res){ _fin(); clearTimeout(timer); delete window[cb]; script.remove(); resolve(res); };
-    const timer=setTimeout(()=>{ _fin(); window[cb]=function(){try{delete window[cb];script.remove();}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Request timed out.")); },20000);
+    const timer=setTimeout(()=>{
+      _fin();
+      window[cb]=function(){try{delete window[cb];script.remove();}catch(e){}};
+      try{script.remove();}catch(e){}
+      // ── Read-back verify for contribution writes ──────────────────
+      // Apps Script may have committed the write even though the JSONP
+      // response was lost (cold start, network blip). For addContribution
+      // only: wait 3s then check if a new receipt appeared in getAllData.
+      // If yes → resolve as success instead of rejecting with timeout.
+      // For all other actions: reject normally (safe, no double-write risk).
+      const _action = data && data.action;
+      if (_action === "addContribution") {
+        const _sentId = String(data.Id || "");
+        setTimeout(function() {
+          mandirCacheBust("getAllData");
+          getData("getAllData").then(function(fresh) {
+            const contribs = (fresh && fresh.contributions) || [];
+            const found = contribs.find(function(c) { return String(c.Id) === _sentId; });
+            if (found) {
+              // Write committed on server — treat as success
+              resolve({ status: "success", receiptId: found.ReceiptID || "", _recoveredFromTimeout: true });
+            } else {
+              reject(new Error("Request timed out."));
+            }
+          }).catch(function() { reject(new Error("Request timed out.")); });
+        }, 3000);
+      } else {
+        reject(new Error("Request timed out."));
+      }
+    },20000);
     script.onerror=function(){ _fin(); clearTimeout(timer); window[cb]=function(){try{delete window[cb];}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Network error.")); };
     script.src=API_URL+"?"+new URLSearchParams(data).toString()+"&callback="+cb; document.body.appendChild(script);
   });
@@ -200,15 +229,18 @@ window._mandirPending = {}; // in-flight deduplication map
 
 /* ── TTL config per action (milliseconds) ── */
 const _CACHE_TTL = {
-  getAllData:       5 * 60 * 1000,  // 5 min  — contributions/expenses change on writes
-  getTypes:        10 * 60 * 1000, // 10 min — rarely changes
-  getOccasions:    10 * 60 * 1000, // 10 min
-  getExpenseTypes: 10 * 60 * 1000, // 10 min
-  getEventData:     2 * 60 * 1000, // 2 min
-  getGallery:       5 * 60 * 1000, // 5 min
-  getEmailSettings: 5 * 60 * 1000, // 5 min
-  getChatbotConfig: 5 * 60 * 1000, // 5 min
-  getYearlySummary: 5 * 60 * 1000, // 5 min
+  getAllData:                5 * 60 * 1000,  // 5 min  — contributions/expenses change on writes
+  getTypes:                10 * 60 * 1000,  // 10 min — rarely changes
+  getOccasions:            10 * 60 * 1000,  // 10 min
+  getExpenseTypes:         10 * 60 * 1000,  // 10 min
+  getEventData:             2 * 60 * 1000,  // 2 min
+  getGallery:               5 * 60 * 1000,  // 5 min
+  getEmailSettings:         5 * 60 * 1000,  // 5 min
+  getChatbotConfig:         5 * 60 * 1000,  // 5 min
+  getYearlySummary:         5 * 60 * 1000,  // 5 min
+  // N1: Requests badge — 60s TTL so rapid badge re-reads hit cache, but
+  //     resolveContributionRequest busts it immediately on every approve/reject.
+  getContributionRequests:  1 * 60 * 1000,  // 60 s
   // Actions NOT listed here are never cached (audit log, feedback, session checks etc.)
 };
 
@@ -236,14 +268,23 @@ const _CACHE_BUST_ON_WRITE = {
   addGoal:            ["getAllData"],
   updateGoal:         ["getAllData"],
   deleteGoal:         ["getAllData"],
-  addEvent:           ["getEventData"],
-  updateEvent:        ["getEventData"],
-  deleteEvent:        ["getEventData"],
-  addEventExpense:    ["getEventData"],
-  deleteGalleryPhoto: ["getGallery"],
-  sendReceiptEmail:   ["getEmailSettings"],
-  saveChatbotConfig:  ["getChatbotConfig"],
-  saveEmailSettings:  ["getEmailSettings"],
+  addEvent:                  ["getEventData"],
+  updateEvent:               ["getEventData"],
+  deleteEvent:               ["getEventData"],
+  addEventExpense:           ["getEventData", "getAllData", "getYearlySummary"], // C4: event expenses also appear in getAllData.expenses
+  // C1: approveUser / rejectUser mutate user rows in getAllData
+  approveUser:               ["getAllData"],
+  rejectUser:                ["getAllData"],
+  // C2: resolveContributionRequest mutates request rows (badge + contributions list)
+  resolveContributionRequest:["getAllData", "getContributionRequests"],
+  // C5: receipt uploads mutate expense rows stored in getAllData
+  uploadExpenseReceipt:      ["getAllData"],
+  removeOneExpenseReceipt:   ["getAllData"],
+  removeAllExpenseReceipts:  ["getAllData"],
+  deleteGalleryPhoto:        ["getGallery"],
+  sendReceiptEmail:          ["getEmailSettings"],
+  saveChatbotConfig:         ["getChatbotConfig"],
+  saveEmailSettings:         ["getEmailSettings"],
 };
 
 /* ═══ getCached(action) ═══════════════════════════════════════
@@ -385,8 +426,39 @@ function mandirCacheBust(action) {
    
         case "goals":
           if (typeof renderGoals === "function") renderGoals();
+          if (typeof loadSummary === "function") loadSummary();
           break;
-   
+
+        // Lightweight scopes — only what each entity actually needs
+        case "events":
+          if (typeof loadSummary === "function") loadSummary();
+          break;
+
+        case "expenses_from_event":
+          if (typeof renderExpenses     === "function") renderExpenses();
+          if (typeof loadSummary        === "function") loadSummary();
+          if (typeof loadExpenseFilters === "function") loadExpenseFilters();
+          break;
+
+        case "requests":
+          // Requests only affect the badge and contributions view
+          if (typeof render      === "function") render();
+          if (typeof loadSummary === "function") loadSummary();
+          break;
+
+        case "summary":
+          if (typeof loadSummary === "function") loadSummary();
+          break;
+
+        case "yearConfig":
+          if (typeof loadSummary === "function") loadSummary();
+          break;
+
+        case "feedback":
+        case "broadcast":
+          // No data globals change — _srExtra handles UI-only re-renders
+          break;
+
         case "all":
         default:
           // Full re-render — same as original init() minus the data fetch
@@ -412,7 +484,6 @@ function mandirCacheBust(action) {
    
     } catch(err) {
       // On any error: fall back silently to full init()
-      console.warn("smartRefresh failed, falling back to init():", err);
       if (typeof init === "function") init();
     }
     // Keep inline dashboard in sync after every data refresh
@@ -1097,6 +1168,19 @@ function exportReceiptPDFForWhatsApp(rid){
 async function sendReceiptEmailDirect(rid){
   const stored = window._rcptStore[rid];
   if(!stored){toast("Receipt data not found.","error");return;}
+
+  // Disable button immediately to prevent double-send
+  var _emailBtn = document.querySelector("button[onclick*=\"sendReceiptEmailDirect('" + rid + "')\"]")
+                || document.querySelector("button[onclick*='sendReceiptEmailDirect(\"" + rid + "\")']");
+  if(_emailBtn){
+    if(_emailBtn._inFlight) return; // already sending
+    _emailBtn._inFlight = true;
+    _emailBtn.disabled = true;
+    _emailBtn._origHtml = _emailBtn.innerHTML;
+    _emailBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+  }
+  function _resetBtn(){ if(_emailBtn){ _emailBtn.disabled=false; _emailBtn._inFlight=false; _emailBtn.innerHTML=_emailBtn._origHtml||'<i class="fa-solid fa-envelope"></i> Email'; } }
+
   const {c,userName,typeName,occasionName} = stored;
   const displayRID = _displayRID(c);
   toast("📧 Sending receipt email...","");
@@ -1114,15 +1198,19 @@ async function sendReceiptEmailDirect(rid){
       note:          c.Note||"",
       paymentDate:   c.PaymentDate||"",
       paymentMode:   c.PaymentMode||"",
-      donorUserId:   c.UserId||"",        // donor — for email lookup only
-      userId:        _s?.userId||"",      // admin — for session verification
+      donorUserId:   c.UserId||"",
+      userId:        _s?.userId||"",
       sessionToken:  _s?.sessionToken||""
     });
-    if(res && res.status==="sent")     toast("✅ Receipt email sent successfully!","");
+    _resetBtn();
+    if(res && res.status==="sent"){
+      toast("✅ Receipt email sent successfully!","");
+      setTimeout(function(){ if(typeof _refreshEmailQuotaUI==="function") _refreshEmailQuotaUI(); }, 1000);
+    }
     else if(res && res.status==="no_email") toast("⚠️ No email address on record for this donor.","warn");
     else if(res && res.status==="quota")    toast("⚠️ Daily email limit reached. Try again tomorrow.","warn");
     else toast("❌ Email send failed.","error");
-  } catch(err){ toast("❌ "+err.message,"error"); }
+  } catch(err){ _resetBtn(); toast("❌ "+err.message,"error"); }
 }
 
 /* Legacy alias kept for backward compatibility */

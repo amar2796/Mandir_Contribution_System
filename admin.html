@@ -5483,7 +5483,7 @@
       if (typeof getEmailQuotaCached !== "function") return;
 
       getEmailQuotaCached().then(function(q) {
-        if (!q || typeof q.used === "undefined") return;
+        if (!q || typeof q.used === "undefined") { console.warn("[QUOTA] Invalid quota response."); return; }
         var pct   = Math.round((q.used / q.limit) * 100);
         var color = q.remaining < 10 ? "#f87171"
                   : q.remaining < 30 ? "#fbbf24" : "#60a5fa";
@@ -5510,6 +5510,57 @@
        Extra UI calls per entity — these are what app.js is missing.
        Each function is called AFTER app.js's own render calls finish.
     ───────────────────────────────────────────────────────────────── */
+    /* ── Helper: rebuild the contribution-form type & occasion <select> dropdowns ── */
+    function _rebuildContribFormDropdowns() {
+      var typeEl = document.getElementById("type");
+      if (typeEl && typeof types !== "undefined") {
+        var curType = typeEl.value;
+        typeEl.innerHTML = '<option value="">-- Select Type --</option>' +
+          types.map(function(t) {
+            return '<option value="' + t.TypeId + '"' + (String(t.TypeId) === curType ? ' selected' : '') + '>' + escapeHtml(t.TypeName) + '</option>';
+          }).join("");
+      }
+      var occEl = document.getElementById("occasion");
+      if (occEl && typeof occasions !== "undefined") {
+        var curOcc = occEl.value;
+        occEl.innerHTML = '<option value="">-- None --</option>' +
+          occasions.map(function(o) {
+            return '<option value="' + o.OccasionId + '"' + (String(o.OccasionId) === curOcc ? ' selected' : '') + '>' + escapeHtml(o.OccasionName) + '</option>';
+          }).join("");
+      }
+    }
+
+    /* ── Helper: rebuild bulk-insert user dropdown ── */
+    function _rebuildBkUserDropdown() {
+      var bkUser = document.getElementById("bk_user");
+      if (bkUser && typeof users !== "undefined") {
+        bkUser.innerHTML = users
+          .filter(function(u) {
+            return u.Role !== "Admin" && String(u.Status || "").toLowerCase() === "active";
+          })
+          .map(function(u) {
+            return '<option value="' + u.UserId + '">' + escapeHtml(u.Name) + '</option>';
+          })
+          .join("");
+      }
+    }
+
+    /* ── Helper: sync Dashboard private data copies from updated admin globals ── */
+    function _dashSyncAndRender() {
+      if (typeof dash_contributions === "undefined") return;
+      try {
+        dash_contributions = (typeof data !== "undefined")         ? data.slice()        : dash_contributions;
+        dash_expenses      = (typeof expenses !== "undefined")     ? expenses.slice()    : dash_expenses;
+        dash_users         = (typeof users !== "undefined")        ? users.filter(function(u){ return (u.Role||"").toLowerCase() !== "admin"; }) : dash_users;
+        dash_types         = (typeof types !== "undefined")        ? types.slice()       : dash_types;
+        dash_expenseTypes  = (typeof expenseTypes !== "undefined") ? expenseTypes.slice(): dash_expenseTypes;
+        dash_occasions     = (typeof occasions !== "undefined")    ? occasions.slice()   : dash_occasions;
+        dash_yearConfig    = (typeof yearConfig !== "undefined")   ? yearConfig.slice()  : dash_yearConfig;
+        // Re-apply filter and re-render all dashboard panels
+        if (typeof dash_applyFilter === "function") dash_applyFilter();
+      } catch(e) { console.warn("[_dashSyncAndRender]", e); }
+    }
+
     var _srExtra = {
 
       contributions: function() {
@@ -5521,18 +5572,21 @@
         _sr_call(_ct_buildOccasionSelect);
         // Goals table shows collected totals from contributions
         _sr_call(renderGoals);
-        // Sidebar live totals
-        _sr_call(updateSidebarSummary);
+        // NOTE: app.js "contributions" case calls loadSummary() → updateSidebarSummary()
+        //       → _hmOnPeriodChange() internally. Do NOT call any of them again here.
         // Bust yearly summary so next open is fresh
         mandirCacheBust("getYearlySummary");
-        // Refresh email quota — a receipt email may have been sent
-        // Slight delay so Apps Script counter is committed before we read it
-        setTimeout(_refreshEmailQuotaUI, 1200);
-        // Refresh pending-request badge quietly
-        getData("getContributionRequests").then(function(res) {
-          window._allRequests = Array.isArray(res) ? res : [];
-          _sr_call(_updateReqBadge);
+        // NOTE: email quota is NOT refreshed here — receipt open/send has its own
+        // dedicated hook (_refreshEmailQuotaUI). smartRefresh("contributions") is called
+        // after SAVING a contribution, not after merely viewing/sending a receipt email.
+        // Refresh pending-request badge quietly using getCached to avoid extra network hit
+        getCached("getAllData").then(function(res) {
+          if (res && Array.isArray(res.requests)) {
+            window._allRequests = res.requests;
+            _sr_call(_updateReqBadge);
+          }
         }).catch(function(){});
+        // D6: _dashSyncFromAdmin() is already called by app.js at end of smartRefresh.
       },
 
       expenses: function() {
@@ -5541,33 +5595,33 @@
         // Expense tracker (et_) dropdowns
         _sr_call(_et_buildTypeSelect);
         _sr_call(_et_buildYearSelect);
-        // Sidebar live totals
-        _sr_call(updateSidebarSummary);
+        // NOTE: app.js "expenses" case calls loadSummary() already.
         // Bust yearly summary
         mandirCacheBust("getYearlySummary");
+        // D6: _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
       },
 
       users: function() {
-        // Summary card shows total-members count
+        // NOTE: app.js "users" case does NOT call loadSummary — do it here.
         _sr_call(loadSummary);
-        // Sidebar live totals (member count updates here too)
-        _sr_call(updateSidebarSummary);
+        // D4: loadSummary() already calls updateSidebarSummary() internally — removed duplicate.
+        // FIX-8: Payment Tracker uses users[] — re-render if tracker is open
+        if (typeof runTracker === "function") {
+          var trPage = document.getElementById("trackerPage");
+          if (trPage && trPage.classList.contains("active")) _sr_call(runTracker);
+        }
+        // FIX-15: Re-fetch pending-request badge after user approve/reject
+        getCached("getAllData").then(function(res) {
+          if (res && Array.isArray(res.requests)) {
+            window._allRequests = res.requests;
+            _sr_call(_updateReqBadge);
+          }
+        }).catch(function(){});
         // approveUser and rejectUser both send an email — refresh quota counter
         setTimeout(_refreshEmailQuotaUI, 1200);
-        // Bulk-insert user dropdown (separate from the main loadUsers() select)
-        var bkUser = document.getElementById("bk_user");
-        if (bkUser && typeof users !== "undefined") {
-          bkUser.innerHTML = users
-            .filter(function(u) {
-              return u.Role !== "Admin" &&
-                     String(u.Status || "").toLowerCase() === "active";
-            })
-            .map(function(u) {
-              return '<option value="' + u.UserId + '">' +
-                     escapeHtml(u.Name) + '</option>';
-            })
-            .join("");
-        }
+        // FIX: rebuild bulk-insert user dropdown
+        _rebuildBkUserDropdown();
+        // D6: _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
       },
 
       types: function() {
@@ -5575,6 +5629,8 @@
         _sr_call(_cr_buildFilterDropdowns);
         // Tracker type select (stale after a new type is added)
         _sr_call(_ct_buildTypeSelect);
+        // FIX-10: Also rebuild the contribution FORM type <select>
+        _rebuildContribFormDropdowns();
       },
 
       occasions: function() {
@@ -5582,6 +5638,8 @@
         _sr_call(_cr_buildFilterDropdowns);
         // Tracker occasion select (stale after a new occasion is added)
         _sr_call(_ct_buildOccasionSelect);
+        // FIX-10: Also rebuild the contribution FORM occasion <select>
+        _rebuildContribFormDropdowns();
       },
 
       expenseTypes: function() {
@@ -5592,58 +5650,121 @@
       },
 
       goals: function() {
-        // app.js calls renderGoals() when _origSmartRefresh is present.
-        // Also call it here as a safety net in case app.js original is absent.
-        _sr_call(renderGoals);
-        _sr_call(updateSidebarSummary);
+        // app.js "goals" case now calls renderGoals() + loadSummary().
+        // D6: _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
+        // updateSidebarSummary is called internally by loadSummary — no extra call needed.
       },
 
       events: function() {
-        /* app.js does not handle events; cache bust is via _CACHE_BUST_ON_WRITE */
-        mandirCacheBust("getEvents");
+        // FIX-3: bust event cache and reload
+        mandirCacheBust("getEventData");
+        // L1: mandirCacheBust("getEvents") removed — "getEvents" is never fetched/cached.
+        // Use _evBust() if available (defined in same block as _events),
+        // otherwise fall back to direct flag (same-block access only)
+        if (typeof _evBust === "function") _evBust();
         _sr_call(loadEvents);
+        // FIX-4: event expenses are a subset of expenses — bust expense tracker too
+        _sr_call(_et_buildYearSelect);
+        // app.js "events" case now calls loadSummary() directly.
+        // D6: _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
+      },
+
+      expenses_from_event: function() {
+        // FIX-4: Used after saveEventExpense — refreshes both event and expense views
+        mandirCacheBust("getEventData");
+        // L1: mandirCacheBust("getEvents") removed — "getEvents" is never fetched/cached.
+        if (typeof _evBust === "function") _evBust();
+        _sr_call(loadEvents);
+        _sr_call(_exp_populateTypeDropdown);
+        _sr_call(_et_buildTypeSelect);
+        _sr_call(_et_buildYearSelect);
+        // app.js "expenses_from_event" case now calls loadSummary() directly.
+        mandirCacheBust("getYearlySummary");
+        // D6: _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
       },
 
       summary: function() {
-        _sr_call(loadSummary);
-        _sr_call(updateSidebarSummary);
+        // D3: app.js "summary" case now calls loadSummary() directly — removed duplicate.
+        // FIX-13: bust yearly summary cache so Dashboard re-reads fresh data
+        mandirCacheBust("getYearlySummary");
+        // D6: _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
+      },
+
+      yearConfig: function() {
+        // FIX-19: After saving year config / opening balance — re-render Dashboard
+        // D8: single bust (removed duplicate inside the if block below)
+        mandirCacheBust("getYearlySummary");
+        // D3: app.js "yearConfig" case now calls loadSummary() directly — removed duplicate.
+        // D6: _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
+        if (typeof loadYearSummary === "function") {
+          var ysPage = document.getElementById("yearSummaryPage");
+          if (ysPage && ysPage.classList.contains("active")) {
+            loadYearSummary(); // cache already busted above — no second mandirCacheBust
+          }
+        }
+      },
+
+      requests: function() {
+        // FIX-17: Dedicated entity for contribution request approve/reject
+        // W1: use getCached instead of raw getData to avoid unnecessary network hit
+        getCached("getAllData").then(function(res) {
+          if (res && Array.isArray(res.requests)) {
+            window._allRequests = res.requests;
+            _sr_call(_updateReqBadge);
+          }
+        }).catch(function(){});
+        // D3: app.js "requests" case now calls loadSummary() directly — removed duplicate.
+        setTimeout(_refreshEmailQuotaUI, 1200);
+        // D6: _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
+      },
+
+      feedback: function() {
+        // FIX-16: Feedback resolve/delete — re-render feedback admin table
+        // app.js "feedback" case is now a no-op break, so no duplicate loadSummary here.
+        if (typeof _fbAdminRender === "function") _sr_call(_fbAdminRender);
+        else if (typeof renderFeedbackAdmin === "function") _sr_call(renderFeedbackAdmin);
+      },
+
+      broadcast: function() {
+        // FIX-18: After sending broadcast — re-render broadcast history
+        // app.js "broadcast" case is now a no-op break, so no duplicate loadSummary here.
+        if (typeof renderBroadcastHistory === "function") _sr_call(renderBroadcastHistory);
+        else if (typeof _bcRenderHistory === "function") _sr_call(_bcRenderHistory);
       },
 
       all: function() {
-        // Run all extras
+        // FIX-22: Run ALL extras including previously missing ones
+        // D1: removed _sr_call(loadSummary)  — app.js "all" default already calls it.
+        // D2: removed _sr_call(renderGoals)  — app.js "all" default already calls it.
+        // D6: removed _sr_call(_dashSyncAndRender) — _dashSyncFromAdmin() fires via app.js.
+        // L1: removed mandirCacheBust("getEvents") — "getEvents" is never fetched/cached.
         _sr_call(_cr_buildFilterDropdowns);
         _sr_call(_ct_buildYearSelect);
         _sr_call(_ct_buildTypeSelect);
         _sr_call(_ct_buildOccasionSelect);
-        _sr_call(renderGoals);
         _sr_call(_exp_populateTypeDropdown);
         _sr_call(_et_buildTypeSelect);
         _sr_call(_et_buildYearSelect);
-        _sr_call(updateSidebarSummary);
-        _sr_call(loadSummary);
         _sr_call(loadEvents);
+        // NOTE: loadSummary() calls _hmOnPeriodChange() internally — no extra call needed.
+        _rebuildContribFormDropdowns();
+        _rebuildBkUserDropdown();
         mandirCacheBust("getYearlySummary");
-        mandirCacheBust("getEvents");
+        mandirCacheBust("getEventData");
+        // FIX-22: loadChatbotSettings was missing from "all"
+        if (typeof loadChatbotSettings === "function") {
+          var cbPage = document.getElementById("chatbotPage");
+          if (cbPage && cbPage.classList.contains("active")) _sr_call(loadChatbotSettings);
+        }
         // Refresh email quota counter in sidebar + EA page
         setTimeout(_refreshEmailQuotaUI, 1200);
-        getData("getContributionRequests").then(function(res) {
-          window._allRequests = Array.isArray(res) ? res : [];
-          _sr_call(_updateReqBadge);
+        // W1: use getCached instead of raw getData
+        getCached("getAllData").then(function(res) {
+          if (res && Array.isArray(res.requests)) {
+            window._allRequests = res.requests;
+            _sr_call(_updateReqBadge);
+          }
         }).catch(function(){});
-        // Rebuild bulk-insert dropdown
-        var bkUser = document.getElementById("bk_user");
-        if (bkUser && typeof users !== "undefined") {
-          bkUser.innerHTML = users
-            .filter(function(u) {
-              return u.Role !== "Admin" &&
-                     String(u.Status || "").toLowerCase() === "active";
-            })
-            .map(function(u) {
-              return '<option value="' + u.UserId + '">' +
-                     escapeHtml(u.Name) + '</option>';
-            })
-            .join("");
-        }
       }
     };
 
@@ -5661,28 +5782,45 @@
      *
      * All 28 call-sites (smartRefresh("contributions") etc.) work unchanged.
      */
+    // ── Debounced smartRefresh ─────────────────────────────────────
+    // When multiple callers fire smartRefresh() in quick succession
+    // (e.g. bulk insert loop, cascade of postData writes), this collapses
+    // them into a single render after 150 ms of silence.
+    // Scoped-entity calls win: if "contributions" and then "all" both fire
+    // within the window, the last call wins — which is always correct since
+    // "all" is a superset. Zero change to any calling code.
+    var _srDebounceTimer = null;
+    var _srPendingEntity = null;
+
     window.smartRefresh = function(entity) {
       entity = entity || "all";
 
-      // Step 1 — run app.js original (async, returns a Promise)
-      var origResult = (typeof window._origSmartRefresh === "function")
-        ? window._origSmartRefresh(entity)
-        : (typeof init === "function" ? init() : Promise.resolve());
+      // Accumulate entity — "all" is a superset so it always wins
+      if (!_srPendingEntity || entity === "all") {
+        _srPendingEntity = entity;
+      }
 
-      // Step 2 — after original finishes, fire admin extras
-      Promise.resolve(origResult).then(function() {
-        var extraFn = _srExtra[entity] || _srExtra["all"];
-        try { extraFn(); } catch(e) {
-          console.warn("[smartRefresh extra '" + entity + "']", e);
-        }
-      }).catch(function(e) {
-        // If app.js original failed, still try the extras (globals may be stale but UI should update)
-        console.warn("[smartRefresh orig failed for '" + entity + "', running extras anyway]", e);
-        var extraFn = _srExtra[entity] || _srExtra["all"];
-        try { extraFn(); } catch(e2) { console.warn("[smartRefresh extra fallback]", e2); }
-        // Last resort: full init
-        if (typeof init === "function") setTimeout(init, 200);
-      });
+      clearTimeout(_srDebounceTimer);
+      _srDebounceTimer = setTimeout(function() {
+        var resolvedEntity = _srPendingEntity || "all";
+        _srPendingEntity   = null;
+        _srDebounceTimer   = null;
+
+        // Step 1 — run app.js original (async, returns a Promise)
+        var origResult = (typeof window._origSmartRefresh === "function")
+          ? window._origSmartRefresh(resolvedEntity)
+          : (typeof init === "function" ? init() : Promise.resolve());
+
+        // Step 2 — after original finishes, fire admin extras
+        Promise.resolve(origResult).then(function() {
+          var extraFn = _srExtra[resolvedEntity] || _srExtra["all"];
+          try { extraFn(); } catch(e) {}
+        }).catch(function(e) {
+          var extraFn = _srExtra[resolvedEntity] || _srExtra["all"];
+          try { extraFn(); } catch(e2) { console.warn("[smartRefresh extra fallback]", e2); }
+          if (typeof init === "function") setTimeout(init, 200);
+        });
+      }, 150);
     };
     /* ═══════════════════════════════════════════════════════════════
        PERFORMANCE UTILITIES
@@ -7171,7 +7309,28 @@
       if (color) el.style.color = color;
     }
 
+    // ── loadSummary cache ──────────────────────────────────────────
+    // Stores last-computed totals and the array references they came from.
+    // If data/expenses/users arrays haven't changed since last call,
+    // we skip all .reduce()/.filter() loops and jump straight to DOM updates.
+    var _summaryCache = { data: null, expenses: null, users: null, result: null };
+
     function loadSummary() {
+      // Fast path: if all three source arrays are the same references as last time,
+      // skip recompute and re-apply the cached result directly to the DOM.
+      if (
+        _summaryCache.result &&
+        _summaryCache.data     === data &&
+        _summaryCache.expenses === expenses &&
+        _summaryCache.users    === users
+      ) {
+        _applySummaryResult(_summaryCache.result);
+        updateSidebarSummary();
+        _hmInitSelectors();
+        _hmOnPeriodChange();
+        return;
+      }
+
       // Total Members = ACTIVE users only (not Admins, not Pending, not Inactive)
       let memberCount = users.filter(
         (u) => u.Role !== "Admin" && String(u.Status || "Active").toLowerCase() === "active"
@@ -7195,36 +7354,9 @@
       const lastMonthE = expenses.filter(e => String(e.Year) === String(lastMonthYear) && e.ForMonth === lastMonth)
         .reduce((a, b) => a + Number(b.Amount || 0), 0);
 
-      function _trendHTML(cur, prev, invertColor) {
-        if (prev === 0 && cur === 0) return '<span style="color:#94a3b8;">— No data</span>';
-        if (prev === 0) return '<span style="color:#27ae60;">▲ New this month</span>';
-        const diff = cur - prev;
-        const pct = Math.abs(Math.round((diff / prev) * 100));
-        const up = diff >= 0;
-        const good = invertColor ? !up : up;
-        const color = diff === 0 ? "#94a3b8" : good ? "#27ae60" : "#e74c3c";
-        const arrow = diff === 0 ? "—" : (up ? "▲" : "▼");
-        return `<span style="color:${color};">${arrow} ${pct}% vs ${lastMonth}</span>`;
-      }
-
       // FIX #5 & #14: Include walk-in entries in all totals
       let totalC = data.reduce((a, b) => a + Number(b.Amount || 0), 0);
       let totalE = expenses.reduce((a, b) => a + Number(b.Amount || 0), 0);
-
-      _countUp(document.getElementById("totalUsers"), String(memberCount), "#6366f1");
-      _countUp(document.getElementById("totalContribution"), "₹" + fmt(totalC), "#27ae60");
-      _countUp(document.getElementById("totalExpense"), "₹" + fmt(totalE), "#e74c3c");
-
-      // Trends
-      const tU = document.getElementById("trendUsers");
-      if (tU) {
-        const thisM = users.filter(u => u.Role !== "Admin" && String(u.Status||"").toLowerCase() === "active").length;
-        tU.innerHTML = '<span style="color:#94a3b8;">Active members</span>';
-      }
-      const tC = document.getElementById("trendContrib");
-      if (tC) tC.innerHTML = _trendHTML(thisMonthC, lastMonthC, false);
-      const tE = document.getElementById("trendExpense");
-      if (tE) tE.innerHTML = _trendHTML(thisMonthE, lastMonthE, true);
 
       // Sum all opening balances from YEAR_CONFIG
       let totalOpening = yearConfig.reduce((sum, row) => {
@@ -7235,23 +7367,57 @@
         return sum + (isNaN(val) ? 0 : val);
       }, 0);
 
-      let net = totalOpening + totalC - totalE;
+      // Store computed result and source references for fast-path reuse
+      var _res = {
+        memberCount, totalC, totalE, totalOpening,
+        thisMonthC, lastMonthC, thisMonthE, lastMonthE, lastMonth
+      };
+      _summaryCache = { data, expenses, users, result: _res };
+      _applySummaryResult(_res);
+
+      updateSidebarSummary();
+      _hmInitSelectors();
+      _hmOnPeriodChange();
+    }
+
+    // Applies pre-computed summary result to DOM — used by both full and fast paths
+    function _applySummaryResult(r) {
+      function _trendHTML(cur, prev, invertColor) {
+        if (prev === 0 && cur === 0) return '<span style="color:#94a3b8;">— No data</span>';
+        if (prev === 0) return '<span style="color:#27ae60;">▲ New this month</span>';
+        const diff = cur - prev;
+        const pct = Math.abs(Math.round((diff / prev) * 100));
+        const up = diff >= 0;
+        const good = invertColor ? !up : up;
+        const color = diff === 0 ? "#94a3b8" : good ? "#27ae60" : "#e74c3c";
+        const arrow = diff === 0 ? "—" : (up ? "▲" : "▼");
+        return `<span style="color:${color};">${arrow} ${pct}% vs ${r.lastMonth}</span>`;
+      }
+
+      _countUp(document.getElementById("totalUsers"), String(r.memberCount), "#6366f1");
+      _countUp(document.getElementById("totalContribution"), "₹" + fmt(r.totalC), "#27ae60");
+      _countUp(document.getElementById("totalExpense"), "₹" + fmt(r.totalE), "#e74c3c");
+
+      const tU = document.getElementById("trendUsers");
+      if (tU) tU.innerHTML = '<span style="color:#94a3b8;">Active members</span>';
+      const tC = document.getElementById("trendContrib");
+      if (tC) tC.innerHTML = _trendHTML(r.thisMonthC, r.lastMonthC, false);
+      const tE = document.getElementById("trendExpense");
+      if (tE) tE.innerHTML = _trendHTML(r.thisMonthE, r.lastMonthE, true);
+
+      const net = r.totalOpening + r.totalC - r.totalE;
       const netEl = document.getElementById("netBalance");
       _countUp(netEl, (net < 0 ? "−" : "") + "₹" + fmt(Math.abs(net)), net >= 0 ? "#27ae60" : "#e74c3c");
 
       const breakdownEl = document.getElementById("netBalanceBreakdown");
       if (breakdownEl) {
-        if (totalOpening > 0) {
+        if (r.totalOpening > 0) {
           breakdownEl.innerHTML =
-            `<span style="color:#64748b;font-size:10px;">Opening: <b style="color:#f7a01a;">₹${fmt(totalOpening)}</b> + Contributions − Expenses</span>`;
+            `<span style="color:#64748b;font-size:10px;">Opening: <b style="color:#f7a01a;">₹${fmt(r.totalOpening)}</b> + Contributions − Expenses</span>`;
         } else {
           breakdownEl.innerHTML = "";
         }
       }
-
-      updateSidebarSummary();
-      _hmInitSelectors();
-      _hmOnPeriodChange();
     }
 
     /* ═══════════════════════════════════════════════════════════
@@ -7822,7 +7988,7 @@
 
     /* Also call _hmRenderDashboard after _dashSyncFromAdmin so
        Walk-in and member lists refresh after any contribution is added */
-    var _origDashSync = typeof _dashSyncFromAdmin === "function" ? _dashSyncFromAdmin : null;
+    // L2: removed unused _origDashSync variable (was captured at parse-time, never referenced)
     document.addEventListener("DOMContentLoaded", function() {
       var origSync = window._dashSyncFromAdmin;
       if (typeof origSync === "function") {
@@ -7871,19 +8037,13 @@
       let sbe = document.getElementById("sb_exp");
       if (sbe) sbe.innerText = "₹" + fmt(yearE);
 
-      // Email quota — use cached value (no cache bust here; _refreshEmailQuotaUI
-      // handles busting when an email is actually sent)
-      if (typeof getEmailQuotaCached === "function") {
-        getEmailQuotaCached().then(function(q) {
-          if (!q || typeof q.used === "undefined") return;
-          var color = q.remaining < 10 ? "#f87171" : q.remaining < 30 ? "#fbbf24" : "#60a5fa";
-          var sbEq = document.getElementById("sb_email_quota");
-          if (sbEq) { sbEq.style.color = color; sbEq.innerText = q.used + " / " + q.limit + " used"; }
-          // H9: show/hide low-quota warning
-          var warnEl = document.getElementById("sb_quota_warn");
-          if (warnEl) warnEl.style.display = q.remaining < 10 ? "block" : "none";
-        }).catch(function() {});
-      }
+      // Email quota is NOT read here anymore.
+      // Reason: updateSidebarSummary() is called inside an async chain (after getCached resolves),
+      // so any flag-based skip logic races and fails. Instead:
+      //   • Page load:  init() calls _refreshEmailQuotaUI() once to populate the counter.
+      //   • After save: _submitContributionFromPreview calls _refreshEmailQuotaUI() when emailSent=true.
+      //   • All other quota refreshes: _refreshEmailQuotaUI() is called explicitly at each call site.
+      // This ensures the counter is ALWAYS updated by a single controlled path that busts the cache first.
       // Populate WA selectors
       let waMonth = document.getElementById("wa_month");
       let waYear = document.getElementById("wa_year");
@@ -8249,20 +8409,27 @@
         loadSummary();
         // Populate Contribution Records filter dropdowns on initial load
         setTimeout(function() { if (typeof _cr_buildFilterDropdowns === "function") _cr_buildFilterDropdowns(); }, 400);
-        // Load contribution request badge count
-        getData("getContributionRequests").then(function (res) {
+        // Load contribution request badge count — use cache so rapid init() calls don't stack requests
+        getCached("getContributionRequests").then(function (res) {
           window._allRequests = Array.isArray(res) ? res : [];
           _updateReqBadge();
         }).catch(function () { });
-        // Auto-refresh pending requests badge every 2 minutes
+        // Auto-refresh pending requests badge every 2 minutes.
+        // Busts cache first so each scheduled tick always hits the server (not stale cache),
+        // while ad-hoc reads within the 60s window still benefit from dedup.
         if (!window._reqBadgeTimer) {
           window._reqBadgeTimer = setInterval(function() {
-            getData("getContributionRequests").then(function(res) {
+            mandirCacheBust("getContributionRequests");
+            getCached("getContributionRequests").then(function(res) {
               window._allRequests = Array.isArray(res) ? res : [];
               _updateReqBadge();
             }).catch(function(){});
           }, 2 * 60 * 1000);
         }
+        // Populate email quota sidebar counter on page load.
+        // _refreshEmailQuotaUI is the single owner of sb_email_quota —
+        // updateSidebarSummary no longer reads quota to avoid async race.
+        if (typeof _refreshEmailQuotaUI === "function") _refreshEmailQuotaUI();
         // Auto-run health check once after data loads so the header
         // heartbeat dot shows the correct status colour from login
         if (!window._hcRanOnce && typeof runHealthCheck === "function") {
@@ -8321,24 +8488,28 @@
       });
     }
     function loadUsers() {
-      document.getElementById("user").innerHTML = users
+      const _luEl = document.getElementById("user");
+      if (_luEl) _luEl.innerHTML = users
         .filter((u) => u.Role !== "Admin" && String(u.Status || "").toLowerCase() === "active")
         .map((u) => `<option value="${u.UserId}">${u.Name}</option>`)
         .join("");
     }
     function loadTypes() {
-      document.getElementById("type").innerHTML = types
+      const _ltEl = document.getElementById("type");
+      if (_ltEl) _ltEl.innerHTML = types
         .map((t) => `<option value="${t.TypeId}">${t.TypeName}</option>`)
         .join("");
     }
     function loadExpenseTypes() {
-      document.getElementById("expenseType").innerHTML = expenseTypes
+      const _letEl = document.getElementById("expenseType");
+      if (_letEl) _letEl.innerHTML = expenseTypes
         .map((e) => `<option value="${e.ExpenseTypeId}">${e.Name}</option>`)
         .join("");
       if (typeof _exp_populateTypeDropdown === "function") _exp_populateTypeDropdown();
     }
     function loadOccasions() {
-      document.getElementById("occasion").innerHTML =
+      const _loEl = document.getElementById("occasion");
+      if (_loEl) _loEl.innerHTML =
         '<option value="">None</option>' +
         occasions
           .map(
@@ -8596,15 +8767,10 @@
         if (res.status === "updated") {
           toast("✅ Contribution updated.");
           closeModal();
+          // N2: removed updateLocalData() call — it raced with smartRefresh (both
+          // patched data[] and called render/loadSummary). smartRefresh fetches
+          // authoritative server data and re-renders completely; no local patch needed.
           smartRefresh("contributions");
-          // updateLocalData is an optimistic patch from app.js — skipped here
-          // because smartRefresh now re-fetches fresh data from API directly.
-          if (typeof updateLocalData === "function") {
-            updateLocalData("contributions", id, {
-              Amount: amt, ForMonth: mon, Year: yr,
-              TypeId: typ, OccasionId: occ, Note: note, PaymentMode: mode,
-            });
-          }
         } else toast("❌ Update failed.", "error");
       } catch (err) {
         toast("❌ " + err.message, "error");
@@ -9878,18 +10044,24 @@
       });
     }
 
+    var _contribSubmitInFlight = false; // guard: prevents double-submit
     async function _submitContributionFromPreview() {
+      if (_contribSubmitInFlight) {
+        return;
+      }
+      _contribSubmitInFlight = true;
       const btn = document.getElementById("prev_submitBtn");
       if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; btn._noAutoLoad = true; }
       const userId = document.getElementById("prev_user").value;
       const amount = document.getElementById("prev_amount").value;
       const year = document.getElementById("prev_year").value;
       if (!userId || !amount || Number(amount) <= 0) {
+        _contribSubmitInFlight = false;
         if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
         return toast("Please select a user and enter a valid amount.", "error");
       }
       try {
-        let res = await postData({
+        const payload = {
           action: "addContribution",
           Id: Date.now(),
           UserId: userId,
@@ -9900,8 +10072,10 @@
           OccasionId: document.getElementById("prev_occasion").value,
           Note: document.getElementById("prev_note").value,
           PaymentMode: document.getElementById("prev_mode").value,
-        });
+        };
+        let res = await postData(payload);
         if (res.status === "success") {
+          _contribSubmitInFlight = false;
           closeModal();
           const rid = res.receiptId;
           let msg = "✅ Contribution saved! Receipt: " + rid;
@@ -9926,13 +10100,22 @@
           // clear draft
           try { localStorage.removeItem("_contrib_draft"); } catch(e){}
           smartRefresh("contributions");
-          _dashSyncFromAdmin();
+          // updateSidebarSummary no longer reads email quota (async race removed).
+          // _refreshEmailQuotaUI is the sole updater: bust cache → fresh server fetch.
+          // Only call it when server confirmed an email was actually sent.
+          if (res.emailSent) {
+            setTimeout(_refreshEmailQuotaUI, 800);
+          } else {
+          }
+          // _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
         } else {
           toast("❌ Failed to add.", "error");
+          _contribSubmitInFlight = false;
           if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
         }
       } catch (err) {
         toast("❌ " + err.message, "error");
+        _contribSubmitInFlight = false;
         if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
       }
     }
@@ -10778,8 +10961,8 @@
           document.getElementById("ev_name").value = "";
           document.getElementById("ev_budget").value = "";
           document.getElementById("ev_desc").value = "";
-          _evBust();
-          await loadEvents();
+          // FIX-3: Use smartRefresh so sidebar + expense tracker also update
+          smartRefresh("events");
         } else {
           toast("❌ " + (res.message || "Failed to create event."), "error");
         }
@@ -10846,7 +11029,9 @@
         toast(res.status === "updated" ? "✅ Event updated." : "❌ Update failed.",
           res.status === "updated" ? "" : "error");
         if (res.status === "updated") {
-          closeModal(); _evBust(); loadEvents();
+          closeModal();
+          // FIX-3: Use smartRefresh so sidebar + expense tracker also update
+          smartRefresh("events");
         }
       } catch (err) { toast("❌ " + err.message, "error"); }
     }
@@ -10864,7 +11049,8 @@
           const res = await postData({ action: "deleteEvent", EventId: eventId, AdminName: s.name || "Admin" });
           toast(res.status === "deleted" ? "✅ Event deleted." : "❌ " + (res.message || "Failed."),
             res.status === "deleted" ? "" : "error");
-          if (res.status === "deleted") { _evBust(); loadEvents(); }
+          // FIX-3: Use smartRefresh so sidebar + expense tracker also update
+          if (res.status === "deleted") { smartRefresh("events"); }
         } catch (err) { toast("❌ " + err.message, "error"); }
       });
     }
@@ -10928,8 +11114,8 @@
         if (res.status === "success") {
           closeModal();
           toast("✅ Expense added to event.", "");
-          _evBust();
-          loadEvents();
+          // FIX-4: Use dedicated entity so expense tracker + dashboard also update
+          smartRefresh("expenses_from_event");
         } else {
           toast("❌ " + (res.message || "Failed."), "error");
         }
@@ -11034,19 +11220,12 @@
         });
         if (res.status === "success") {
           toast("✅ Goal saved!");
-          // Optimistic local update
-          goals.push({
-            GoalId: newGoalId,
-            GoalName: name,
-            TargetAmount: Number(target),
-            CurrentAmount: Number(current),
-            Status: status,
-          });
-          renderGoals();
-          if (typeof updateSidebarSummary === "function") updateSidebarSummary();
           document.getElementById("g_name").value = "";
           document.getElementById("g_target").value = "";
           document.getElementById("g_current").value = "";
+          // FIX-1: Use smartRefresh instead of optimistic local mutation
+          // so the goals table always reflects server-confirmed data.
+          smartRefresh("goals");
         } else toast("❌ Failed: " + (res.message || ""), "error");
       } catch (e) {
         toast("❌ " + e.message, "error");
@@ -11100,20 +11279,10 @@
         });
         if (res.status === "updated") {
           toast("✅ Goal updated.");
-          // Optimistic local update — no full reload needed
-          const idx = goals.findIndex((x) => String(x.GoalId) === String(id));
-          if (idx !== -1) {
-            goals[idx] = {
-              ...goals[idx],
-              GoalName: nameVal,
-              TargetAmount: Number(targetVal),
-              CurrentAmount: Number(currentVal),
-              Status: statusVal,
-            };
-          }
-          renderGoals();
-          if (typeof updateSidebarSummary === "function") updateSidebarSummary();
           closeModal();
+          // FIX-2: Use smartRefresh instead of optimistic local mutation
+          // so the goals table always reflects server-confirmed data.
+          smartRefresh("goals");
         } else {
           toast("❌ Failed: " + (res.message || ""), "error");
         }
@@ -11187,6 +11356,81 @@
     function viewContrib_receipt(rid) {
       showReceiptById(rid);
     }
+
+    /* ── Receipt Email Send — Quota Counter Hook ────────────────────────────
+       app.js showReceipt() renders a modal that may include a "Send Email"
+       button (action: resendReceipt / sendReceiptEmail).  When the admin
+       clicks it, an email is consumed from the daily quota — but because the
+       receipt view does NOT call smartRefresh("contributions"), the sidebar
+       counter was never updated.
+
+       Fix: use a MutationObserver on the modal container to detect when a
+       receipt modal is opened, then attach a one-time click listener to any
+       button whose text/action is "Send Email" or "Resend".  On click, wait
+       1.5 s (Apps Script commit time) then call _refreshEmailQuotaUI().
+
+       This is intentionally decoupled from smartRefresh so that ONLY the
+       quota counter updates — no table re-render, no cache bust, no full
+       data reload — because the contribution data itself did NOT change.
+    ──────────────────────────────────────────────────────────────────────── */
+    (function _hookReceiptEmailQuota() {
+      var _modalEl = null;
+      // Find the modal container — app.js typically uses id="modal" or class="_modal"
+      function _getModal() {
+        if (_modalEl && _modalEl.isConnected) return _modalEl;
+        _modalEl = document.getElementById("modal") ||
+                   document.querySelector("._modal-wrap") ||
+                   document.querySelector("[id*='modal']");
+        return _modalEl;
+      }
+
+      function _attachEmailBtnListener(root) {
+        if (!root) return;
+        // Match buttons by their label text or title — covers various receipt modal designs
+        // ✅ FIX: Also match plain "email" — the receipt modal button text is just "Email" (with icon),
+        //         not "send email" or "resend", so those checks were never matching.
+        var btns = root.querySelectorAll("button, [role='button']");
+        btns.forEach(function(btn) {
+          var txt = (btn.textContent || btn.innerText || btn.title || "").toLowerCase().trim();
+          var matches = txt.includes("send email") || txt.includes("resend") ||
+                        txt.includes("email receipt") || txt === "email" ||
+                        txt.includes("📧") || (btn.onclick && String(btn.onclick).includes("sendReceiptEmail"));
+          if (matches) {
+            if (btn._quotaHooked) return; // don't attach twice
+            btn._quotaHooked = true;
+            btn.addEventListener("click", function() {
+              // Delay to let Apps Script commit the quota increment
+              setTimeout(function() {
+                if (typeof _refreshEmailQuotaUI === "function") {
+                  _refreshEmailQuotaUI();
+                }
+              }, 1500);
+            }, { once: false });
+          }
+        });
+      }
+
+      // Observe modal DOM for when receipt modals open (content injected dynamically)
+      document.addEventListener("DOMContentLoaded", function() {
+        var observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(m) {
+            m.addedNodes.forEach(function(node) {
+              if (node.nodeType !== 1) return;
+              var txt = (node.textContent || "").toLowerCase();
+              // Only process nodes that look like a receipt modal
+              if (txt.includes("receipt") || txt.includes("send email") || txt.includes("resend")) {
+                _attachEmailBtnListener(node);
+                // Also check descendants already rendered
+                setTimeout(function() { _attachEmailBtnListener(node); }, 200);
+              }
+            });
+          });
+        });
+
+        var target = document.body;
+        observer.observe(target, { childList: true, subtree: true });
+      });
+    }());
 
     /* ═══ BROADCAST FUNCTIONS ═══ */
     let _bcHistory = [];
@@ -11309,7 +11553,6 @@
           time: new Date().toLocaleString("en-IN"),
         });
       } catch (e) {
-        console.warn("Broadcast save failed:", e);
       }
       titleEl.value = "";
       msgEl.value = "";
@@ -12044,7 +12287,10 @@
       }
     });
 
-    try { init(); } catch (e) { console.warn('init() error:', e); }
+    // N5: init() is async — a bare try/catch does NOT catch Promise rejections.
+    // _showLoadingError() inside init() handles errors correctly; this .catch()
+    // is a last-resort safety net for any unhandled rejection that escapes it.
+    init().catch(function(e) { console.warn('init() unhandled rejection:', e); });
 
     /* FIX #4: Header always stays visible (sticky), scroll-hide removed */
     /* No scroll-hide for admin header — menu stays accessible always */
@@ -12273,7 +12519,13 @@
           const oName = occasions.find(o => String(o.OccasionId) === String(occasionId));
           closeModal();
           smartRefresh("contributions");
-          _dashSyncFromAdmin();
+          // Refresh quota ONLY when server confirmed email was actually sent.
+          // showReceipt() below opens a receipt modal for display only — it must
+          // NOT cause any quota refresh. The MutationObserver will attach a click
+          // handler to the receipt's "Send Email" button; that click path is the
+          // only other legitimate quota refresh trigger.
+          if (res.emailSent) setTimeout(_refreshEmailQuotaUI, 800);
+          // _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
           setTimeout(() => showReceipt(mockC, name, tName?.TypeName || "Contribution", oName?.OccasionName || "—", true), 400);
         } else {
           toast("❌ Failed: " + (res.message || ""), "error");
@@ -12663,6 +12915,10 @@
             toast(value ? "✅ " + (labelMap[key] || key) + " enabled" : "⭕ Disabled", "");
             _updateToggleStatus(key, value);
             _updateCardStyle(cardMap[key] || cardId, value);
+            // FIX-14: bust settings cache so next loadEmailSettings() reads fresh state
+            if (typeof mandirCacheBust === "function") mandirCacheBust("getEmailSettings");
+            // Refresh quota counter — enabling auto-receipt can affect quota estimate
+            setTimeout(_refreshEmailQuotaUI, 600);
           } else {
             toast("❌ Save failed — check Apps Script deployment", "error");
             const el = document.getElementById("toggle_" + key);
@@ -12908,11 +13164,15 @@
       setTimeout(() => {
         const btn = document.getElementById("_approveOkBtn");
         if (btn) btn.addEventListener("click", () => {
-          closeModal();
+          if (btn._inFlight) return; // double-submit guard
+          btn._inFlight = true;
           btn.disabled = true;
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Approving...';
+          closeModal();
           const s = JSON.parse(localStorage.getItem("session") || "{}");
           postData({ action: "approveUser", UserId: userId, AdminName: s.name || "Admin" })
             .then(res => {
+              btn._inFlight = false;
               if (res && res.status === "success") {
                 toast("✅ " + userName + " approved! Approval email sent.");
                 setTimeout(() => { try { smartRefresh("users"); } catch (e) { } }, 300);
@@ -12920,7 +13180,7 @@
                 toast("❌ " + (res && res.message ? res.message : "Approval failed."), "error");
               }
             })
-            .catch(err => toast("❌ " + err.message, "error"));
+            .catch(err => { btn._inFlight = false; toast("❌ " + err.message, "error"); });
         });
       }, 50);
     }
@@ -13022,6 +13282,8 @@
           if (res && res.status === "success") {
             toast("✅ Chatbot settings saved successfully!", "success");
             if (cbMsg) { cbMsg.textContent = "✓ Settings saved."; cbMsg.className = "msg-box success"; setTimeout(() => { cbMsg.textContent = ""; cbMsg.className = "msg-box"; }, 3000); }
+            // FIX-5: Reload chatbot settings so the page reflects what was saved
+            if (typeof loadChatbotSettings === "function") setTimeout(loadChatbotSettings, 300);
           } else {
             toast("❌ " + (res && res.message ? res.message : "Save failed."), "error");
           }
@@ -13123,7 +13385,9 @@
       const tbody = document.getElementById("reqTbody");
       if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#aaa;padding:24px;"><div class="spinner" style="margin:0 auto;width:24px;height:24px;"></div></td></tr>';
       try {
-        const res = await getData("getContributionRequests");
+        // Bust first so the page-open fetch is always live, then use getCached for dedup
+        mandirCacheBust("getContributionRequests");
+        const res = await getCached("getContributionRequests");
         window._allRequests = Array.isArray(res) ? res : [];
         renderContributionRequests();
         _updateReqBadge();
@@ -13269,6 +13533,8 @@
 
     async function _doApproveContribRequest(r, selTypeId) {
       if (!checkSession()) return;
+      if (window._approveReqInFlight) return; // double-submit guard
+      window._approveReqInFlight = true;
       const s = JSON.parse(localStorage.getItem("session") || "{}");
       try {
         const contribRes = await postData({
@@ -13297,10 +13563,13 @@
         if (contribRes.emailSent) msg += " · Receipt email sent";
         if (contribRes.emailSkipped) msg += " · Email quota reached";
         toast(msg);
-        mandirCacheBust("getAllData");
+        // D7: removed manual mandirCacheBust("getAllData") — addContribution is in
+        // _CACHE_BUST_ON_WRITE so postData() already busted it automatically.
         smartRefresh("contributions");
         loadContributionRequests();
+        window._approveReqInFlight = false;
       } catch (err) {
+        window._approveReqInFlight = false;
         toast("Error: " + err.message, "error");
       }
     }
@@ -13322,6 +13591,10 @@
       setTimeout(function () {
         const btn = document.getElementById("_rejectReqBtn");
         if (btn) btn.addEventListener("click", function () {
+          if (btn._inFlight) return; // double-submit guard
+          btn._inFlight = true;
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Rejecting...';
           const reason = (document.getElementById("_rejectReasonInput") || {}).value || "";
           closeModal();
           _doRejectContribRequest(r, reason);
@@ -13342,6 +13615,7 @@
         });
         toast("Request rejected" + (reason ? " with reason." : "."), "warn");
         loadContributionRequests();
+        smartRefresh("requests"); // C3: update badge + contributions list (mirrors approve flow)
       } catch (err) {
         toast("Error: " + err.message, "error");
       }
