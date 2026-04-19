@@ -2122,6 +2122,166 @@
       background: rgba(8,15,30,0.9) !important;
     }
 
+    /* ══ ADMIN RETRY UI — error state styles ══ */
+    #loadingOverlay_error {
+      animation: _alo_errIn 0.38s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes _alo_errIn {
+      from { opacity: 0; transform: translate(-50%,-46%) scale(0.96); }
+      to   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    }
+    .alo-err-card {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      display: flex; flex-direction: column;
+      width: min(88vw, 360px);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08);
+      border: 1px solid rgba(247,160,26,0.35);
+      background: #fff;
+    }
+    /* Coloured header strip */
+    .alo-err-header {
+      width: 100%;
+      background: linear-gradient(135deg, #7c2d12 0%, #92400e 50%, #b45309 100%);
+      padding: 18px 20px 16px;
+      display: flex; align-items: center; gap: 13px;
+      position: relative; overflow: hidden;
+    }
+    .alo-err-header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .alo-err-icon-wrap {
+      width: 44px; height: 44px; flex-shrink: 0;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.22);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+    }
+    .alo-err-hdr-text { flex: 1; min-width: 0; }
+    .alo-err-title {
+      font-family: Poppins, sans-serif;
+      font-size: 0.9rem; font-weight: 800;
+      color: #fff; line-height: 1.2; margin-bottom: 2px;
+    }
+    .alo-err-subtitle {
+      font-family: Poppins, sans-serif;
+      font-size: 10px; font-weight: 500;
+      color: rgba(255,218,160,0.85);
+    }
+    /* Body */
+    .alo-err-body {
+      padding: 15px 18px 18px;
+      display: flex; flex-direction: column; gap: 11px;
+      background: #fff;
+    }
+    /* Meta row: attempt pill + history dots */
+    .alo-err-meta {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 8px;
+    }
+    #alo_attempt_pill {
+      display: none;
+      align-items: center; gap: 5px;
+      font-size: 10.5px; font-weight: 700;
+      font-family: Poppins, sans-serif;
+      color: #92400e;
+      background: rgba(247,160,26,0.12);
+      border: 1px solid rgba(247,160,26,0.32);
+      border-radius: 20px; padding: 3px 10px 3px 8px;
+    }
+    #alo_attempt_pill.show { display: flex; }
+    .alo-err-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #ef4444; flex-shrink: 0;
+      animation: _alo_dot_blink 1.2s ease-in-out infinite;
+    }
+    @keyframes _alo_dot_blink {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.35; transform: scale(0.7); }
+    }
+    #alo_attempt_dots { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+    .alo-adot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #ef4444; opacity: 0.22;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .alo-adot.used { opacity: 0.9; transform: scale(1.1); }
+    /* Reason box */
+    #loadingOverlay_reason {
+      font-family: Poppins, sans-serif;
+      font-size: 12.5px; color: #555;
+      background: rgba(251,245,235,0.9);
+      border: 1px solid rgba(247,160,26,0.28);
+      border-radius: 10px; padding: 11px 14px;
+      line-height: 1.65; width: 100%;
+    }
+    /* Countdown bar */
+    .alo-countdown-wrap {
+      display: none; flex-direction: column; gap: 5px;
+    }
+    .alo-countdown-wrap.active { display: flex; }
+    .alo-countdown-label {
+      font-size: 10.5px; font-family: Poppins, sans-serif;
+      color: #92400e; font-weight: 600;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .alo-countdown-track {
+      width: 100%; height: 4px; border-radius: 4px;
+      background: rgba(247,160,26,0.15); overflow: hidden;
+    }
+    .alo-countdown-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #92400e, #f7a01a);
+      border-radius: 4px; width: 100%;
+      transition: width linear;
+    }
+    /* Retry button */
+    #loadingOverlay_retryBtn {
+      background: linear-gradient(135deg, #92400e 0%, #b45309 45%, #f7a01a 100%) !important;
+      color: #fff !important; border: none !important;
+      border-radius: 11px !important; padding: 12px 20px !important;
+      font-family: Poppins, sans-serif !important;
+      font-size: 0.9rem !important; font-weight: 700 !important;
+      cursor: pointer; width: 100% !important;
+      display: flex !important; align-items: center !important;
+      justify-content: center !important; gap: 8px !important;
+      box-shadow: 0 4px 16px rgba(180,83,9,0.36), 0 1px 0 rgba(255,255,255,0.14) inset !important;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
+      position: relative; overflow: hidden;
+    }
+    #loadingOverlay_retryBtn:hover  { transform: translateY(-1px) !important; box-shadow: 0 6px 22px rgba(180,83,9,0.46) !important; filter: brightness(1.06); }
+    #loadingOverlay_retryBtn:active { transform: scale(0.975) !important; }
+    #loadingOverlay_retryBtn:disabled { opacity: 0.6 !important; cursor: not-allowed !important; transform: none !important; }
+    /* Back to login button */
+    #alo_login_btn {
+      background: transparent;
+      color: #92400e;
+      border: 1.5px solid rgba(247,160,26,0.42);
+      border-radius: 11px; padding: 10px 20px;
+      font-family: Poppins, sans-serif;
+      font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; width: 100%;
+      display: flex; align-items: center;
+      justify-content: center; gap: 7px;
+      transition: background 0.18s ease, border-color 0.18s ease;
+    }
+    #alo_login_btn:hover { background: rgba(247,160,26,0.07); border-color: #f7a01a; }
+    /* Dark mode */
+    body.dark-mode .alo-err-card { background: #0d1525 !important; border-color: rgba(247,160,26,0.25) !important; }
+    body.dark-mode .alo-err-header { background: linear-gradient(135deg, #3d0f00, #5c1f00, #7a3200) !important; }
+    body.dark-mode .alo-err-body { background: #0d1525 !important; }
+    body.dark-mode #loadingOverlay_reason { background: rgba(8,15,30,0.8) !important; border-color: rgba(247,160,26,0.18) !important; color: #94a3b8 !important; }
+    body.dark-mode #alo_attempt_pill { color: #fbbf24 !important; background: rgba(247,160,26,0.1) !important; border-color: rgba(247,160,26,0.22) !important; }
+    body.dark-mode .alo-countdown-label { color: #fbbf24 !important; }
+    body.dark-mode #alo_login_btn { color: #fde68a !important; border-color: rgba(247,160,26,0.3) !important; }
+    body.dark-mode #alo_login_btn:hover { background: rgba(247,160,26,0.07) !important; }
+
     /* ── Shimmer rows in dark mode ── */
     body.dark-mode .shimmer-row td {
       background: linear-gradient(90deg, #1e2d45 25%, #253347 50%, #1e2d45 75%) !important;
@@ -2525,18 +2685,49 @@
       <div class="spinner"></div>
       <div style="font-family:Poppins,sans-serif;color:#334155;font-weight:600;">Loading data...</div>
     </div>
-    <!-- Error / retry state -->
-    <div id="loadingOverlay_error" style="display:none;flex-direction:column;align-items:center;gap:14px;max-width:360px;width:90%;text-align:center;">
-      <div style="width:58px;height:58px;border-radius:50%;background:#fff3cd;border:2px solid #f7a01a;display:flex;align-items:center;justify-content:center;font-size:1.6rem;">⚠️</div>
-      <div style="font-family:Poppins,sans-serif;font-size:1rem;font-weight:700;color:#78350f;">Could Not Load Data</div>
-      <div id="loadingOverlay_reason" style="font-family:Poppins,sans-serif;font-size:13px;color:#555;background:#fffbf5;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;line-height:1.6;width:100%;"></div>
-      <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
-        <button id="loadingOverlay_retryBtn" onclick="_doRetry(this)" style="background:#f7a01a;color:#fff;border:none;border-radius:10px;padding:12px;font-family:Poppins,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-shadow:0 4px 12px rgba(247,160,26,0.35);">
-          <i class="fa-solid fa-rotate-right"></i> Retry
-        </button>
-        <button onclick="location.replace('login.html')" style="background:#fff;color:#78350f;border:1.5px solid #f7a01a;border-radius:10px;padding:10px;font-family:Poppins,sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;width:100%;box-shadow:none;">
-          <i class="fa-solid fa-right-to-bracket"></i> Back to Login
-        </button>
+    <!-- Error / retry state — hidden until an error occurs -->
+    <div id="loadingOverlay_error" style="display:none;">
+      <div class="alo-err-card">
+        <!-- Header strip -->
+        <div class="alo-err-header">
+          <div class="alo-err-icon-wrap" id="alo_err_icon">⚠️</div>
+          <div class="alo-err-hdr-text">
+            <div class="alo-err-title" id="alo_err_title">Could Not Load Data</div>
+            <div class="alo-err-subtitle" id="alo_err_subtitle">Tap Retry to try again</div>
+          </div>
+        </div>
+        <!-- Body -->
+        <div class="alo-err-body">
+          <!-- Attempt badge + history dots -->
+          <div class="alo-err-meta">
+            <span id="alo_attempt_pill">
+              <span class="alo-err-dot"></span>
+              <span id="alo_pill_text">Attempt 1 failed</span>
+            </span>
+            <div id="alo_attempt_dots"></div>
+          </div>
+          <!-- Reason detail -->
+          <div id="loadingOverlay_reason"></div>
+          <!-- Auto-retry countdown bar -->
+          <div class="alo-countdown-wrap" id="alo_countdown_wrap">
+            <div class="alo-countdown-label">
+              <span>Auto-retrying…</span>
+              <span id="alo_countdown_txt">8s</span>
+            </div>
+            <div class="alo-countdown-track">
+              <div class="alo-countdown-bar" id="alo_countdown_bar"></div>
+            </div>
+          </div>
+          <!-- Buttons -->
+          <div style="display:flex;flex-direction:column;gap:8px;width:100%;margin-top:2px;">
+            <button id="loadingOverlay_retryBtn" onclick="_doRetry(this)">
+              <i class="fa-solid fa-rotate-right"></i> Retry Now
+            </button>
+            <button id="alo_login_btn" onclick="_doAdminBackToLogin()">
+              <i class="fa-solid fa-right-to-bracket"></i> Back to Login
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -7070,46 +7261,152 @@
       return { icon: "⚠️", title: "Connection Error", detail: "An unexpected error occurred: " + (err && err.message ? err.message : String(err || "Unknown error")) + ". Please try again." };
     }
 
+    /* ══ ADMIN RETRY ENGINE — improved ══ */
+    var _aloRetryCount    = 0;
+    var _aloCountdownTimer = null;
+    var _aloCountdownSec   = 0;
+
+    function _aloClearCountdown() {
+      if (_aloCountdownTimer) { clearInterval(_aloCountdownTimer); _aloCountdownTimer = null; }
+      var wrap = document.getElementById("alo_countdown_wrap");
+      if (wrap) wrap.classList.remove("active");
+    }
+
+    function _aloStartCountdown(seconds, onDone) {
+      _aloClearCountdown();
+      var wrap = document.getElementById("alo_countdown_wrap");
+      var bar  = document.getElementById("alo_countdown_bar");
+      var txt  = document.getElementById("alo_countdown_txt");
+      if (!wrap || !bar || !txt) { onDone && onDone(); return; }
+      wrap.classList.add("active");
+      _aloCountdownSec = seconds;
+      bar.style.transition = "none";
+      bar.style.width = "100%";
+      void bar.offsetWidth;
+      bar.style.transition = "width " + seconds + "s linear";
+      bar.style.width = "0%";
+      txt.textContent = seconds + "s";
+      _aloCountdownTimer = setInterval(function() {
+        _aloCountdownSec--;
+        if (txt) txt.textContent = _aloCountdownSec + "s";
+        if (_aloCountdownSec <= 0) {
+          _aloClearCountdown();
+          onDone && onDone();
+        }
+      }, 1000);
+    }
+
+    function _aloUpdateAttemptDots(count) {
+      var container = document.getElementById("alo_attempt_dots");
+      if (!container) return;
+      var maxDots = 5;
+      container.innerHTML = "";
+      for (var i = 0; i < Math.min(count, maxDots); i++) {
+        var d = document.createElement("span");
+        d.className = "alo-adot used";
+        container.appendChild(d);
+      }
+      if (count > maxDots) {
+        var more = document.createElement("span");
+        more.style.cssText = "font-size:9px;font-weight:700;color:#b45309;font-family:Poppins,sans-serif;margin-left:2px;";
+        more.textContent = "+" + (count - maxDots);
+        container.appendChild(more);
+      }
+    }
+
     /* ── Show error state inside loadingOverlay with specific reason ── */
     function _showLoadingError(err) {
       const classified = _classifyNetworkError(err);
-      const loadEl  = document.getElementById("loadingOverlay_loading");
-      const errEl   = document.getElementById("loadingOverlay_error");
+      const loadEl   = document.getElementById("loadingOverlay_loading");
+      const errEl    = document.getElementById("loadingOverlay_error");
       const reasonEl = document.getElementById("loadingOverlay_reason");
+      const iconEl   = document.getElementById("alo_err_icon");
+      const titleEl  = document.getElementById("alo_err_title");
+      const subtitleEl = document.getElementById("alo_err_subtitle");
+      const pill     = document.getElementById("alo_attempt_pill");
+      const pillTxt  = document.getElementById("alo_pill_text");
+      const btn      = document.getElementById("loadingOverlay_retryBtn");
+
       if (loadEl)  loadEl.style.display = "none";
       if (errEl)   errEl.style.display  = "flex";
+
+      if (iconEl)    iconEl.textContent = classified.icon;
+      if (titleEl)   titleEl.textContent = classified.title;
+      if (subtitleEl) subtitleEl.textContent = _aloRetryCount > 0
+        ? "Attempt " + _aloRetryCount + " failed — tap Retry"
+        : "Something went wrong — tap Retry";
+
       if (reasonEl) reasonEl.innerHTML =
-        "<strong style='color:#78350f;'>" + classified.icon + " " + classified.title + "</strong><br/>" +
-        "<span style='color:#666;'>" + classified.detail + "</span>";
-      // Make sure the overlay stays visible
+        "<span style='font-size:12px;line-height:1.65;'>" + classified.detail + "</span>";
+
+      if (_aloRetryCount > 0) {
+        if (pill)    pill.classList.add("show");
+        if (pillTxt) pillTxt.textContent = "Attempt " + _aloRetryCount + " failed";
+        _aloUpdateAttemptDots(_aloRetryCount);
+      }
+
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry Now'; btn.style.opacity = "1"; }
+
+      // Auto-retry countdown for first 2 failures only, then manual
+      if (_aloRetryCount < 3) {
+        _aloStartCountdown(8, function() {
+          var retryBtn = document.getElementById("loadingOverlay_retryBtn");
+          _doRetry(retryBtn);
+        });
+      }
+
       const overlay = document.getElementById("loadingOverlay");
       if (overlay && !overlay.classList.contains("show")) overlay.classList.add("show");
     }
 
-    /* ── Retry handler — prevents double-fire, shows feedback ── */
+    /* ── Retry handler — prevents double-fire, busts cache, shows feedback ── */
     window._doRetry = function(btn) {
-      if (btn && btn.disabled) return; // prevent double-click
+      if (btn && btn.disabled) return;
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Retrying...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Retrying…';
         btn.style.opacity = '0.8';
       }
-      // Small delay so UI updates before heavy init() runs
+      _aloClearCountdown();
+      _aloRetryCount++;
+      // Bust cache — primary via app.js helper, fallback manual clear
+      if (typeof mandirCacheBust === "function") {
+        mandirCacheBust("getAllData");
+      } else {
+        try {
+          ["getAllData", "mandir_cache_getAllData"].forEach(function(k) {
+            sessionStorage.removeItem(k); localStorage.removeItem(k);
+          });
+        } catch(e) {}
+      }
       setTimeout(function() {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry'; btn.style.opacity = '1'; }
+        _resetLoadingOverlay();
         init();
-      }, 150);
+      }, 180);
     };
 
-    /* ── Reset loadingOverlay back to normal loading state ── */
+    /* ── Back to Login — clears session so guard doesn't bounce back ── */
+    window._doAdminBackToLogin = function() {
+      _aloClearCountdown();
+      try {
+        ["session", "mandir_remember_token", "adminSession"].forEach(function(k) {
+          localStorage.removeItem(k);
+        });
+      } catch(e) {}
+      _aloRetryCount = 0;
+      location.replace("login.html");
+    };
+
+    /* ── Reset loadingOverlay back to normal loading/spinner state ── */
     function _resetLoadingOverlay() {
       const loadEl = document.getElementById("loadingOverlay_loading");
       const errEl  = document.getElementById("loadingOverlay_error");
+      const pill   = document.getElementById("alo_attempt_pill");
       if (loadEl) { loadEl.style.display = "flex"; loadEl.style.flexDirection = "column"; loadEl.style.alignItems = "center"; loadEl.style.gap = "15px"; }
-      if (errEl)  errEl.style.display  = "none";
-      // Re-enable retry button if it was disabled
+      if (errEl)  errEl.style.display = "none";
+      if (pill)   pill.classList.remove("show");
       var btn = document.getElementById("loadingOverlay_retryBtn");
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry'; btn.style.opacity = '1'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry Now'; btn.style.opacity = "1"; }
     }
 
     function setLoading(show) {
@@ -8444,6 +8741,8 @@
         // Only hide overlay if we didn't hit an error (error path returns early above)
         const errEl = document.getElementById("loadingOverlay_error");
         if (!errEl || errEl.style.display === "none") {
+          _aloRetryCount = 0;   // reset on success
+          _aloClearCountdown(); // cancel any auto-retry timer
           setLoading(false);
         }
         // Restore scroll position after re-render
