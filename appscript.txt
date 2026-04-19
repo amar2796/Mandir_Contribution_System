@@ -231,7 +231,16 @@ function getSheetData(name) {
   const headers = data.shift();
   return data.map(r => {
     let o = {};
-    headers.forEach((h, i) => o[h] = r[i]);
+    headers.forEach((h, i) => {
+      // PaymentDate/CreatedAt/RegisteredAt: Sheets may return a Date object when the
+      // column is date-formatted. Always coerce to dd-MM-yyyy HH:mm:ss IST string.
+      // This prevents "11-04-2026" being stored as Nov 4 (MM-DD auto-parse by Sheets).
+      if ((h === "PaymentDate" || h === "CreatedAt" || h === "RegisteredAt") && r[i] instanceof Date) {
+        o[h] = Utilities.formatDate(r[i], "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+      } else {
+        o[h] = r[i];
+      }
+    });
     return o;
   });
 }
@@ -2645,7 +2654,60 @@ function updateUser(p) {
 }
 
 function addRow(name, row) {
-  SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name).appendRow(row);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  sheet.appendRow(row);
+  // Force PaymentDate column to plain text so Sheets never auto-parses "dd-MM-yyyy"
+  // as a date. Without this, "11-04-2026" is read as MM-DD → November 4,
+  // corrupting every sort and display downstream.
+  if (name === "CONTRIBUTIONS" || name === "EXPENSES" || name === "EVENT_EXPENSES") {
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const pdCol = headers.indexOf("PaymentDate");
+    if (pdCol >= 0) {
+      const lastRow = sheet.getLastRow();
+      sheet.getRange(lastRow, pdCol + 1).setNumberFormat("@"); // @ = plain text
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// ONE-TIME REPAIR: Fix corrupted PaymentDate cells in CONTRIBUTIONS
+// Run this ONCE from Apps Script editor: repairPaymentDates()
+// It converts any Date-object cells back to "dd-MM-yyyy HH:mm:ss" IST plain text.
+// Safe to run multiple times — skips cells already in plain text format.
+// ════════════════════════════════════════════════════════════════
+function repairPaymentDates() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetNames = ["CONTRIBUTIONS", "EXPENSES", "EVENT_EXPENSES"];
+  var totalFixed = 0;
+
+  sheetNames.forEach(function(name) {
+    const sheet = ss.getSheetByName(name);
+    if (!sheet) return;
+    const data = sheet.getDataRange().getValues();
+    if (data.length < 2) return;
+    const headers = data[0];
+    const pdCol = headers.indexOf("PaymentDate");
+    if (pdCol < 0) return;
+
+    for (var i = 1; i < data.length; i++) {
+      const cell = sheet.getRange(i + 1, pdCol + 1);
+      const val  = data[i][pdCol];
+      if (val instanceof Date) {
+        // Convert Date object to IST plain text string
+        const fixed = Utilities.formatDate(val, "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+        cell.setNumberFormat("@");   // plain text first
+        cell.setValue(fixed);         // then write string
+        totalFixed++;
+        Logger.log("Fixed row " + (i+1) + ": " + val + " -> " + fixed);
+      } else if (String(val).trim() !== "") {
+        // Already a string — just ensure cell format is plain text to prevent future re-parsing
+        cell.setNumberFormat("@");
+      }
+    }
+  });
+
+  Logger.log("repairPaymentDates complete. Fixed " + totalFixed + " cells.");
+  return "Done. Fixed " + totalFixed + " Date cells. Check Logs for details.";
 }
 
 function deleteRow(name, id) {

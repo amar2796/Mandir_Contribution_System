@@ -73,17 +73,31 @@ function fmt(n) { return Number(n||0).toLocaleString("en-IN"); }
 function formatPaymentDate(raw) {
   if (!raw || raw === "\u2014") return "\u2014";
   const s = String(raw).trim();
+  // Already in dd-MM-yyyy format — return as-is
   if (/^\d{2}-\d{2}-\d{4}/.test(s)) return s;
+  // Slash format from admin toLocaleDateString('en-IN'): "d/M/yyyy h:mm:ss am/pm"
+  // Must parse as DD/MM/YYYY — never pass directly to new Date() which reads as MM/DD
+  const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(am|pm))?)?/i);
+  if (slash) {
+    var D=+slash[1], M=+slash[2]-1, Y=+slash[3];
+    var hh=+(slash[4]||0), mi=+(slash[5]||0), ss2=+(slash[6]||0);
+    var ap=(slash[7]||"").toLowerCase();
+    if(ap==="pm"&&hh<12)hh+=12; if(ap==="am"&&hh===12)hh=0;
+    var fd=new Date(Y,M,D,hh,mi,ss2);
+    return String(fd.getDate()).padStart(2,"0")+"-"+String(fd.getMonth()+1).padStart(2,"0")+"-"+fd.getFullYear()
+          +" "+String(fd.getHours()).padStart(2,"0")+":"+String(fd.getMinutes()).padStart(2,"0")+":"+String(fd.getSeconds()).padStart(2,"0");
+  }
   try {
+    // ISO or other unambiguous formats only reach here
     const d = new Date(s);
     if (isNaN(d.getTime())) return s;
     const ist = new Date(d.getTime() + 5.5*60*60*1000);
     const dd  = String(ist.getUTCDate()).padStart(2,"0");
     const mm  = String(ist.getUTCMonth()+1).padStart(2,"0");
-    const hh  = String(ist.getUTCHours()).padStart(2,"0");
-    const mi  = String(ist.getUTCMinutes()).padStart(2,"0");
+    const hh2  = String(ist.getUTCHours()).padStart(2,"0");
+    const mi2  = String(ist.getUTCMinutes()).padStart(2,"0");
     const ss  = String(ist.getUTCSeconds()).padStart(2,"0");
-    return dd+"-"+mm+"-"+ist.getUTCFullYear()+" "+hh+":"+mi+":"+ss;
+    return dd+"-"+mm+"-"+ist.getUTCFullYear()+" "+hh2+":"+mi2+":"+ss;
   } catch(e){ return s; }
 }
 

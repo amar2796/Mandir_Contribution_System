@@ -56,10 +56,6 @@
       --green: #22c55e;
       --red: #ef4444;
       --blue: #3b82f6;
-      --brown-grad: linear-gradient(135deg, #2a0f00 0%, #3c1a00 60%, #2a0f00 100%);
-      --brown-border: rgba(247, 160, 26, 0.35);
-      --brown-dark: #2a0f00;
-      --brown-mid: #3c1a00;
       --rad-xl: 22px;
       --rad-lg: 16px;
       --rad-md: 12px;
@@ -117,17 +113,6 @@
       gap: 10px;
       min-width: 0;
       flex: 1;
-    }
-
-    .hdr-icon {
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
     }
 
     .header-logo {
@@ -1679,81 +1664,9 @@
       to   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
     }
 
-    /* ── Card top band — rich brown header ── */
-    .ulo-card-header {
-      width: 100%;
-      background: linear-gradient(135deg, #3d1800 0%, #5c2709 50%, #78350f 100%);
-      padding: 26px 28px 20px;
-      position: relative; overflow: hidden;
-    }
-    /* Subtle sheen line across header */
-    .ulo-card-header::before {
-      content: '';
-      position: absolute; top: 0; left: -40%; width: 180%; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
-    }
-    /* Faint Om watermark in header */
-    .ulo-card-header::after {
-      content: '🕉';
-      position: absolute; right: -10px; top: -14px;
-      font-size: 80px; opacity: 0.06; pointer-events: none;
-      line-height: 1;
-    }
-
-    /* ── Om symbol — large, centred in header ── */
-    .ulo-temple-symbol {
-      font-size: 48px; line-height: 1;
-      margin-bottom: 10px; position: relative; z-index: 1;
-      filter: drop-shadow(0 2px 14px rgba(247,160,26,0.55));
-      animation: _ulo_pulse 3s ease-in-out infinite;
-      display: block;
-    }
-    @keyframes _ulo_pulse {
-      0%,100% { transform: scale(1);    filter: drop-shadow(0 2px 14px rgba(247,160,26,0.45)); }
-      50%      { transform: scale(1.06); filter: drop-shadow(0 2px 22px rgba(247,160,26,0.75)); }
-    }
-
-    /* ── Temple name + tagline in header ── */
-    .ulo-temple-name {
-      font-family: Georgia, 'Times New Roman', serif;
-      font-size: 16px; font-weight: 700;
-      color: #fde68a;
-      letter-spacing: 3.5px; text-transform: uppercase;
-      position: relative; z-index: 1; margin-bottom: 4px;
-    }
-    .ulo-tagline {
-      font-size: 12px; color: rgba(253,230,138,0.65);
-      letter-spacing: 0.8px; font-weight: 400;
-      position: relative; z-index: 1;
-    }
-
-    /* ── Ornate gold divider with diamond ── */
-    .ulo-divider {
-      width: 100%; height: 20px;
-      display: flex; align-items: center; justify-content: center;
-      gap: 8px; margin: 0;
-      background: linear-gradient(90deg, #3d1800, #78350f);
-      flex-shrink: 0;
-    }
-    .ulo-divider::before, .ulo-divider::after {
-      content: '';
-      flex: 1; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(247,160,26,0.6));
-    }
-    .ulo-divider::after {
-      background: linear-gradient(90deg, rgba(247,160,26,0.6), transparent);
-    }
-    .ulo-divider-diamond {
-      width: 7px; height: 7px;
-      background: #f7a01a;
-      transform: rotate(45deg);
-      box-shadow: 0 0 6px rgba(247,160,26,0.7);
-      flex-shrink: 0;
-    }
-
     /* ── Body content area ── */
     .ulo-card-body {
-      width: 100%; padding: 22px 26px 24px;
+      width: 100%; padding: 28px 26px 24px;
       display: flex; flex-direction: column; align-items: center;
     }
 
@@ -1803,52 +1716,55 @@
     /* ── Step label ── */
     .ulo-loading-label {
       font-family: var(--font-b);
-      font-size: 12.5px; font-weight: 600;
+      font-size: 13px; font-weight: 600;
       color: #78350f; letter-spacing: 0.2px;
-      margin-top: 10px; margin-bottom: 18px;
-      min-height: 18px;
+      margin-top: 12px; margin-bottom: 16px;
+      min-height: 20px;
       transition: opacity 0.22s ease;
     }
 
-    /* ── Step pills (replaces plain dots — more informative) ── */
+    /* ── Step pills ── */
     .ulo-steps-dots {
-      display: flex; gap: 4px; margin-bottom: 12px;
+      display: flex; gap: 5px; margin-bottom: 14px;
+      align-items: center;
     }
     .ulo-sdot {
-      height: 4px; border-radius: 4px;
-      background: rgba(247,160,26,0.2);
-      transition: background 0.4s, width 0.4s, box-shadow 0.4s;
+      height: 5px; border-radius: 5px;
+      background: rgba(247,160,26,0.18);
+      transition: background 0.38s ease, width 0.38s cubic-bezier(.4,0,.2,1), box-shadow 0.38s ease;
       width: 18px;
     }
     .ulo-sdot.done {
       background: #f7a01a;
-      box-shadow: 0 1px 4px rgba(247,160,26,0.4);
+      box-shadow: 0 1px 5px rgba(247,160,26,0.45);
     }
     .ulo-sdot.active {
-      background: #78350f;
-      width: 32px;
-      box-shadow: 0 1px 6px rgba(120,53,14,0.4);
-      animation: _ulo_pill_glow 1s ease-in-out infinite;
+      background: linear-gradient(90deg, #92400e, #c97a00);
+      width: 34px;
+      box-shadow: 0 1px 8px rgba(120,53,14,0.45);
+      animation: _ulo_pill_glow 1.1s ease-in-out infinite;
     }
     @keyframes _ulo_pill_glow {
-      0%,100% { box-shadow: 0 1px 4px rgba(120,53,14,0.3); }
-      50%      { box-shadow: 0 1px 10px rgba(120,53,14,0.6); }
+      0%,100% { box-shadow: 0 1px 5px rgba(120,53,14,0.3); }
+      50%      { box-shadow: 0 2px 12px rgba(120,53,14,0.65); }
     }
 
     /* ── Progress track ── */
     .ulo-progress-wrap {
-      width: 100%; height: 7px;
-      background: rgba(247,160,26,0.15);
-      border-radius: 7px; position: relative;
-      margin-bottom: 9px; overflow: hidden;
+      width: 100%; height: 10px;
+      background: rgba(247,160,26,0.12);
+      border-radius: 10px; position: relative;
+      margin-bottom: 10px; overflow: hidden;
+      border: 1px solid rgba(247,160,26,0.18);
     }
-    /* shimmer on the track itself */
+    /* Shimmer on the empty track */
     .ulo-progress-wrap::after {
       content: '';
       position: absolute; inset: 0;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
       background-size: 200% 100%;
-      animation: _ulo_track_sheen 2.5s linear infinite;
+      animation: _ulo_track_sheen 2.2s linear infinite;
+      pointer-events: none;
     }
     @keyframes _ulo_track_sheen {
       0%   { background-position: -200% center; }
@@ -1856,21 +1772,33 @@
     }
     .ulo-progress-bar {
       height: 100%; width: 0%;
-      background: linear-gradient(90deg, #92400e 0%, #c97a00 40%, #f7a01a 75%, #fbbf24 100%);
-      border-radius: 7px;
-      transition: width 0.6s cubic-bezier(.4,0,.2,1);
+      background: linear-gradient(90deg, #92400e 0%, #b86c00 35%, #f7a01a 72%, #fbbf24 100%);
+      border-radius: 10px;
+      transition: width 0.7s cubic-bezier(.4,0,.2,1);
       position: relative; z-index: 1;
     }
-    /* Glowing leading edge */
+    /* Glowing leading edge pulse */
+    .ulo-progress-bar::before {
+      content: '';
+      position: absolute; right: -1px; top: 0; bottom: 0;
+      width: 32px;
+      background: linear-gradient(90deg, transparent, rgba(255,225,130,0.75));
+      border-radius: 0 10px 10px 0;
+      opacity: 0; transition: opacity 0.4s;
+      animation: _ulo_edge_pulse 1.4s ease-in-out infinite;
+    }
+    .ulo-progress-bar.active::before { opacity: 1; }
+    @keyframes _ulo_edge_pulse {
+      0%,100% { opacity: 0.55; }
+      50%      { opacity: 1; }
+    }
+    /* Inner highlight stripe */
     .ulo-progress-bar::after {
       content: '';
-      position: absolute; right: 0; top: 0; bottom: 0;
-      width: 28px;
-      background: linear-gradient(90deg, transparent, rgba(255,220,120,0.7));
-      border-radius: 0 7px 7px 0;
-      opacity: 0; transition: opacity 0.3s;
+      position: absolute; top: 1px; left: 6px; right: 6px; height: 3px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 3px;
     }
-    .ulo-progress-bar.active::after { opacity: 1; }
 
     /* ── Step counter row ── */
     .ulo-step-row {
@@ -1882,13 +1810,14 @@
       font-family: var(--font-b); font-weight: 700;
     }
     .ulo-pct-badge {
-      font-size: 10px; font-weight: 700;
+      font-size: 11px; font-weight: 800;
       color: #78350f;
-      background: rgba(247,160,26,0.15);
-      border: 1px solid rgba(247,160,26,0.3);
-      border-radius: 20px; padding: 1px 8px;
+      background: rgba(247,160,26,0.14);
+      border: 1px solid rgba(247,160,26,0.32);
+      border-radius: 20px; padding: 2px 10px;
       font-family: var(--font-b);
       transition: opacity 0.3s;
+      letter-spacing: 0.3px;
     }
     .ulo-step-remain {
       font-size: 10.5px; color: #b8a090;
@@ -1906,8 +1835,6 @@
       border-color: rgba(247,160,26,0.3) !important;
       box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 6px 20px rgba(0,0,0,0.35) !important;
     }
-    body.user-dark .ulo-temple-name   { color: #fde68a !important; }
-    body.user-dark .ulo-tagline       { color: rgba(253,230,138,0.5) !important; }
     body.user-dark .ulo-loading-label { color: #fbbf24 !important; }
     body.user-dark .ulo-step-done     { color: #f7a01a !important; }
     body.user-dark .ulo-step-remain   { color: rgba(247,160,26,0.35) !important; }
@@ -1915,7 +1842,8 @@
     body.user-dark .ulo-progress-wrap { background: rgba(247,160,26,0.1) !important; }
     body.user-dark .ulo-sdot          { background: rgba(247,160,26,0.15) !important; }
     body.user-dark .ulo-sdot.done     { background: #f7a01a !important; }
-    body.user-dark .ulo-sdot.active   { background: #fde68a !important; }
+    body.user-dark .ulo-sdot.active   { background: linear-gradient(90deg, #b86c00, #f7a01a) !important; }
+    body.user-dark .ulo-progress-wrap { background: rgba(247,160,26,0.1) !important; border-color: rgba(247,160,26,0.2) !important; }
     /* ── Error state (hidden until needed) ── */
     #ulo_error {
       display: none;
@@ -3127,6 +3055,76 @@
       transition: color 0.2s;
     }
 
+    /* ── No-contribution reminder — amber pulse glow ── */
+    .hero-stat--no-contrib {
+      background: rgba(247, 160, 26, 0.10) !important;
+      border: 1.5px solid rgba(247, 160, 26, 0.45) !important;
+      animation: _hs_glow 2.2s ease-in-out infinite;
+    }
+    .hero-stat--no-contrib .hero-stat-l {
+      color: #fbbf24 !important;
+    }
+    .hero-stat--no-contrib .hero-stat-v {
+      color: #fde68a !important;
+    }
+    .hero-stat--no-contrib .hero-stat-hint {
+      display: block;
+      font-size: 9.5px;
+      color: rgba(251, 191, 36, 0.72);
+      margin-top: 3px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+    @keyframes _hs_glow {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(247, 160, 26, 0);
+        border-color: rgba(247, 160, 26, 0.30);
+        background: rgba(247, 160, 26, 0.08);
+      }
+      50% {
+        box-shadow: 0 0 10px 2px rgba(247, 160, 26, 0.18);
+        border-color: rgba(247, 160, 26, 0.62);
+        background: rgba(247, 160, 26, 0.16);
+      }
+    }
+    body.user-dark .hero-stat--no-contrib {
+      background: rgba(247, 160, 26, 0.10) !important;
+      border-color: rgba(247, 160, 26, 0.45) !important;
+      animation: _hs_glow_dark 2.2s ease-in-out infinite !important;
+    }
+    @keyframes _hs_glow_dark {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(247, 160, 26, 0);
+        border-color: rgba(247, 160, 26, 0.35);
+        background: rgba(247, 160, 26, 0.08);
+      }
+      50% {
+        box-shadow: 0 0 14px 3px rgba(247, 160, 26, 0.24);
+        border-color: rgba(247, 160, 26, 0.68);
+        background: rgba(247, 160, 26, 0.18);
+      }
+    }
+    @media (max-width: 480px) {
+      .hero-stat--no-contrib { animation-name: _hs_glow_mobile; }
+      body.user-dark .hero-stat--no-contrib { animation-name: _hs_glow_dark_mobile !important; }
+      @keyframes _hs_glow_mobile {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(247,160,26,0); border-color: rgba(247,160,26,0.30); background: rgba(247,160,26,0.08); }
+        50%       { box-shadow: 0 0 7px 1px rgba(247,160,26,0.15); border-color: rgba(247,160,26,0.55); background: rgba(247,160,26,0.14); }
+      }
+      @keyframes _hs_glow_dark_mobile {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(247,160,26,0); border-color: rgba(247,160,26,0.35); background: rgba(247,160,26,0.08); }
+        50%       { box-shadow: 0 0 9px 2px rgba(247,160,26,0.20); border-color: rgba(247,160,26,0.62); background: rgba(247,160,26,0.16); }
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-stat--no-contrib,
+      body.user-dark .hero-stat--no-contrib {
+        animation: none !important;
+        border-color: rgba(247, 160, 26, 0.55) !important;
+        background: rgba(247, 160, 26, 0.12) !important;
+      }
+    }
+
     /* 12. Scroll-to-top button — ring indicator */
     #scrollTopBtn::before {
       content: '';
@@ -3372,6 +3370,7 @@
 
     /* ── Payment form inputs (inline-styled, overridden here) ── */
     body.user-dark #pr_month,
+    body.user-dark #pr_year,
     body.user-dark #pr_amount,
     body.user-dark #pr_mode,
     body.user-dark #pr_utr,
@@ -3382,6 +3381,7 @@
       border-color: #2d3748 !important;
     }
     body.user-dark #pr_month:focus,
+    body.user-dark #pr_year:focus,
     body.user-dark #pr_amount:focus,
     body.user-dark #pr_mode:focus,
     body.user-dark #pr_utr:focus,
@@ -4206,11 +4206,12 @@
           <div>
             <div class="hero-label">Donated This Year (<span id="heroYearLabel">2025</span>)</div>
             <div class="hero-amount">₹ <span id="thisYearAmount">0</span></div>
-            <div id="lastDonationRow" style="display:none;margin-top:7px;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span style="font-size:11px;color:var(--ink-faint);">Last donation:</span>
-              <span id="lastDonationAmt" style="font-size:12px;font-weight:700;color:var(--gold-lt);font-family:var(--font-h);"></span>
-              <span style="font-size:11px;color:rgba(255,255,255,0.45);">·</span>
-              <span id="lastDonationDate" style="font-size:11px;color:var(--ink-faint);"></span>
+            <div id="lastDonationRow" style="display:none;margin-top:9px;align-items:center;gap:5px;flex-wrap:wrap;background:rgba(247,160,26,0.10);border:1px solid rgba(247,160,26,0.22);border-radius:20px;padding:4px 11px;width:fit-content;">
+              <i class="fa-solid fa-clock-rotate-left" style="font-size:10px;color:var(--gold);opacity:0.85;"></i>
+              <span style="font-size:10.5px;color:var(--ink-faint);letter-spacing:.2px;">Last:</span>
+              <span id="lastDonationAmt" style="font-size:12.5px;font-weight:700;color:var(--gold-lt);font-family:var(--font-h);"></span>
+              <span style="font-size:11px;color:rgba(255,255,255,0.35);">·</span>
+              <span id="lastDonationDate" style="font-size:10.5px;color:rgba(255,255,255,0.55);"></span>
             </div>
           </div>
           <div style="text-align:right;">
@@ -4527,13 +4528,20 @@
             </div>
             <div>
               <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
-                <i class="fa-solid fa-indian-rupee-sign" class="_u-gold-icon-xs"></i> Amount <span style="color:#ef4444;">*</span>
+                <i class="fa-solid fa-calendar" class="_u-gold-icon-xs"></i> Year <span style="color:#ef4444;">*</span>
               </label>
-              <div style="position:relative;">
-                <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#78350f;">₹</span>
-                <input type="number" id="pr_amount" placeholder="0" min="1" class="f-input-gold"
-                  style="width:100%;padding:10px 12px 10px 26px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"/>
-              </div>
+              <select id="pr_year" class="f-input-gold" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;">
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:5px;margin-bottom:5px;">
+              <i class="fa-solid fa-indian-rupee-sign" class="_u-gold-icon-xs"></i> Amount <span style="color:#ef4444;">*</span>
+            </label>
+            <div style="position:relative;">
+              <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#78350f;">₹</span>
+              <input type="number" id="pr_amount" placeholder="0" min="1" class="f-input-gold"
+                style="width:100%;padding:10px 12px 10px 26px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;background:var(--bg);color:var(--ink);font-family:var(--font-b);transition:border-color .2s;box-sizing:border-box;"/>
             </div>
           </div>
 
@@ -4705,23 +4713,13 @@
     <div class="ulo-inner">
       <!-- Normal loading state — Premium Temple Edition -->
       <div id="ulo_loading">
-        <!-- Rich brown header band -->
-        <div class="ulo-card-header">
-          <span class="ulo-temple-symbol">🕉️</span>
-          <div class="ulo-temple-name">Mandir</div>
-          <div class="ulo-tagline">॥ जय श्री राम ॥</div>
-        </div>
-        <!-- Ornate divider -->
-        <div class="ulo-divider"><div class="ulo-divider-diamond"></div></div>
         <!-- Body -->
         <div class="ulo-card-body">
           <!-- Double-ring arc spinner -->
           <div class="ulo-arc-wrap">
             <svg viewBox="0 0 76 76" xmlns="http://www.w3.org/2000/svg">
-              <!-- outer ring -->
               <circle class="ulo-arc-track-outer" cx="38" cy="38" r="34"/>
               <circle class="ulo-arc-fill-outer"  cx="38" cy="38" r="34" transform="rotate(-90 38 38)"/>
-              <!-- inner ring -->
               <circle class="ulo-arc-track-inner" cx="38" cy="38" r="24"/>
               <circle class="ulo-arc-fill-inner"  cx="38" cy="38" r="24" transform="rotate(90 38 38)"/>
             </svg>
@@ -4738,7 +4736,7 @@
             <div class="ulo-sdot" data-step="4"></div>
             <div class="ulo-sdot" data-step="5"></div>
           </div>
-          <!-- Progress track -->
+          <!-- Progress track — enhanced with border + inner highlight -->
           <div class="ulo-progress-wrap">
             <div class="ulo-progress-bar active" id="ulo_prog_bar"></div>
           </div>
@@ -5846,6 +5844,10 @@
         return { icon: "📴", title: "No Internet Connection",
           detail: "You appear to be offline. Please check your Wi-Fi or mobile data, then tap Retry." };
       }
+      if (msg.includes("empty or incomplete data") || msg.includes("profile could not be found")) {
+        return { icon: "🔄", title: "Data Not Ready",
+          detail: "The server responded but your data wasn't ready yet. This is usually temporary — please tap Retry." };
+      }
       if (name === "timeouterror" || msg.includes("timed out") || msg.includes("timeout") || msg.includes("time out")) {
         return { icon: "⏱️", title: "Request Timed Out",
           detail: "The server took too long to respond. This can happen on slow connections or when the server is busy. Please try again." };
@@ -5894,10 +5896,7 @@
       "Loading recent activity…",
       "Almost there…"
     ];
-    var _uloCurrentStep = 0;
-
     function _uloStep(stepIndex) {
-      _uloCurrentStep = stepIndex;
       var total = _ULO_STEPS.length;
       var pct   = Math.round((stepIndex / total) * 100);
 
@@ -6004,6 +6003,9 @@
         btn.style.opacity = "0.8";
       }
       _uloRetryCount++;
+      // Bust cache before retry — without this, getCached() returns the same
+      // stale/empty data that caused the error, so retry always fails again.
+      if (typeof mandirCacheBust === "function") mandirCacheBust("getAllData");
       // Small delay so UI repaints before heavy init() runs
       setTimeout(function() {
         _showUserLoadingOverlay(); // reset to spinner
@@ -6017,6 +6019,15 @@
       try {
         _uloStep(0); // Connecting to server…
         let allData = (await getCached("getAllData")) || {};
+
+        // ── Guard: treat missing or structurally empty response as an error
+        //    so the retry overlay is shown instead of a blank/zero dashboard.
+        //    "users" array must exist and be non-empty — it's the minimum proof
+        //    that the server returned real data (not a timeout stub or empty obj).
+        if (!allData || typeof allData !== "object" || !Array.isArray(allData.users) || allData.users.length === 0) {
+          throw new Error("Server returned empty or incomplete data. Please retry.");
+        }
+
         _uloStep(1); // Fetching member data…
         let s = _sess();
         if (!s) { location.replace("login.html"); return; }
@@ -6024,9 +6035,15 @@
         users = allData.users || []; types = allData.types || []; occasions = allData.occasions || [];
         allContributions = allData.contributions || []; allGoals = allData.goals || [];
         data = allContributions.filter(c => String(c.UserId) === String(s.userId));
-        let myProfile = users.find(u => String(u.UserId) === String(s.userId));
+
+        // ── Guard: current user must exist in the users list
+        //    If profile is missing, data is partial — show retry rather than a broken dashboard.
+        var _myProfile = users.find(u => String(u.UserId) === String(s.userId));
+        if (!_myProfile) {
+          throw new Error("Your profile could not be found. Please retry.");
+        }
         _uloStep(3); // Building your dashboard…
-        updateHeader(myProfile, s);
+        updateHeader(_myProfile, s);
         calculateTotal();
 
         // ── Reveal hero FIRST — user sees their data immediately
@@ -6048,7 +6065,7 @@
         // ── Birthday celebration — once per birthday, 30s after login
         (function() {
           try {
-            var mp = users.find(function(u){ return String(u.UserId) === String(s.userId); });
+            var mp = users.find(function(u){ return String(u.UserId) === String(s.userId); }) || _myProfile;
             if (!mp || !mp.DOB) return;
             var dobStr = String(mp.DOB || "");
             var dobDay, dobMonth;
@@ -6153,11 +6170,14 @@
 
     function loadSummaryYears() {
       let yrs = new Set(); data.forEach(c => { let y = Number(c.Year); if (!isNaN(y) && y > 2000) yrs.add(y); });
-      for (let y = 2023; y <= new Date().getFullYear(); y++)yrs.add(y);
+      // Fill any gap between earliest data year and current year so no year is missing
+      const curY = new Date().getFullYear();
+      const minY = yrs.size > 0 ? Math.min(...yrs) : curY;
+      for (let y = minY; y <= curY; y++) yrs.add(y);
       let sorted = Array.from(yrs).sort((a, b) => b - a);
       let sel = document.getElementById("summaryYear");
       sel.innerHTML = sorted.map(y => `<option value="${y}">${y}</option>`).join("");
-      sel.value = new Date().getFullYear();
+      sel.value = curY;
     }
 
     function renderSummaries() {
@@ -6186,7 +6206,9 @@
 
     function loadFilters() {
       let yrs = new Set(); data.forEach(c => { let y = Number(c.Year); if (!isNaN(y) && y > 2000) yrs.add(y); });
-      for (let y = 2023; y <= new Date().getFullYear(); y++)yrs.add(y);
+      const curY = new Date().getFullYear();
+      const minY = yrs.size > 0 ? Math.min(...yrs) : curY;
+      for (let y = minY; y <= curY; y++) yrs.add(y);
       document.getElementById("filterYear").innerHTML = `<option value="">All Years</option>` + Array.from(yrs).sort((a, b) => b - a).map(y => `<option value="${y}">${y}</option>`).join("");
       document.getElementById("filterMonth").innerHTML = `<option value="">All Months</option>` + months.map(m => `<option value="${m}">${m}</option>`).join("");
       document.getElementById("filterType").innerHTML = `<option value="">All Types</option>` + types.map(t => `<option value="${escapeHtml(String(t.TypeId))}">${escapeHtml(t.TypeName)}</option>`).join("");
@@ -6196,11 +6218,32 @@
     const _pgSize = 10;
 
     // ── Shared date parser: handles dd-MM-yyyy and dd-MM-yyyy H:mm:ss / HH:mm:ss ──
+    // _parseDMY: parse PaymentDate string from AppScript backend (always "dd-MM-yyyy HH:mm:ss" IST).
+    // Also guards against raw JS Date objects (rare Sheets auto-parse edge case).
     function _parseDMY(s) {
       if (!s) return 0;
-      const m = String(s).trim().match(/^(\d{2})-(\d{2})-(\d{4})(?:\s+(\d{1,2}):(\d{2}):(\d{2}))?/);
-      if (m) return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0), +(m[6]||0)).getTime();
-      const t = new Date(s).getTime(); return isNaN(t) ? 0 : t;
+      // Guard: Date object (Sheets auto-parsed the cell)
+      if (s instanceof Date) { const t = s.getTime(); return isNaN(t) ? 0 : t; }
+      const str = String(s).trim();
+      if (!str) return 0;
+      // dd-MM-yyyy HH:mm:ss (AppScript standard)
+      const mD = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})(?:\s+(\d{1,2}):(\d{2}):(\d{2}))?/);
+      if (mD) {
+        const D=+mD[1], M=+mD[2]-1, Y=+mD[3], hh=+(mD[4]||0), mi=+(mD[5]||0), ss=+(mD[6]||0);
+        if (D<1||D>31||M<0||M>11) { console.error("[_parseDMY] Bad date in sheet — raw:", str, "| Check CONTRIBUTIONS PaymentDate row with this value."); return 0; }
+        return new Date(Y,M,D,hh,mi,ss).getTime();
+      }
+      // d/M/yyyy h:mm am/pm (admin locale)
+      const mS = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(am|pm))?)?/i);
+      if (mS) {
+        const D=+mS[1], M=+mS[2]-1, Y=+mS[3];
+        var hh=+(mS[4]||0), mi=+(mS[5]||0), ss=+(mS[6]||0), ap=(mS[7]||"").toLowerCase();
+        if(ap==="pm"&&hh<12)hh+=12; if(ap==="am"&&hh===12)hh=0;
+        if (D<1||D>31||M<0||M>11) { console.error("[_parseDMY] Bad date — raw:", str); return 0; }
+        return new Date(Y,M,D,hh,mi,ss).getTime();
+      }
+      const t = new Date(str).getTime();
+      return isNaN(t) ? 0 : t;
     }
 
     function renderTable(list) {
@@ -6314,24 +6357,65 @@
       if (ylEl) ylEl.textContent = curY;
 
       // ── Last donation row ──
-      const sorted = data
-        .filter(c => (String(c.Status || "Approved")).toLowerCase() === "approved")
-        .slice()
-        .sort((a, b) => _parseDMY(b.PaymentDate) - _parseDMY(a.PaymentDate));
+      const approvedData = data.filter(c => (String(c.Status || "Approved")).toLowerCase() === "approved");
+      const sorted = approvedData.slice().sort((a, b) => _parseDMY(b.PaymentDate) - _parseDMY(a.PaymentDate));
       const last = sorted[0];
       const ldrEl = document.getElementById("lastDonationRow");
       if (last && ldrEl) {
         document.getElementById("lastDonationAmt").textContent = "₹" + fmt(last.Amount);
-        document.getElementById("lastDonationDate").textContent = formatPaymentDate(last.PaymentDate);
+        (function() {
+          var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+          var rawVal = last.PaymentDate;
+          var dateStr = "—";
+          // Case A: Date object (rare — Sheets auto-parsed the cell)
+          if (rawVal instanceof Date && !isNaN(rawVal.getTime())) {
+            var fd=rawVal, fh=fd.getHours(), fm=fd.getMinutes();
+            dateStr=fd.getDate()+" "+MONTHS[fd.getMonth()]+" "+fd.getFullYear()+", "+(fh%12||12)+":"+(fm<10?"0"+fm:fm)+" "+(fh>=12?"PM":"AM");
+          } else {
+            var raw = String(rawVal || "").trim();
+            // Case B: dd-MM-yyyy or d/M/yyyy string (AppScript standard)
+            var m = raw.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})(?:[T\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(am|pm))?)?/i);
+            if (m) {
+              var D=+m[1], M=+m[2]-1, Y=+m[3], hh=+(m[4]||0), mi=+(m[5]||0);
+              var ap=(m[7]||"").toLowerCase();
+              if(ap==="pm"&&hh<12)hh+=12; if(ap==="am"&&hh===12)hh=0;
+              if (D>=1&&D<=31&&M>=0&&M<=11) {
+                var fd=new Date(Y,M,D,hh,mi), fh=fd.getHours(), fm=fd.getMinutes();
+                dateStr=D+" "+MONTHS[M]+" "+Y+", "+(fh%12||12)+":"+(fm<10?"0"+fm:fm)+" "+(fh>=12?"PM":"AM");
+              } else {
+                console.error("[LastDonation] Bad PaymentDate:", raw, "| ReceiptID:", last.ReceiptID||"?", "| Fix dd-MM-yyyy in Google Sheet.");
+              }
+            } else {
+              // Case C: ISO fallback
+              var fd2=new Date(raw);
+              if(!isNaN(fd2)){var fh2=fd2.getHours(),fm2=fd2.getMinutes();dateStr=fd2.getDate()+" "+MONTHS[fd2.getMonth()]+" "+fd2.getFullYear()+", "+(fh2%12||12)+":"+(fm2<10?"0"+fm2:fm2)+" "+(fh2>=12?"PM":"AM");}
+            }
+          }
+          document.getElementById("lastDonationDate").textContent = dateStr;
+        })();
         ldrEl.style.display = "flex";
       }
 
       // ── Quick stats: This Month + Records ──
       const thisMonth = data.filter(c => String(c.Year) === String(curY) && c.ForMonth === curM).reduce((s, c) => s + Number(c.Amount || 0), 0);
+      const noContrib = thisMonth === 0;
       const qs = document.getElementById("quickStats");
       if (qs) {
-        qs.innerHTML = [["📅 This Month", "₹" + fmt(thisMonth)], ["🧾 Records", data.length]].map(([l, v]) =>
-          `<div class="hero-stat"><div class="hero-stat-l">${l}</div><div class="hero-stat-v">${v}</div></div>`).join("");
+        const monthCard = noContrib
+          ? `<div class="hero-stat hero-stat--no-contrib">
+               <div class="hero-stat-l">📅 This Month</div>
+               <div class="hero-stat-v">₹0</div>
+               <span class="hero-stat-hint">No contribution yet</span>
+             </div>`
+          : `<div class="hero-stat">
+               <div class="hero-stat-l">📅 This Month</div>
+               <div class="hero-stat-v">₹${fmt(thisMonth)}</div>
+             </div>`;
+        const recordsCard = `<div class="hero-stat">
+               <div class="hero-stat-l">🧾 Records</div>
+               <div class="hero-stat-v">${data.length}</div>
+             </div>`;
+        qs.innerHTML = monthCard + recordsCard;
       }
     }
 
@@ -7268,14 +7352,16 @@
     const _origShowReceipt = window.showReceipt;
     window.showReceipt = function(c, userName, typeName, occasionName, isAdmin) {
       _origShowReceipt(c, userName, typeName, occasionName, isAdmin);
-      // After modal renders, patch header background to brown
+      // After modal renders, find the header band by data attribute set by app.js,
+      // or fall back to first child div of ._mbdy that has a dark background.
+      // Using firstElementChild is more reliable than colour-string matching.
       setTimeout(function() {
         const modal = document.querySelector("._mbdy");
         if (!modal) return;
-        const hdrBand = modal.querySelector("div[style*='1e293b']") ||
-                        modal.querySelector("div[style*='334155']");
+        const hdrBand = modal.querySelector("[data-receipt-header]") ||
+                        modal.firstElementChild;
         if (hdrBand) {
-          hdrBand.style.background = "var(--brown-grad)";
+          hdrBand.style.background = "linear-gradient(135deg,#2a0f00 0%,#3c1a00 60%,#2a0f00 100%)";
         }
       }, 30);
     };
@@ -8014,11 +8100,7 @@
       document.documentElement.lang = "hi";
       const btn = document.getElementById("userLangBtn");
       if (btn) btn.textContent = "हिं";
-      document.addEventListener("DOMContentLoaded", function () {
-        _applyUserLang("HI");
-        const b = document.getElementById("userLangBtn");
-        if (b) b.textContent = "हिं";
-      });
+      // Translation is applied in init() after data loads — no extra DOMContentLoaded needed
     }
 
     // ── Scroll to top button + page progress bar (rAF-throttled for performance)
@@ -8064,6 +8146,23 @@
       if (prMonth && prMonth.options.length <= 1) {
         months.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; prMonth.appendChild(o); });
       }
+      // Populate payment year dropdown — from earliest data year up to current year
+      const prYear = document.getElementById("pr_year");
+      if (prYear && prYear.options.length === 0) {
+        const curY = new Date().getFullYear();
+        // Find earliest year in loaded contributions, floor at 2023
+        let minY = curY;
+        if (typeof data !== "undefined" && data.length > 0) {
+          data.forEach(function(c) { var y = Number(c.Year); if (!isNaN(y) && y > 2000 && y < minY) minY = y; });
+        }
+        minY = Math.min(minY, 2023);
+        for (let y = curY; y >= minY; y--) {
+          const o = document.createElement("option");
+          o.value = String(y); o.textContent = String(y);
+          if (y === curY) o.selected = true;
+          prYear.appendChild(o);
+        }
+      }
       // Populate payment mode dropdown — uses PAYMENT_MODES (sourced from constants.js if available)
       const prMode = document.getElementById("pr_mode");
       if (prMode && prMode.options.length === 0) {
@@ -8094,6 +8193,7 @@
     async function submitPaymentRequest() {
       const s = (_sess() || {});
       const month = (document.getElementById("pr_month") || {}).value || "";
+      const year = (document.getElementById("pr_year") || {}).value || String(new Date().getFullYear());
       const amount = (document.getElementById("pr_amount") || {}).value || "";
       const mode = (document.getElementById("pr_mode") || {}).value || "UPI";
       const utr = (document.getElementById("pr_utr") || {}).value || "";
@@ -8140,7 +8240,7 @@
         const res = await postData({
           action: "submitContributionRequest",
           UserId: s.userId, Amount: amount, PaymentMode: mode,
-          ForMonth: month, Year: String(new Date().getFullYear()),
+          ForMonth: month, Year: year,
           UtrRef: utr, Note: note, SlipURL: slipUrl,
           sessionToken: s.sessionToken || "", userId: s.userId || ""
         });
@@ -8148,7 +8248,7 @@
           show("✅ Request submitted! Admin will verify and record it soon.", true);
           // Reset form after 5 seconds
           setTimeout(() => {
-            ["pr_month", "pr_amount", "pr_utr", "pr_note"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+            ["pr_month", "pr_year", "pr_amount", "pr_utr", "pr_note"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
             const slipInput = document.getElementById("pr_slip"); if (slipInput) slipInput.value = "";
             const slipName = document.getElementById("pr_slip_name"); if (slipName) slipName.textContent = "Tap to attach payment slip or screenshot";
             const slipPrev = document.getElementById("pr_slip_preview_wrap"); if (slipPrev) slipPrev.style.display = "none";
@@ -8189,6 +8289,7 @@
           return !dismissed.includes(String(r.ReqId || ""));
         });
         if (visible.length === 0) {
+          _contribReqsLoaded = true;
           section.style.display = "block";
           listEl.innerHTML = `<div class="card" style="margin-bottom:10px;">
             <div class="card-body" style="text-align:center;padding:24px 16px;">
@@ -8678,12 +8779,17 @@
       setTimeout(function(){
         var o = document.getElementById("_bdayCelebOverlay");
         if (o) { o.style.transition = "opacity 0.8s ease"; o.style.opacity = "0"; setTimeout(function(){ o.remove(); }, 800); }
+        // Particle canvas cleans itself up on next rAF tick once overlay is gone
+        // Force-remove it after the fade so it never lingers
+        setTimeout(function(){
+          var pc = document.querySelector("canvas[style*='z-index:100001']");
+          if (pc) pc.remove();
+        }, 1000);
       }, 18000);
     }
 
-    function _escHtml(s) {
-      return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-    }
+    // _escHtml: alias to escapeHtml (defined in app.js) — kept for birthday overlay compatibility
+    function _escHtml(s) { return escapeHtml(s); }
 
     /* ══════════════════════════════════════════════════════════════
        UNIVERSAL BUTTON ANIMATION ENGINE  v2
@@ -8790,14 +8896,6 @@
         }
       };
 
-      window._btnFlashSuccess = function(btn, label) {
-        if (!btn) return;
-        var orig = btn.dataset.origHtml || btn.innerHTML;
-        btn.dataset.loading = "";
-        btn.innerHTML = '<span class="btn-check-flash">✅</span> ' + (label || "Done!");
-        setTimeout(function() { btn.innerHTML = orig; }, 1200);
-      };
-
     })();
     /* ══ END UNIVERSAL BUTTON ANIMATION ENGINE v2 ══ */
 
@@ -8897,5 +8995,4 @@
   </script>
 </body>
 
-</html>
 </html>

@@ -5466,6 +5466,46 @@
       }
     }
 
+    /* ── Centralized email quota UI refresh ──────────────────────────────
+       Call this any time an email may have been consumed (contribution save,
+       monthly report, birthday test send, bulk insert, walk-in save).
+       Busts the quota cache then updates all 3 quota UI elements:
+         • sb_email_quota   — sidebar "Email Today" counter
+         • sb_quota_warn    — sidebar low-quota warning banner
+         • ea_quota_display — Email Automation page quota bar
+       Always busts cache first so the counter is live, not cached.
+    ─────────────────────────────────────────────────────────────────── */
+    function _refreshEmailQuotaUI() {
+      // Bust both the app.js quota cache vars and the perf-cache layer
+      window._quotaCache = null;
+      window._quotaCacheTime = 0;
+      if (typeof mandirCacheBust === "function") mandirCacheBust("getEmailQuota");
+      if (typeof getEmailQuotaCached !== "function") return;
+
+      getEmailQuotaCached().then(function(q) {
+        if (!q || typeof q.used === "undefined") return;
+        var pct   = Math.round((q.used / q.limit) * 100);
+        var color = q.remaining < 10 ? "#f87171"
+                  : q.remaining < 30 ? "#fbbf24" : "#60a5fa";
+        var col2  = pct > 80 ? "#f87171" : pct > 50 ? "#fbbf24" : "#34d399";
+
+        // 1. Sidebar — Email Today counter + warning banner
+        var sbEq = document.getElementById("sb_email_quota");
+        if (sbEq) { sbEq.style.color = color; sbEq.innerText = q.used + " / " + q.limit + " used"; }
+        var warnEl = document.getElementById("sb_quota_warn");
+        if (warnEl) warnEl.style.display = q.remaining < 10 ? "block" : "none";
+
+        // 2. Email Automation page quota display (only updates if page is open)
+        var eaEl = document.getElementById("ea_quota_display");
+        if (eaEl) {
+          eaEl.innerHTML = "<strong style='color:" + col2 + ";'>" + q.used +
+            "</strong> used of <strong>" + q.limit +
+            "</strong> today &nbsp;&middot;&nbsp; <strong style='color:#34d399;'>" +
+            q.remaining + " remaining</strong>";
+        }
+      }).catch(function() {});
+    }
+
     /* ─────────────────────────────────────────────────────────────────
        Extra UI calls per entity — these are what app.js is missing.
        Each function is called AFTER app.js's own render calls finish.
@@ -5485,6 +5525,9 @@
         _sr_call(updateSidebarSummary);
         // Bust yearly summary so next open is fresh
         mandirCacheBust("getYearlySummary");
+        // Refresh email quota — a receipt email may have been sent
+        // Slight delay so Apps Script counter is committed before we read it
+        setTimeout(_refreshEmailQuotaUI, 1200);
         // Refresh pending-request badge quietly
         getData("getContributionRequests").then(function(res) {
           window._allRequests = Array.isArray(res) ? res : [];
@@ -5507,6 +5550,10 @@
       users: function() {
         // Summary card shows total-members count
         _sr_call(loadSummary);
+        // Sidebar live totals (member count updates here too)
+        _sr_call(updateSidebarSummary);
+        // approveUser and rejectUser both send an email — refresh quota counter
+        setTimeout(_refreshEmailQuotaUI, 1200);
         // Bulk-insert user dropdown (separate from the main loadUsers() select)
         var bkUser = document.getElementById("bk_user");
         if (bkUser && typeof users !== "undefined") {
@@ -5526,11 +5573,15 @@
       types: function() {
         // Contribution records type-filter dropdown
         _sr_call(_cr_buildFilterDropdowns);
+        // Tracker type select (stale after a new type is added)
+        _sr_call(_ct_buildTypeSelect);
       },
 
       occasions: function() {
         // Contribution records occasion-filter dropdown
         _sr_call(_cr_buildFilterDropdowns);
+        // Tracker occasion select (stale after a new occasion is added)
+        _sr_call(_ct_buildOccasionSelect);
       },
 
       expenseTypes: function() {
@@ -5541,11 +5592,15 @@
       },
 
       goals: function() {
-        /* app.js already calls renderGoals() — nothing extra needed */
+        // app.js calls renderGoals() when _origSmartRefresh is present.
+        // Also call it here as a safety net in case app.js original is absent.
+        _sr_call(renderGoals);
+        _sr_call(updateSidebarSummary);
       },
 
       events: function() {
         /* app.js does not handle events; cache bust is via _CACHE_BUST_ON_WRITE */
+        mandirCacheBust("getEvents");
         _sr_call(loadEvents);
       },
 
@@ -5568,6 +5623,9 @@
         _sr_call(loadSummary);
         _sr_call(loadEvents);
         mandirCacheBust("getYearlySummary");
+        mandirCacheBust("getEvents");
+        // Refresh email quota counter in sidebar + EA page
+        setTimeout(_refreshEmailQuotaUI, 1200);
         getData("getContributionRequests").then(function(res) {
           window._allRequests = Array.isArray(res) ? res : [];
           _sr_call(_updateReqBadge);
@@ -7813,19 +7871,18 @@
       let sbe = document.getElementById("sb_exp");
       if (sbe) sbe.innerText = "₹" + fmt(yearE);
 
-      // Email quota — fetch async, non-blocking
-      let sbEq = document.getElementById("sb_email_quota");
-      if (sbEq) {
-        getEmailQuotaCached().then(q => {
-          if (q && typeof q.used !== "undefined") {
-            const color = q.remaining < 10 ? "#f87171" : q.remaining < 30 ? "#fbbf24" : "#60a5fa";
-            sbEq.style.color = color;
-            sbEq.innerText = q.used + " / " + q.limit + " used";
-            // H9: show/hide low-quota warning
-            const warnEl = document.getElementById("sb_quota_warn");
-            if (warnEl) warnEl.style.display = q.remaining < 10 ? "block" : "none";
-          }
-        }).catch(() => { if (sbEq) sbEq.innerText = "—"; });
+      // Email quota — use cached value (no cache bust here; _refreshEmailQuotaUI
+      // handles busting when an email is actually sent)
+      if (typeof getEmailQuotaCached === "function") {
+        getEmailQuotaCached().then(function(q) {
+          if (!q || typeof q.used === "undefined") return;
+          var color = q.remaining < 10 ? "#f87171" : q.remaining < 30 ? "#fbbf24" : "#60a5fa";
+          var sbEq = document.getElementById("sb_email_quota");
+          if (sbEq) { sbEq.style.color = color; sbEq.innerText = q.used + " / " + q.limit + " used"; }
+          // H9: show/hide low-quota warning
+          var warnEl = document.getElementById("sb_quota_warn");
+          if (warnEl) warnEl.style.display = q.remaining < 10 ? "block" : "none";
+        }).catch(function() {});
       }
       // Populate WA selectors
       let waMonth = document.getElementById("wa_month");
@@ -10986,6 +11043,7 @@
             Status: status,
           });
           renderGoals();
+          if (typeof updateSidebarSummary === "function") updateSidebarSummary();
           document.getElementById("g_name").value = "";
           document.getElementById("g_target").value = "";
           document.getElementById("g_current").value = "";
@@ -11054,6 +11112,7 @@
             };
           }
           renderGoals();
+          if (typeof updateSidebarSummary === "function") updateSidebarSummary();
           closeModal();
         } else {
           toast("❌ Failed: " + (res.message || ""), "error");
@@ -12208,7 +12267,7 @@
             ForMonth: month || "General",
             Year: year,
             Note: note || "",
-            PaymentDate: new Date().toLocaleDateString("en-IN") + " " + new Date().toLocaleTimeString("en-IN"),
+            PaymentDate: (function(){ var n=new Date(); return String(n.getDate()).padStart(2,"0")+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+n.getFullYear()+" "+String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0")+":"+String(n.getSeconds()).padStart(2,"0"); })(),
           };
           const tName = types.find(t => String(t.TypeId) === String(typeId));
           const oName = occasions.find(o => String(o.OccasionId) === String(occasionId));
@@ -12676,7 +12735,7 @@
             res.style.color = ok ? "#166534" : "#991b1b";
             res.textContent = data ? data.message : "❌ Unknown error";
           }
-          if (ok) toast("✅ Birthday test email sent!", "");
+          if (ok) { toast("✅ Birthday test email sent!", ""); _refreshEmailQuotaUI(); }
           else toast("❌ Failed: " + (data&&data.message||"error"), "error");
         })
         .catch(function(err) {
@@ -12775,27 +12834,7 @@
           res.innerHTML = "✅ Done — sent to <strong>" + (r.sent || 0) + "</strong> members, skipped <strong>" + (r.skipped || 0) + "</strong>";
           res.style.color = "#065f46";
           // Bust quota cache and refresh sidebar + email auto page counters
-          window._quotaCache = null;
-          window._quotaCacheTime = 0;
-          getEmailQuotaCached().then(function(q) {
-            if (!q || typeof q.used === "undefined") return;
-            // 1. Sidebar — Email Today
-            var sbEq = document.getElementById("sb_email_quota");
-            if (sbEq) {
-              var color = q.remaining < 10 ? "#f87171" : q.remaining < 30 ? "#fbbf24" : "#60a5fa";
-              sbEq.style.color = color;
-              sbEq.innerText = q.used + " / " + q.limit + " used";
-            }
-            var warnEl = document.getElementById("sb_quota_warn");
-            if (warnEl) warnEl.style.display = q.remaining < 10 ? "block" : "none";
-            // 2. Email Automation page quota display
-            var eaEl = document.getElementById("ea_quota_display");
-            if (eaEl) {
-              var pct = Math.round((q.used / q.limit) * 100);
-              var col = pct > 80 ? "#f87171" : pct > 50 ? "#fbbf24" : "#34d399";
-              eaEl.innerHTML = "<strong style='color:" + col + ";'>" + q.used + "</strong> used of <strong>" + q.limit + "</strong> today &nbsp;&middot;&nbsp; <strong style='color:#34d399;'>" + q.remaining + " remaining</strong>";
-            }
-          }).catch(function() {});
+          _refreshEmailQuotaUI();
         } else {
           res.innerHTML = "❌ Failed: " + (r && r.message ? r.message : "Unknown error. Check Apps Script logs.");
           res.style.color = "#991b1b";
