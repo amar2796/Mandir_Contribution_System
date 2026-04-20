@@ -742,9 +742,16 @@ function checkSession() {
 
 /* ═══ LOCAL UPDATE ═══ */
 function updateLocalData(category,id,newData){
-  if(category==="contributions"){let i=data.findIndex(x=>String(x.Id)===String(id));if(i!==-1)data[i]={...data[i],...newData};}
-  else if(category==="expenses"){let i=expenses.findIndex(x=>String(x.Id)===String(id));if(i!==-1)expenses[i]={...expenses[i],...newData};}
-  render();if(typeof renderExpenses==="function")renderExpenses();loadSummary();
+  if(category==="contributions"){
+    let i=data.findIndex(x=>String(x.Id)===String(id));
+    if(i!==-1)data[i]={...data[i],...newData};
+    if(typeof render==="function")render();
+  } else if(category==="expenses"){
+    let i=expenses.findIndex(x=>String(x.Id)===String(id));
+    if(i!==-1)expenses[i]={...expenses[i],...newData};
+    if(typeof renderExpenses==="function")renderExpenses();
+  }
+  loadSummary();
 }
 
 /* ═══ YEAR DROPDOWN ═══ */
@@ -1018,10 +1025,8 @@ setTimeout(function(){ _getLogoB64(function(){}); }, 500);
 
 /** Normalises a ReceiptID: migrates legacy TRX- prefix to APP.receiptPrefix */
 function _displayRID(c) {
-  return (c.ReceiptID || "—").replace(
-    /^TRX-/,
-    (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : APP.legacyReceiptPrefix || "MNR") + "-"
-  );
+  const prefix = (typeof APP !== "undefined" && APP.receiptPrefix) ? APP.receiptPrefix : "MNR";
+  return (c.ReceiptID || "—").replace(/^TRX-/, prefix + "-");
 }
 
 /** Builds the WhatsApp text body for a contribution receipt (no duplicates) */
@@ -1524,7 +1529,7 @@ async function _generateQRDataUrl(text, sizePx) {
 
 /* ═══ VIEW-ONLY DETAIL POPUP ═══ */
 function showDetailPopup(title, rows, editFn){
-  let rowsHtml = rows.map(r=>`<div class="_row"><span class="_rl">${r[0]}</span><span class="_rv">${r[1]}</span></div>`).join("");
+  let rowsHtml = rows.map(r=>`<div class="_row"><span class="_rl">${escapeHtml(String(r[0]||""))}</span><span class="_rv">${escapeHtml(String(r[1]||""))}</span></div>`).join("");
   let editBtn = editFn ? `<button class="_mbtn" style="background:#f7a01a;" onclick="${editFn}"><i class="fa-solid fa-pen"></i> Edit</button>` : "";
   let html=`
     <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> ${title}</h3><button class="_mcls" onclick="closeModal()">×</button></div>

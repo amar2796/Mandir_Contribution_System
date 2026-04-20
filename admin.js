@@ -945,8 +945,11 @@
               base64: _adminSelfCroppedB64,
               fileName: "Admin_" + s.userId + "_" + Date.now() + ".jpg",
               oldPhotoURL: myProfile?.PhotoURL || "",
+              userId: s.userId || "",
+              sessionToken: s.sessionToken || ""
             }),
           });
+          if (!response.ok) throw new Error("Server error: " + response.status);
           let res = await response.json();
           if (res.status === "success") { photoURL = res.photoUrl; toast("✅ Photo uploaded!"); }
           else toast("Photo upload failed, profile still updating.", "warn");
@@ -1349,9 +1352,12 @@
             caption: caption,
             tags: tags,
             priority: 999,
-            AdminName: session.name || "Admin"
+            AdminName: session.name || "Admin",
+            userId: session.userId || "",
+            sessionToken: session.sessionToken || ""
           })
         });
+        if (!response.ok) throw new Error("Server error: " + response.status);
         var res = await response.json();
         if (res.status === "success") {
           toast("Photo uploaded to gallery!", "success");
@@ -4103,8 +4109,11 @@
               base64: _adminPendingCroppedB64,
               fileName: "User_" + id + "_" + Date.now() + ".jpg",
               oldPhotoURL: u?.PhotoURL || "",
+              userId: s.userId || "",
+              sessionToken: s.sessionToken || ""
             }),
           });
+          if (!response.ok) throw new Error("Server error: " + response.status);
           let res = await response.json();
           if (res.status === "success") {
             photoURL = res.photoUrl;
@@ -4274,8 +4283,9 @@
       window._mdEditing = null;
       if (res && res.status === 'updated') {
         toast('✅ Updated.');
-        // also refresh dropdowns that use types/expenseTypes
+        // Refresh dropdowns that use types/occasions/expenseTypes
         if (listName === 'types') loadTypes();
+        if (listName === 'occasions') loadOccasions();
         if (listName === 'expenseTypes') loadExpenseTypes();
       } else {
         toast('❌ Update failed.', 'error');
@@ -4578,21 +4588,19 @@
       }
       closeModal();
       const s = JSON.parse(localStorage.getItem("session") || "{}");
-      let done = 0, failed = 0;
       toast("Inserting " + finalRows.length + " entries...", "warn");
-      for (let r of finalRows) {
-        try {
-          let res = await postData({
-            action: "addContribution",
-            Id: Date.now() + "_" + r.month,
-            UserId: userId, Amount: r.amount, ForMonth: r.month,
-            Year: year, TypeId: typeId, OccasionId: "", Note: note,
-            sessionToken: s.sessionToken || "", userId: s.userId || ""
-          });
-          if (res.status === "success") done++; else failed++;
-        } catch (e) { failed++; }
-        await new Promise(r => setTimeout(r, 300));
-      }
+      // Send all entries in parallel instead of sequentially — reduces ~18s to ~2s for a full year
+      const results = await Promise.all(finalRows.map(function(r) {
+        return postData({
+          action: "addContribution",
+          Id: Date.now() + "_" + r.month,
+          UserId: userId, Amount: r.amount, ForMonth: r.month,
+          Year: year, TypeId: typeId, OccasionId: "", Note: note,
+          sessionToken: s.sessionToken || "", userId: s.userId || ""
+        }).catch(function() { return { status: "error" }; });
+      }));
+      const done   = results.filter(function(r) { return r && r.status === "success"; }).length;
+      const failed = results.length - done;
       toast(done > 0 ? "✅ Bulk insert: " + done + " added" + (failed > 0 ? ", " + failed + " failed" : ".") : "❌ All inserts failed.", done > 0 ? "" : "error");
       smartRefresh("contributions");
     }
@@ -4807,7 +4815,7 @@
       confirmModal("Delete this contribution?", async () => {
         try {
           const _s = JSON.parse(localStorage.getItem("session") || "{}");
-          let res = await postData({ action: "deleteContribution", Id: id, sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
+          let res = await postData({ action: "deleteContribution", Id: id, AdminName: _s.name || "Admin", sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
           if (res.status === "deleted") {
             smartRefresh("contributions");
             // UNDO: show toast with undo option
@@ -4815,7 +4823,9 @@
               _showUndoToast(_undoLabel, function() {
                 if (_undoSaved) {
                   var payload = Object.assign({ action: "addContribution" }, _undoSaved);
-                  delete payload.ReceiptID;
+                  // Preserve original ReceiptID so restored record keeps the same receipt number
+                  // Only remove the row Id so the server doesn't reject it as a duplicate row
+                  delete payload.Id;
                   postData(payload).then(function() {
                     smartRefresh("contributions");
                     toast("↩ Contribution restored.");
@@ -5028,9 +5038,12 @@
             base64: _rcptB64,
             fileName: _rcptFileName,
             existingURLs: JSON.stringify(existingUrls),
-            AdminName: s.name || "Admin"
+            AdminName: s.name || "Admin",
+            userId: s.userId || "",
+            sessionToken: s.sessionToken || ""
           })
         });
+        if (!response.ok) throw new Error("Server error: " + response.status);
         const res = await response.json();
 
         if (res.status === "success") {
@@ -8229,13 +8242,19 @@
         if (!contribRes || contribRes.status !== "success") {
           toast("Failed to record contribution.", "error"); return;
         }
-        await postData({
+        const resolveRes = await postData({
           action: "resolveContributionRequest",
           ReqId: r.ReqId,
           Status: "Approved",
-          AdminName: s.Name || "Admin",
+          AdminName: s.Name || s.name || "Admin",
           RejectionNote: ""
         });
+        if (resolveRes && resolveRes.status === "already_resolved") {
+          toast("⚠️ This request was already approved by another admin.", "warn");
+          loadContributionRequests();
+          window._approveReqInFlight = false;
+          return;
+        }
         let msg = "Request approved! Receipt: " + (contribRes.receiptId || "");
         if (contribRes.emailSent) msg += " · Receipt email sent";
         if (contribRes.emailSkipped) msg += " · Email quota reached";

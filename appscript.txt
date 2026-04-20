@@ -69,9 +69,9 @@ function _verifySession(params, actionName) {
   const userId = sanitize(params.userId || params.UserId || params.AdminName || "", 30);
   const token  = sanitize(params.sessionToken || params.token || "", 64);
   if (!token || !userId) {
-    // No token provided — allow but log (legacy/direct API call)
-    logAction(userId || "Unknown", "UNVERIFIED_CALL", "Action: " + actionName + " — no session token");
-    return true; // permissive: don't break existing clients without token
+    // No token or userId — reject and log. No legacy bypass.
+    logAction(userId || "Unknown", "REJECTED_NO_TOKEN", "Action: " + actionName + " — missing session token or userId");
+    return false;
   }
   try {
     const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
@@ -861,11 +861,20 @@ function sendReceiptEmail(toEmail, donorName, receiptId, amount, forMonth, year,
   }
 }
 
+// Helper: escape HTML special chars to prevent layout injection in emails
+function _htmlEscape(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 // Helper: one row in the receipt email table
 function _emailRow(label, value) {
   return `<tr>
-    <td style="padding:8px 0;color:#64748b;font-size:12px;border-bottom:1px solid #f1f5f9;width:45%;">${label}</td>
-    <td style="padding:8px 0;color:#1e293b;font-size:13px;font-weight:600;border-bottom:1px solid #f1f5f9;text-align:right;">${value}</td>
+    <td style="padding:8px 0;color:#64748b;font-size:12px;border-bottom:1px solid #f1f5f9;width:45%;">${_htmlEscape(label)}</td>
+    <td style="padding:8px 0;color:#1e293b;font-size:13px;font-weight:600;border-bottom:1px solid #f1f5f9;text-align:right;">${_htmlEscape(value)}</td>
   </tr>`;
 }
 
@@ -1156,6 +1165,17 @@ function doGet(e) {
     const month  = sanitize(e.parameter.month,  20);
     const year   = sanitize(e.parameter.year,   10);
     const jobKey = sanitize(e.parameter.jobKey, 50) || ("job_" + Date.now());
+    // Cooldown: prevent re-sending the same month+year report within 1 hour
+    const throttleKey = "MREPORT_SENT_" + (month || "") + "_" + (year || "");
+    let _throttled = false;
+    try {
+      const lastSent = PropertiesService.getScriptProperties().getProperty(throttleKey);
+      if (lastSent && (Date.now() - Number(lastSent)) < 3600000) { _throttled = true; }
+      else { PropertiesService.getScriptProperties().setProperty(throttleKey, String(Date.now())); }
+    } catch(e) {}
+    if (_throttled) {
+      result = { status: "error", message: "Monthly report for this period was already sent recently. Please wait 1 hour before re-sending." };
+    } else {
     // Mark job as pending immediately so client knows it started
     try {
       PropertiesService.getScriptProperties().setProperty(
@@ -1178,6 +1198,7 @@ function doGet(e) {
       );
     } catch(e) {}
     result = jobResult;
+    } // end cooldown else
   }
 
   // ── #9b: POLL for monthly report result
@@ -1712,6 +1733,7 @@ function doGet(e) {
   else if (action === "updateType") {
     result = updateSingle(SHEETS.TYPES, sanitize(e.parameter.TypeId,30), sanitize(e.parameter.TypeName,100));
     _bustSheetCache("c_types");
+    if (result && result.status === "updated") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Update Type", "TypeId: " + sanitize(e.parameter.TypeId,30));
   }
   else if (action === "updateSortOrder") {
     // FIX: wrap JSON.parse in try-catch — malformed order param would crash doGet
@@ -1725,20 +1747,30 @@ function doGet(e) {
     var nextSort = _getNextSortOrder(SHEETS.OCCASIONS);
     addRow(SHEETS.OCCASIONS, [generateId(), sanitize(e.parameter.OccasionName, 100), nextSort]);
     _bustSheetCache("c_occasions");
+    logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Occasion", sanitize(e.parameter.OccasionName,100));
     result = { status: "success" };
   }
   else if (action === "deleteOccasion")  { result = deleteRow(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30)); _bustSheetCache("c_occasions");}
-  else if (action === "updateOccasion")  { result = updateSingle(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30), sanitize(e.parameter.OccasionName,100)); _bustSheetCache("c_occasions");}
+  else if (action === "updateOccasion")  {
+    result = updateSingle(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30), sanitize(e.parameter.OccasionName,100));
+    _bustSheetCache("c_occasions");
+    if (result && result.status === "updated") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Update Occasion", "OccasionId: " + sanitize(e.parameter.OccasionId,30));
+  }
 
   // ── EXPENSE TYPES (with permanent SortOrder) ─────────────────────
   else if (action === "addExpenseType") {
     var nextSort = _getNextSortOrder(SHEETS.EXPENSE_TYPES);
     addRow(SHEETS.EXPENSE_TYPES, [generateId(), sanitize(e.parameter.Name, 100), nextSort]);
     _bustSheetCache("c_exptypes");
+    logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Expense Type", sanitize(e.parameter.Name,100));
     result = { status: "success" };
   }
   else if (action === "deleteExpenseType"){ result=deleteRow(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30));  _bustSheetCache("c_exptypes");}
-  else if (action === "updateExpenseType"){ result=updateSingle(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30),sanitize(e.parameter.Name,100)); _bustSheetCache("c_exptypes");}
+  else if (action === "updateExpenseType"){
+    result=updateSingle(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30),sanitize(e.parameter.Name,100));
+    _bustSheetCache("c_exptypes");
+    if (result && result.status === "updated") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Update Expense Type", "ExpenseTypeId: " + sanitize(e.parameter.ExpenseTypeId,30));
+  }
 
   // ════════════════════════════════════════════════════════════════
   //  IMPROVEMENT #1 + #3 — ADD CONTRIBUTION
@@ -1750,7 +1782,7 @@ function doGet(e) {
     const receiptId   = generateReceiptId();
     const paymentMode = sanitize(e.parameter.PaymentMode, 30) || "UPI";
     const userId      = sanitize(e.parameter.UserId, 30);
-    const amount      = sanitize(e.parameter.Amount, 20);
+    const amount      = Number(sanitize(e.parameter.Amount, 20)) || 0;
     const forMonth    = sanitize(e.parameter.ForMonth, 20);
     const year        = sanitize(e.parameter.Year, 10);
     const typeId      = sanitize(e.parameter.TypeId, 30);
@@ -1794,27 +1826,21 @@ function doGet(e) {
         // ✅ FIX: Do NOT call tryConsumeEmailQuota() here.
         // sendReceiptEmail() already calls it atomically inside.
         // Calling it here too was causing DOUBLE quota increment (+2 per email).
-        Logger.log("[addContribution] Walk-in email path. donorName=" + donorName + " walkInEmail=" + walkInEmail);
-        Logger.log("[addContribution] Calling sendReceiptEmail() — quota will be consumed inside it.");
         emailSent = sendReceiptEmail(
           walkInEmail, donorName, receiptId,
           amount, forMonth, year,
           typeName, occasionName, note,
           formatDate(), paymentMode
         );
-        Logger.log("[addContribution] Walk-in sendReceiptEmail() returned: " + emailSent);
         if (!emailSent) {
           emailSkipped = true;
-          Logger.log("[addContribution] Walk-in email skipped (quota full or send error).");
         }
       } else if (!isWalkIn) {
         // Regular member — send only if auto_receipt toggle is ON
         const emailSettings = getEmailSettings();
-        Logger.log("[addContribution] Regular member path. auto_receipt=" + emailSettings.auto_receipt + " userId=" + userId);
         if (emailSettings.auto_receipt) {
           const users = getSheetData(SHEETS.USERS);
           const donor = users.find(u => String(u.UserId) === userId);
-          Logger.log("[addContribution] Donor found=" + !!donor + " email=" + (donor ? donor.Email : "N/A"));
           if (donor && donor.Email && String(donor.Email).trim() !== "") {
             const types     = getSheetData(SHEETS.TYPES);
             const occasions = getSheetData(SHEETS.OCCASIONS);
@@ -1823,27 +1849,21 @@ function doGet(e) {
             // ✅ FIX: Do NOT call tryConsumeEmailQuota() here.
             // sendReceiptEmail() already calls it atomically inside.
             // Calling it here too was causing DOUBLE quota increment (+2 per email).
-            Logger.log("[addContribution] Calling sendReceiptEmail() for regular member — quota will be consumed inside it.");
             emailSent = sendReceiptEmail(
               donor.Email, donor.Name, receiptId,
               amount, forMonth, year,
               typeName, occasionName, note,
               formatDate(), paymentMode
             );
-            Logger.log("[addContribution] Regular sendReceiptEmail() returned: " + emailSent);
             if (!emailSent) {
               emailSkipped = true;
-              Logger.log("[addContribution] Regular member email skipped (quota full or send error).");
             }
           } else {
-            Logger.log("[addContribution] No email address for donor — skipping email.");
           }
         } else {
-          Logger.log("[addContribution] auto_receipt is OFF — email not sent.");
         }
       }
     } catch(emailErr) {
-      Logger.log("[addContribution] EMAIL ERROR (non-fatal): " + emailErr.toString());
       /* non-fatal — contribution was already saved */
     }
 
@@ -1860,7 +1880,7 @@ function doGet(e) {
     addRow(SHEETS.EXPENSES, [
       sanitize(e.parameter.Id, 30) || generateId(),
       sanitize(e.parameter.Title,         200),
-      sanitize(e.parameter.Amount,         20),
+      Number(sanitize(e.parameter.Amount,  20)) || 0,
       formatDate(),
       sanitize(e.parameter.Year,           10) || new Date().getFullYear(),
       sanitize(e.parameter.ExpenseTypeId,  30),
@@ -1871,14 +1891,16 @@ function doGet(e) {
   }
 
   else if (action === "deleteContribution") {
-    let id = sanitize(e.parameter.Id, 30);
+    let id    = sanitize(e.parameter.Id, 30);
+    let admin = sanitize(e.parameter.AdminName || "Admin", 100);
     result = deleteRow(SHEETS.CONTRIBUTIONS, id);
-    if (result.status === "deleted") logAction("Admin", "Delete Contribution", "Id: " + id);
+    if (result.status === "deleted") logAction(admin, "Delete Contribution", "Id: " + id);
   }
   else if (action === "deleteExpense") {
-    let id = sanitize(e.parameter.Id, 30);
+    let id    = sanitize(e.parameter.Id, 30);
+    let admin = sanitize(e.parameter.AdminName || "Admin", 100);
     result = deleteRow(SHEETS.EXPENSES, id);
-    if (result.status === "deleted") logAction("Admin", "Delete Expense", "Id: " + id);
+    if (result.status === "deleted") logAction(admin, "Delete Expense", "Id: " + id);
   }
   else if (action === "updateContribution") {
     result = updateRow(SHEETS.CONTRIBUTIONS, e.parameter);
@@ -2146,7 +2168,7 @@ function doGet(e) {
             if (String(allData[i][headers.indexOf("UserId")]||allData[i][0]) === userId) {
               sheet.getRange(i+1, mobileCol+1).setValue(saved.newMobile);
               SpreadsheetApp.flush();
-              logAction("User", "Mobile Number Changed", "UserId: " + userId + " | New: " + saved.newMobile);
+              logAction(userId, "Mobile Number Changed", "UserId: " + userId + " | New: " + saved.newMobile);
               found = true; break;
             }
           }
@@ -2223,10 +2245,13 @@ function doGet(e) {
             if (rowReqId === reqId && rowUserId === userId && rowStatus === "Pending") {
               const updates = { Amount: Number(amount)||0, PaymentMode: mode, ForMonth: month, UtrRef: utrRef, Note: note };
               if (slipUrl) updates.SlipURL = slipUrl;
+              // Batch all updates into a single setValues() call — avoids 5-6 separate Sheets API round-trips
+              const newRow = data2[i].slice();
               for (const [col, val] of Object.entries(updates)) {
                 const ci = hdrs.indexOf(col);
-                if (ci !== -1) sheet.getRange(i+1, ci+1).setValue(val);
+                if (ci !== -1) newRow[ci] = val;
               }
+              sheet.getRange(i + 1, 1, 1, newRow.length).setValues([newRow]);
               SpreadsheetApp.flush();
               logAction(userId, "EditContributionRequest", "ReqId:"+reqId+" Month:"+month+" Amount:"+amount);
               result = { status:"success" };
@@ -2285,15 +2310,30 @@ function doGet(e) {
       const status   = sanitize(e.parameter.Status, 20); // Approved or Rejected
       const admin    = sanitize(e.parameter.AdminName || "Admin", 100);
       const rejNote  = sanitize(e.parameter.RejectionNote || "", 300);
+      // Whitelist Status values — prevent arbitrary strings being written to sheet
+      const VALID_STATUSES = ["Approved", "Rejected"];
+      if (!VALID_STATUSES.includes(status)) {
+        result = { status: "error", message: "Invalid status value. Must be Approved or Rejected." };
+      } else {
       const sheet    = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CONTRIBUTION_REQUESTS");
       if (!sheet) { result = {status:"error",message:"Sheet not found"}; }
       else {
+        // Use LockService to prevent dual-admin race condition creating duplicate contributions
+        const lock = LockService.getScriptLock();
+        lock.waitLock(8000);
+        try {
         const data2 = sheet.getDataRange().getValues();
         const hdrs  = data2[0];
         const statusCol    = hdrs.indexOf("Status");
         const rejNoteCol   = hdrs.indexOf("RejectionNote");
         for (let i = 1; i < data2.length; i++) {
           if (String(data2[i][hdrs.indexOf("ReqId")]||data2[i][0]) === reqId) {
+            // Check current status inside the lock — prevent duplicate approvals
+            const currentStatus = String(data2[i][statusCol] || "Pending");
+            if (currentStatus !== "Pending") {
+              result = { status: "already_resolved", message: "This request was already resolved by another admin." };
+              break;
+            }
             sheet.getRange(i+1, statusCol+1).setValue(status);
             if (rejNoteCol !== -1) sheet.getRange(i+1, rejNoteCol+1).setValue(rejNote);
             SpreadsheetApp.flush();
@@ -2321,10 +2361,11 @@ function doGet(e) {
             break;
           }
         }
-        // FIX #6: Use explicit found flag instead of checking result.status,
-        // which could throw TypeError if result is still {} at this point.
-        if (!result || result.status !== "success") result = {status:"error",message:"Request not found"};
+        // Use explicit found flag instead of checking result.status
+        if (!result || (result.status !== "success" && result.status !== "already_resolved")) result = {status:"error",message:"Request not found"};
+        } finally { lock.releaseLock(); }
       }
+      } // end VALID_STATUSES check
     } catch(err) { result = {status:"error",message:err.message}; }
   }
 
@@ -3017,16 +3058,15 @@ function doPost(e) {
     // FIX SEC-9: Verify session token on all doPost actions — photo uploads modify Drive and user data
     const _postUserId = sanitize(data.UserId || data.userId || "", 30);
     const _postToken  = sanitize(data.sessionToken || data.token || "", 64);
-    if (_postUserId && _postToken) {
-      // Has token — validate it
-      if (!_verifySession({ userId: _postUserId, sessionToken: _postToken }, data.action || "doPost")) {
-        return ContentService
-          .createTextOutput(JSON.stringify({ status: "error", message: "Session expired. Please login again." }))
-          .setMimeType(ContentService.MimeType.JSON);
-      }
-    } else if (_postUserId) {
-      // UserId present but no token — log as unverified (legacy tolerance)
-      logAction(_postUserId, "UNVERIFIED_POST", "Action: " + (data.action || "doPost") + " — no session token");
+    if (!_postUserId || !_postToken) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: "error", message: "Authentication required." }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (!_verifySession({ userId: _postUserId, sessionToken: _postToken }, data.action || "doPost")) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: "error", message: "Session expired. Please login again." }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     if (data.action === "uploadAndSaveProfile") {

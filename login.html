@@ -23,7 +23,7 @@
         <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;"></i>
       </div>
       <h2>Mandir Login</h2>
-      <span class="card-subtitle">Shree Hanuman Mandir, Paliya</span>
+      <span class="card-subtitle" id="loginSubtitle"></span>
     </div>
 
     <!-- Form body -->
@@ -32,12 +32,12 @@
 
       <div class="input-group">
         <i class="icon fa-solid fa-phone"></i>
-        <input type="text" id="mobile" placeholder="Mobile Number" maxlength="10" inputmode="numeric"/>
+        <input type="text" id="mobile" placeholder="Mobile Number" maxlength="10" inputmode="numeric" autocomplete="username"/>
       </div>
 
       <div class="input-group">
         <i class="icon fa-solid fa-lock"></i>
-        <input type="password" id="password" placeholder="Password"/>
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password"/>
         <i class="fa-solid fa-eye pwd-eye" id="togglePassword"></i>
       </div>
 
@@ -418,6 +418,13 @@
 <div id="_tw"></div>
 
 <script src="constants.js"></script>
+<script>
+  // Populate login subtitle from constants.js — avoids hardcoding temple name/location
+  var _sub = document.getElementById("loginSubtitle");
+  if (_sub && typeof APP !== "undefined") {
+    _sub.textContent = APP.name + ", " + APP.village;
+  }
+</script>
 <script src="config.js"></script>
 <script src="login.js"></script>
 </body>

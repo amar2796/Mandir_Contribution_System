@@ -46,13 +46,18 @@
     currencyCode:  "INR",
   
     /* ── Bank / UPI Details (used in Donate modal) ── */
+    // upiId is safe to keep here - it is publicly shared for donations.
     upiId:         "8765890641@upi",
-    accountName:   "Ram Shank Vishwakarma",
-    accountNo:     "1234 5678 1234",
-    ifscCode:      "BKID0008XXX",
-    bankName:      "State Bank of India",
-    bankBranch:    "Katka Khanpur Branch",
-    accountType:   "Savings",
+    // SECURITY: real bank details removed from this public file.
+    // accountNo, ifscCode, bankName, bankBranch, accountName, accountType
+    // now live in CFG in appscript.txt only. Donate modal fetches them
+    // server-side via getPaymentDetails. Do NOT put real values back here.
+    accountName:   "",
+    accountNo:     "",
+    ifscCode:      "",
+    bankName:      "",
+    bankBranch:    "",
+    accountType:   "",
   
     /* ── Authorized Signatory (shown on PDF receipts) ── */
     signatory:     "Temple Trust",
