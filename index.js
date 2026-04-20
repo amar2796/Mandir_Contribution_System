@@ -1,0 +1,755 @@
+/* ── Gallery + Announcement ── */
+      /* ── Gallery — Swiper.js ── */
+      var _gcPhotos = [], _gcLbIdx = 0;
+      var _swiperInstance = null;
+
+      function loadGallery() {
+        getData("getGallery").then(function(photos) {
+          document.getElementById("galleryLoading").style.display = "none";
+          if (!Array.isArray(photos) || photos.length === 0) {
+            document.getElementById("galleryEmpty").style.display = "block";
+            return;
+          }
+          _gcPhotos = photos;
+          _buildSwiper();
+          document.getElementById("galleryCarouselWrap").style.display = "block";
+        }).catch(function() {
+          document.getElementById("galleryLoading").style.display = "none";
+          document.getElementById("galleryEmpty").style.display = "block";
+        });
+      }
+
+      function _buildSwiper() {
+        var track = document.getElementById("galleryCarousel");
+        track.innerHTML = "";
+
+        _gcPhotos.forEach(function(p, i) {
+          var slide = document.createElement("div");
+          slide.className = "swiper-slide swiper-slide-gallery";
+          slide.setAttribute("data-idx", i);
+          slide.innerHTML =
+            '<img src="' + p.PhotoURL + '" alt="' + (p.Caption || "Photo") + '" loading="lazy">' +
+            '<div class="gc-overlay"></div>' +
+            '<div class="gc-view-icon"><i class="fa-solid fa-expand"></i></div>' +
+            (p.Caption ? '<div class="gc-caption">' + p.Caption + '</div>' : '');
+          track.appendChild(slide);
+        });
+
+        if (_swiperInstance) { _swiperInstance.destroy(true, true); }
+
+        _swiperInstance = new Swiper("#gallerySwiper", {
+          slidesPerView: 3,
+          spaceBetween: 20,
+          loop: _gcPhotos.length >= 3,
+          autoplay: {
+            delay: 4000,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true,
+            waitForTransition: true,
+          },
+          pagination: {
+            el: "#gcDots",
+            clickable: true,
+          },
+          navigation: {
+            nextEl: "#gcNext",
+            prevEl: "#gcPrev",
+          },
+          breakpoints: {
+            0:   { slidesPerView: 1, spaceBetween: 14 },
+            521: { slidesPerView: 2, spaceBetween: 16 },
+            769: { slidesPerView: 3, spaceBetween: 20 },
+          },
+          grabCursor: true,
+          effect: "slide",
+          observer: true,
+          observeParents: true,
+          resizeObserver: true,
+          on: {
+            click: function(swiper, event) {
+              /* Find the slide element that was clicked */
+              var slideEl = event.target.closest(".swiper-slide-gallery");
+              if (!slideEl) return;
+              /* Get the real (non-duplicated) index from data-idx */
+              var idx = parseInt(slideEl.getAttribute("data-idx"), 10);
+              if (!isNaN(idx)) openLightbox(idx);
+            }
+          }
+        });
+        /* Force autoplay restart after init to fix intermittent no-scroll bug */
+        setTimeout(function(){ if(_swiperInstance && _swiperInstance.autoplay) _swiperInstance.autoplay.start(); }, 400);
+      }
+
+      /* stubs kept so nothing else breaks */
+      function gallerySlide(dir) { if(_swiperInstance){ dir>0?_swiperInstance.slideNext():_swiperInstance.slidePrev(); } }
+      function galleryGoTo(idx) { if(_swiperInstance){ _swiperInstance.slideTo(idx); } }
+
+      /* ── Lightbox ── */
+      var _lbScrollY = 0;
+      var _lbNavBusy = false;
+      function openLightbox(idx) {
+        _gcLbIdx = idx; _lbRender();
+        document.getElementById("gcLightbox").classList.add("open");
+        document.getElementById("gcLbPanel").classList.remove("closing");
+        /* Lock body scroll — overflow:hidden only (no position:fixed to avoid page jump) */
+        _lbScrollY = window.scrollY;
+        document.body.style.overflow = "hidden";
+        document.body.style.paddingRight = (window.innerWidth - document.documentElement.clientWidth) + "px";
+        if (_swiperInstance && _swiperInstance.autoplay) _swiperInstance.autoplay.stop();
+      }
+      function closeLightbox() {
+        var p = document.getElementById("gcLbPanel");
+        p.classList.add("closing");
+        setTimeout(function(){
+          document.getElementById("gcLightbox").classList.remove("open");
+          p.classList.remove("closing");
+          /* Restore scroll */
+          document.body.style.overflow = "";
+          document.body.style.paddingRight = "";
+          window.scrollTo(0, _lbScrollY);
+          if (_gcPhotos.length && _swiperInstance && _swiperInstance.autoplay) _swiperInstance.autoplay.start();
+        }, 240);
+      }
+      /* Close when clicking outside the image frame */
+      function _lbOutsideClick(e) {
+        var frame = document.getElementById("gcLbFrame");
+        if (frame && !frame.contains(e.target)) { closeLightbox(); }
+      }
+      function lbNav(dir) {
+        if (_lbNavBusy) return;
+        _lbNavBusy = true;
+        var img = document.getElementById("gcLightboxImg");
+        /* Step 1: animate current image out */
+        img.classList.remove("lb-out-l","lb-out-r","lb-in-l","lb-in-r");
+        img.classList.add(dir > 0 ? "lb-out-l" : "lb-out-r");
+        setTimeout(function(){
+          /* Step 2: update index + src */
+          _gcLbIdx = ((_gcLbIdx + dir) + _gcPhotos.length) % _gcPhotos.length;
+          _lbRender();
+          /* Step 3: animate new image in */
+          img.classList.remove("lb-out-l","lb-out-r");
+          img.classList.add(dir > 0 ? "lb-in-l" : "lb-in-r");
+          setTimeout(function(){
+            img.classList.remove("lb-in-l","lb-in-r");
+            _lbNavBusy = false;
+          }, 300);
+        }, 160);
+      }
+      function _lbRender() {
+        var p = _gcPhotos[_gcLbIdx];
+        var img = document.getElementById("gcLightboxImg");
+        img.src = p.PhotoURL; img.alt = p.Caption||"Photo";
+        document.getElementById("gcLbCounter").textContent = (_gcLbIdx+1)+" / "+_gcPhotos.length;
+        // Show / update caption
+        var cap = document.getElementById("gcLbCaption");
+        if (cap) { cap.textContent = p.Caption || ""; cap.style.display = p.Caption ? "block" : "none"; }
+      }
+      document.addEventListener("keydown", function(e){
+        var lb = document.getElementById("gcLightbox");
+        if (!lb||!lb.classList.contains("open")) return;
+        if (e.key==="Escape") closeLightbox();
+        if (e.key==="ArrowRight") lbNav(1);
+        if (e.key==="ArrowLeft")  lbNav(-1);
+      });
+      /* Touch swipe inside lightbox */
+      (function(){
+        var touchStartX = 0;
+        document.addEventListener("touchstart", function(e){
+          var lb = document.getElementById("gcLightbox");
+          if (!lb || !lb.classList.contains("open")) return;
+          touchStartX = e.touches[0].clientX;
+        }, {passive: true});
+        document.addEventListener("touchend", function(e){
+          var lb = document.getElementById("gcLightbox");
+          if (!lb || !lb.classList.contains("open")) return;
+          var dx = e.changedTouches[0].clientX - touchStartX;
+          if (Math.abs(dx) > 50) lbNav(dx < 0 ? 1 : -1);
+        }, {passive: true});
+      })();
+      window.addEventListener("resize", function(){ if(_swiperInstance) _swiperInstance.update(); });
+      /* ── Community Stats — members only from getUsers ── */
+      function _animateMemberCount(el, target, duration) {
+        if (!el) return;
+        var frames = Math.max(60, Math.round(duration / 16));
+        var f = 0;
+        function tick() {
+          f++;
+          var ease = 1 - Math.pow(1 - f / frames, 3);
+          el.textContent = Math.round(ease * target).toLocaleString("en-IN");
+          if (f < frames) requestAnimationFrame(tick);
+          else el.textContent = target.toLocaleString("en-IN");
+        }
+        requestAnimationFrame(tick);
+      }
+      var _statsAnimated = false;
+      function loadCommunityStats() {
+        if (typeof getData !== "function") return;
+        getData("getUsers").then(function(users) {
+          var list = Array.isArray(users) ? users : [];
+          var members = list.filter(function(u) {
+            return !u.Status || String(u.Status).toLowerCase() !== "inactive";
+          }).length;
+          _animateMemberCount(document.getElementById("csMembers"), members, 1800);
+        }).catch(function() {});
+      }
+
+      /* ══ TEMPLE FINANCES JS — DISABLED
+         To re-enable: remove the opening slash-star and closing star-slash
+         around this entire block (match with CSS and HTML blocks above).
+
+var _trLoaded = false;
+ 
+ function loadTransparency() {
+   if (_trLoaded) return; // load once per page visit
+   if (typeof getData !== "function") return;
+  
+   getData("getPublicStats").then(function(res) {
+     if (!res || res.status === "error") return;
+     _trLoaded = true;
+     _renderTransparency(res);
+   }).catch(function() {});
+ }
+  
+ function _renderTransparency(res) {
+   var f = function(n) { return "₹" + Number(n||0).toLocaleString("en-IN"); };
+   var curYear = new Date().getFullYear();
+  
+   // ── Updated timestamp
+   var upd = document.getElementById("tr_updated");
+   if (upd && res.updatedAt) upd.textContent = "Last updated: " + res.updatedAt;
+  
+   // ── Summary cards
+   var cards = document.getElementById("tr_cards");
+   var balance = Number(res.balance || 0);
+   var balColor = balance >= 0 ? "green" : "red";
+   if (cards) {
+     cards.innerHTML =
+       '<div class="tr-card green">'  +
+         '<div class="tr-card-label">This Year Collection</div>' +
+         '<div class="tr-card-value">' + f(res.thisYearCollection) + '</div>' +
+       '</div>' +
+       '<div class="tr-card red">'    +
+         '<div class="tr-card-label">This Year Expenses</div>' +
+         '<div class="tr-card-value">' + f(res.thisYearExpense) + '</div>' +
+       '</div>' +
+       '<div class="tr-card ' + balColor + '">' +
+         '<div class="tr-card-label">Current Balance</div>' +
+         '<div class="tr-card-value">' + f(balance) + '</div>' +
+       '</div>' +
+       '<div class="tr-card blue">' +
+         '<div class="tr-card-label">Active Members</div>' +
+         '<div class="tr-card-value">' + Number(res.memberCount||0) + '</div>' +
+       '</div>';
+   }
+  
+   // ── Year table
+   var rows = res.yearRows || [];
+   if (rows.length > 0) {
+     var tbody = document.getElementById("tr_tbody");
+     var tfoot = document.getElementById("tr_tfoot");
+     var sumC = 0, sumE = 0;
+  
+     if (tbody) {
+       tbody.innerHTML = rows.map(function(r) {
+         sumC += Number(r.totalCollection||0);
+         sumE += Number(r.totalExpense||0);
+         var isCur = Number(r.year) === curYear;
+         var cls   = isCur ? " class=\"tr-current-year\"" : "";
+         var closing = Number(r.closingBalance||0);
+         return "<tr" + cls + ">" +
+           "<td>" + r.year + (isCur ? " 🟡" : "") + "</td>" +
+           "<td>" + f(r.openingBalance) + "</td>" +
+           "<td style=\"color:#27ae60;\">" + f(r.totalCollection) + "</td>" +
+           "<td style=\"color:#e74c3c;\">" + f(r.totalExpense) + "</td>" +
+           "<td style=\"color:" + (closing >= 0 ? "#27ae60" : "#e74c3c") + ";\">" + f(closing) + "</td>" +
+         "</tr>";
+       }).join("");
+     }
+  
+     if (tfoot) {
+       tfoot.innerHTML = "<tr>" +
+         "<td>All Years</td>" +
+         "<td>—</td>" +
+         "<td style=\"color:#27ae60;\">" + f(sumC) + "</td>" +
+         "<td style=\"color:#e74c3c;\">" + f(sumE) + "</td>" +
+         "<td style=\"color:#334155;\">" + f(balance) + "</td>" +
+       "</tr>";
+     }
+  
+     var wrap = document.getElementById("tr_table_wrap");
+     if (wrap) wrap.style.display = "block";
+   }
+  
+   // ── Goals
+   var goals = res.goals || [];
+   var activeGoals = goals.filter(function(g) {
+     return String(g.Status||"").toLowerCase() !== "disabled" && Number(g.Target||0) > 0;
+   });
+   if (activeGoals.length > 0) {
+     var list = document.getElementById("tr_goals_list");
+     if (list) {
+       list.innerHTML = activeGoals.map(function(g) {
+         var pct = Math.min(100, Math.round(Number(g.Current||0) / Number(g.Target) * 100));
+         return '<div class="tr-goal-item">' +
+           '<div class="tr-goal-top">' +
+             '<span class="tr-goal-name">' + _trEsc(g.Name||"Goal") + '</span>' +
+             '<span class="tr-goal-pct">' + pct + '%</span>' +
+           '</div>' +
+           '<div class="tr-goal-bar-bg">' +
+             '<div class="tr-goal-bar-fill" style="width:' + pct + '%"></div>' +
+           '</div>' +
+           '<div class="tr-goal-amounts">' +
+             '<span>₹' + Number(g.Current||0).toLocaleString("en-IN") + ' raised</span>' +
+             '<span>Target: ₹' + Number(g.Target).toLocaleString("en-IN") + '</span>' +
+           '</div>' +
+         '</div>';
+       }).join("");
+     }
+     var goalsEl = document.getElementById("tr_goals");
+     if (goalsEl) goalsEl.style.display = "block";
+   }
+ }
+  
+ function _trEsc(s) {
+   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+ }
+  
+ // Lazy-load on scroll — fires once when section enters viewport
+ var _trObserved = false;
+ function _watchTransparency() {
+   if (_trObserved) return;
+   var el = document.getElementById("financesSection");
+   if (!el) return;
+   if ("IntersectionObserver" in window) {
+     var obs = new IntersectionObserver(function(entries) {
+       if (entries[0].isIntersecting) { loadTransparency(); obs.disconnect(); }
+     }, { threshold: 0.1 });
+     obs.observe(el);
+     _trObserved = true;
+   } else {
+     // Fallback for older browsers
+     loadTransparency();
+     _trObserved = true;
+   }
+ }
+ document.addEventListener("DOMContentLoaded", _watchTransparency);
+ ══ END TEMPLE FINANCES JS ══ */
+
+      function _checkStatsVisible() {
+        if (_statsAnimated) return;
+        var el = document.getElementById("communityStats");
+        if (!el) return;
+        if (el.getBoundingClientRect().top < window.innerHeight - 60) {
+          _statsAnimated = true;
+          loadCommunityStats();
+        }
+      }
+      window.addEventListener("scroll", _checkStatsVisible, { passive: true });
+      document.addEventListener("DOMContentLoaded", function(){ setTimeout(_checkStatsVisible, 800); });
+
+      /* ── Announcement Banner ── */
+      var _annDismissedId = null;
+      function dismissBanner() {
+        var banner = document.getElementById("announcementBanner");
+        banner.style.transition = "max-height 0.35s ease, opacity 0.3s ease";
+        banner.style.opacity = "0";
+        banner.style.maxHeight = "0";
+        banner.style.overflow = "hidden";
+        setTimeout(function(){ banner.classList.remove("open"); banner.style = ""; }, 360);
+        try { sessionStorage.setItem("ann_dismissed", _annDismissedId || "1"); } catch(e){}
+      }
+      function loadAnnouncement() {
+        if (typeof getData !== "function") return;
+        getData("getAnnouncement").then(function(data) {
+          if (!data || !data.Message) return;
+          var dismissed = "";
+          try { dismissed = sessionStorage.getItem("ann_dismissed") || ""; } catch(e){}
+          var annId = String(data.Id || data.Message).substring(0, 40);
+          if (dismissed === annId) return;
+          _annDismissedId = annId;
+          document.getElementById("annText").textContent = data.Message;
+          var badge = document.getElementById("annBadge");
+          if (data.Badge) { badge.textContent = data.Badge; badge.style.display = "inline-block"; }
+          if (data.Icon) document.querySelector(".ann-icon").textContent = data.Icon;
+          document.getElementById("announcementBanner").classList.add("open");
+        }).catch(function(){});
+      }
+      document.addEventListener("DOMContentLoaded", function(){ setTimeout(loadAnnouncement, 600); });
+      document.addEventListener("DOMContentLoaded", loadGallery);
+
+/* ── Members Slider ── */
+      /* ── Members Slider ── */
+      var _memberIdx = 0;
+      var _memberTotal = 3;
+      var _memberAutoplay = null;
+      var _memberAutoplayDelay = 4000;
+
+      function memberGoTo(idx) {
+        var cards = document.querySelectorAll('.member-card');
+        var dots = document.querySelectorAll('.member-dot');
+        var currentCard = cards[_memberIdx];
+        // Add slide-out, then switch
+        currentCard.classList.add('slide-out');
+        setTimeout(function() {
+          currentCard.classList.remove('active');
+          currentCard.classList.remove('slide-out');
+          currentCard.style.display = '';
+          dots[_memberIdx].classList.remove('active');
+          _memberIdx = (idx + _memberTotal) % _memberTotal;
+          cards[_memberIdx].classList.add('active');
+          dots[_memberIdx].classList.add('active');
+        }, 300);
+      }
+      function memberNav(dir) { memberGoTo(_memberIdx + dir); }
+      function resetMemberAutoplay() {
+        clearInterval(_memberAutoplay);
+        _memberAutoplay = setInterval(function(){ memberNav(1); }, _memberAutoplayDelay);
+      }
+      // Start autoplay after page load
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          _memberAutoplay = setInterval(function(){ memberNav(1); }, _memberAutoplayDelay);
+        }, 2500);
+      });
+
+      /* Splash */
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          const splash = document.getElementById("splash-screen");
+          splash.classList.add("splash-hidden");
+          // Start music when animation starts (when splash begins to hide)
+          if (!isPlaying) {
+            music
+              .play()
+              .then(() => {
+                isPlaying = true;
+                audioBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+              })
+              .catch(() => {
+                // Autoplay blocked — will play on first user interaction
+              });
+          }
+          setTimeout(() => {
+            splash.style.display = "none";
+          }, 800);
+        }, 1500);
+      });
+
+      /* Audio */
+      let music = document.getElementById("bgMusic");
+      let audioBtn = document.getElementById("audioControl");
+      let isPlaying = false;
+      music.volume = 0.5;
+      function toggleAudio() {
+        if (isPlaying) {
+          music.pause();
+          audioBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+          isPlaying = false;
+        } else {
+          music.play().catch(() => {});
+          audioBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+          isPlaying = true;
+        }
+      }
+      audioBtn.addEventListener("click", toggleAudio);
+      // Fallback: if autoplay was blocked, start on first user interaction
+      function initialPlay() {
+        if (!isPlaying) toggleAudio();
+        document.removeEventListener("click", initialPlay);
+        document.removeEventListener("touchstart", initialPlay);
+      }
+      document.addEventListener("click", initialPlay);
+      document.addEventListener("touchstart", initialPlay);
+      setTimeout(() => {
+        if (isPlaying) toggleAudio();
+      }, 12000);
+
+      /* Hamburger nav menu toggle */
+      function toggleNavMenu() {
+        const menu = document.getElementById("navMenu");
+        const icon = document.getElementById("hamburgerIcon");
+        const isOpen = menu.classList.toggle("open");
+        icon.className = isOpen ? "fa-solid fa-xmark" : "fa-solid fa-bars";
+      }
+      function closeNavMenu() {
+        const menu = document.getElementById("navMenu");
+        const icon = document.getElementById("hamburgerIcon");
+        menu.classList.remove("open");
+        icon.className = "fa-solid fa-bars";
+      }
+      // Close menu when clicking outside
+      document.addEventListener("click", function (e) {
+        const menu = document.getElementById("navMenu");
+        const btn = document.getElementById("hamburgerBtn");
+        if (btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+          closeNavMenu();
+        }
+      });
+
+      /* Scroll Reveal */
+      function reveal() {
+        var reveals = document.querySelectorAll(".reveal");
+        for (var i = 0; i < reveals.length; i++) {
+          var windowHeight = window.innerHeight;
+          var elementTop = reveals[i].getBoundingClientRect().top;
+          if (elementTop < windowHeight - 100)
+            reveals[i].classList.add("active");
+        }
+      }
+      window.addEventListener("scroll", reveal);
+      reveal();
+
+      /* Floating Ram */
+      function createFloatingRam() {
+        const heroSection = document.querySelector(".hero");
+        if (!heroSection) return;
+        const ramElement = document.createElement("div");
+        ramElement.classList.add("floating-ram");
+        ramElement.innerText = "राम";
+        const randomLeft = Math.random() * 100;
+        const randomSize = Math.random() * 1.5 + 1;
+        const heroHeight = heroSection.offsetHeight;
+        const travelDistance = heroHeight + 100;
+        const randomSpeed = Math.random() * 20 + 30;
+        const duration = travelDistance / randomSpeed;
+        ramElement.style.left = randomLeft + "%";
+        ramElement.style.setProperty("--travel", `-${travelDistance}px`);
+        ramElement.style.animationDuration = duration + "s";
+        ramElement.style.fontSize = randomSize + "rem";
+        heroSection.appendChild(ramElement);
+        setTimeout(() => {
+          ramElement.remove();
+        }, duration * 1000);
+      }
+      setTimeout(() => {
+        setInterval(createFloatingRam, 900);
+      }, 2000);
+
+      /* FIX #1 & #3: Feedback submit */
+      function submitFeedback() {
+        const name = (document.getElementById("fb_name").value || "").trim();
+        const mobile = (
+          document.getElementById("fb_mobile").value || ""
+        ).trim();
+        const address = (
+          document.getElementById("fb_address").value || ""
+        ).trim();
+        const message = (
+          document.getElementById("fb_message").value || ""
+        ).trim();
+        if (!name) {
+          alert("Please enter your name.");
+          return;
+        }
+        if (!mobile) {
+          alert("Please enter your mobile number.");
+          return;
+        }
+        if (!message) {
+          alert("Please enter your message.");
+          return;
+        }
+
+        // Send feedback via postData to backend (stored as audit/feedback log)
+        // Using the API to log as a feedback entry
+        const feedbackNote = `FEEDBACK | Name: ${name} | Mobile: ${mobile} | Address: ${
+          address || "—"
+        } | Message: ${message}`;
+        // Try to send (best-effort, non-blocking)
+        if (typeof postData === "function") {
+          postData({
+            action: "submitFeedback",
+            Name: name,
+            Mobile: mobile,
+            Address: address,
+            Message: message,
+            Status: "Pending",
+            SubmittedAt: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+          }).catch(() => {}); // best-effort
+        }
+
+        // Show thank you message below the form (don't hide the form)
+        const thanksEl = document.getElementById("feedbackThanks");
+        const formEl = document.getElementById("feedbackFormBox");
+        thanksEl.style.display = "block";
+        // Scroll to thank you message
+        thanksEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        // Auto-hide after 6 seconds and clear form
+        setTimeout(() => {
+          thanksEl.style.opacity = "0";
+          thanksEl.style.transition = "opacity 0.5s ease";
+          setTimeout(() => {
+            thanksEl.style.display = "none";
+            thanksEl.style.opacity = "";
+            thanksEl.style.transition = "";
+            // Clear form fields
+            document.getElementById("fb_name").value = "";
+            document.getElementById("fb_mobile").value = "";
+            document.getElementById("fb_address").value = "";
+            document.getElementById("fb_message").value = "";
+          }, 500);
+        }, 6000);
+      }
+
+/* ── Payment Modal ── */
+      /* ── Payment Modal ── */
+      function _initPayModalFields() {
+        if (typeof APP === 'undefined') return;
+        var accName = document.getElementById('payAccName');
+        var accNo   = document.getElementById('payAccNo');
+        var ifsc    = document.getElementById('payIfsc');
+        var bank    = document.getElementById('payBankName');
+        var branch  = document.getElementById('payBranch');
+        var accType = document.getElementById('payAccType');
+        var upiEl   = document.getElementById('payUpiId');
+        if (accName) accName.textContent = APP.accountName  || 'Shree Hanuman Mandir';
+        if (accNo)   accNo.textContent   = APP.accountNo    || 'Contact Temple Office';
+        if (ifsc)    ifsc.textContent    = APP.ifscCode     || 'Contact Temple Office';
+        if (bank)    bank.textContent    = APP.bankName     || 'Bank of India';
+        if (branch)  branch.textContent  = APP.bankBranch   || 'Paliya Branch';
+        if (accType) accType.textContent = APP.accountType  || 'Savings';
+        if (upiEl)   upiEl.textContent   = APP.upiId        || 'mandir@upi';
+      }
+      /* Pre-fill fields as soon as DOM is ready */
+      document.addEventListener('DOMContentLoaded', _initPayModalFields);
+
+      function _generatePayQR() {
+        var upiId = (typeof APP !== 'undefined' && APP.upiId) ? APP.upiId : 'mandir@upi';
+        var name  = (typeof APP !== 'undefined' && APP.name)  ? APP.name  : 'Shree Hanuman Mandir';
+        var upiStr = 'upi://pay?pa=' + encodeURIComponent(upiId) + '&pn=' + encodeURIComponent(name) + '&cu=INR';
+        var box = document.getElementById('payQrBox');
+        if (!box) return;
+        // Clear previous QR
+        box.innerHTML = '';
+        if (window.QRCode) {
+          try {
+            new window.QRCode(box, {
+              text: upiStr,
+              width: 148,
+              height: 148,
+              colorDark: '#1a0800',
+              colorLight: '#ffffff',
+              correctLevel: window.QRCode.CorrectLevel.M
+            });
+          } catch(e) {
+            box.innerHTML = '<div class="pay-qr-placeholder"><i class="fa-solid fa-qrcode"></i><span>QR Ready<br>' + upiId + '</span></div>';
+          }
+        } else {
+          // Load QRCode.js on demand
+          var s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+          s.onload = function() { _generatePayQR(); };
+          s.onerror = function() {
+            box.innerHTML = '<div class="pay-qr-placeholder"><i class="fa-solid fa-qrcode"></i><span>' + upiId + '</span></div>';
+          };
+          document.head.appendChild(s);
+        }
+      }
+
+      function openPayModal() {
+        var m = document.getElementById('payModal');
+        m.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        m.scrollTop = 0;
+        _initPayModalFields();
+        _generatePayQR();
+        spawnPayParticles();
+      }
+      function closePayModal() {
+        var m = document.getElementById('payModal');
+        m.classList.remove('open');
+        document.body.style.overflow = '';
+        stopPayParticles();
+      }
+      /* Close on Escape key */
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePayModal();
+      });
+
+      /* ── Floating divine particles ── */
+      var _payParticleInterval = null;
+      var _payParticles = ['🪔','✨','🌸','🔱','ॐ','🌼','🙏'];
+      function spawnPayParticles() {
+        _payParticleInterval = setInterval(function() {
+          var modal = document.getElementById('payModal');
+          if (!modal || !modal.classList.contains('open')) return;
+          var el = document.createElement('div');
+          el.className = 'pay-particle';
+          el.textContent = _payParticles[Math.floor(Math.random() * _payParticles.length)];
+          var dur = 4 + Math.random() * 5;
+          el.style.cssText = 'left:' + (5 + Math.random()*88) + '%;bottom:0;animation-duration:' + dur + 's;animation-delay:' + (Math.random()*1.5) + 's;font-size:' + (0.85 + Math.random()*0.7) + 'rem;opacity:0;';
+          modal.appendChild(el);
+          setTimeout(function(){ el.remove(); }, (dur + 2) * 1000);
+        }, 900);
+      }
+      function stopPayParticles() {
+        clearInterval(_payParticleInterval);
+        var old = document.querySelectorAll('.pay-particle');
+        old.forEach(function(el){ el.remove(); });
+      }
+
+      /* ── Copy bank details ── */
+      function copyBankDetails() {
+        var accNo  = document.getElementById('payAccNo').innerText;
+        var ifsc   = document.getElementById('payIfsc').innerText;
+        var bank   = document.getElementById('payBankName').innerText;
+        var branch = document.getElementById('payBranch').innerText;
+        var name   = (typeof APP !== 'undefined' && APP.name) ? APP.name : 'Shree Hanuman Mandir';
+        var text   = name + '\nAccount No: ' + accNo + '\nIFSC: ' + ifsc + '\nBank: ' + bank + ', ' + branch;
+        navigator.clipboard.writeText(text).then(function() {
+          var btn = document.getElementById('copyBankBtn');
+          btn.classList.add('copied');
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+          setTimeout(function() {
+            btn.classList.remove('copied');
+            btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy Details';
+          }, 2500);
+        }).catch(function() {});
+      }
+      /* ── Copy UPI ID ── */
+      function copyUpiId() {
+        var upi = document.getElementById('payUpiId').innerText;
+        navigator.clipboard.writeText(upi).then(function() {
+          var btn = document.getElementById('copyUpiBtn');
+          btn.classList.add('copied');
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+          setTimeout(function() {
+            btn.classList.remove('copied');
+            btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy UPI ID';
+          }, 2500);
+        }).catch(function() {});
+      }
+
+/* ── Service Worker Registration ── */
+  /* ── Service Worker registration ── */
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("./sw.js").then(function(reg) {
+   
+        // Detect when a new SW version is waiting — prompt user to refresh
+        reg.addEventListener("updatefound", function() {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", function() {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              // New version available — show update toast if toast() is available
+              // Otherwise show a simple confirm dialog
+              if (typeof toast === "function") {
+                toast("🔄 App updated — tap here to refresh", "warn");
+                // Auto-reload after 4 seconds so admin always gets latest code
+                setTimeout(function() { location.reload(); }, 4000);
+              } else {
+                if (confirm("App updated. Reload now for the latest version?")) {
+                  location.reload();
+                }
+              }
+            }
+          });
+        });
+   
+      }).catch(function(err) {
+        // SW registration failed — app still works normally without it
+        console.warn("Service Worker registration failed:", err);
+      });
+    });
+  }
