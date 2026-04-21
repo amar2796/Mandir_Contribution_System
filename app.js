@@ -188,6 +188,15 @@ function postData(data) {
       }
     },20000);
     script.onerror=function(){ _fin(); clearTimeout(timer); window[cb]=function(){try{delete window[cb];}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Network error.")); };
+    // ── AUTO-INJECT session token + userId so every write action is authenticated.
+    // Only fills in missing fields — never overwrites values the caller already set.
+    try {
+      var _sess = JSON.parse(localStorage.getItem("session") || "{}");
+      if (_sess && (_sess.sessionToken || _sess.token)) {
+        if (!data.sessionToken && !data.token) data.sessionToken = _sess.sessionToken || _sess.token || "";
+        if (!data.userId)                       data.userId      = _sess.userId || "";
+      }
+    } catch(_e) { /* never block the call on a storage error */ }
     script.src=API_URL+"?"+new URLSearchParams(data).toString()+"&callback="+cb; document.body.appendChild(script);
   });
 }

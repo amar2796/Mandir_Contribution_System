@@ -476,13 +476,19 @@
     if (!_checkAdminSession()) {
       /* stop */
     }
-    // Block back-button re-entry after logout
+    // Block back-button re-entry after logout.
+    // FIX: Only run on e.persisted (back/forward cache restore), NOT on fresh page load.
+    // Previously fired on every load, causing a second getAllData → double login log entry.
     window.addEventListener("pageshow", function (e) {
-      _checkAdminSession();
+      if (e.persisted) _checkAdminSession();
     });
-    // Block tab re-use with copied URL after session expires
+    // Block tab re-use with copied URL after session expires.
+    // FIX: Guard with a 2s delay so this doesn't fire on the initial page load,
+    // which was causing a second session-verify call and duplicate login log entries.
+    var _vcReady = false;
+    setTimeout(function () { _vcReady = true; }, 2000);
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) _checkAdminSession();
+      if (!document.hidden && _vcReady) _checkAdminSession();
     });
 
     // FIX: Show session-expiry warning banner if admin leaves tab open long
@@ -3110,9 +3116,13 @@
           }, 2 * 60 * 1000);
         }
         // Populate email quota sidebar counter on page load.
+        // FIX: Delay by 3s so the session token write from login has time to complete
+        // before hitting getEmailQuota. Previously caused VERIFY_SESSION_ERROR in audit log.
         // _refreshEmailQuotaUI is the single owner of sb_email_quota —
         // updateSidebarSummary no longer reads quota to avoid async race.
-        if (typeof _refreshEmailQuotaUI === "function") _refreshEmailQuotaUI();
+        setTimeout(function() {
+          if (typeof _refreshEmailQuotaUI === "function") _refreshEmailQuotaUI();
+        }, 3000);
         // Auto-run health check once after data loads so the header
         // heartbeat dot shows the correct status colour from login
         if (!window._hcRanOnce && typeof runHealthCheck === "function") {
@@ -3902,31 +3912,35 @@
       let contribTotal = data
         .filter((c) => String(c.UserId) === id)
         .reduce((s, c) => s + Number(c.Amount || 0), 0);
-      showDetailPopup(
-        "Member Details",
-        [
-          ["Name", escapeHtml(u.Name)],
-          ["Mobile", escapeHtml(String(u.Mobile || "—"))],
-          ["Email", escapeHtml(u.Email || "—")],
-          [
-            "Role",
-            `<span class="badge ${u.Role === "Admin" ? "badge-red" : "badge-green"
-            }">${u.Role}</span>`,
-          ],
-          [
-            "Status",
-            `<span class="badge ${u.Status === "Active" ? "badge-green" : "badge-red"
-            }">${u.Status || "Active"}</span>`,
-          ],
-          [
-            "Total Contributions",
-            "<span style='color:#27ae60;font-weight:700;'>₹ " +
-            fmt(contribTotal) +
-            "</span>",
-          ],
-        ],
-        `openEditUser('${id}')`
-      );
+      // FIX: Use openModal directly instead of showDetailPopup.
+      // showDetailPopup (app.js) escapes values as plain text, so HTML strings for
+      // Role, Status and Total Contributions were rendered as raw markup in the popup.
+      const roleClass  = u.Role === "Admin" ? "badge-red" : "badge-green";
+      const statClass  = u.Status === "Active" ? "badge-green" : "badge-red";
+      const rows = [
+        ["Name",               escapeHtml(u.Name || "—")],
+        ["Mobile",             escapeHtml(String(u.Mobile || "—"))],
+        ["Email",              escapeHtml(u.Email || "—")],
+        ["Role",               '<span class="badge ' + roleClass + '">' + escapeHtml(u.Role || "User") + '</span>'],
+        ["Status",             '<span class="badge ' + statClass + '">' + escapeHtml(u.Status || "Active") + '</span>'],
+        ["Total Contributions",'<span style="color:#27ae60;font-weight:700;">&#8377; ' + fmt(contribTotal) + '</span>'],
+      ];
+      const tableRows = rows.map(function(r) {
+        return '<tr>'
+          + '<td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;border-bottom:1px solid #f1f5f9;">' + r[0] + '</td>'
+          + '<td style="padding:10px 14px;font-size:13px;color:#1e293b;font-weight:600;border-bottom:1px solid #f1f5f9;text-align:right;">' + r[1] + '</td>'
+          + '</tr>';
+      }).join("");
+      const _safeId = String(id).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+      const html = '<div class="_mhdr"><h3><i class="fa-solid fa-eye" style="color:#f7a01a;margin-right:6px;"></i> Member Details</h3><button class="_mcls" onclick="closeModal()">×</button></div>'
+        + '<div class="_mbdy" style="padding:10px 16px;">'
+        + '<table style="width:100%;border-collapse:collapse;">' + tableRows + '</table>'
+        + '</div>'
+        + '<div class="_mft">'
+        + '<button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>'
+        + '<button class="_mbtn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);" onclick="closeModal();openEditUser(\'' + _safeId + '\')"><i class="fa-solid fa-pen"></i> Edit</button>'
+        + '</div>';
+      openModal(html, "460px");
     }
 
     /* ── DOB format helpers ──────────────────────────────────────────────
@@ -4748,6 +4762,7 @@
         return toast("Please select a user and enter a valid amount.", "error");
       }
       try {
+        const _ps = JSON.parse(localStorage.getItem("session") || "{}");
         const payload = {
           action: "addContribution",
           Id: Date.now(),
@@ -4759,6 +4774,9 @@
           OccasionId: document.getElementById("prev_occasion").value,
           Note: document.getElementById("prev_note").value,
           PaymentMode: document.getElementById("prev_mode").value,
+          sessionToken: _ps.sessionToken || "",
+          userId: _ps.userId || "",
+          AdminName: _ps.name || "Admin",
         };
         let res = await postData(payload);
         if (res.status === "success") {
@@ -4822,10 +4840,14 @@
             if (typeof _showUndoToast === "function") {
               _showUndoToast(_undoLabel, function() {
                 if (_undoSaved) {
+                  // FIX: Keep ALL original fields (Id, ReceiptID, PaymentDate) so the
+                  // restored record is byte-for-byte identical to what was deleted.
+                  // Old code deleted payload.Id causing backend to generate a new Id,
+                  // new PaymentDate and new ReceiptID. Record is already gone — no duplicate risk.
                   var payload = Object.assign({ action: "addContribution" }, _undoSaved);
-                  // Preserve original ReceiptID so restored record keeps the same receipt number
-                  // Only remove the row Id so the server doesn't reject it as a duplicate row
-                  delete payload.Id;
+                  payload.Id          = _undoSaved.Id;
+                  payload.ReceiptID   = _undoSaved.ReceiptID;
+                  payload.PaymentDate = _undoSaved.PaymentDate;
                   postData(payload).then(function() {
                     smartRefresh("contributions");
                     toast("↩ Contribution restored.");
@@ -8048,6 +8070,13 @@
       setTimeout(function() {
         if (typeof _hcSilentLoginCheck === "function") _hcSilentLoginCheck();
       }, 3000);
+
+      // FIX: Ensure _uniModal always renders above loadingOverlay (which can have
+      // a high z-index in admin.css). Without this, approve/reject modals open
+      // behind the overlay and appear invisible / unclickable.
+      var modalZFix = document.createElement("style");
+      modalZFix.textContent = "#_uniModal { z-index: 999990 !important; }";
+      document.head.appendChild(modalZFix);
     });
 
     // ── L3: Shortcut help popup
@@ -8162,9 +8191,10 @@
           ? '<a href="' + escapeHtml(r.SlipURL) + '" target="_blank" style="color:#3b82f6;font-size:11px;text-decoration:none;"><i class="fa-solid fa-image"></i> View</a>'
           : '<span style="color:#aaa;font-size:11px;">—</span>';
         const rejNote = r.RejectionNote ? '<br><span style="font-size:10px;color:#ef4444;">Reason: ' + escapeHtml(r.RejectionNote) + '</span>' : "";
+        const _safeReqId = String(r.ReqId).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
         const actBtns = st === "Pending"
-          ? '<button onclick="_approveContribRequest(' + JSON.stringify(r.ReqId) + ')" style="background:#22c55e;padding:5px 10px;font-size:11px;border-radius:6px;margin-right:4px;"><i class="fa-solid fa-check"></i> Approve</button>'
-          + '<button onclick="_rejectContribRequest(' + JSON.stringify(r.ReqId) + ')" style="background:#ef4444;padding:5px 10px;font-size:11px;border-radius:6px;"><i class="fa-solid fa-xmark"></i> Reject</button>'
+          ? '<button onclick="_approveContribRequest(\'' + _safeReqId + '\')" style="background:#22c55e;padding:5px 10px;font-size:11px;border-radius:6px;margin-right:4px;"><i class="fa-solid fa-check"></i> Approve</button>'
+          + '<button onclick="_rejectContribRequest(\'' + _safeReqId + '\')" style="background:#ef4444;padding:5px 10px;font-size:11px;border-radius:6px;"><i class="fa-solid fa-xmark"></i> Reject</button>'
           : '<span style="font-size:11px;color:#94a3b8;">' + st + '</span>';
         return '<tr>'
           + '<td>' + (i + 1) + '</td>'
@@ -8183,8 +8213,16 @@
     }
 
     function _approveContribRequest(reqId) {
-      const r = (window._reqListRendered || []).find(function(x) { return String(x.ReqId) === String(reqId); });
-      if (!r) return;
+      // FIX: Search _allRequests (full unfiltered list) instead of _reqListRendered
+      // (which could be an empty/stale filtered subset), causing silent no-op on button click.
+      const r = (window._allRequests || []).find(function(x) { return String(x.ReqId) === String(reqId); });
+      if (!r) { toast("Request not found. Please refresh the page.", "error"); return; }
+      // FIX: Guard against types not loaded yet — dropdown would be empty and
+      // the admin would be stuck unable to select a type or proceed.
+      if (!types || types.length === 0) {
+        toast("Contribution types not loaded yet. Please wait a moment and try again.", "warn");
+        return;
+      }
       const u = (users || []).find(function (u) { return String(u.UserId) === String(r.UserId); });
       const name = u ? u.Name : "this member";
       const typeOpts = (types || []).map(function (t) {
@@ -8218,7 +8256,7 @@
           closeModal();
           _doApproveContribRequest(r, selTypeId);
         });
-      }, 50);
+      }, 150);
     }
 
     async function _doApproveContribRequest(r, selTypeId) {
@@ -8240,15 +8278,27 @@
           PaymentMode: r.PaymentMode || "UPI",
         });
         if (!contribRes || contribRes.status !== "success") {
-          toast("Failed to record contribution.", "error"); return;
+          toast("Failed to record contribution.", "error");
+          window._approveReqInFlight = false;
+          return;
         }
-        const resolveRes = await postData({
-          action: "resolveContributionRequest",
-          ReqId: r.ReqId,
-          Status: "Approved",
-          AdminName: s.Name || s.name || "Admin",
-          RejectionNote: ""
-        });
+        let resolveRes;
+        try {
+          resolveRes = await postData({
+            action: "resolveContributionRequest",
+            ReqId: r.ReqId,
+            Status: "Approved",
+            AdminName: s.Name || s.name || "Admin",
+            RejectionNote: ""
+          });
+        } catch (resolveErr) {
+          // FIX: addContribution already succeeded — warn admin rather than silently failing.
+          // The contribution is recorded but the request stays "Pending" until manually resolved.
+          toast("⚠️ Contribution recorded but request status update failed. Please re-open this request and approve again to resolve it.", "warn");
+          loadContributionRequests();
+          window._approveReqInFlight = false;
+          return;
+        }
         if (resolveRes && resolveRes.status === "already_resolved") {
           toast("⚠️ This request was already approved by another admin.", "warn");
           loadContributionRequests();
@@ -8271,8 +8321,9 @@
     }
 
     function _rejectContribRequest(reqId) {
-      const r = (window._reqListRendered || []).find(function(x) { return String(x.ReqId) === String(reqId); });
-      if (!r) return;
+      // FIX: Search _allRequests (full unfiltered list) instead of _reqListRendered.
+      const r = (window._allRequests || []).find(function(x) { return String(x.ReqId) === String(reqId); });
+      if (!r) { toast("Request not found. Please refresh the page.", "error"); return; }
       const u = (users || []).find(function (u) { return String(u.UserId) === String(r.UserId); });
       const name = u ? u.Name : "this member";
       const html = '<div class="_mhdr"><h3><i class="fa-solid fa-circle-xmark" style="color:#ef4444;"></i> Reject Request</h3><button class="_mcls" onclick="closeModal()">×</button></div>'
@@ -8295,7 +8346,7 @@
           closeModal();
           _doRejectContribRequest(r, reason);
         });
-      }, 50);
+      }, 150);
     }
 
     async function _doRejectContribRequest(r, reason) {
@@ -8316,6 +8367,11 @@
         toast("Error: " + err.message, "error");
       }
     }
+
+    // FIX: Expose contribution request handlers on window so inline onclick="..." in
+    // dynamically-rendered table rows always resolves them, regardless of JS execution scope.
+    window._approveContribRequest = _approveContribRequest;
+    window._rejectContribRequest  = _rejectContribRequest;
 
     // ── L2: Dark mode toggle
     function toggleDarkMode() {
@@ -10411,17 +10467,22 @@
 
       var toast = document.createElement("div");
       toast.id = "_undoToast";
+      // FIX: Moved from bottom-center to top-right below the header.
+      // top:68px clears the fixed sidebar header on desktop and app header on mobile.
+      // max-width + right:16px keeps it safe on narrow mobile screens.
       toast.style.cssText =
-        "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);" +
-        "background:#1e293b;color:#fff;padding:12px 20px;border-radius:12px;" +
+        "position:fixed;top:68px;right:16px;" +
+        "background:#1e293b;color:#fff;padding:12px 16px;border-radius:12px;" +
         "font-size:13px;font-family:Poppins,sans-serif;z-index:99999;" +
-        "display:flex;align-items:center;gap:14px;box-shadow:0 8px 28px rgba(0,0,0,0.3);" +
-        "animation:_undoFadeIn 0.25s ease;";
+        "display:flex;align-items:center;gap:12px;" +
+        "box-shadow:0 8px 28px rgba(0,0,0,0.35);" +
+        "max-width:calc(100vw - 32px);box-sizing:border-box;" +
+        "animation:_undoSlideIn 0.25s ease;";
       toast.innerHTML =
-        '<span>🗑️ ' + label + ' deleted</span>' +
+        '<span style="flex:1;min-width:0;">🗑️ <b>' + label + '</b> deleted</span>' +
         '<button onclick="_doUndo()" style="background:#f7a01a;border:none;color:#fff;' +
         'padding:5px 14px;border-radius:7px;cursor:pointer;font-weight:700;font-size:12px;' +
-        'font-family:Poppins,sans-serif;box-shadow:none;">↩ Undo</button>' +
+        'font-family:Poppins,sans-serif;box-shadow:none;white-space:nowrap;flex-shrink:0;">↩ Undo</button>' +
         '<div id="_undoProgress" style="position:absolute;bottom:0;left:0;height:3px;' +
         'background:#f7a01a;border-radius:0 0 12px 12px;width:100%;' +
         'transition:width 30s linear;"></div>';
@@ -10453,11 +10514,14 @@
       if (typeof fn === "function") fn();
     };
 
-    // Undo is wired directly into del() function body below — no patch needed here
+    // FIX: Expose _showUndoToast on window so del(), deleteGoal() and other
+    // functions in outer scopes can reach it. Without this the typeof check
+    // always returned false and the undo toast never appeared.
+    window._showUndoToast = _showUndoToast;
 
     // Inject undo animation keyframes
     var undoStyle = document.createElement("style");
-    undoStyle.textContent = "@keyframes _undoFadeIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }";
+    undoStyle.textContent = "@keyframes _undoSlideIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }";
     document.head.appendChild(undoStyle);
 
 

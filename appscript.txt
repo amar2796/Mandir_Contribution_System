@@ -37,7 +37,19 @@ const CFG = {
   folderProfile: "1z9vb3mPu8DVB7htuB_vku0cC2dTc7Pa7",   // Drive > ProfilePhotos/
   folderExpense: "1YY55xNxs5_LNCNjYYkq0oeEzoZBg5qKv", // Drive > ExpenseReceipts/
   folderGallery: "1ecYdcFZrSF2mKX15mDYh8vi4Oat9jF2n",   // Drive > GalleryPhotos/
-  folderSlip:    "1c60FzCP3ECU_XBckWfBVkcWyNb-ikNIk",   // Drive > PaymentSlips/ 
+  folderSlip:    "1c60FzCP3ECU_XBckWfBVkcWyNb-ikNIk",   // Drive > PaymentSlips/
+
+  // ── PAYMENT / BANK DETAILS (returned only to authenticated sessions via getPaymentDetails)
+  // ⚠️  SECURITY: These values are NEVER sent to the public. They are stored here on the
+  //     server only and returned only when a valid sessionToken is verified.
+  //     Do NOT copy these into constants.js — that file is public (served to the browser).
+  upiId:       "8765890641@upi",          // safe to display publicly (QR code / Donate modal)
+  accountName: "Ram Shank Vishwakarma",   // kept server-side only
+  accountNo:   "1234 5678 1234",          // kept server-side only
+  ifscCode:    "BKID0008XXX",             // kept server-side only
+  bankName:    "State Bank of India",     // kept server-side only
+  bankBranch:  "Katka Khanpur Branch",    // kept server-side only
+  accountType: "Savings",                 // kept server-side only
 };
 
 const SHEETS = {
@@ -70,7 +82,7 @@ function _verifySession(params, actionName) {
   const token  = sanitize(params.sessionToken || params.token || "", 64);
   if (!token || !userId) {
     // No token or userId — reject and log. No legacy bypass.
-    logAction(userId || "Unknown", "REJECTED_NO_TOKEN", "Action: " + actionName + " — missing session token or userId");
+    logAction(userId || "Unknown", "REJECTED_NO_TOKEN", "Action: " + actionName + " — missing session token or userId", "", "", { severity:"WARN", result:"BLOCKED" });
     return false;
   }
   try {
@@ -86,7 +98,7 @@ function _verifySession(params, actionName) {
         if (!stored) return true; // empty token = legacy user, allow
         // FIX SEC-5: explicit true/false — no fall-through to permissive return
         if (stored === token) return true;
-        logAction(userId, "SESSION_TOKEN_MISMATCH", "Action: " + actionName + " — token rejected");
+        logAction(userId, "SESSION_TOKEN_MISMATCH", "Action: " + actionName + " — token rejected", "", "", { severity:"WARN", result:"BLOCKED" });
         return false;
       }
     }
@@ -133,37 +145,123 @@ function sanitize(val, maxLen) {
 //   details    — specific record info (e.g. "ReceiptId: MNR-2025-00042 | Amount: ₹500")
 //   reason     — WHY it was done (e.g. "Devotee requested cash donation for Diwali puja")
 //   deviceInfo — browser/device string (e.g. "Android | Chrome | Asia/Kolkata")
-function logAction(adminName, action, details, reason, deviceInfo) {
+// ════════════════════════════════════════════════════════════════
+//  ENHANCED AUDIT LOGGING SYSTEM
+//  Columns: Timestamp | Actor | Action | Result | Details | Reason | Error | DeviceInfo | Severity
+//
+//  severity: "INFO" | "WARN" | "ERROR" | "CRITICAL"
+//  result  : "SUCCESS" | "FAILURE" | "BLOCKED" | "SYSTEM"
+//  errorStack: full error message + stack when an exception occurs
+//
+//  Usage:
+//    logAction(who, action, details)                         — basic INFO / SUCCESS
+//    logAction(who, action, details, reason)                 — with reason/purpose
+//    logAction(who, action, details, reason, device)         — with device info
+//    logAction(who, action, details, reason, device, opts)   — full control:
+//      opts = { severity:"ERROR", result:"FAILURE", error: err }
+//
+//  The 6th argument (opts) is optional and backward-compatible —
+//  all existing callers without opts continue to work unchanged.
+// ════════════════════════════════════════════════════════════════
+function logAction(adminName, action, details, reason, deviceInfo, opts) {
   try {
+    // ── Parse opts (optional 6th arg) ──────────────────────────
+    const _opts      = (opts && typeof opts === "object") ? opts : {};
+    const severity   = _opts.severity   || "INFO";
+    const result     = _opts.result     || "SUCCESS";
+    const errorStack = _opts.error
+      ? (String(_opts.error.stack || _opts.error.message || _opts.error)).substring(0, 800)
+      : "";
+
+    // ── Severity row color map ──────────────────────────────────
+    const _severityColor = {
+      "INFO":     null,           // default white — no color
+      "WARN":     "#fff8e1",      // soft amber
+      "ERROR":    "#fdecea",      // soft red
+      "CRITICAL": "#ffd6d6",      // strong red
+      "SYSTEM":   "#e8f5e9",      // soft green
+    };
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName(SHEETS.AUDIT);
-    // Auto-create AUDIT_LOGS sheet with headers if it doesn't exist
+
+    // ── Auto-create AUDIT_LOGS sheet with full headers if missing ──
     if (!sheet) {
       sheet = ss.insertSheet(SHEETS.AUDIT);
-      sheet.appendRow(["Timestamp","UserAdmin","Action","Details","Reason","DeviceInfo"]);
+      sheet.appendRow([
+        "Timestamp","Actor","Action","Result",
+        "Details","Reason","Error","DeviceInfo","Severity"
+      ]);
       sheet.setFrozenRows(1);
-      sheet.getRange(1,1,1,6).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+      sheet.getRange(1,1,1,9)
+        .setFontWeight("bold")
+        .setBackground("#334155")
+        .setFontColor("#ffffff");
+      // ── Column widths for readability
+      sheet.setColumnWidth(1, 160); // Timestamp
+      sheet.setColumnWidth(2, 130); // Actor
+      sheet.setColumnWidth(3, 160); // Action
+      sheet.setColumnWidth(4,  80); // Result
+      sheet.setColumnWidth(5, 320); // Details
+      sheet.setColumnWidth(6, 200); // Reason
+      sheet.setColumnWidth(7, 260); // Error
+      sheet.setColumnWidth(8, 180); // DeviceInfo
+      sheet.setColumnWidth(9,  80); // Severity
     }
-    const ts = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MMM-yyyy hh:mm a");
-    sheet.appendRow([
-      ts,
-      sanitize(adminName, 100),
-      sanitize(action, 100),
-      sanitize(details, 500),
-      sanitize(reason || "", 300),      // ← Reason/purpose column
-      sanitize(deviceInfo || "", 200)
-    ]);
-    // ── Auto-trim: keep only latest 1000 data rows (header stays at row 1)
-    // Deletes oldest rows in one batch — fast single API call, no performance impact.
+
+    // ── Migrate old 6-column sheet to 9-column on first new write ──
     try {
-      const lastRow = sheet.getLastRow();
-      const MAX_ROWS = 1000;
-      const dataRows = lastRow - 1; // subtract header row
+      const hdrRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      if (hdrRow.length < 9) {
+        // Add missing columns to existing header
+        const newCols = ["Result","Error","Severity"].slice(-(9 - hdrRow.length));
+        newCols.forEach(function(col, i) {
+          sheet.getRange(1, hdrRow.length + 1 + i).setValue(col);
+        });
+        sheet.getRange(1, 1, 1, 9).setFontWeight("bold").setBackground("#334155").setFontColor("#ffffff");
+      }
+    } catch(migErr) { /* migration failure must not block the write */ }
+
+    const ts = Utilities.formatDate(new Date(), "GMT+5:30", "dd-MMM-yyyy HH:mm:ss");
+    const newRow = [
+      ts,
+      sanitize(adminName  || "Unknown", 100),
+      sanitize(action     || "",         100),
+      sanitize(result,                    20),
+      sanitize(details    || "",         500),
+      sanitize(reason     || "",         300),
+      sanitize(errorStack,               800),
+      sanitize(deviceInfo || "",         200),
+      sanitize(severity,                  20),
+    ];
+
+    const lastRow = sheet.appendRow(newRow).getLastRow
+      ? sheet.getLastRow()
+      : sheet.getLastRow();
+
+    // ── Row color for non-INFO entries ──────────────────────────
+    const rowColor = _severityColor[severity];
+    if (rowColor) {
+      try {
+        sheet.getRange(sheet.getLastRow(), 1, 1, 9).setBackground(rowColor);
+      } catch(colorErr) { /* color is cosmetic — never block */ }
+    }
+
+    // ── Auto-trim: keep only latest 2000 rows (was 1000) ────────
+    try {
+      const totalRows = sheet.getLastRow();
+      const MAX_ROWS  = 2000;
+      const dataRows  = totalRows - 1;
       if (dataRows > MAX_ROWS) {
-        sheet.deleteRows(2, dataRows - MAX_ROWS); // delete oldest from row 2
+        sheet.deleteRows(2, dataRows - MAX_ROWS);
       }
     } catch(trimErr) { /* trim failure must never crash the log write */ }
-  } catch (e) { /* Audit failure must never crash main op */ }
+
+  } catch(e) {
+    // Audit failure must NEVER crash the main operation.
+    // Last-resort: write to Apps Script native logger so at least something is captured.
+    try { Logger.log("[AUDIT_FAIL] " + action + " | " + details + " | " + e.message); } catch(le) {}
+  }
 }
 
 // ── Automatic backup (set up via Time-based trigger)
@@ -217,8 +315,10 @@ function autoBackupSystem() {
           });
         } catch(mailErr) {}
       });
-    } catch(e2) {}
-    logAction("System", "autoBackup_FAILED", err.message);
+    } catch(e2) {
+      logAction("System", "BACKUP_ADMIN_NOTIFY_ERROR", "Could not email admins about backup failure", e2.message, "", { severity:"WARN", result:"FAILURE", error:e2 });
+    }
+    logAction("System", "BACKUP_FAILED", "Automatic backup failed", err.message, "", { severity:"CRITICAL", result:"FAILURE", error:err });
   }
 }
 
@@ -336,7 +436,7 @@ function tryConsumeEmailQuota() {
     props.setProperty("EMAIL_COUNT", String(count + 1));
     return true;
   } catch(e) {
-    Logger.log("tryConsumeEmailQuota error: " + e.toString());
+    logAction("System", "EMAIL_QUOTA_LOCK_ERROR", "Failed to acquire lock or update quota counter", e.message, "", { severity:"ERROR", result:"FAILURE", error:e });
     return false; // on lock timeout or any error, refuse to send (safe default)
   } finally {
     if (lockAcquired) lock.releaseLock(); // only release if we actually acquired it
@@ -413,7 +513,7 @@ function saveEmailSettings(key, value) {
     sheet.appendRow([key, value, Utilities.formatDate(new Date(),"GMT+5:30","dd-MM-yyyy HH:mm:ss")]);
   }
   SpreadsheetApp.flush();
-  logAction("Admin", "saveEmailSettings", key + " = " + value);
+  logAction(sanitize(e.parameter.AdminName||"Admin",100), "Save Email Settings", key + " = " + value);
   return { status: "ok" };
 }
 
@@ -435,7 +535,7 @@ function sendMonthlyEndReports(overrideMonth, overrideYear) {
 
   const settings = getEmailSettings();
   if (!settings.monthly_report) {
-    Logger.log("Monthly report is disabled. Skipping.");
+    logAction("System", "MONTHLY_REPORT_SKIPPED", "Month: " + (safeMonth||"auto") + " Year: " + (safeYear||"auto"), "monthly_report toggle is OFF", "", { severity:"INFO", result:"BLOCKED" });
     return { status: "ok", sent: 0, skipped: 0, message: "Disabled" };
   }
   return _doSendMonthlyReports(safeMonth, safeYear);
@@ -499,7 +599,7 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
       sent++;
       Utilities.sleep(300);
     } catch(e) {
-      Logger.log("Failed to send to " + item.to + ": " + e.toString());
+      logAction("System", "MONTHLY_REPORT_SEND_ERROR", "To: " + item.to, e.message, "", { severity:"WARN", result:"FAILURE", error:e });
       skipped++;
     }
   });
@@ -543,7 +643,7 @@ function _getLogoUrl() {
       }
     }
   } catch(e) {
-    Logger.log("_getLogoUrl error: " + e.message);
+    logAction("System", "LOGO_LOAD_ERROR", "CFG.folderLogo: " + (CFG.folderLogo||"not set"), e.message, "", { severity:"WARN", result:"FAILURE", error:e });
   }
   _cachedLogoUrl = "";   // cache the "no logo" result too
   return "";
@@ -743,13 +843,14 @@ function _buildReminderEmail(member, month, year) {
 //  Called after addContribution. Uses email quota guard.
 // ════════════════════════════════════════════════════════════════
 function sendReceiptEmail(toEmail, donorName, receiptId, amount, forMonth, year, typeName, occasionName, note, paymentDate, paymentMode) {
-  if (!toEmail) { Logger.log("[sendReceiptEmail] No toEmail — aborting."); return false; }
-  Logger.log("[sendReceiptEmail] Attempting to consume quota for receiptId=" + receiptId + " toEmail=" + toEmail);
-  if (!tryConsumeEmailQuota()) {
-    Logger.log("[sendReceiptEmail] Quota FULL — email NOT sent.");
-    return false; // atomic quota check+increment
+  if (!toEmail) {
+    logAction("System", "RECEIPT_EMAIL_SKIPPED", "ReceiptId: " + receiptId, "No email address for donor", "", { severity:"INFO", result:"FAILURE" });
+    return false;
   }
-  Logger.log("[sendReceiptEmail] Quota consumed. Sending email now...");
+  if (!tryConsumeEmailQuota()) {
+    logAction("System", "RECEIPT_EMAIL_QUOTA_FULL", "ReceiptId: " + receiptId + " | Donor: " + donorName, "Daily email quota exhausted", "", { severity:"WARN", result:"FAILURE" });
+    return false;
+  }
 
   const modeLabel = paymentMode || "—";
   const amountFmt = "Rs. " + Number(amount || 0).toLocaleString("en-IN");
@@ -856,7 +957,7 @@ function sendReceiptEmail(toEmail, donorName, receiptId, amount, forMonth, year,
     });
     return true; // quota already consumed atomically in tryConsumeEmailQuota()
   } catch(err) {
-    Logger.log("Receipt email failed: " + err.toString());
+    logAction("System", "RECEIPT_EMAIL_SEND_ERROR", "ReceiptId: " + receiptId + " | To: " + toEmail + " | Donor: " + donorName, err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
     return false;
   }
 }
@@ -930,6 +1031,7 @@ function doGet(e) {
     "getFeedback","getContributionRequests","getUserContributionRequests",
     "getAuditLog","getAnnouncementHistory","getHealthCheck",
     "getEmailSettings","getEmailQuota","getYearlySummary",
+    "getPaymentDetails",  // SEC: bank/UPI details — never public, requires valid session
     "getMonthlyReportStatus",
   ];
   if (_WRITE_ACTIONS.indexOf(action) !== -1 && !_verifySession(e.parameter, action)) {
@@ -945,7 +1047,8 @@ function doGet(e) {
     let pwdHash = sanitize(e.parameter.password, 128);
     const _rl = _checkLoginRate(mobile);
     if (_rl.blocked) {
-      // Use status:"error" so client message-display branch handles it correctly
+      // Log brute-force block as CRITICAL
+      logAction(mobile || "Unknown", "LOGIN_BLOCKED", "Mobile: " + mobile, "Rate limit exceeded — too many failed attempts", "", { severity: "CRITICAL", result: "BLOCKED" });
       result = { status: "error", message: _rl.message, errorCode: "rate_limited" };
     } else {
       // Step 1: check if mobile exists (regardless of password)
@@ -953,20 +1056,26 @@ function doGet(e) {
       if (!userByMobile) {
         // Mobile not registered at all
         _recordLoginFail(mobile);
+        logAction(mobile, "LOGIN_FAILED", "Mobile not registered: " + mobile, "mobile_not_found", sanitize(e.parameter.deviceInfo||"",200), { severity:"WARN", result:"FAILURE" });
         result = { status: "error", message: "Mobile number not registered. Please check your number or register.", errorCode: "mobile_not_found" };
       } else if (String(userByMobile.Status||"").toLowerCase() === "pending") {
+        logAction(mobile, "LOGIN_DENIED", "Account pending approval | Mobile: " + mobile, "account_pending", sanitize(e.parameter.deviceInfo||"",200), { severity:"INFO", result:"BLOCKED" });
         result = { status: "pending", message: "Your registration is pending admin approval. You will receive an email once approved." };
       } else if (String(userByMobile.Status||"").toLowerCase() === "rejected") {
+        logAction(mobile, "LOGIN_DENIED", "Account rejected | Mobile: " + mobile, "account_rejected", sanitize(e.parameter.deviceInfo||"",200), { severity:"WARN", result:"BLOCKED" });
         result = { status: "error", message: "Your registration was not approved. Please contact the temple admin.", errorCode: "account_rejected" };
       } else if (String(userByMobile.Status||"").toLowerCase() === "inactive") {
+        logAction(mobile, "LOGIN_DENIED", "Account inactive | Mobile: " + mobile, "account_inactive", sanitize(e.parameter.deviceInfo||"",200), { severity:"WARN", result:"BLOCKED" });
         result = { status: "error", message: "Your account is deactivated. Please contact admin.", errorCode: "account_inactive" };
       } else if (String(userByMobile.Status||"").toLowerCase() !== "active") {
         _recordLoginFail(mobile);
+        logAction(mobile, "LOGIN_FAILED", "Invalid account status: " + userByMobile.Status + " | Mobile: " + mobile, "account_invalid", sanitize(e.parameter.deviceInfo||"",200), { severity:"WARN", result:"FAILURE" });
         result = { status: "error", message: "Account status invalid. Please contact admin.", errorCode: "account_invalid" };
       } else {
         // Step 2: mobile found and Active — now check password
         if (String(userByMobile.Password) !== pwdHash) {
           _recordLoginFail(mobile);
+          logAction(userByMobile.Name || mobile, "LOGIN_FAILED", "Wrong password | Mobile: " + mobile + " | UserId: " + userByMobile.UserId, "wrong_password", sanitize(e.parameter.deviceInfo||"",200), { severity:"WARN", result:"FAILURE" });
           result = { status: "error", message: "Incorrect password. Please try again.", errorCode: "wrong_password" };
         } else {
           // Login success
@@ -1140,6 +1249,22 @@ function doGet(e) {
     result = getEmailQuotaStatus();
   }
 
+  // ── PAYMENT DETAILS — authenticated only, never public
+  // Returns bank/UPI details stored in CFG. Session must be valid.
+  // Frontend (Donate modal) calls this after login to show payment details.
+  else if (action === "getPaymentDetails") {
+    result = {
+      status:      "ok",
+      upiId:       CFG.upiId       || "",
+      accountName: CFG.accountName || "",
+      accountNo:   CFG.accountNo   || "",
+      ifscCode:    CFG.ifscCode    || "",
+      bankName:    CFG.bankName    || "",
+      bankBranch:  CFG.bankBranch  || "",
+      accountType: CFG.accountType || "",
+    };
+  }
+
   // ── #8: EMAIL AUTOMATION SETTINGS
   else if (action === "getEmailSettings") {
     result = getEmailSettings();
@@ -1189,6 +1314,7 @@ function doGet(e) {
     try {
       jobResult = _doSendMonthlyReports(month || null, year || null);
     } catch(err) {
+      logAction("System", "MONTHLY_REPORT_ERROR", "Month: " + (month||"auto") + " | Year: " + (year||"auto"), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
       jobResult = { status: "error", message: err.message };
     }
     // Store final result for polling
@@ -1240,7 +1366,7 @@ function doGet(e) {
         return "";
       });
       sheet.appendRow(row);
-      logAction("Admin", "addGoal", sanitize(e.parameter.GoalName, 100));
+      logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Goal", sanitize(e.parameter.GoalName, 100) + " | Target: ₹" + (e.parameter.TargetAmount||""));
       result = { status: "success" };
     }
   }
@@ -1259,7 +1385,7 @@ function doGet(e) {
         if (h === "CurrentAmount") sheet.getRange(sheetRow,i+1).setValue(Number(e.parameter.CurrentAmount||0));
         if (h === "Status")        sheet.getRange(sheetRow,i+1).setValue(sanitize(e.parameter.Status,20));
       });
-      logAction("Admin", "updateGoal", rid);
+      logAction(sanitize(e.parameter.AdminName||"Admin",100), "Update Goal", "GoalId: " + rid + " | Name: " + sanitize(e.parameter.GoalName||"",100));
       // M7 — check if goal just completed
       _checkGoalCompletion(rid);
       result = { status: "updated" };
@@ -1271,7 +1397,7 @@ function doGet(e) {
     const rid   = sanitize(e.parameter.GoalId, 50);
     const idx   = rows.findIndex(r => String(r.GoalId) === rid);
     if (idx === -1) { result = { status: "error", message: "Goal not found" }; }
-    else { sheet.deleteRow(idx + 2); logAction("Admin", "deleteGoal", rid); result = { status: "deleted" }; }
+    else { sheet.deleteRow(idx + 2); logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete Goal", "GoalId: " + rid); result = { status: "deleted" }; }
   }
 
   // ── GALLERY
@@ -1507,6 +1633,7 @@ function doGet(e) {
     try {
       jobResult = sendMonthlyReminders(month || null, year || null, true);
     } catch(err) {
+      logAction("System", "MONTHLY_REMINDER_TRIGGER_ERROR", "Month: " + month + " Year: " + year, err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
       jobResult = { status: "error", message: err.message };
     }
     // Store final result so poll endpoint can return it
@@ -1524,6 +1651,7 @@ function doGet(e) {
     try {
       result = sendBirthdayEmails(isTest, testUserId);
     } catch(err) {
+      logAction("System", "BIRTHDAY_EMAIL_ERROR", "isTest: " + isTest, err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
       result = { status: "error", message: err.message };
     }
   }
@@ -1597,7 +1725,7 @@ function doGet(e) {
         "",
         sanitize(e.parameter.DOB || "", 12)   // DOB: DD-MM-YYYY or blank
       ]);
-      logAction("Admin", "Add User", "Mobile: " + mobile + ", Name: " + e.parameter.Name);
+      logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add User", "Mobile: " + mobile + " | Name: " + sanitize(e.parameter.Name||"",100) + " | Role: " + sanitize(e.parameter.Role||"User",20));
       result = { status: "success" };
     }
   }
@@ -1713,14 +1841,14 @@ function doGet(e) {
   else if (action === "deleteUser") {
     let id = sanitize(e.parameter.UserId, 30);
     result = deleteRow(SHEETS.USERS, id);
-    if (result.status === "deleted") logAction("Admin", "Delete User", "UserId: " + id);
+    if (result.status === "deleted") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete User", "UserId: " + id);
   }
   else if (action === "updateUser")      { result = updateUser(e.parameter); }
   // ── CONTRIBUTION TYPES (with permanent SortOrder) ──────────────
   else if (action === "addType") {
     var nextSort = _getNextSortOrder(SHEETS.TYPES);
     addRow(SHEETS.TYPES, [generateId(), sanitize(e.parameter.TypeName, 100), nextSort]);
-    logAction("Admin", "Add Type", e.parameter.TypeName);
+    logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Type", sanitize(e.parameter.TypeName||"",100));
     _bustSheetCache("c_types");
     result = { status: "success" };
   }
@@ -1728,7 +1856,7 @@ function doGet(e) {
     let id = sanitize(e.parameter.TypeId, 30);
     result = deleteRow(SHEETS.TYPES, id);
     _bustSheetCache("c_types");
-    if (result.status === "deleted") logAction("Admin", "Delete Type", "TypeId: " + id);
+    if (result.status === "deleted") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete Type", "TypeId: " + sanitize(e.parameter.TypeId||id,30));
   }
   else if (action === "updateType") {
     result = updateSingle(SHEETS.TYPES, sanitize(e.parameter.TypeId,30), sanitize(e.parameter.TypeName,100));
@@ -1750,7 +1878,12 @@ function doGet(e) {
     logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Occasion", sanitize(e.parameter.OccasionName,100));
     result = { status: "success" };
   }
-  else if (action === "deleteOccasion")  { result = deleteRow(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30)); _bustSheetCache("c_occasions");}
+  else if (action === "deleteOccasion")  {
+    const _delOccId = sanitize(e.parameter.OccasionId,30);
+    result = deleteRow(SHEETS.OCCASIONS, _delOccId);
+    _bustSheetCache("c_occasions");
+    if (result.status === "deleted") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete Occasion", "OccasionId: " + _delOccId);
+  }
   else if (action === "updateOccasion")  {
     result = updateSingle(SHEETS.OCCASIONS, sanitize(e.parameter.OccasionId,30), sanitize(e.parameter.OccasionName,100));
     _bustSheetCache("c_occasions");
@@ -1765,7 +1898,12 @@ function doGet(e) {
     logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Expense Type", sanitize(e.parameter.Name,100));
     result = { status: "success" };
   }
-  else if (action === "deleteExpenseType"){ result=deleteRow(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30));  _bustSheetCache("c_exptypes");}
+  else if (action === "deleteExpenseType") {
+    const _delEtId = sanitize(e.parameter.ExpenseTypeId,30);
+    result = deleteRow(SHEETS.EXPENSE_TYPES, _delEtId);
+    _bustSheetCache("c_exptypes");
+    if (result.status === "deleted") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete Expense Type", "ExpenseTypeId: " + _delEtId);
+  }
   else if (action === "updateExpenseType"){
     result=updateSingle(SHEETS.EXPENSE_TYPES,sanitize(e.parameter.ExpenseTypeId,30),sanitize(e.parameter.Name,100));
     _bustSheetCache("c_exptypes");
@@ -1778,8 +1916,12 @@ function doGet(e) {
   //            sends HTML receipt email with quota guard.
   // ════════════════════════════════════════════════════════════════
   else if (action === "addContribution") {
-    // #3 — sequential human-readable receipt ID
-    const receiptId   = generateReceiptId();
+    // #3 — sequential human-readable receipt ID.
+    // RESTORE FIX: If ReceiptID is supplied by the caller (undo restore), honour it
+    // and skip generateReceiptId() so the global counter is NOT incremented.
+    // Normal adds never pass ReceiptID so existing behaviour is unchanged.
+    const suppliedReceiptId = sanitize(e.parameter.ReceiptID, 30);
+    const receiptId         = suppliedReceiptId || generateReceiptId();
     const paymentMode = sanitize(e.parameter.PaymentMode, 30) || "UPI";
     const userId      = sanitize(e.parameter.UserId, 30);
     const amount      = Number(sanitize(e.parameter.Amount, 20)) || 0;
@@ -1788,21 +1930,25 @@ function doGet(e) {
     const typeId      = sanitize(e.parameter.TypeId, 30);
     const occasionId  = sanitize(e.parameter.OccasionId, 30);
     const note        = sanitize(e.parameter.Note, 500);
+    // RESTORE FIX: If PaymentDate is supplied by the caller (undo restore), honour it
+    // so the restored record shows the original date, not the current timestamp.
+    const suppliedPaymentDate = sanitize(e.parameter.PaymentDate, 30);
+    const paymentDate         = suppliedPaymentDate || formatDate();
 
     addRow(SHEETS.CONTRIBUTIONS, [
       sanitize(e.parameter.Id, 30) || generateId(),
       userId,
       amount,
-      formatDate(),
+      paymentDate,  // original date on restore, current timestamp on normal add
       forMonth,
       year,
       typeId,
       occasionId,
       note,
-      receiptId,    // Col 10 — now MNR-YYYY-NNNN format
-      paymentMode   // Col 11 — NEW: Payment Mode
+      receiptId,    // Col 10 — original receipt on restore, new MNR-YYYY-NNNN on normal add
+      paymentMode   // Col 11 — Payment Mode
     ]);
-    logAction("Admin", "Add Contribution", "UserId: " + userId + ", Amount: " + amount + ", Receipt: " + receiptId);
+    logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Contribution", "UserId: " + userId + " | Amount: ₹" + amount + " | Receipt: " + receiptId + " | Month: " + forMonth + " " + year + " | Mode: " + paymentMode);
 
     // #1 — Send receipt email (quota-guarded)
     // Case A: Walk-in entry with a directly provided email (WalkInEmail param)
@@ -1864,7 +2010,8 @@ function doGet(e) {
         }
       }
     } catch(emailErr) {
-      /* non-fatal — contribution was already saved */
+      // Non-fatal — contribution was already saved. Log so admins know email failed.
+      logAction(sanitize(e.parameter.AdminName||"Admin",100), "RECEIPT_EMAIL_ERROR", "ReceiptId: " + receiptId + " | UserId: " + userId, emailErr.message, "", { severity:"WARN", result:"FAILURE", error:emailErr });
     }
 
     result = {
@@ -1886,7 +2033,7 @@ function doGet(e) {
       sanitize(e.parameter.ExpenseTypeId,  30),
       sanitize(e.parameter.ForMonth,       20) || ""
     ]);
-    logAction("Admin", "Add Expense", "Title: " + e.parameter.Title + ", Amount: " + e.parameter.Amount);
+    logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Expense", "Title: " + e.parameter.Title + " | Amount: ₹" + e.parameter.Amount + " | Year: " + e.parameter.Year);
     result = { status: "success" };
   }
 
@@ -1904,11 +2051,11 @@ function doGet(e) {
   }
   else if (action === "updateContribution") {
     result = updateRow(SHEETS.CONTRIBUTIONS, e.parameter);
-    if (result.status === "updated") logAction("Admin", "Update Contribution", "Id: " + e.parameter.Id);
+    if (result.status === "updated") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Update Contribution", "Id: " + e.parameter.Id + " | Amount: ₹" + (e.parameter.Amount||"") + " | Month: " + (e.parameter.ForMonth||"") + " " + (e.parameter.Year||""));
   }
   else if (action === "updateExpense") {
     result = updateExpenseRow(SHEETS.EXPENSES, e.parameter);
-    if (result.status === "updated") logAction("Admin", "Update Expense", "Id: " + e.parameter.Id);
+    if (result.status === "updated") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Update Expense", "Id: " + e.parameter.Id + " | Title: " + (e.parameter.Title||"") + " | Amount: ₹" + (e.parameter.Amount||""));
   }
 
   // ── ANNOUNCEMENTS & BROADCASTS (unchanged from original)
@@ -1962,6 +2109,7 @@ function doGet(e) {
         }
         if (!result || !result.status) result = { status: "error", message: "Expense not found." };
       } catch(err) {
+        logAction(sanitize(e.parameter.AdminName||"Admin",100), "REMOVE_RECEIPT_ERROR", "ExpenseId: " + sanitize(e.parameter.Id||"",30), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
         result = { status: "error", message: err.message };
       }
     }
@@ -1997,6 +2145,7 @@ function doGet(e) {
         logAction(adminName, "removeAllExpenseReceipts", "ExpenseId: " + expId);
         result = { status: "success" };
       } catch(err) {
+        logAction(sanitize(e.parameter.AdminName||"Admin",100), "REMOVE_ALL_RECEIPTS_ERROR", "ExpenseId: " + sanitize(e.parameter.Id||"",30), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
         result = { status: "error", message: err.message };
       }
     }
@@ -2049,7 +2198,7 @@ function doGet(e) {
         "SETTINGS":              ["Key","Value","UpdatedAt"],
         "FEEDBACK":              ["Timestamp","Name","Mobile","Address","Message","Status"],
         "CHATBOT_CONFIG":        ["Key","Value","UpdatedAt"],
-        "AUDIT_LOGS":            ["Timestamp","UserAdmin","Action","Details","Reason","DeviceInfo"],
+        "AUDIT_LOGS":            ["Timestamp","Actor","Action","Result","Details","Reason","Error","DeviceInfo","Severity"],
         "ANNOUNCEMENT":          ["AnnId","Message","Badge","Icon","Color","Status","AdminName","CreatedAt"],
         "YEAR_CONFIG":           ["Year","OpeningBalance"]
       };
@@ -2212,10 +2361,13 @@ function doGet(e) {
         // Insert in exact sheet column order: ReqId,UserId,Amount,PaymentMode,ForMonth,Year,Note,UtrRef,Status,RequestedAt,SlipURL,RejectionNote
         reqSheet.appendRow([newId, userId, Number(amount)||0, mode, month, year, note, utrRef, "Pending",
           Utilities.formatDate(new Date(),"GMT+5:30","dd-MM-yyyy HH:mm:ss"), slipUrl, ""]);
-        logAction("User", "Contribution Request", "UserId:"+userId+" Amount:"+amount+" Month:"+month);
+        logAction(userId, "Contribution Request Submitted", "UserId: " + userId + " | Amount: ₹" + amount + " | Month: " + month + " | Mode: " + mode);
         result = { status:"success", reqId: newId };
       }
-    } catch(err) { result = { status:"error", message:err.message }; }
+    } catch(err) {
+      logAction(sanitize(e.parameter.UserId||"User",30), "CONTRIBUTION_REQUEST_ERROR", "Amount: " + sanitize(e.parameter.Amount||"",20) + " | Month: " + sanitize(e.parameter.ForMonth||"",20), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
+      result = { status:"error", message:err.message };
+    }
   }
 
   // ── User: edit their own PENDING contribution request
@@ -2262,7 +2414,10 @@ function doGet(e) {
           if (!found) result = { status:"error", message:"Pending request not found or not authorized." };
         }
       }
-    } catch(err) { result = { status:"error", message:err.message }; }
+    } catch(err) {
+      logAction(sanitize(e.parameter.UserId||"User",30), "EDIT_CONTRIB_REQUEST_ERROR", "ReqId: " + sanitize(e.parameter.ReqId||"",30), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
+      result = { status:"error", message:err.message };
+    }
   }
 
   // ── User: get their own contribution requests
@@ -2355,18 +2510,23 @@ function doGet(e) {
                     htmlBody: _buildContribRejectionEmail(donor, amount, forMonth, year, rejNote)
                   });
                 }
-              } catch(mailErr) { /* non-fatal */ }
-            }
-            result = {status:"success"};
+              } catch(mailErr) {
+                logAction("System", "REJECTION_EMAIL_ERROR", "ReqId: " + reqId + " | UserId: " + String(data2[i][hdrs.indexOf("UserId")]||""), mailErr.message, "", { severity:"WARN", result:"FAILURE", error:mailErr });
+              }
+            } // end if (status === "Rejected")
+            result = { status: "success" };
             break;
-          }
+          } // end for loop
         }
         // Use explicit found flag instead of checking result.status
         if (!result || (result.status !== "success" && result.status !== "already_resolved")) result = {status:"error",message:"Request not found"};
         } finally { lock.releaseLock(); }
       }
       } // end VALID_STATUSES check
-    } catch(err) { result = {status:"error",message:err.message}; }
+    } catch(err) {
+      logAction(sanitize(e.parameter.AdminName||"Admin",100), "RESOLVE_CONTRIB_REQUEST_ERROR", "ReqId: " + sanitize(e.parameter.ReqId||"",30) + " | Status: " + sanitize(e.parameter.Status||"",20), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
+      result = {status:"error",message:err.message};
+    }
   }
 
   // ── User: delete their own APPROVED or REJECTED contribution request
@@ -2400,7 +2560,10 @@ function doGet(e) {
           if (!found) result = { status:"error", message:"Request not found or not eligible for deletion." };
         }
       }
-    } catch(err) { result = { status:"error", message:err.message }; }
+    } catch(err) {
+      logAction(sanitize(e.parameter.userId||e.parameter.UserId||"User",30), "DELETE_CONTRIB_REQUEST_ERROR", "ReqId: " + sanitize(e.parameter.ReqId||"",30), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
+      result = { status:"error", message:err.message };
+    }
   }
 
   // ── Y1: Send OTP for registration email verification
@@ -2491,7 +2654,10 @@ function doGet(e) {
   return ContentService
     .createTextOutput(callback + "(" + JSON.stringify(result) + ")")
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
-}
+
+} // end doGet — NO outer try-catch by design: Apps Script handles uncaught exceptions
+  // at the platform level. Each action branch has its own try-catch above.
+  // If you see "Script error" in client, check AUDIT_LOGS for the action name.
 
 // ════════════════════════════════════════════════════════════════
 //  HELPERS
@@ -2767,7 +2933,7 @@ function repairPaymentDates() {
         cell.setNumberFormat("@");   // plain text first
         cell.setValue(fixed);         // then write string
         totalFixed++;
-        Logger.log("Fixed row " + (i+1) + ": " + val + " -> " + fixed);
+        Logger.log("Fixed row " + (i+1) + ": " + val + " -> " + fixed); // keep: maintenance tool, runs manually
       } else if (String(val).trim() !== "") {
         // Already a string — just ensure cell format is plain text to prevent future re-parsing
         cell.setNumberFormat("@");
@@ -2776,6 +2942,7 @@ function repairPaymentDates() {
   });
 
   Logger.log("repairPaymentDates complete. Fixed " + totalFixed + " cells.");
+  logAction("System", "repairPaymentDates", "Fixed " + totalFixed + " Date cells in CONTRIBUTIONS/EXPENSES sheets", "", "", { severity:"INFO", result:"SUCCESS" });
   return "Done. Fixed " + totalFixed + " Date cells. Check Logs for details.";
 }
 
@@ -2854,7 +3021,7 @@ function _updateSortOrder(sheetName, orderArr) {
   var cacheKeyMap = { TYPES: "c_types", OCCASIONS: "c_occasions", EXPENSE_TYPES: "c_exptypes" };
   if (cacheKeyMap[target]) _bustSheetCache(cacheKeyMap[target]);
 
-  logAction("Admin", "updateSortOrder", sheetName + " — " + updated + " rows updated");
+  logAction(sanitize(e.parameter.AdminName||"Admin",100), "Update Sort Order", sheetName + " — " + updated + " rows updated");
   return { status: "success", updated: updated };
 }
 
@@ -3167,7 +3334,10 @@ function doPost(e) {
       logAction(sanitize(data.AdminName,100)||"Admin","uploadGalleryPhoto","Id: "+newId);
       result = { status:"success", photoUrl:photoUrl, photoId:newId };
     } else { result = { status:"error", message:"Unknown action." }; }
-  } catch(err) { result = { status:"error", message:err.message }; }
+  } catch(err) {
+    logAction(sanitize((JSON.parse(e.postData.contents||"{}").AdminName||JSON.parse(e.postData.contents||"{}").userId||"Unknown"),100), "DOPOST_UNHANDLED_ERROR", "Action: " + (JSON.parse(e.postData.contents||"{}").action||"unknown"), err.message, "", { severity:"CRITICAL", result:"FAILURE", error:err });
+    result = { status:"error", message:err.message };
+  }
   return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -3218,8 +3388,10 @@ function uploadUserPhoto(base64Data, fileName) {
 function verifyEmailSystem() {
   try {
     MailApp.sendEmail({ to:"amarjeetvish@gmail.com", subject:CFG.name+" - Verification Test", htmlBody:"<h2>It Works!</h2><p>Email system is operational.</p>" });
-    Logger.log("Success! Check your inbox.");
-  } catch(e) { Logger.log("Error: "+e.toString()); }
+    logAction("System", "EMAIL_VERIFY_TEST", "Test email sent successfully to amarjeetvish@gmail.com", "", "", { severity:"INFO", result:"SUCCESS" });
+  } catch(e) {
+    logAction("System", "EMAIL_VERIFY_TEST_FAILED", "Test email failed", e.message, "", { severity:"ERROR", result:"FAILURE", error:e });
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -3405,7 +3577,7 @@ function sendMonthlyContributionReminders(overrideMonth, overrideYear) {
         sent++;
         Utilities.sleep(200);
       } catch(mailErr) {
-        Logger.log("Reminder email failed for " + member.Email + ": " + mailErr);
+        logAction("System", "REMINDER_EMAIL_SEND_ERROR", "To: " + member.Email + " | Name: " + (member.Name||""), mailErr.message, "", { severity:"WARN", result:"FAILURE", error:mailErr });
         skipped++;
       }
     });
@@ -3413,7 +3585,7 @@ function sendMonthlyContributionReminders(overrideMonth, overrideYear) {
     logAction("System", "monthlyReminder", month + " " + year + " — sent:" + sent + ", skipped:" + skipped);
     return { status: "ok", sent: sent, skipped: skipped };
   } catch(err) {
-    logAction("System", "monthlyReminder_FAILED", err.message);
+    logAction("System", "MONTHLY_REMINDER_FAILED", "Month: " + (month||"") + " Year: " + (year||""), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
     return { status: "error", message: err.message };
   }
 }
@@ -3536,7 +3708,7 @@ function saveChatbotConfig(params) {
       savedKeys.push(key);
     });
     SpreadsheetApp.flush();
-    logAction("Admin", "saveChatbotConfig", "Updated: " + savedKeys.join(", "));
+    logAction(sanitize(e.parameter.AdminName||params.AdminName||"Admin",100), "Save Chatbot Config", "Updated: " + savedKeys.join(", "));
     return { status: "success" };
   } catch(e) { return { status: "error", message: e.message }; }
 }
@@ -3665,7 +3837,9 @@ function registerUser(params) {
 </table></td></tr></table></body></html>`
         });
       }
-    } catch(regMailErr) { /* non-fatal */ }
+    } catch(regMailErr) {
+      logAction("System", "REGISTRATION_EMAIL_ERROR", "Mobile: " + mobile + " | Name: " + name, regMailErr.message, "", { severity:"WARN", result:"FAILURE", error:regMailErr });
+    }
  
     // Notify all admin users (best-effort, non-blocking)
     try {
@@ -3702,12 +3876,19 @@ function registerUser(params) {
   </td></tr>
 </table></body></html>`
           });
-        } catch(mailErr) { /* non-fatal */ }
+        } catch(mailErr) {
+          logAction("System", "ADMIN_NOTIFY_EMAIL_ERROR", "Admin: " + (admin.Name||admin.Email||"") + " | NewUser: " + name, mailErr.message, "", { severity:"WARN", result:"FAILURE", error:mailErr });
+        }
       });
-    } catch(e2) { /* non-fatal */ }
+    } catch(e2) {
+      logAction("System", "ADMIN_NOTIFY_LOOP_ERROR", "NewUser: " + name + " | Mobile: " + mobile, e2.message, "", { severity:"WARN", result:"FAILURE", error:e2 });
+    }
  
     return { status: "success" };
-  } catch(e) { return { status: "error", message: e.message }; }
+  } catch(e) {
+    logAction("System", "REGISTER_USER_ERROR", "Mobile: " + sanitize(params.Mobile||"",15) + " | Name: " + sanitize(params.Name||"",100), e.message, "", { severity:"ERROR", result:"FAILURE", error:e });
+    return { status: "error", message: e.message };
+  }
 }
  
 function approveUser(params) {
@@ -3751,11 +3932,16 @@ function approveUser(params) {
           subject: CFG.name + " — Your Registration Has Been Approved!",
           htmlBody: _buildApprovalEmail(userObj)
         });
-      } catch(mailErr) { Logger.log("Approval email error: " + mailErr); }
+      } catch(mailErr) {
+        logAction(adminName, "APPROVAL_EMAIL_ERROR", "UserId: " + userId + " | To: " + toEmail, mailErr.message, "", { severity:"WARN", result:"FAILURE", error:mailErr });
+      }
     }
  
-    return { status: "success" };
-  } catch(e) { return { status: "error", message: e.message }; }
+    return { status: "success", emailSent: !!(toEmail) };
+  } catch(e) {
+    logAction("System", "APPROVE_USER_ERROR", "UserId: " + sanitize(params.UserId||"",30), e.message, "", { severity:"ERROR", result:"FAILURE", error:e });
+    return { status: "error", message: e.message };
+  }
 }
  
 function rejectUser(params) {
@@ -3791,7 +3977,9 @@ function rejectUser(params) {
           subject: CFG.name + " — Regarding Your Registration Request",
           htmlBody: _buildRejectionEmail(userObj, reason)
         });
-      } catch(mailErr) { Logger.log("Rejection email error: " + mailErr); }
+      } catch(mailErr) {
+        logAction(adminName, "REJECTION_EMAIL_ERROR", "UserId: " + userId + " | To: " + toEmail, mailErr.message, "", { severity:"WARN", result:"FAILURE", error:mailErr });
+      }
     }
 
     // DELETE the row from sheet
@@ -3800,7 +3988,10 @@ function rejectUser(params) {
     logAction(adminName, "Reject & Delete User", "UserId: " + userId + " | Name: " + userObj.Name + (reason ? " | Reason: " + reason : ""));
  
     return { status: "success" };
-  } catch(e) { return { status: "error", message: e.message }; }
+  } catch(e) {
+    logAction("System", "REJECT_USER_ERROR", "UserId: " + sanitize(params.UserId||"",30), e.message, "", { severity:"ERROR", result:"FAILURE", error:e });
+    return { status: "error", message: e.message };
+  }
 }
  
 function _buildApprovalEmail(user) {
@@ -4036,17 +4227,19 @@ function _changePassword(p) {  // FIX #3: Moved to global scope (was accidentall
           const storedHash = String(data[i][pwdCol] || "").trim().toLowerCase();
           // Verify old password matches stored hash
           if (storedHash !== oldHashRaw.toLowerCase()) {
+            logAction(userId, "CHANGE_PASSWORD_WRONG_CURRENT", "UserId: " + userId, "Supplied current password did not match", "", { severity:"WARN", result:"FAILURE" });
             return { status: "error", message: "Current password is incorrect." };
           }
           // Write new password hash
           sheet.getRange(i + 1, pwdCol + 1).setValue(newHashRaw.toLowerCase());
           SpreadsheetApp.flush();
-          logAction("User", "Change Password", "UserId: " + userId);
+          logAction(userId, "Change Password", "UserId: " + userId, "User changed their own password");
           return { status: "success" };
         }
       }
       return { status: "error", message: "User not found." };
     } catch(err) {
+      logAction("System", "CHANGE_PASSWORD_ERROR", "UserId: " + sanitize((params||{}).userId||"",30), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
       return { status: "error", message: err.message };
     }
   }
@@ -4071,7 +4264,10 @@ function _addEvent(p) {  // FIX #3: Moved to global scope (was accidentally inde
       sheet.appendRow(row);
       logAction(sanitize(p.AdminName,100)||"Admin", "addEvent", sanitize(p.EventName,100));
       return { status:"success" };
-    } catch(err) { return { status:"error", message:err.message }; }
+    } catch(err) {
+      logAction(sanitize(p.AdminName,100)||"System", "ADD_EVENT_ERROR", "EventName: " + sanitize(p.EventName||"",100), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
+      return { status:"error", message:err.message };
+    }
   }
  
 function _updateEvent(p) {
@@ -4106,7 +4302,10 @@ function _updateEvent(p) {
         }
       }
       return { status:"not found" };
-    } catch(err) { return { status:"error", message:err.message }; }
+    } catch(err) {
+      logAction(sanitize(p.AdminName,100)||"System", "UPDATE_EVENT_ERROR", "EventId: " + sanitize(p.EventId||"",50), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
+      return { status:"error", message:err.message };
+    }
   }
  
 function _deleteEvent(p) {  // FIX #3: Moved to global scope (was accidentally indented)
@@ -4135,7 +4334,10 @@ function _deleteEvent(p) {  // FIX #3: Moved to global scope (was accidentally i
       SpreadsheetApp.flush();
       logAction(adminName, "deleteEvent", eventId);
       return { status:"deleted" };
-    } catch(err) { return { status:"error", message:err.message }; }
+    } catch(err) {
+      logAction(sanitize(p.AdminName,100)||"System", "DELETE_EVENT_ERROR", "EventId: " + sanitize(p.EventId||"",50), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
+      return { status:"error", message:err.message };
+    }
   }
  
 function _addEventExpense(p) {  // FIX #3: Moved to global scope (was accidentally indented)
@@ -4159,7 +4361,10 @@ function _addEventExpense(p) {  // FIX #3: Moved to global scope (was accidental
       logAction(sanitize(p.AdminName,100)||"Admin","addEventExpense",
         "EventId:"+sanitize(p.EventId,50)+" Title:"+sanitize(p.Title,100));
       return { status:"success" };
-    } catch(err) { return { status:"error", message:err.message }; }
+    } catch(err) {
+      logAction(sanitize(p.AdminName,100)||"System", "ADD_EVENT_EXPENSE_ERROR", "EventId: " + sanitize(p.EventId||"",50) + " | Title: " + sanitize(p.Title||"",100), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
+      return { status:"error", message:err.message };
+    }
   }
 
 // ════════════════════════════════════════════════════════════════
@@ -4274,7 +4479,7 @@ function sendBirthdayEmails(isTest, testUserId) {
 
     } catch(err) {
       errors.push((u.Name||u.UserId) + ": " + err.message);
-      Logger.log("Birthday email error for " + (u.Name||"?") + ": " + err.message);
+      logAction("System", "BIRTHDAY_EMAIL_SEND_ERROR", "UserId: " + (u.UserId||"") + " | Name: " + (u.Name||"") + " | To: " + (u.Email||""), err.message, "", { severity:"WARN", result:"FAILURE", error:err });
     }
   });
 
