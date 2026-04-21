@@ -3065,6 +3065,21 @@
     }
 
     async function init() {
+      // SESSION GUARD: Check session BEFORE firing any backend call.
+      // Without this, if _forceLogout() cleared localStorage (session expiry, cross-device kick),
+      // getCached("getAllData") fires immediately with no userId/token → REJECTED_NO_TOKEN logged
+      // as "Unknown". This guard stops all backend calls and lets _forceLogout handle the redirect.
+      try {
+        const _initSess = JSON.parse(localStorage.getItem("session") || "null");
+        if (!_initSess || !_initSess.userId || !_initSess.sessionToken || Date.now() > (_initSess.expiry || 0)) {
+          if (typeof _forceLogout === "function") {
+            _forceLogout("Session expired. Please login again.", "Session expired - init guard");
+          } else {
+            location.replace("login.html");
+          }
+          return;
+        }
+      } catch(_e) { /* storage error — let init proceed, getData will get rejected cleanly */ }
       // Preserve scroll position so saves don't jump user to top
       const _scrollY = window.scrollY;
       _resetLoadingOverlay();

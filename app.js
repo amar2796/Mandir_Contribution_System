@@ -171,6 +171,13 @@ function postData(data) {
       if (_action === "addContribution") {
         const _sentId = String(data.Id || "");
         setTimeout(function() {
+          // SESSION GUARD: If session was cleared (force logout, cross-device kick) during the
+          // 23-second window (20s timeout + 3s delay), getData("getAllData") would fire with no
+          // userId/token → REJECTED_NO_TOKEN logged as "Unknown". Skip fallback if session gone.
+          try {
+            var _fb_sess = JSON.parse(localStorage.getItem("session") || "null");
+            if (!_fb_sess || !_fb_sess.userId || !_fb_sess.sessionToken) return;
+          } catch(_fbe) { return; }
           mandirCacheBust("getAllData");
           getData("getAllData").then(function(fresh) {
             const contribs = (fresh && fresh.contributions) || [];
