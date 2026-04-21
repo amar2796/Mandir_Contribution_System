@@ -1249,9 +1249,26 @@ function doGet(e) {
     result = getEmailQuotaStatus();
   }
 
-  // ── PAYMENT DETAILS — authenticated only, never public
-  // Returns bank/UPI details stored in CFG. Session must be valid.
-  // Frontend (Donate modal) calls this after login to show payment details.
+  // ── PUBLIC PAYMENT DETAILS — no session required, open to all visitors
+  // Bank receive-details are intentionally public — a donor needs them to pay.
+  // Knowing an account number for *receiving* donations is not a security risk.
+  // NOT in _WRITE_ACTIONS — open so the donate modal works for every visitor.
+  else if (action === "getPublicPaymentDetails") {
+    result = {
+      status:      "ok",
+      upiId:       CFG.upiId       || "",
+      accountName: CFG.accountName || "",
+      accountNo:   CFG.accountNo   || "",
+      ifscCode:    CFG.ifscCode    || "",
+      bankName:    CFG.bankName    || "",
+      bankBranch:  CFG.bankBranch  || "",
+      accountType: CFG.accountType || "",
+    };
+  }
+
+  // ── PRIVATE PAYMENT DETAILS — session-gated (kept for future use)
+  // Same data as above, but only returns to authenticated sessions.
+  // Use if you ever add extra sensitive fields only logged-in users should see.
   else if (action === "getPaymentDetails") {
     result = {
       status:      "ok",
@@ -3635,7 +3652,14 @@ function getChatbotConfig() {
     if (data.length < 2) return _defaultChatbotConfig();
     const config = Object.assign({}, _defaultChatbotConfig());
     data.slice(1).forEach(r => {
-      if (r[0]) config[String(r[0]).trim()] = String(r[1] !== undefined && r[1] !== null ? r[1] : "").trim();
+      if (r[0]) {
+        // FIX: Google Sheets stores empty numeric cells as the number 0, not "".
+        // String(0) = "0" which is truthy — caused chatbot to show "Account: 0",
+        // "IFSC: 0" etc. Treat value 0 (number) as empty string, same as null/undefined.
+        const rawVal = r[1];
+        const strVal = (rawVal === undefined || rawVal === null || rawVal === 0) ? "" : String(rawVal).trim();
+        config[String(r[0]).trim()] = strVal;
+      }
     });
     return config;
   } catch(e) { return _defaultChatbotConfig(); }

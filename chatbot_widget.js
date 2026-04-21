@@ -67,23 +67,32 @@
       var apiUrl = (typeof API_URL !== "undefined" ? API_URL : "") || (window.API_URL || "");
       if (!apiUrl) { _botConfig = {}; cb(_botConfig); return; }
       _fetchJSON(apiUrl + "?action=getChatbotConfig", function (err, data) {
-        if (!err && data && !data.error) {
-          _botConfig = data;
-          // ── Auto-fill bank/UPI from APP constants if chatbot config fields are blank.
-          // Admin can override these any time via the chatbot config panel in admin.html.
-          // This means the chatbot works out-of-the-box without needing manual config.
-          if (!_botConfig.upi_id   && window.APP && APP.upiId)     _botConfig.upi_id    = APP.upiId;
-          if (!_botConfig.contact_phone && window.APP && APP.phone) _botConfig.contact_phone = APP.phone;
-          if (!_botConfig.contact_email && window.APP && APP.email) _botConfig.contact_email = APP.email;
-          _botConfigTime = Date.now();
+        _botConfig = (!err && data && !data.error) ? data : {};
+        _botConfigTime = Date.now();
+
+        // ── Auto-fill bank/UPI from server when chatbot config fields are blank.
+        // getPublicPaymentDetails needs no session — works for all visitors.
+        // Admin can always override these via the Chatbot Config panel in admin.html.
+        var needsBankFill = !_botConfig.bank_name && !_botConfig.bank_account && !_botConfig.upi_id;
+        // Always fall back contact fields from APP constants (already in constants.js)
+        if (!_botConfig.contact_phone && window.APP && APP.phone) _botConfig.contact_phone = APP.phone;
+        if (!_botConfig.contact_email && window.APP && APP.email) _botConfig.contact_email = APP.email;
+
+        if (needsBankFill) {
+          _fetchJSON(apiUrl + "?action=getPublicPaymentDetails", function(err2, pay) {
+            if (!err2 && pay && pay.status === "ok") {
+              if (!_botConfig.upi_id)       _botConfig.upi_id       = pay.upiId       || "";
+              if (!_botConfig.bank_name)    _botConfig.bank_name    = pay.bankName    || "";
+              if (!_botConfig.bank_account) _botConfig.bank_account = pay.accountNo   || "";
+              if (!_botConfig.bank_ifsc)    _botConfig.bank_ifsc    = pay.ifscCode    || "";
+              if (!_botConfig.bank_branch)  _botConfig.bank_branch  = pay.bankBranch  || "";
+            }
+            cb(_botConfig);
+          });
         } else {
-          _botConfig = {
-            upi_id:        (window.APP && APP.upiId) ? APP.upiId : "",
-            contact_phone: (window.APP && APP.phone) ? APP.phone : "",
-            contact_email: (window.APP && APP.email) ? APP.email : ""
-          };
+          // Config already has bank fields set by admin — use as-is
+          cb(_botConfig);
         }
-        cb(_botConfig);
       });
     }
   

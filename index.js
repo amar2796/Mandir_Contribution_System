@@ -185,11 +185,9 @@
       function loadCommunityStats() {
         if (typeof getData !== "function") return;
         // getPublicStats is public — no session needed. Returns memberCount directly.
-        // (Previously used getUsers which requires a session token and returns 0 on the public page.)
         getData("getPublicStats").then(function(res) {
           if (!res || res.status === "error") return;
-          var members = Number(res.memberCount || 0);
-          _animateMemberCount(document.getElementById("csMembers"), members, 1800);
+          _animateMemberCount(document.getElementById("csMembers"), Number(res.memberCount || 0), 1800);
         }).catch(function() {});
       }
 
@@ -593,64 +591,48 @@ var _trLoaded = false;
 
 /* ── Payment Modal ── */
       /* ── Payment Modal ── */
-      /* ── Payment details cache (one fetch per page load) ── */
+      /* ── Payment details cache — fetched once per page load, public for all visitors ── */
       var _payDetails = null;
 
-      function _loadPayDetails(cb) {
-        if (_payDetails) { cb(_payDetails); return; }
-        // getPaymentDetails requires a session token — returns data only when logged in.
-        // On public page (no session): falls back to APP.xxx values from constants.js,
-        // which are now empty strings, so fields show "—" until user logs in.
-        if (typeof getData !== "function") { cb(null); return; }
-        var session = null;
-        try { session = JSON.parse(localStorage.getItem("session") || "null"); } catch(e) {}
-        if (session && session.sessionToken) {
-          // Logged-in visitor: fetch real details from server
-          getData("getPaymentDetails").then(function(res) {
-            if (res && res.status === "ok") { _payDetails = res; cb(res); }
-            else { cb(null); }
-          }).catch(function() { cb(null); });
-        } else {
-          // Public visitor (not logged in): UPI ID is safe to show publicly from APP
-          var pub = {
-            upiId:       (typeof APP !== "undefined" && APP.upiId)       ? APP.upiId       : "",
-            accountName: "",
-            accountNo:   "Login to view",
-            ifscCode:    "Login to view",
-            bankName:    "Login to view",
-            bankBranch:  "Login to view",
-            accountType: "Login to view"
-          };
-          _payDetails = pub;
-          cb(pub);
+      function _initPayModalFields() {
+        // Already cached this page load — fill instantly
+        if (_payDetails) { _applyPayDetails(_payDetails); return; }
+        // Fetch from server — getPublicPaymentDetails requires no session
+        if (typeof getData === "function") {
+          getData("getPublicPaymentDetails").then(function(res) {
+            if (res && res.status === "ok") {
+              _payDetails = res;
+              _applyPayDetails(res);
+            }
+          }).catch(function() {});
         }
       }
 
-      function _initPayModalFields() {
-        _loadPayDetails(function(p) {
-          if (!p) return;
-          var set = function(id, val) {
-            var el = document.getElementById(id);
-            if (el) el.textContent = val || "—";
-          };
-          set("payAccName", p.accountName);
-          set("payAccNo",   p.accountNo);
-          set("payIfsc",    p.ifscCode);
-          set("payBankName",p.bankName);
-          set("payBranch",  p.bankBranch);
-          set("payAccType", p.accountType);
-          set("payUpiId",   p.upiId);
-        });
+      function _applyPayDetails(p) {
+        var set = function(id, val) {
+          var el = document.getElementById(id);
+          if (el) el.textContent = val || "—";
+        };
+        set("payAccName", p.accountName);
+        set("payAccNo",   p.accountNo);
+        set("payIfsc",    p.ifscCode);
+        set("payBankName",p.bankName);
+        set("payBranch",  p.bankBranch);
+        set("payAccType", p.accountType);
+        set("payUpiId",   p.upiId);
       }
-      /* Pre-fill fields as soon as DOM is ready */
-      document.addEventListener('DOMContentLoaded', _initPayModalFields);
+
+      /* Data is fetched lazily on first openPayModal() click — no need to pre-fetch
+         on every page load since most visitors never open the donate modal.
+         _initPayModalFields() caches the result in _payDetails so the second
+         open is instant. The DOMContentLoaded pre-fetch was an unnecessary backend
+         call on every index page visit. */
 
       function _generatePayQR() {
-        var name = (typeof APP !== "undefined" && APP.name) ? APP.name : "Shree Hanuman Mandir";
-        // Use cached payment details if available, otherwise fall back to APP.upiId
         var upiId = (_payDetails && _payDetails.upiId)
           ? _payDetails.upiId
           : ((typeof APP !== "undefined" && APP.upiId) ? APP.upiId : "mandir@upi");
+        var name  = (typeof APP !== "undefined" && APP.name) ? APP.name : "Shree Hanuman Mandir";
         var upiStr = "upi://pay?pa=" + encodeURIComponent(upiId) + "&pn=" + encodeURIComponent(name) + "&cu=INR";
         var box = document.getElementById("payQrBox");
         if (!box) return;
@@ -659,21 +641,19 @@ var _trLoaded = false;
           try {
             new window.QRCode(box, {
               text: upiStr,
-              width: 148,
-              height: 148,
-              colorDark: "#1a0800",
-              colorLight: "#ffffff",
+              width: 148, height: 148,
+              colorDark: "#1a0800", colorLight: "#ffffff",
               correctLevel: window.QRCode.CorrectLevel.M
             });
           } catch(e) {
-            box.innerHTML = '<div class="pay-qr-placeholder"><i class="fa-solid fa-qrcode"></i><span>QR Ready<br>' + upiId + "</span></div>";
+            box.innerHTML = "<div class=\"pay-qr-placeholder\"><i class=\"fa-solid fa-qrcode\"></i><span>QR Ready<br>" + upiId + "</span></div>";
           }
         } else {
           var s = document.createElement("script");
           s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
           s.onload = function() { _generatePayQR(); };
           s.onerror = function() {
-            box.innerHTML = '<div class="pay-qr-placeholder"><i class="fa-solid fa-qrcode"></i><span>' + upiId + "</span></div>";
+            box.innerHTML = "<div class=\"pay-qr-placeholder\"><i class=\"fa-solid fa-qrcode\"></i><span>" + upiId + "</span></div>";
           };
           document.head.appendChild(s);
         }
@@ -684,11 +664,11 @@ var _trLoaded = false;
         m.classList.add("open");
         document.body.style.overflow = "hidden";
         m.scrollTop = 0;
-        // Bust cache so if user just logged in they get real details immediately
-        _payDetails = null;
+        // Fields pre-fetched on DOMContentLoaded — should already be filled.
+        // Call again in case the first fetch hadn't completed yet.
         _initPayModalFields();
-        // Generate QR after details load (slight delay so _payDetails is populated)
-        setTimeout(_generatePayQR, 150);
+        // QR uses the cached UPI ID. Small delay ensures _payDetails is populated first.
+        setTimeout(_generatePayQR, 100);
         spawnPayParticles();
       }
       function closePayModal() {
