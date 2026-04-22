@@ -736,36 +736,92 @@ var _trLoaded = false;
         }).catch(function() {});
       }
 
-/* ── Service Worker Registration ── */
-  /* ── Service Worker registration ── */
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function() {
-      navigator.serviceWorker.register("./sw.js").then(function(reg) {
-   
-        // Detect when a new SW version is waiting — prompt user to refresh
-        reg.addEventListener("updatefound", function() {
-          const newWorker = reg.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener("statechange", function() {
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              // New version available — show update toast if toast() is available
-              // Otherwise show a simple confirm dialog
-              if (typeof toast === "function") {
-                toast("🔄 App updated — tap here to refresh", "warn");
-                // Auto-reload after 4 seconds so admin always gets latest code
-                setTimeout(function() { location.reload(); }, 4000);
-              } else {
-                if (confirm("App updated. Reload now for the latest version?")) {
-                  location.reload();
-                }
-              }
-            }
-          });
-        });
-   
-      }).catch(function(err) {
-        // SW registration failed — app still works normally without it
-        console.warn("Service Worker registration failed:", err);
+/* ══ CHAUPAI TICKER ══
+   Moved here from inline <script> in index.html.
+   Runs on DOMContentLoaded — requires #chaupaiDisplay and #chaupaiSpacer in DOM. */
+(function _initChaupai() {
+  var chaupais = [
+    'प्रबिसि नगर कीजे सब काजा। हृदयँ राखि कोसलपुर राजा॥',
+    'मंगल भवन अमंगल हारी। द्रवहु सुदसरथ अजर बिहारी।।'
+  ];
+
+  function init() {
+    var container = document.getElementById('chaupaiDisplay');
+    var spacer    = document.getElementById('chaupaiSpacer');
+    if (!container || !spacer) return;
+
+    var ci = 0;
+
+    /* Spacer always = longest string → layout is permanently locked */
+    spacer.textContent = chaupais.reduce(function(a, b) {
+      return b.length > a.length ? b : a;
+    }, '');
+
+    /* Split string into Unicode-aware grapheme clusters (handles Hindi matras correctly) */
+    function getChars(str) {
+      if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        var seg = new Intl.Segmenter('hi', { granularity: 'grapheme' });
+        return Array.from(seg.segment(str), function(s) { return s.segment; });
+      }
+      return Array.from(str); /* fallback */
+    }
+
+    /* Build one <span class="cp-char"><span>c</span></span> per grapheme */
+    function buildCharEls(chars) {
+      container.innerHTML = '';
+      var els = [];
+      chars.forEach(function(ch) {
+        var wrap  = document.createElement('span');
+        wrap.className = 'cp-char';
+        var inner = document.createElement('span');
+        inner.textContent = ch;
+        wrap.appendChild(inner);
+        container.appendChild(wrap);
+        els.push(inner);
       });
-    });
+      return els;
+    }
+
+    function showChaupai() {
+      var chars = getChars(chaupais[ci]);
+      var els   = buildCharEls(chars);
+      var i = 0;
+
+      /* Reveal one character at a time, left → right */
+      function revealNext() {
+        if (i < els.length) {
+          els[i].classList.add('cp-in');
+          i++;
+          setTimeout(revealNext, 55); /* 55 ms per character */
+        } else {
+          /* Hold fully visible, then hide */
+          setTimeout(function() { hideFrom(els.length - 1); }, 2600);
+        }
+      }
+
+      /* Hide one character at a time, right → left */
+      function hideFrom(j) {
+        if (j >= 0) {
+          els[j].classList.remove('cp-in');
+          els[j].classList.add('cp-out');
+          j--;
+          setTimeout(function() { hideFrom(j); }, 40); /* 40 ms per character */
+        } else {
+          /* Next chaupai — spacer stays, no layout shift */
+          ci = (ci + 1) % chaupais.length;
+          setTimeout(showChaupai, 500);
+        }
+      }
+
+      revealNext();
+    }
+
+    showChaupai();
   }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init(); /* DOM already ready */
+  }
+}());

@@ -5,11 +5,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Admin Panel - Mandir System</title>
+  <title id="adminPageTitle">Admin Panel — Mandir System</title>
+  <meta name="description" content="Admin panel for temple management — contributions, expenses, users and more."/>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
-  <!-- Font Awesome loaded async so it never blocks first render -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     media="print" onload="this.media='all'" />
   <noscript>
@@ -3074,6 +3074,15 @@
   </div><!-- end .layout -->
 
   <script src="constants.js"></script>
+  <script>
+    // ── Set page title from constants.js ──
+    (function() {
+      if (typeof APP === 'undefined') return;
+      var name = APP.name || 'Mandir';
+      document.title = 'Admin Panel — ' + name;
+      var t = document.getElementById('adminPageTitle'); if (t) t.textContent = 'Admin Panel — ' + name;
+    })();
+  </script>
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script src="admin.js"></script>

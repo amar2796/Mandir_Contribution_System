@@ -4,14 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" href="icon-192.svg"/>
-  <meta name="theme-color" content="#f7a01a"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="SHM"/>
-
-    <title>Mandir System</title>
+    <title id="pageTitle">Mandir System</title>
+    <meta name="description" id="metaDesc" content="Temple management system — contributions, expenses, members and more."/>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -58,8 +52,8 @@
           <i id="hdrIcon" class="fa-solid fa-place-of-worship"
             style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
           <div class="header-brand-text">
-            <span class="brand-main">Shree Hanuman Mandir</span>
-            <span class="brand-sub">Paliya Sultanpur Uttar Pradesh</span>
+            <span class="brand-main" id="hdrBrandName">Shree Hanuman Mandir</span>
+            <span class="brand-sub" id="hdrBrandSub">Paliya Sultanpur Uttar Pradesh</span>
           </div>
         </a>
       </div>
@@ -91,7 +85,7 @@
 
     <!-- Mobile slide-down nav menu -->
     <div class="nav-menu" id="navMenu">
-      <a href="#about" onclick="closeNavMenu()">
+      <a href="#hero" onclick="closeNavMenu()">
         <i class="fa-solid fa-house"></i>
          Home
          </a
@@ -171,87 +165,7 @@
     </div>
 
 
-    <script>
-      (function(){
-        var chaupais = [
-          'प्रबिसि नगर कीजे सब काजा। हृदयँ राखि कोसलपुर राजा॥',
-          'मंगल भवन अमंगल हारी। द्रवहु सुदसरथ अजर बिहारी।।'
-        ];
-
-        var container = document.getElementById('chaupaiDisplay');
-        var spacer    = document.getElementById('chaupaiSpacer');
-        var ci = 0;
-
-        /* Spacer always = longest string → layout is permanently locked */
-        function getLongest(){
-          return chaupais.reduce(function(a, b){ return b.length > a.length ? b : a; }, '');
-        }
-        spacer.textContent = getLongest();
-
-        /* Split string into Unicode-aware grapheme clusters (handles Hindi matras correctly) */
-        function getChars(str){
-          /* Segmenter available in modern browsers */
-          if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-            var seg = new Intl.Segmenter('hi', { granularity: 'grapheme' });
-            return Array.from(seg.segment(str), function(s){ return s.segment; });
-          }
-          /* Fallback: spread operator (may split some combined characters) */
-          return Array.from(str);
-        }
-
-        /* Build one <span class="cp-char"><span>c</span></span> per grapheme */
-        function buildCharEls(chars){
-          container.innerHTML = '';
-          var els = [];
-          chars.forEach(function(ch){
-            var wrap  = document.createElement('span');
-            wrap.className = 'cp-char';
-            var inner = document.createElement('span');
-            inner.textContent = ch;
-            wrap.appendChild(inner);
-            container.appendChild(wrap);
-            els.push(inner);
-          });
-          return els;
-        }
-
-        function showChaupai(){
-          var chars = getChars(chaupais[ci]);
-          var els   = buildCharEls(chars);
-          var i = 0;
-
-          /* Reveal one character at a time, left → right */
-          function revealNext(){
-            if(i < els.length){
-              els[i].classList.add('cp-in');
-              i++;
-              setTimeout(revealNext, 55);   /* 55 ms per character */
-            } else {
-              /* Hold fully visible, then hide */
-              setTimeout(function(){ hideFrom(els.length - 1); }, 2600);
-            }
-          }
-
-          /* Hide one character at a time, right → left */
-          function hideFrom(j){
-            if(j >= 0){
-              els[j].classList.remove('cp-in');
-              els[j].classList.add('cp-out');
-              j--;
-              setTimeout(function(){ hideFrom(j); }, 40);  /* 40 ms per character */
-            } else {
-              /* Next chaupai — spacer stays, no layout shift, OM never moves */
-              ci = (ci + 1) % chaupais.length;
-              setTimeout(showChaupai, 500);
-            }
-          }
-
-          revealNext();
-        }
-
-        showChaupai();
-      })();
-    </script>
+    <!-- chaupai ticker init — see index.js _initChaupai() -->
 
     <div class="section reveal" id="about">
       <h2>About The Mandir</h2>
@@ -287,7 +201,7 @@
               <i class="fa-solid fa-om"></i> हमारे सदस्य
             </div>
             <h2 class="members-title">Our <span>Mandir Members</span></h2>
-            <p class="members-subtitle">
+            <p class="members-subtitle" id="membersSubtitle">
               The devoted souls who uphold the spirit of Shree Hanuman Mandir — serving the community with faith, love, and dedication.
             </p>
           </div>
@@ -605,7 +519,7 @@
         <div class="feedback-map-side">
           <div class="feedback-map-header">
             <i class="fa-solid fa-location-dot"></i>
-            Shree Hanuman Mandir, Paliya — Find Us Here
+            <span id="mapHeaderText">Shree Hanuman Mandir, Paliya — Find Us Here</span>
           </div>
           <iframe
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3273.497389457402!2d82.20519597492734!3d26.321060585267084!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399a790bd4e8dff3%3A0x93c61c2049ae55f2!2sHanuman%20Mandir!5e1!3m2!1sen!2sin!4v1775203315104!5m2!1sen!2sin"
@@ -659,6 +573,39 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js"></script>
     <script src="constants.js"></script>
+    <script>
+      // ── Populate all dynamic fields from constants.js (APP object) ──
+      (function() {
+        if (typeof APP === 'undefined') return;
+        var name    = APP.name     || 'Shree Hanuman Mandir';
+        var loc     = APP.village  || APP.location || '';
+        var tagline = APP.tagline  || '';
+        // Page title
+        document.title = name + (loc ? ', ' + loc : '');
+        // Meta description
+        var md = document.getElementById('metaDesc');
+        if (md) md.setAttribute('content', name + ' — temple management system for contributions, expenses, and members.');
+        // Header brand
+        var bn = document.getElementById('hdrBrandName'); if (bn) bn.textContent = name;
+        var bs = document.getElementById('hdrBrandSub');  if (bs) bs.textContent = loc;
+        // Donate modal sub-text
+        var ps = document.querySelector('.pay-section-sub');
+        if (ps) ps.textContent = 'Support ' + name + ' — your donation helps maintain the temple, conduct yagyas, and serve the community.';
+        // Donate declaration
+        var pd = document.getElementById('payDeclName'); if (pd) pd.textContent = name + (loc ? ', ' + loc : '');
+        // Map header
+        var mh = document.getElementById('mapHeaderText'); if (mh) mh.textContent = name + (loc ? ', ' + loc : '') + ' — Find Us Here';
+        // Member cards subtitle text
+        var ms = document.getElementById('membersSubtitle');
+        if (ms) ms.textContent = 'The devoted souls who uphold the spirit of ' + name + ' — serving the community with faith, love, and dedication.';
+        // Member card location tags (all .member-title elements)
+        var memberTitles = document.querySelectorAll('.member-title');
+        memberTitles.forEach(function(el) { el.textContent = name + (loc ? ', ' + loc : ''); });
+        // Community stats sublabel
+        var csSub = document.querySelector('.cs-sublabel');
+        if (csSub) csSub.textContent = name + ' family';
+      })();
+    </script>
     <script src="config.js"></script>
     <script src="app.js"></script>
     <script src="chatbot_widget.js"></script>
@@ -757,7 +704,7 @@
         <!-- Declaration -->
         <div class="pay-declaration">
           <p>
-            <strong>Declaration:</strong> All donations made to <strong>Shree Hanuman Mandir, Paliya</strong>
+            <strong>Declaration:</strong> All donations made to <strong id="payDeclName">Shree Hanuman Mandir, Paliya</strong>
             are used exclusively for temple maintenance, religious ceremonies, and community welfare activities.
             This institution is managed by the <strong>Ram Yagya Vishwakarma Committee</strong>.
             Please retain your payment receipt for records. For any queries, contact the temple office.
