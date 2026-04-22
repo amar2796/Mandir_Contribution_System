@@ -382,6 +382,7 @@ function generateReceiptId() {
     if (String(storedYear) !== String(year)) {
       counter = 0;
       props.setProperty(yearKey, String(year));
+      logAction("System", "RECEIPT_COUNTER_YEAR_RESET", "New year: " + year + " | Previous year: " + (storedYear||"none"), "Receipt ID counter reset for new year", "", { severity:"INFO", result:"SYSTEM" });
     }
 
     counter++;
@@ -434,6 +435,10 @@ function tryConsumeEmailQuota() {
 
     // Increment atomically inside the lock
     props.setProperty("EMAIL_COUNT", String(count + 1));
+    // Warn when quota is nearly exhausted (10 or fewer remaining)
+    if ((CFG.emailDailyLimit - (count + 1)) <= 10) {
+      logAction("System", "EMAIL_QUOTA_LOW", "Used: " + (count + 1) + " / " + CFG.emailDailyLimit + " | Remaining: " + (CFG.emailDailyLimit - count - 1), "Email quota nearly exhausted", "", { severity:"WARN", result:"SYSTEM" });
+    }
     return true;
   } catch(e) {
     logAction("System", "EMAIL_QUOTA_LOCK_ERROR", "Failed to acquire lock or update quota counter", e.message, "", { severity:"ERROR", result:"FAILURE", error:e });
@@ -491,7 +496,7 @@ function getEmailSettings() {
   };
 }
 
-function saveEmailSettings(key, value) {
+function saveEmailSettings(key, value, adminName) {
   const ss  = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEETS.SETTINGS);
   if (!sheet) {
@@ -513,7 +518,7 @@ function saveEmailSettings(key, value) {
     sheet.appendRow([key, value, Utilities.formatDate(new Date(),"GMT+5:30","dd-MM-yyyy HH:mm:ss")]);
   }
   SpreadsheetApp.flush();
-  logAction(sanitize(e.parameter.AdminName||"Admin",100), "Save Email Settings", key + " = " + value);
+  logAction(sanitize(adminName||"Admin",100), "Save Email Settings", key + " = " + value, "Email automation setting changed");
   return { status: "ok" };
 }
 
@@ -989,6 +994,7 @@ function doGet(e) {
   const callback = /^[a-zA-Z0-9_$]{1,80}$/.test(_rawCb) ? _rawCb : "cb";
   let result = {};
 
+  _trackRequest(action);   // ── TRAFFIC COUNTER: fires before auth, counts every hit
 
   // ── MUST #7: Verify session token for all write, mutating, and sensitive read actions
   // FIX SEC-1 (complete): Every action that modifies data OR exposes private data requires auth
@@ -1030,6 +1036,7 @@ function doGet(e) {
     "getUsers","getUsersByStatus","getPendingUsers","getPendingCount",
     "getFeedback","getContributionRequests","getUserContributionRequests",
     "getAuditLog","getAnnouncementHistory","getHealthCheck",
+    "getTrafficStats","resetTrafficStats",  // ── TRAFFIC: admin-only
     "getEmailSettings","getEmailQuota","getYearlySummary",
     "getPaymentDetails",  // SEC: bank/UPI details — never public, requires valid session
     "getMonthlyReportStatus",
@@ -1139,6 +1146,11 @@ function doGet(e) {
           found = true; break;
         }
       }
+      if (found) {
+        logAction(userId, "SESSION_TOKEN_SET", "UserId: " + userId, "Session token stored after login", sanitize(e.parameter.deviceInfo||"",200), { severity:"INFO", result:"SUCCESS" });
+      } else {
+        logAction(userId, "SESSION_TOKEN_SET_FAILED", "UserId: " + userId + " — user not found", "", "", { severity:"WARN", result:"FAILURE" });
+      }
       result = found ? { status: "ok" } : { status: "error", message: "User not found" };
     }
   }
@@ -1189,6 +1201,7 @@ function doGet(e) {
           }
         }
       } catch(e) { /* silent */ }
+      logAction(userId, "SESSION_TOKEN_CLEARED", "UserId: " + userId, sanitize(e.parameter.reason||"Session cleared",200), sanitize(e.parameter.deviceInfo||"",200), { severity:"INFO", result:"SUCCESS" });
     }
     result = { status: "ok" };
   }
@@ -1293,7 +1306,7 @@ function doGet(e) {
     const allowed  = ["auto_receipt", "monthly_report", "birthday_email"];
     // logo_email_url removed — logo is now auto-loaded from CFG.folderLogo (Drive folder)
     if (allowed.indexOf(key) !== -1) {
-      result = saveEmailSettings(key, value);
+      result = saveEmailSettings(key, value, sanitize(e.parameter.AdminName||"Admin",100));
     } else {
       result = { status: "error", message: "Unknown setting key: " + key };
     }
@@ -1504,14 +1517,19 @@ function doGet(e) {
         const data = sheet.getDataRange().getValues();
         if (data.length < 2) { result = []; }
         else {
-          // slice(1) = skip header | slice(-1000) = latest 1000 | reverse = newest first
+          // Use header-based column lookup — handles both old 6-col and new 9-col sheet layouts
+          const hdr = data[0];
+          const _ac = (n) => hdr.indexOf(n);
           result = data.slice(1).slice(-1000).reverse().map(r => ({
-            Timestamp:  r[0] || "",
-            UserAdmin:  r[1] || "",
-            Action:     r[2] || "",
-            Details:    r[3] || "",
-            Reason:     r[4] || "",      // ← NEW
-            DeviceInfo: r[5] || ""
+            Timestamp:  r[0]                               || "",
+            UserAdmin:  r[1]                               || "",
+            Action:     r[2]                               || "",
+            Result:     _ac("Result")    !== -1 ? (r[_ac("Result")]    || "") : "",
+            Details:    _ac("Details")   !== -1 ? (r[_ac("Details")]   || "") : (r[3] || ""),
+            Reason:     _ac("Reason")    !== -1 ? (r[_ac("Reason")]    || "") : (r[4] || ""),
+            Error:      _ac("Error")     !== -1 ? (r[_ac("Error")]     || "") : "",
+            DeviceInfo: _ac("DeviceInfo")!== -1 ? (r[_ac("DeviceInfo")]|| "") : (r[5] || ""),
+            Severity:   _ac("Severity")  !== -1 ? (r[_ac("Severity")]  || "") : ""
           }));
         }
       }
@@ -1554,6 +1572,7 @@ function doGet(e) {
           const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
           if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
           sheet.getRange(rowIndex, 6).setValue(newStatus);
+          logAction(sanitize(e.parameter.AdminName||"Admin",100), "Update Feedback Status", "RowIndex: " + rowIndex + " | NewStatus: " + newStatus, "", "", { severity:"INFO", result:"SUCCESS" });
           result = { status: "updated" };
         }
       }
@@ -1574,6 +1593,7 @@ function doGet(e) {
           const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
           if (headers.length < 6) sheet.getRange(1, 6).setValue("Status");
           sheet.getRange(rowIndex, 6).setValue("Deleted");
+          logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete Feedback", "RowIndex: " + rowIndex, "Soft-deleted by admin", "", { severity:"WARN", result:"SUCCESS" });
           result = { status: "deleted" };
         }
       }
@@ -1598,6 +1618,7 @@ function doGet(e) {
         sanitize(e.parameter.Message, 1000),
         "Pending"
       ]);
+      logAction(sanitize(e.parameter.Name||"Guest",100), "Submit Feedback", "Mobile: " + sanitize(e.parameter.Mobile||"",15), "Public feedback submitted", "", { severity:"INFO", result:"SUCCESS" });
       result = { status: "success" };
     } catch(err) { result = { status: "error", message: err.message }; }
   }
@@ -1761,6 +1782,7 @@ function doGet(e) {
       );
       if (!user) {
         // Generic — do not reveal if mobile exists or not
+        logAction(mobile, "MOBILE_RESET_LOOKUP", "Mobile: " + mobile, "No active account found", "", { severity:"INFO", result:"FAILURE" });
         result = { status: "error", message: "No active account found for this mobile number." };
       } else {
         // Mask email: m***@g***.com
@@ -1774,6 +1796,7 @@ function doGet(e) {
           const dMask  = (dDot > 1 ? domain.substring(0,1) + "***" + domain.substring(dDot) : domain);
           masked = local.substring(0,1) + "***@" + dMask;
         }
+        logAction(mobile, "MOBILE_RESET_LOOKUP", "UserId: " + user.UserId + " | Mobile: " + mobile, "Masked email returned for password reset", "", { severity:"INFO", result:"SUCCESS" });
         result = { status: "success", userId: user.UserId, maskedEmail: masked };
       }
     }
@@ -1808,6 +1831,7 @@ function doGet(e) {
             <p style="color:#94a3b8;font-size:11px;">${CFG.name} | ${CFG.location}</p>
           </div>`
         });
+        logAction(userId, "FORGOT_PASSWORD_OTP_SENT", "UserId: " + userId, "Password reset OTP sent to registered email", "", { severity:"INFO", result:"SUCCESS" });
         result = { status: "success" };
       }
     }
@@ -1847,6 +1871,7 @@ function doGet(e) {
         result = found ? { status: "success" } : { status: "error", message: "User not found." };
       }
     } else {
+      logAction(userId || "Unknown", "RESET_PASSWORD_OTP_FAILED", "UserId: " + (userId||"Unknown"), savedOtp ? "Wrong OTP supplied" : "OTP expired or not found", "", { severity:"WARN", result:"FAILURE" });
       result = { status: "error", message: "Invalid or expired OTP." };
     }
   }
@@ -1857,8 +1882,9 @@ function doGet(e) {
 
   else if (action === "deleteUser") {
     let id = sanitize(e.parameter.UserId, 30);
+    const _delUser = getSheetData(SHEETS.USERS).find(u => String(u.UserId) === id);
     result = deleteRow(SHEETS.USERS, id);
-    if (result.status === "deleted") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete User", "UserId: " + id);
+    if (result.status === "deleted") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete User", "UserId: " + id + (_delUser ? " | Name: " + (_delUser.Name||"") + " | Mobile: " + (_delUser.Mobile||"") + " | Role: " + (_delUser.Role||"") : ""), "", "", { severity:"WARN", result:"SUCCESS" });
   }
   else if (action === "updateUser")      { result = updateUser(e.parameter); }
   // ── CONTRIBUTION TYPES (with permanent SortOrder) ──────────────
@@ -1884,7 +1910,7 @@ function doGet(e) {
     // FIX: wrap JSON.parse in try-catch — malformed order param would crash doGet
     let _sortOrder = [];
     try { _sortOrder = JSON.parse(e.parameter.order || "[]"); } catch(ex) { _sortOrder = []; }
-    result = _updateSortOrder(sanitize(e.parameter.sheet, 20), _sortOrder);
+    result = _updateSortOrder(sanitize(e.parameter.sheet, 20), _sortOrder, sanitize(e.parameter.AdminName||"Admin",100));
   }
 
   // ── OCCASIONS (with permanent SortOrder) ────────────────────────
@@ -2057,14 +2083,16 @@ function doGet(e) {
   else if (action === "deleteContribution") {
     let id    = sanitize(e.parameter.Id, 30);
     let admin = sanitize(e.parameter.AdminName || "Admin", 100);
+    const _dc = getSheetData(SHEETS.CONTRIBUTIONS).find(r => String(r.Id) === id);
     result = deleteRow(SHEETS.CONTRIBUTIONS, id);
-    if (result.status === "deleted") logAction(admin, "Delete Contribution", "Id: " + id);
+    if (result.status === "deleted") logAction(admin, "Delete Contribution", "Id: " + id + (_dc ? " | UserId: " + (_dc.UserId||"") + " | Amount: ₹" + (_dc.Amount||0) + " | Month: " + (_dc.ForMonth||"") + " " + (_dc.Year||"") + " | Receipt: " + (_dc.ReceiptID||"") : ""), "", "", { severity:"WARN", result:"SUCCESS" });
   }
   else if (action === "deleteExpense") {
     let id    = sanitize(e.parameter.Id, 30);
     let admin = sanitize(e.parameter.AdminName || "Admin", 100);
+    const _de = getSheetData(SHEETS.EXPENSES).find(r => String(r.Id) === id);
     result = deleteRow(SHEETS.EXPENSES, id);
-    if (result.status === "deleted") logAction(admin, "Delete Expense", "Id: " + id);
+    if (result.status === "deleted") logAction(admin, "Delete Expense", "Id: " + id + (_de ? " | Title: " + (_de.Title||"") + " | Amount: ₹" + (_de.Amount||0) + " | Month: " + (_de.ForMonth||"") + " " + (_de.Year||"") : ""), "", "", { severity:"WARN", result:"SUCCESS" });
   }
   else if (action === "updateContribution") {
     result = updateRow(SHEETS.CONTRIBUTIONS, e.parameter);
@@ -2265,6 +2293,16 @@ function doGet(e) {
     }
   }
 
+  // ── TRAFFIC STATS
+  else if (action === "getTrafficStats") {
+    result = getTrafficStats();
+  }
+
+  // ── RESET TRAFFIC STATS (manual reset from admin panel)
+  else if (action === "resetTrafficStats") {
+    result = resetTrafficStats();
+  }
+
   // ── MONTHLY CONTRIBUTION REMINDER (trigger on 25th via Time-based trigger)
   else if (action === "sendMonthlyReminders") {
     result = sendMonthlyContributionReminders(e.parameter.month, e.parameter.year);
@@ -2302,6 +2340,7 @@ function doGet(e) {
               <p style="color:#999;font-size:12px;">${CFG.name} | ${CFG.location}</p>
             </div>`
           });
+          logAction(userId, "MOBILE_CHANGE_OTP_SENT", "UserId: " + userId + " | NewMobile: " + newMobile.substring(0,4) + "***", "Mobile change OTP sent to registered email", "", { severity:"INFO", result:"SUCCESS" });
           result = { status: "success", message: "OTP sent to your registered email." };
         }
       }
@@ -2319,6 +2358,7 @@ function doGet(e) {
     } else {
       const saved = JSON.parse(raw);
       if (saved.otp !== userOtp) {
+        logAction(userId, "MOBILE_CHANGE_OTP_FAILED", "UserId: " + userId, "Wrong OTP supplied for mobile change", "", { severity:"WARN", result:"FAILURE" });
         result = { status: "error", message: "Incorrect OTP. Please try again." };
       } else {
         // OTP valid — update mobile
@@ -2509,7 +2549,12 @@ function doGet(e) {
             sheet.getRange(i+1, statusCol+1).setValue(status);
             if (rejNoteCol !== -1) sheet.getRange(i+1, rejNoteCol+1).setValue(rejNote);
             SpreadsheetApp.flush();
-            logAction(admin, "ResolveContributionRequest", reqId + " → " + status);
+            const _rUserId = String(data2[i][hdrs.indexOf("UserId")]  || "");
+            const _rMonth  = String(data2[i][hdrs.indexOf("ForMonth")]|| "");
+            const _rYear   = String(data2[i][hdrs.indexOf("Year")]    || "");
+            const _rAmt    = Number(data2[i][hdrs.indexOf("Amount")]  || 0);
+            const _rMode   = String(data2[i][hdrs.indexOf("PaymentMode")]|| "");
+            logAction(admin, "ResolveContributionRequest", "ReqId: " + reqId + " | Status: " + status + " | UserId: " + _rUserId + " | Amount: ₹" + _rAmt + " | Month: " + _rMonth + " " + _rYear + " | Mode: " + _rMode + (rejNote ? " | Reason: " + rejNote : ""), "", "", { severity: status === "Rejected" ? "WARN" : "INFO", result:"SUCCESS" });
             // Send rejection email to user
             if (status === "Rejected") {
               try {
@@ -2622,6 +2667,7 @@ function doGet(e) {
           </div>`
         });
         result = { status: "success", otpKey: otpKey };
+        logAction("System", "REGISTRATION_OTP_SENT", "Email: " + email.substring(0,3) + "***", "Email verification OTP sent", "", { severity:"INFO", result:"SUCCESS" });
       }
     }
   }
@@ -2635,8 +2681,10 @@ function doGet(e) {
     } else {
       const saved = CacheService.getScriptCache().get(otpKey);
       if (!saved) {
+        logAction("Unknown", "REGISTRATION_OTP_FAILED", "OtpKey: " + otpKey.substring(0,20) + "***", "OTP expired or not found", "", { severity:"WARN", result:"FAILURE" });
         result = { status: "error", message: "OTP expired or not found. Please request a new code." };
       } else if (saved !== userOtp) {
+        logAction("Unknown", "REGISTRATION_OTP_FAILED", "OtpKey: " + otpKey.substring(0,20) + "***", "Wrong OTP supplied", "", { severity:"WARN", result:"FAILURE" });
         result = { status: "error", message: "Incorrect code. Please try again." };
       } else {
         CacheService.getScriptCache().remove(otpKey);
@@ -2666,7 +2714,10 @@ function doGet(e) {
     }
   }
 
-  else { result = { error: "Invalid action: " + action }; }
+  else {
+    logAction(sanitize(e.parameter.userId||e.parameter.UserId||"Unknown",30), "INVALID_ACTION", "Action: " + action, "", sanitize(e.parameter.deviceInfo||"",200), { severity:"WARN", result:"FAILURE" });
+    result = { error: "Invalid action: " + action };
+  }
 
   return ContentService
     .createTextOutput(callback + "(" + JSON.stringify(result) + ")")
@@ -2900,7 +2951,7 @@ function updateUser(p) {
       found = true; break;
     }
   }
-  if (found) { logAction(sanitize(p.AdminName,100)||"System","Update User","UserId: "+userId); return {status:"updated"}; }
+  if (found) { logAction(sanitize(p.AdminName,100)||"System","Update User","UserId: "+userId+" | Name: "+sanitize(p.Name||"",100)+" | Role: "+sanitize(p.Role||"",20)+" | Status: "+sanitize(p.Status||"",20),"Profile updated"); return {status:"updated"}; }
   return { status: "not found" };
 }
 
@@ -2996,7 +3047,7 @@ function _getNextSortOrder(sheetName) {
   return max + 1;
 }
 
-function _updateSortOrder(sheetName, orderArr) {
+function _updateSortOrder(sheetName, orderArr, adminName) {
   // orderArr: [{id: "...", sort: 1}, {id: "...", sort: 2}, ...]
   // Writes the SortOrder value into column 3 (index 2) for each matching row.
   if (!sheetName || !Array.isArray(orderArr) || orderArr.length === 0) {
@@ -3038,7 +3089,7 @@ function _updateSortOrder(sheetName, orderArr) {
   var cacheKeyMap = { TYPES: "c_types", OCCASIONS: "c_occasions", EXPENSE_TYPES: "c_exptypes" };
   if (cacheKeyMap[target]) _bustSheetCache(cacheKeyMap[target]);
 
-  logAction(sanitize(e.parameter.AdminName||"Admin",100), "Update Sort Order", sheetName + " — " + updated + " rows updated");
+  logAction(sanitize(adminName||"Admin",100), "Update Sort Order", sheetName + " — " + updated + " rows updated");
   return { status: "success", updated: updated };
 }
 
@@ -3243,6 +3294,7 @@ function doPost(e) {
     const _postUserId = sanitize(data.UserId || data.userId || "", 30);
     const _postToken  = sanitize(data.sessionToken || data.token || "", 64);
     if (!_postUserId || !_postToken) {
+      logAction(_postUserId || "Unknown", "REJECTED_NO_TOKEN", "doPost action: " + (data.action||"unknown") + " — missing userId or sessionToken", "", "", { severity:"WARN", result:"BLOCKED" });
       return ContentService
         .createTextOutput(JSON.stringify({ status: "error", message: "Authentication required." }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -3262,7 +3314,10 @@ function doPost(e) {
           const oldUrl = String(data.oldPhotoURL);
           if (oldUrl.includes("lh3.googleusercontent.com/d/")) oldId = oldUrl.split("/d/")[1].split("?")[0].trim();
           else if (oldUrl.includes("drive.google.com/thumbnail?id=")) oldId = oldUrl.split("id=")[1].split("&")[0].trim();
-          if (oldId && oldId.length > 10) DriveApp.getFileById(oldId).setTrashed(true);
+          if (oldId && oldId.length > 10) {
+            DriveApp.getFileById(oldId).setTrashed(true);
+            logAction(data.AdminName||"User", "Old Profile Photo Deleted", "UserId: " + data.UserId + " | DriveFileId: " + oldId, "Replaced on profile update", "", { severity:"INFO", result:"SUCCESS" });
+          }
         } catch(ex){}
       }
       const photoUrl = uploadProfilePhoto(data.base64, sanitize(data.fileName,100));
@@ -3278,7 +3333,10 @@ function doPost(e) {
           let oldId = "";
           if (oldUrl.includes("drive.google.com/thumbnail?id=")) oldId = oldUrl.split("id=")[1].split("&")[0].trim();
           else if (oldUrl.includes("lh3.googleusercontent.com/d/"))  oldId = oldUrl.split("/d/")[1].split("?")[0].trim();
-          if (oldId && oldId.length > 10) DriveApp.getFileById(oldId).setTrashed(true);
+          if (oldId && oldId.length > 10) {
+            DriveApp.getFileById(oldId).setTrashed(true);
+            logAction(sanitize(data.UserId,30)||"User", "Old Payment Slip Deleted", "UserId: " + data.UserId + " | DriveFileId: " + oldId, "Replaced on slip re-upload", "", { severity:"INFO", result:"SUCCESS" });
+          }
         } catch(ex) { /* non-fatal — continue with upload */ }
       }
       const slipUrl = uploadPaymentSlipPhoto(data.base64, sanitize(data.fileName,100));
@@ -3732,7 +3790,7 @@ function saveChatbotConfig(params) {
       savedKeys.push(key);
     });
     SpreadsheetApp.flush();
-    logAction(sanitize(e.parameter.AdminName||params.AdminName||"Admin",100), "Save Chatbot Config", "Updated: " + savedKeys.join(", "));
+    logAction(sanitize(params.AdminName||"Admin",100), "Save Chatbot Config", "Updated: " + savedKeys.join(", "));
     return { status: "success" };
   } catch(e) { return { status: "error", message: e.message }; }
 }
@@ -4347,16 +4405,17 @@ function _deleteEvent(p) {  // FIX #3: Moved to global scope (was accidentally i
       }
       // Delete all linked event expenses
       const exSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.EVENT_EXPENSES);
+      let _deletedExpCount = 0;
       if (exSheet) {
         const exData = exSheet.getDataRange().getValues();
         const exHdrs = exData[0];
         const eidCol = exHdrs.indexOf("EventId");
         for (let i = exData.length-1; i >= 1; i--) {
-          if (String(exData[i][eidCol]) === eventId) exSheet.deleteRow(i+1);
+          if (String(exData[i][eidCol]) === eventId) { exSheet.deleteRow(i+1); _deletedExpCount++; }
         }
       }
       SpreadsheetApp.flush();
-      logAction(adminName, "deleteEvent", eventId);
+      logAction(adminName, "deleteEvent", "EventId: " + eventId + " | LinkedExpensesDeleted: " + _deletedExpCount, "", "", { severity:"WARN", result:"SUCCESS" });
       return { status:"deleted" };
     } catch(err) {
       logAction(sanitize(p.AdminName,100)||"System", "DELETE_EVENT_ERROR", "EventId: " + sanitize(p.EventId||"",50), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
@@ -4635,4 +4694,157 @@ function _buildBirthdayEmail(member) {
 </table>
 </td></tr></table>
 </body></html>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TRAFFIC COUNTER
+//  Keys: TC_HOUR_2026-04-21T14  → count for that UTC+5:30 hour
+//        TC_DAY_2026-04-21      → count for that IST day
+//        TC_TOTAL               → all-time total
+//        TC_PEAK_HOUR           → highest single-hour count ever
+//        TC_PEAK_DAY            → highest single-day count ever
+//        TC_ACTIONS             → JSON map of action → count
+//
+//  DAILY LIMIT: Change TC_DAILY_LIMIT to match your account:
+//    20000  = Free Google account
+//    100000 = Google Workspace account
+// ════════════════════════════════════════════════════════════════
+
+var TC_DAILY_LIMIT = 20000; // ← CHANGE THIS if you have Google Workspace (use 100000)
+
+function _trackRequest(action) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var now   = new Date();
+    var ist   = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+
+    var dayKey  = "TC_DAY_"  + Utilities.formatDate(ist, "GMT+5:30", "yyyy-MM-dd");
+    var hourKey = "TC_HOUR_" + Utilities.formatDate(ist, "GMT+5:30", "yyyy-MM-dd'T'HH");
+
+    // ── BATCHED: 1 read + 1 write = 2 PS calls/request (40,000/day at 20k requests)
+    //    Safely under the 50,000/day PropertiesService quota for free accounts.
+    //    Old code used 7 individual calls — would have failed after ~7,100 requests/day.
+    var all = props.getProperties();
+
+    var dayCount  = Number(all[dayKey]         || 0) + 1;
+    var hourCount = Number(all[hourKey]        || 0) + 1;
+    var total     = Number(all["TC_TOTAL"]     || 0) + 1;
+    var peakHour  = Number(all["TC_PEAK_HOUR"] || 0);
+    var peakDay   = Number(all["TC_PEAK_DAY"]  || 0);
+
+    var updates = {};
+    updates[dayKey]     = String(dayCount);
+    updates[hourKey]    = String(hourCount);
+    updates["TC_TOTAL"] = String(total);
+    if (hourCount > peakHour) updates["TC_PEAK_HOUR"] = String(hourCount);
+    if (dayCount  > peakDay)  updates["TC_PEAK_DAY"]  = String(dayCount);
+
+    if (action) {
+      try {
+        var actMap = JSON.parse(all["TC_ACTIONS"] || "{}");
+        actMap[action] = (actMap[action] || 0) + 1;
+        updates["TC_ACTIONS"] = JSON.stringify(actMap);
+      } catch(e) {}
+    }
+
+    props.setProperties(updates); // single write call
+  } catch(e) { /* never crash the main request */ }
+}
+
+function getTrafficStats() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var all   = props.getProperties();
+    var now   = new Date();
+    var ist   = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+
+    var hours = [];
+    for (var h = 23; h >= 0; h--) {
+      var t    = new Date(ist.getTime() - h * 60 * 60 * 1000);
+      var key  = "TC_HOUR_" + Utilities.formatDate(t, "GMT+5:30", "yyyy-MM-dd'T'HH");
+      var label = Utilities.formatDate(t, "GMT+5:30", "HH:00");
+      hours.push({ hour: label, count: Number(all[key] || 0) });
+    }
+
+    var days = [];
+    for (var d = 13; d >= 0; d--) {
+      var t2   = new Date(ist.getTime() - d * 24 * 60 * 60 * 1000);
+      var key2 = "TC_DAY_" + Utilities.formatDate(t2, "GMT+5:30", "yyyy-MM-dd");
+      var lbl2 = Utilities.formatDate(t2, "GMT+5:30", "dd MMM");
+      days.push({ date: lbl2, count: Number(all[key2] || 0) });
+    }
+
+    var todayKey = "TC_DAY_"  + Utilities.formatDate(ist, "GMT+5:30", "yyyy-MM-dd");
+    var thisHourKey = "TC_HOUR_" + Utilities.formatDate(ist, "GMT+5:30", "yyyy-MM-dd'T'HH");
+
+    var actMap = {};
+    try { actMap = JSON.parse(all["TC_ACTIONS"] || "{}"); } catch(e) {}
+    var actions = Object.keys(actMap)
+      .map(function(k) { return { action: k, count: actMap[k] }; })
+      .sort(function(a, b) { return b.count - a.count; })
+      .slice(0, 15);
+
+    var todayCount = Number(all[todayKey] || 0);
+    var dailyLimit = TC_DAILY_LIMIT;
+    var usedPct    = Math.round(todayCount / dailyLimit * 100);
+
+    // ── Email quota (reuse existing getEmailQuotaStatus)
+    var emailQuota  = { used: 0, limit: 100, remaining: 100 };
+    try { emailQuota = getEmailQuotaStatus(); } catch(e) {}
+    var emailPct = Math.min(100, Math.round(emailQuota.used / Math.max(1, emailQuota.limit) * 100));
+
+    return {
+      status:       "ok",
+      total:        Number(all["TC_TOTAL"]     || 0),
+      today:        todayCount,
+      thisHour:     Number(all[thisHourKey]    || 0),
+      peakHour:     Number(all["TC_PEAK_HOUR"] || 0),
+      peakDay:      Number(all["TC_PEAK_DAY"]  || 0),
+      dailyLimit:   dailyLimit,
+      usedPct:      usedPct,
+      emailUsed:    emailQuota.used,
+      emailLimit:   emailQuota.limit,
+      emailPct:     emailPct,
+      last24Hours:  hours,
+      last14Days:   days,
+      topActions:   actions,
+      generatedAt:  Utilities.formatDate(ist, "GMT+5:30", "dd-MMM-yyyy HH:mm:ss") + " IST"
+    };
+  } catch(err) {
+    return { status: "error", message: err.message };
+  }
+}
+
+// ── Manual reset — clears all TC_ keys except TC_DAILY_LIMIT config
+function resetTrafficStats() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var all   = props.getProperties();
+    var deleted = 0;
+    Object.keys(all).forEach(function(k) {
+      if (k.indexOf("TC_") === 0) {
+        props.deleteProperty(k);
+        deleted++;
+      }
+    });
+    return { status: "ok", message: "Traffic stats reset. " + deleted + " keys cleared.", deleted: deleted };
+  } catch(err) {
+    return { status: "error", message: err.message };
+  }
+}
+
+// ── Auto-clean old hour keys — run weekly via Time-based trigger (Sunday)
+//    Prevents PropertiesService filling up after months of use
+function cleanTrafficKeys() {
+  try {
+    var props  = PropertiesService.getScriptProperties();
+    var all    = props.getProperties();
+    var cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    Object.keys(all).forEach(function(k) {
+      if (k.indexOf("TC_HOUR_") === 0) {
+        var dateStr = k.replace("TC_HOUR_", "").split("T")[0];
+        if (new Date(dateStr) < cutoff) props.deleteProperty(k);
+      }
+    });
+  } catch(e) {}
 }

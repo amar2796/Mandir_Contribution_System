@@ -2963,6 +2963,108 @@
           </div>
 
         </div>
+
+        <!-- ═══ TRAFFIC STATS CARD ═══ -->
+        <div id="trafficStatsPanel" class="card" style="margin-top:14px;">
+
+          <!-- Header -->
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+            <h4 style="margin:0;color:#334155;">
+              <i class="fa-solid fa-chart-bar" style="color:#f7a01a;margin-right:6px;"></i> API Traffic Monitor
+              <span style="font-size:10px;font-weight:500;color:#94a3b8;margin-left:6px;">gmail.com free account</span>
+            </h4>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;cursor:pointer;user-select:none;">
+                <input type="checkbox" id="tc_autorefresh" onchange="tcToggleAutoRefresh()" style="cursor:pointer;accent-color:#f7a01a;">
+                Auto-refresh
+              </label>
+              <select id="tc_interval" onchange="tcToggleAutoRefresh()" title="Refresh interval"
+                style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #e2e8f0;color:#334155;display:none;font-family:Poppins,sans-serif;">
+                <option value="30000">Every 30 sec</option>
+                <option value="60000">Every 1 min</option>
+                <option value="300000">Every 5 min</option>
+              </select>
+              <button onclick="loadTrafficStats()"
+                style="background:#f7a01a;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:12px;font-weight:600;">
+                <i class="fa-solid fa-rotate-right"></i> Refresh
+              </button>
+              <button onclick="confirmResetTraffic()"
+                style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:12px;font-weight:600;">
+                <i class="fa-solid fa-rotate-left"></i> Reset Stats
+              </button>
+            </div>
+          </div>
+
+          <!-- Quota Bars (always visible once loaded) -->
+          <div id="tc_limit_wrap" style="display:none;margin-bottom:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;">
+
+            <!-- doGet quota -->
+            <div style="margin-bottom:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                <span style="font-size:11px;font-weight:600;color:#475569;">
+                  <i class="fa-solid fa-arrow-right-to-bracket" style="color:#2563eb;margin-right:4px;"></i>
+                  doGet Requests / day
+                </span>
+                <span id="tc_limit_label" style="font-size:11px;font-weight:700;color:#334155;">— / —</span>
+              </div>
+              <div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;">
+                <div id="tc_limit_bar" style="height:8px;border-radius:6px;background:#22c55e;width:0%;transition:width .6s ease,background .4s;"></div>
+              </div>
+              <div id="tc_limit_status" style="font-size:11px;margin-top:4px;color:#64748b;"></div>
+            </div>
+
+            <!-- Email quota -->
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                <span style="font-size:11px;font-weight:600;color:#475569;">
+                  <i class="fa-solid fa-envelope" style="color:#7c3aed;margin-right:4px;"></i>
+                  Email Recipients / day
+                  <span style="font-size:10px;font-weight:400;color:#94a3b8;">(incl. receipts &amp; bulk)</span>
+                </span>
+                <span id="tc_email_label" style="font-size:11px;font-weight:700;color:#334155;">— / —</span>
+              </div>
+              <div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;">
+                <div id="tc_email_bar" style="height:8px;border-radius:6px;background:#22c55e;width:0%;transition:width .6s ease,background .4s;"></div>
+              </div>
+              <div id="tc_email_status" style="font-size:11px;margin-top:4px;color:#64748b;"></div>
+            </div>
+
+          </div>
+
+          <!-- Loading -->
+          <div id="tc_loading" style="text-align:center;padding:30px;color:#94a3b8;font-size:14px;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Loading traffic data…
+          </div>
+
+          <!-- Content (hidden until loaded) -->
+          <div id="tc_content" style="display:none;">
+
+            <!-- Summary pills -->
+            <div id="tc_summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;"></div>
+
+            <!-- Hourly chart -->
+            <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">
+              <i class="fa-solid fa-clock" style="color:#f7a01a;margin-right:4px;"></i> Last 24 Hours
+            </div>
+            <div id="tc_hour_chart" style="display:flex;align-items:flex-end;gap:3px;height:88px;background:#f8fafc;border-radius:8px;padding:8px 6px 4px;overflow:hidden;"></div>
+
+            <!-- Daily chart -->
+            <div style="font-size:11px;font-weight:600;color:#64748b;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.5px;">
+              <i class="fa-solid fa-calendar-week" style="color:#2563eb;margin-right:4px;"></i> Last 14 Days
+            </div>
+            <div id="tc_day_chart" style="display:flex;align-items:flex-end;gap:4px;height:88px;background:#f8fafc;border-radius:8px;padding:8px 6px 4px;overflow:hidden;"></div>
+
+            <!-- Top actions -->
+            <div style="font-size:11px;font-weight:600;color:#64748b;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.5px;">
+              <i class="fa-solid fa-list-ol" style="color:#7c3aed;margin-right:4px;"></i> Top Actions
+            </div>
+            <div id="tc_actions"></div>
+
+            <div id="tc_generated" style="font-size:10px;color:#94a3b8;margin-top:12px;text-align:right;border-top:1px solid #f1f5f9;padding-top:8px;"></div>
+          </div>
+        </div>
+        <!-- ═══ END TRAFFIC STATS CARD ═══ -->
+
       </div>
 
     </div><!-- end .main -->
