@@ -1126,7 +1126,8 @@
           </div>
           <div class="form-row">
             <div>
-              <label>Year</label><select id="contribYear"></select>
+              <label>Year</label><select id="contribYear" onchange="(function(){var y=document.getElementById('contribYear').value;var h=document.getElementById('contribYearHint');if(h)h.textContent='Receipt will be: MNR-'+y+'-NNNNN';})()"></select>
+              <div id="contribYearHint" style="font-size:11px;color:#f7a01a;margin-top:3px;font-style:italic;">Receipt will be: MNR-...-NNNNN</div>
             </div>
             <div>
               <label>Type</label><select id="type"></select>
@@ -1585,6 +1586,9 @@
                   <th style="text-align:right;">Total Expenses</th>
                   <th style="text-align:right;">Closing Balance</th>
                   <th style="text-align:right;">Carry-forward →</th>
+                  <th style="text-align:right;">Receipts</th>
+                  <th style="text-align:right;">Members</th>
+                  <th style="text-align:right;">Avg/Receipt</th>
                 </tr>
               </thead>
               <tbody id="ys_tbody"></tbody>

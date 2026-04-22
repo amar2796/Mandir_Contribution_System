@@ -491,6 +491,66 @@
       if (!document.hidden && _vcReady) _checkAdminSession();
     });
 
+    // ── [SEC] TAB / BROWSER CLOSE — clear session on server via sendBeacon
+    // sendBeacon is the only reliable way to fire a request on page unload.
+    // Regular fetch/XHR gets cancelled when the tab closes.
+    // _navFlag is set by logout() so we don't double-clear on intentional logout.
+    window.addEventListener("beforeunload", function () {
+      if (window._navFlag) return; // logout already cleared token — skip
+      try {
+        var s = JSON.parse(localStorage.getItem("session") || "{}");
+        if (s && s.userId && s.sessionToken) {
+          var params = new URLSearchParams({
+            action:   "clearSessionToken",
+            userId:   s.userId,
+            reason:   "Tab or browser closed",
+            callback: "cb_unload"
+          });
+          navigator.sendBeacon(API_URL + "?" + params.toString());
+        }
+      } catch(e) {}
+    });
+
+    // ── [SEC] SCREEN LOCK / APP SWITCH — Visibility API hidden-duration check
+    // When a user locks their phone, switches apps, or minimises the browser,
+    // the page becomes "hidden". If it stays hidden > 30 min we force logout on return.
+    // This covers the scenario that beforeunload misses (screen lock never unloads page).
+    var _pageHiddenAt = null;
+    var _VISIBILITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        // Page just became hidden — record the time
+        _pageHiddenAt = Date.now();
+      } else {
+        // Page became visible again — check how long it was hidden
+        if (_pageHiddenAt !== null) {
+          var hiddenDuration = Date.now() - _pageHiddenAt;
+          _pageHiddenAt = null;
+          if (hiddenDuration >= _VISIBILITY_TIMEOUT_MS) {
+            // Hidden for 30+ min — treat as session timeout, force logout
+            try {
+              var s = JSON.parse(localStorage.getItem("session") || "{}");
+              if (s && s.userId) {
+                var params = new URLSearchParams({
+                  action:   "clearSessionToken",
+                  userId:   s.userId,
+                  reason:   "Session expired - 30 min screen lock / inactivity",
+                  callback: "cb_vis"
+                });
+                navigator.sendBeacon(API_URL + "?" + params.toString());
+              }
+            } catch(e) {}
+            localStorage.clear();
+            sessionStorage.clear();
+            location.replace("login.html");
+            return; // stop here — page is redirecting
+          }
+        }
+        // Visible again within timeout — re-check session validity (existing behaviour)
+        if (_vcReady) _checkAdminSession();
+      }
+    });
+
     // FIX: Show session-expiry warning banner if admin leaves tab open long
     (function _sessionExpiryBannerInit() {
       var _bannerShown = false;
@@ -1924,7 +1984,10 @@
               '<td style="text-align:right;font-weight:700;color:' + (closing >= 0 ? "#27ae60" : "#e74c3c") + ';">' +
               (closing < 0 ? "−" : "") + "₹" + fmt(Math.abs(closing)) +
               '</td>' +
-              '<td style="text-align:right;color:#6366f1;">' + cfText + '</td>';
+              '<td style="text-align:right;color:#6366f1;">' + cfText + '</td>' +
+              '<td style="text-align:right;color:#334155;">' + (r.receiptCount || 0) + '</td>' +
+              '<td style="text-align:right;color:#334155;">' + (r.memberCount || 0) + '</td>' +
+              '<td style="text-align:right;color:#64748b;">₹' + fmt(r.avgContribution || 0) + '</td>';
 
             tbody.appendChild(tr);
           });
@@ -1941,6 +2004,9 @@
             (finalBalance < 0 ? "−" : "") + "₹" + fmt(Math.abs(finalBalance)) +
             '</td>' +
             '<td style="text-align:right;color:#94a3b8;font-size:11px;">Final balance</td>' +
+            '<td style="text-align:right;color:#94a3b8;">—</td>' +
+            '<td style="text-align:right;color:#94a3b8;">—</td>' +
+            '<td style="text-align:right;color:#94a3b8;">—</td>' +
             '</tr>';
 
           // Show table + totals
@@ -3186,17 +3252,26 @@
       let cur = new Date().getFullYear();
       // Always include from 2023 (collection start year) to next year
       for (let y = 2023; y <= cur + 1; y++) years.add(y);
-      let opts = Array.from(years)
-        .sort((a, b) => b - a)
-        .map((y) => `<option value="${y}">${y}</option>`)
-        .join("");
-      ["contribYear", "expYear"].forEach((id) => {
-        let el = document.getElementById(id);
-        if (el) {
-          el.innerHTML = opts;
-          el.value = cur;
-        }
-      });
+
+      const sortedYears = Array.from(years).sort((a, b) => b - a);
+
+      // contribYear — shows label hint for past/future years so admin knows
+      // the receipt ID will use the selected year (MNR-YYYY-NNNNN)
+      const contribEl = document.getElementById("contribYear");
+      if (contribEl) {
+        contribEl.innerHTML = sortedYears.map((y) => {
+          let label = String(y);
+          if (y === cur)      label = y + " (Current)";
+          else if (y < cur)   label = y + " (Old Entry)";
+          else if (y > cur)   label = y + " (Advance)";
+          return `<option value="${y}">${label}</option>`;
+        }).join("");
+        contribEl.value = cur;
+      }
+
+      // Initialize receipt year hint display
+      const hintEl = document.getElementById("contribYearHint");
+      if (hintEl) hintEl.textContent = "Receipt will be: MNR-" + cur + "-NNNNN";
     }
     function loadUsers() {
       const _luEl = document.getElementById("user");
@@ -4684,7 +4759,10 @@
       const monthOpts = MONTHS.map(m => `<option value="${m}"${m===forMonth?" selected":""}>${m}</option>`).join("");
       const curY = new Date().getFullYear();
       let yearOptsP = "";
-      for (let y = curY+1; y >= 2023; y--) yearOptsP += `<option value="${y}"${y===Number(year)?" selected":""}>${y}</option>`;
+      for (let y = curY+1; y >= 2023; y--) {
+        let yLbl = y === curY ? y + " (Current)" : y < curY ? y + " (Old Entry)" : y + " (Advance)";
+        yearOptsP += `<option value="${y}"${y===Number(year)?" selected":""}>${yLbl}</option>`;
+      }
       const typeOptsP = types.map(t => `<option value="${t.TypeId}"${String(t.TypeId)===typeId?" selected":""}>${escapeHtml(t.TypeName)}</option>`).join("");
       const occasionOptsP = `<option value="">— None —</option>` + occasions.map(o => `<option value="${o.OccasionId}"${String(o.OccasionId)===occasionId?" selected":""}>${escapeHtml(o.OccasionName)}</option>`).join("");
       const modeOpts = ["UPI","Cash","Cheque","Online Transfer"].map(m => `<option value="${m}"${m===paymentMode?" selected":""}>${m}</option>`).join("");
@@ -4785,7 +4863,7 @@
           UserId: userId,
           Amount: amount,
           ForMonth: document.getElementById("prev_month").value,
-          Year: year,
+          Year: year,   // ← passed to backend so receipt ID uses selected year (MNR-YYYY-NNNNN)
           TypeId: document.getElementById("prev_type").value,
           OccasionId: document.getElementById("prev_occasion").value,
           Note: document.getElementById("prev_note").value,
@@ -5230,7 +5308,8 @@
         let dob = (document.getElementById("u_dob")?.value || "").trim();
         let res = await postData({
           action: "addUser",
-          UserId: Date.now(),
+          // [ID] UserId is now generated server-side (USER-NNNNN / ADMIN-NNNNN)
+          // Do NOT send UserId from frontend — backend ignores it and generates its own
           Name: name,
           Mobile: mobile,
           Password: pass,
@@ -7036,9 +7115,10 @@
       const months = MONTHS; // PERF: reuse global
       const curY = new Date().getFullYear();
       let yearOpts = "";
-      for (let y = curY + 1; y >= 2023; y--)
-        yearOpts += `<option value="${y}"${y === curY ? " selected" : ""
-          }>${y}</option>`;
+      for (let y = curY + 1; y >= 2023; y--) {
+        let yLbl = y === curY ? y + " (Current)" : y < curY ? y + " (Old Entry)" : y + " (Advance)";
+        yearOpts += `<option value="${y}"${y === curY ? " selected" : ""}>${yLbl}</option>`;
+      }
       let monthOpts = months
         .map((m) => `<option value="${m}">${m}</option>`)
         .join("");
@@ -7120,7 +7200,7 @@
       const monthOptsWI = `<option value="">— All / General —</option>` + MOS2.map(m=>`<option value="${m}"${m===month?" selected":""}>${m}</option>`).join("");
       const curY2 = new Date().getFullYear();
       let yearOptsWI = "";
-      for (let y=curY2+1;y>=2023;y--) yearOptsWI+=`<option value="${y}"${y===Number(year)?" selected":""}>${y}</option>`;
+      for (let y=curY2+1;y>=2023;y--) { let yLbl2=y===curY2?y+" (Current)":y<curY2?y+" (Old Entry)":y+" (Advance)"; yearOptsWI+=`<option value="${y}"${y===Number(year)?" selected":""}>${yLbl2}</option>`; }
       const typeOptsWI = types.map(t=>`<option value="${t.TypeId}"${String(t.TypeId)===typeId?" selected":""}>${escapeHtml(t.TypeName)}</option>`).join("");
       const occasionOptsWI = `<option value="">— None —</option>`+occasions.map(o=>`<option value="${o.OccasionId}"${String(o.OccasionId)===occasionId?" selected":""}>${escapeHtml(o.OccasionName)}</option>`).join("");
       const typeNameWI = types.find(t=>String(t.TypeId)===typeId)?.TypeName || "Contribution";
@@ -7215,7 +7295,8 @@
       const note = (document.getElementById("wprev_note")?.value||"").trim();
       if (!name) { if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter donor name.", "error"); }
       if (!amount || Number(amount) <= 0) { if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter a valid amount.", "error"); }
-      const walkInUserId = "WALKIN_" + Date.now();
+      // [ID] Send "WALKIN" as signal — backend generates WALKIN_YYYY_NNNNN (year-wise sequential)
+      const walkInUserId = "WALKIN";
       try {
         let payload = {
           action: "addContribution",
