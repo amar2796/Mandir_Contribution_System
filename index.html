@@ -21,7 +21,7 @@
   </head>
   <body>
     <div id="splash-screen">
-      <h1 class="splash-text">॥ जय श्री राम ॥</h1>
+      <h1 class="splash-text" id="splashText">॥ जय श्री राम ॥</h1>
     </div>
 
     <audio id="bgMusic" src="jai-shree-ram.mp3"></audio>
@@ -122,7 +122,7 @@
 
     <div class="hero" id="hero">
       <div class="hero-box">
-        <h1>|| श्री हनुमत आश्रम ||<span>राम यज्ञ विश्‍वकर्मा</span></h1>
+        <h1 id="heroHeading">|| श्री हनुमत आश्रम ||<span id="heroSub">राम यज्ञ विश्‍वकर्मा</span></h1>
       </div>
     </div>
 
@@ -558,7 +558,7 @@
             <h3>Thank You for Your Valuable Feedback!</h3>
             <p>
               Your message has been received. We deeply appreciate your time and<br />suggestions
-              — they help us serve the Mandir community better.<br /><br /><em>जय श्री राम 🕉️</em>
+              — they help us serve the Mandir community better.<br /><br /><em id="feedbackTagline">जय श्री राम 🕉️</em>
             </p>
             <div class="fb-pending-badge">
               <i class="fa-solid fa-clock"></i> Status: Pending Review
@@ -569,41 +569,77 @@
       </div>
     </div>
 
-    <div class="footer">© 2026 Mandir System | Built with <span>❤️</span></div>
+    <div class="footer" id="pageFooter">© 2026 Mandir System | Built with <span>❤️</span></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js"></script>
     <script src="constants.js"></script>
     <script>
-      // ── Populate all dynamic fields from constants.js (APP object) ──
+      // ══════════════════════════════════════════════════════════════
+      //  CONSTANTS INIT — populates every hardcoded text from APP
+      //  To switch temple: edit constants.js (and appscript CFG) only.
+      // ══════════════════════════════════════════════════════════════
       (function() {
         if (typeof APP === 'undefined') return;
-        var name    = APP.name     || 'Shree Hanuman Mandir';
-        var loc     = APP.village  || APP.location || '';
-        var tagline = APP.tagline  || '';
-        // Page title
+        var name      = APP.name      || 'Mandir';
+        var loc       = APP.location  || '';
+        var tagline   = APP.tagline   || '';
+        var symbol    = APP.symbol    || '🕉️';
+        var committee = APP.committee || '';
+        var splashTxt = APP.splashText || ('॥ ' + tagline + ' ॥');
+        var heroTxt   = APP.heroText  || ('|| ' + name + ' ||');
+        var heroSub   = APP.heroSub   || '';
+        var shortName = APP.shortName || name;
+
+        // Page title & meta description
         document.title = name + (loc ? ', ' + loc : '');
-        // Meta description
         var md = document.getElementById('metaDesc');
         if (md) md.setAttribute('content', name + ' — temple management system for contributions, expenses, and members.');
+
+        // Splash screen
+        var sp = document.getElementById('splashText');
+        if (sp) sp.textContent = splashTxt;
+
         // Header brand
         var bn = document.getElementById('hdrBrandName'); if (bn) bn.textContent = name;
         var bs = document.getElementById('hdrBrandSub');  if (bs) bs.textContent = loc;
-        // Donate modal sub-text
-        var ps = document.querySelector('.pay-section-sub');
-        if (ps) ps.textContent = 'Support ' + name + ' — your donation helps maintain the temple, conduct yagyas, and serve the community.';
-        // Donate declaration
-        var pd = document.getElementById('payDeclName'); if (pd) pd.textContent = name + (loc ? ', ' + loc : '');
-        // Map header
-        var mh = document.getElementById('mapHeaderText'); if (mh) mh.textContent = name + (loc ? ', ' + loc : '') + ' — Find Us Here';
-        // Member cards subtitle text
+
+        // Hero
+        var hh = document.getElementById('heroHeading');
+        if (hh) { hh.childNodes[0].textContent = heroTxt; }
+        var hs = document.getElementById('heroSub'); if (hs) hs.textContent = heroSub;
+
+        // Members section subtitle
         var ms = document.getElementById('membersSubtitle');
         if (ms) ms.textContent = 'The devoted souls who uphold the spirit of ' + name + ' — serving the community with faith, love, and dedication.';
+
         // Member card location tags (all .member-title elements)
-        var memberTitles = document.querySelectorAll('.member-title');
-        memberTitles.forEach(function(el) { el.textContent = name + (loc ? ', ' + loc : ''); });
+        document.querySelectorAll('.member-title').forEach(function(el) {
+          el.textContent = name + (loc ? ', ' + loc : '');
+        });
+
         // Community stats sublabel
         var csSub = document.querySelector('.cs-sublabel');
         if (csSub) csSub.textContent = name + ' family';
+
+        // Donate modal sub-text
+        var ps = document.querySelector('.pay-section-sub');
+        if (ps) ps.textContent = 'Support ' + name + ' — your donation helps maintain the temple, conduct religious activities, and serve the community.';
+
+        // Donate declaration name & committee
+        var pd = document.getElementById('payDeclName');    if (pd) pd.textContent = name + (loc ? ', ' + loc : '');
+        var pc = document.getElementById('payCommittee');   if (pc && committee) pc.textContent = committee;
+
+        // Map header
+        var mh = document.getElementById('mapHeaderText');
+        if (mh) mh.textContent = name + (loc ? ', ' + loc : '') + ' — Find Us Here';
+
+        // Feedback thanks tagline
+        var ft = document.getElementById('feedbackTagline');
+        if (ft) ft.textContent = tagline + ' ' + symbol;
+
+        // Footer
+        var pf = document.getElementById('pageFooter');
+        if (pf) pf.innerHTML = '&copy; ' + new Date().getFullYear() + ' ' + shortName + ' | Built with <span>&#10084;&#65039;</span>';
       })();
     </script>
     <script src="config.js"></script>
@@ -706,7 +742,7 @@
           <p>
             <strong>Declaration:</strong> All donations made to <strong id="payDeclName">Shree Hanuman Mandir, Paliya</strong>
             are used exclusively for temple maintenance, religious ceremonies, and community welfare activities.
-            This institution is managed by the <strong>Ram Yagya Vishwakarma Committee</strong>.
+            This institution is managed by the <strong id="payCommittee">Ram Yagya Vishwakarma Committee</strong>.
             Please retain your payment receipt for records. For any queries, contact the temple office.
             <strong>दान का सदुपयोग मंदिर संचालन एवं धार्मिक कार्यों में किया जाता है।</strong>
           </p>

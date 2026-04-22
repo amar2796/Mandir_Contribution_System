@@ -632,7 +632,7 @@ var _trLoaded = false;
         var upiId = (_payDetails && _payDetails.upiId)
           ? _payDetails.upiId
           : ((typeof APP !== "undefined" && APP.upiId) ? APP.upiId : "mandir@upi");
-        var name  = (typeof APP !== "undefined" && APP.name) ? APP.name : "Shree Hanuman Mandir";
+        var name  = (typeof APP !== "undefined" && APP.name) ? APP.name : 'Mandir';
         var upiStr = "upi://pay?pa=" + encodeURIComponent(upiId) + "&pn=" + encodeURIComponent(name) + "&cu=INR";
         var box = document.getElementById("payQrBox");
         if (!box) return;
@@ -710,7 +710,7 @@ var _trLoaded = false;
         var ifsc   = document.getElementById('payIfsc').innerText;
         var bank   = document.getElementById('payBankName').innerText;
         var branch = document.getElementById('payBranch').innerText;
-        var name   = (typeof APP !== 'undefined' && APP.name) ? APP.name : 'Shree Hanuman Mandir';
+        var name   = (typeof APP !== 'undefined' && APP.name) ? APP.name : 'Mandir';
         var text   = name + '\nAccount No: ' + accNo + '\nIFSC: ' + ifsc + '\nBank: ' + bank + ', ' + branch;
         navigator.clipboard.writeText(text).then(function() {
           var btn = document.getElementById('copyBankBtn');

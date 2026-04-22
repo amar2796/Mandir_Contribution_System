@@ -1781,7 +1781,8 @@
     window._doAdminBackToLogin = function() {
       _aloClearCountdown();
       try {
-        ["session", "mandir_remember_token", "adminSession"].forEach(function(k) {
+        var _rmKey = ((typeof APP !== "undefined" && APP.shortName) ? APP.shortName.toLowerCase() : "mandir") + "_remember_token";
+        ["session", _rmKey, "adminSession"].forEach(function(k) {
           localStorage.removeItem(k);
         });
       } catch(e) {}
@@ -3326,7 +3327,7 @@
               (o) => String(o.OccasionId) === String(c.OccasionId)
             )?.OccasionName || "";
           const _rid = _storeReceipt(c, name, tName, oName);
-          let displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+          let displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
           let walkInBadge = String(c.UserId).startsWith("WALKIN_")
             ? `<span style="font-size:9px;background:#946c44;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">WALK-IN</span>`
             : "";
@@ -3499,7 +3500,7 @@
       var filtered = data.filter(function(c) {
         var user = users.find(function(u) { return String(u.UserId) === String(c.UserId); });
         var isWalkIn = String(c.UserId).startsWith("WALKIN_");
-        var displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        var displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
         var walkInName = isWalkIn
           ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "").toLowerCase()
           : "";
@@ -6060,7 +6061,7 @@
       const d = window._rcptStore ? window._rcptStore[rid] : null;
       if (!d) { showReceiptById(rid); return; }
       const { c, userName, typeName, occasionName } = d;
-      const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+      const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
       const html = `
         <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Contribution Details</h3><button class="_mcls" onclick="closeModal()">×</button></div>
         <div class="_mbdy">
@@ -6573,7 +6574,7 @@
 
       const list = data.filter(function (c) {
         const user = users.find(u => String(u.UserId) === String(c.UserId));
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
         const walkInName = String(c.UserId).startsWith("WALKIN_")
           ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "").toLowerCase()
           : "";
@@ -6617,7 +6618,7 @@
         const mobile = user?.Mobile || (isWalkIn ? (String(c.Note || "").match(/\|\s*(\d+)/)?.[1] || "") : "");
         const typeName = types.find(t => String(t.TypeId) === String(c.TypeId))?.TypeName || "";
         const occName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "";
-        const rid = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        const rid = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
         const pDate = formatPaymentDate(c.PaymentDate);
 
         return [
@@ -9222,7 +9223,7 @@
         const uMatch = !txt ||
           (user?.Name.toLowerCase() || "").includes(txt) ||
           String(user?.Mobile || "").includes(txt);
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
         const trkMatch = !trackTxt ||
           (c.ReceiptID || "").toLowerCase().includes(trackTxt) ||
           displayRID.toLowerCase().includes(trackTxt);
@@ -9876,7 +9877,7 @@
         const mobile = user?.Mobile || "";
         if (fName && !name.toLowerCase().includes(fName) && !String(mobile).includes(fName)) return false;
         const rid = (c.ReceiptID || "");
-        const dispRid = rid.replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        const dispRid = rid.replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
         if (fTrack && !rid.toLowerCase().includes(fTrack) && !dispRid.toLowerCase().includes(fTrack)) return false;
         if (fType && String(c.TypeId) !== String(fType)) return false;
         if (fOcc && String(c.OccasionId) !== String(fOcc)) return false;
@@ -10085,7 +10086,7 @@
             const name  = dash_getDisplayName(c.UserId, c.Note);
             const tName = dash_types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
             const oName = dash_occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
-            const rid   = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+            const rid   = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
             const _drid = _storeReceipt(c, name, tName, oName);
             const streak = isWalkIn
               ? `<div class="ct-streak" style="opacity:.25;">${"<div class='ct-sd ct-sd-off'></div>".repeat(12)}</div>`

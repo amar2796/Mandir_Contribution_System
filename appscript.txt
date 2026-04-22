@@ -19,6 +19,11 @@ const CFG = {
   designation:   "Authorized Signatory",
   tagline:       "Jai Shree Ram",
   thankYouMsg:   "Thank you for your generous contribution",
+  // ── PUBLIC DISPLAY FIELDS (shown on homepage — change for any temple/institution)
+  splashText:    "॥ जय श्री राम ॥",          // Splash screen greeting
+  heroText:      "|| श्री हनुमत आश्रम ||",    // Hero section heading
+  heroSub:       "राम यज्ञ विश्‍वकर्मा",      // Hero section sub-heading
+  committee:     "Ram Yagya Vishwakarma Committee", // Managing committee name (used in donate declaration)
   emailDailyLimit: 90,           // Gmail free = 100/day; keep 10 buffer for OTPs
   // ── EMAIL LOGO (used in ALL emails: receipt, monthly report, reminder, birthday, approval)
   // Drop any image file (logo.png / logo.jpg) into a dedicated Drive folder.

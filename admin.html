@@ -3075,12 +3075,35 @@
 
   <script src="constants.js"></script>
   <script>
-    // ── Set page title from constants.js ──
+    // ══════════════════════════════════════════════════════════════
+    //  CONSTANTS INIT — populates every hardcoded text from APP
+    //  To switch temple: edit constants.js (and appscript CFG) only.
+    // ══════════════════════════════════════════════════════════════
     (function() {
       if (typeof APP === 'undefined') return;
-      var name = APP.name || 'Mandir';
+      var name    = APP.name    || 'Mandir';
+      var prefix  = APP.receiptPrefix || 'REC';
+      var tagline = APP.tagline || '';
+
+      // Page title
       document.title = 'Admin Panel — ' + name;
       var t = document.getElementById('adminPageTitle'); if (t) t.textContent = 'Admin Panel — ' + name;
+
+      // Sidebar brand subtitle
+      var sb = document.getElementById('sidebarBrandSub'); if (sb) sb.textContent = name;
+
+      // Receipt ID filter placeholders — e.g. "MNR-… or TRX-…"
+      var legacyPrefix = APP.legacyReceiptPrefix || 'TRX';
+      var placeholder  = prefix + '-\u2026 or ' + legacyPrefix + '-\u2026';
+      ['ct_filterTrackID', 'cr_filterTrackID'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.placeholder = placeholder;
+      });
+
+      // Chatbot example placeholders
+      var cbWelcome = document.getElementById('cbot_welcome_en');
+      if (cbWelcome) cbWelcome.placeholder = 'e.g. ' + tagline + '! How can I help you?';
+      var cbBranch = document.getElementById('cbot_bank_branch');
+      if (cbBranch) cbBranch.placeholder = 'e.g. ' + (APP.location || 'Main') + ' Branch';
     })();
   </script>
   <script src="config.js"></script>

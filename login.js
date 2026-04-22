@@ -1,7 +1,8 @@
 // ══════════════════════════════════════════════════════════════════
 //  REMEMBER ME — 24-hour token (H12)
 // ══════════════════════════════════════════════════════════════════
-const _RMK = "mandir_remember_token";
+// Storage key derived from APP.shortName so it updates automatically when temple changes
+const _RMK = ((typeof APP !== "undefined" && APP.shortName) ? APP.shortName.toLowerCase() : "mandir") + "_remember_token";
 function saveRememberToken(userId,name,role,email,token){
   try{localStorage.setItem(_RMK,JSON.stringify({userId,name,role,email:email||"",sessionToken:token||"",expiry:Date.now()+24*60*60*1000}));}catch(e){}
 }

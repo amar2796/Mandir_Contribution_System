@@ -1041,7 +1041,7 @@ setTimeout(function(){ _getLogoB64(function(){}); }, 500);
 
 /** Normalises a ReceiptID: migrates legacy TRX- prefix to APP.receiptPrefix */
 function _displayRID(c) {
-  const prefix = (typeof APP !== "undefined" && APP.receiptPrefix) ? APP.receiptPrefix : "MNR";
+  const prefix = (typeof APP !== "undefined" && APP.receiptPrefix) ? APP.receiptPrefix : "REC";
   return (c.ReceiptID || "—").replace(/^TRX-/, prefix + "-");
 }
 
@@ -1576,7 +1576,7 @@ function showVersionInSidebar(containerId) {
 //  login.html has its own copy; these are for the protected pages
 //  to validate and clear the remember-me token on logout.
 // ════════════════════════════════════════════════════════════════
-const REMEMBER_TOKEN_KEY = "mandir_remember_token";
+const REMEMBER_TOKEN_KEY = ((typeof APP !== "undefined" && APP.shortName) ? APP.shortName.toLowerCase() : "mandir") + "_remember_token";
 
 function getRememberToken() {
   try {

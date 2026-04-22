@@ -1,10 +1,16 @@
+// ── Storage keys derived from APP.shortName — change once in constants.js, updates everywhere
+const _U_PREFIX  = ((typeof APP !== "undefined" && APP.shortName) ? APP.shortName.toLowerCase() : "mandir");
+const _U_RMK     = _U_PREFIX + "_remember_token";   // remember-me token
+const _U_DARK    = _U_PREFIX + "_user_dark";         // dark mode preference
+const _U_LANG    = _U_PREFIX + "_lang";              // language preference
+
 // ── Session guard — with Remember Me restore (H12)
 (function () {
     let s = JSON.parse(localStorage.getItem("session") || "null");
     if (!s || Date.now() > s.expiry) {
       // Try remember-me token before redirecting to login
       try {
-        const rt = JSON.parse(localStorage.getItem("mandir_remember_token") || "null");
+        const rt = JSON.parse(localStorage.getItem(_U_RMK) || "null");
         if (rt && rt.role === "User" && Date.now() < rt.expiry) {
           s = {
             userId: rt.userId, name: rt.name, role: rt.role, email: rt.email || "",
@@ -12,9 +18,9 @@
           };
           localStorage.setItem("session", JSON.stringify(s));
         } else {
-          ["session","mandir_remember_token"].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); return;
+          ["session",_U_RMK].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); return;
         }
-      } catch (e) { ["session","mandir_remember_token"].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); return; }
+      } catch (e) { ["session",_U_RMK].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); return; }
     }
     if (s.role !== "User") { location.replace("admin.html"); return; }
     s.expiry = Date.now() + 30 * 60 * 1000; localStorage.setItem("session", JSON.stringify(s));
@@ -34,10 +40,10 @@
   })();
   window.addEventListener("pageshow", () => {
     let s = JSON.parse(localStorage.getItem("session") || "null");
-    if (!s || Date.now() > s.expiry || s.role !== "User") { ["session","mandir_remember_token"].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); }
+    if (!s || Date.now() > s.expiry || s.role !== "User") { ["session",_U_RMK].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); }
   });
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) { let s = JSON.parse(localStorage.getItem("session") || "null"); if (!s || Date.now() > s.expiry || s.role !== "User") { ["session","mandir_remember_token"].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); } }
+    if (!document.hidden) { let s = JSON.parse(localStorage.getItem("session") || "null"); if (!s || Date.now() > s.expiry || s.role !== "User") { ["session",_U_RMK].forEach(k=>localStorage.removeItem(k)); history.replaceState(null, "", "login.html"); location.replace("login.html"); } }
   });
 
 
@@ -98,8 +104,8 @@
       }
     } catch (e) { }
     // H12: also clear remember-me token on explicit logout
-    try { localStorage.removeItem("mandir_remember_token"); } catch (e) { }
-    ["session","mandir_remember_token","mandir_user_dark","mandir_lang"].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+    try { localStorage.removeItem(_U_RMK); } catch (e) { }
+    ["session",_U_RMK,_U_DARK,_U_LANG].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
     sessionStorage.clear(); setTimeout(() => { history.replaceState(null, "", "login.html"); location.replace("login.html"); }, 150);
   }
 
@@ -1316,7 +1322,7 @@ existing updateUser action. No new Apps Script action needed.
   window._doBackToLogin = function() {
     _clearCountdown();
     try {
-      ["session", "mandir_remember_token"].forEach(function(k) {
+      ["session", _U_RMK].forEach(function(k) {
         localStorage.removeItem(k);
       });
     } catch(e) {}
@@ -3097,7 +3103,7 @@ const isDark = document.body.classList.toggle("user-dark");
 const btn = document.getElementById("userDarkBtn");
 
 if (isDark) {
-  localStorage.setItem("mandir_user_dark", "1");
+  localStorage.setItem(_U_DARK, "1");
   if (btn) {
     btn.classList.add("is-dark");
     btn.setAttribute("aria-checked", "true");
@@ -3106,7 +3112,7 @@ if (isDark) {
   const mt = document.getElementById("metaThemeColor");
   if (mt) mt.content = "#08090f";
 } else {
-  localStorage.setItem("mandir_user_dark", "0");
+  localStorage.setItem(_U_DARK, "0");
   if (btn) {
     btn.classList.remove("is-dark");
     btn.setAttribute("aria-checked", "false");
@@ -3117,7 +3123,7 @@ if (isDark) {
 }
 }
   (function () {
-    const stored = localStorage.getItem("mandir_user_dark");
+    const stored = localStorage.getItem(_U_DARK);
     const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
     const shouldBeDark = stored === "1" || (stored === null && prefersDark);
     if (shouldBeDark) {
@@ -3135,7 +3141,7 @@ if (isDark) {
     // Listen for system preference changes
     if (window.matchMedia) {
       window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(e) {
-        if (localStorage.getItem("mandir_user_dark") === null) {
+        if (localStorage.getItem(_U_DARK) === null) {
           document.body.classList.toggle("user-dark", e.matches);
           const btn = document.getElementById("userDarkBtn");
           if (btn) btn.classList.toggle("is-dark", e.matches);
@@ -3145,7 +3151,7 @@ if (isDark) {
   })();
 
   // ── L1: Hindi toggle — full page translation
-  const _ULANG = { current: localStorage.getItem("mandir_lang") || "EN" };
+  const _ULANG = { current: localStorage.getItem(_U_LANG) || "EN" };
 
   // Selector-based translation map: CSS selector → [EN text, HI text]
   // Covers every visible static label on the page
@@ -3270,7 +3276,7 @@ if (isDark) {
 
   function toggleUserLang() {
     _ULANG.current = _ULANG.current === "EN" ? "HI" : "EN";
-    localStorage.setItem("mandir_lang", _ULANG.current);
+    localStorage.setItem(_U_LANG, _ULANG.current);
     const btn = document.getElementById("userLangBtn");
     if (btn) {
       btn.classList.remove("lang-flip");
