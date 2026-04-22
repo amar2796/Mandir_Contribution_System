@@ -476,13 +476,19 @@
     if (!_checkAdminSession()) {
       /* stop */
     }
-    // Block back-button re-entry after logout
+    // Block back-button re-entry after logout.
+    // FIX: Only run on e.persisted (back/forward cache restore), NOT on fresh page load.
+    // Previously fired on every load, causing a second getAllData → double login log entry.
     window.addEventListener("pageshow", function (e) {
-      _checkAdminSession();
+      if (e.persisted) _checkAdminSession();
     });
-    // Block tab re-use with copied URL after session expires
+    // Block tab re-use with copied URL after session expires.
+    // FIX: Guard with a 2s delay so this doesn't fire on the initial page load,
+    // which was causing a second session-verify call and duplicate login log entries.
+    var _vcReady = false;
+    setTimeout(function () { _vcReady = true; }, 2000);
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) _checkAdminSession();
+      if (!document.hidden && _vcReady) _checkAdminSession();
     });
 
     // FIX: Show session-expiry warning banner if admin leaves tab open long
@@ -945,8 +951,11 @@
               base64: _adminSelfCroppedB64,
               fileName: "Admin_" + s.userId + "_" + Date.now() + ".jpg",
               oldPhotoURL: myProfile?.PhotoURL || "",
+              userId: s.userId || "",
+              sessionToken: s.sessionToken || ""
             }),
           });
+          if (!response.ok) throw new Error("Server error: " + response.status);
           let res = await response.json();
           if (res.status === "success") { photoURL = res.photoUrl; toast("✅ Photo uploaded!"); }
           else toast("Photo upload failed, profile still updating.", "warn");
@@ -1349,9 +1358,12 @@
             caption: caption,
             tags: tags,
             priority: 999,
-            AdminName: session.name || "Admin"
+            AdminName: session.name || "Admin",
+            userId: session.userId || "",
+            sessionToken: session.sessionToken || ""
           })
         });
+        if (!response.ok) throw new Error("Server error: " + response.status);
         var res = await response.json();
         if (res.status === "success") {
           toast("Photo uploaded to gallery!", "success");
@@ -1769,7 +1781,8 @@
     window._doAdminBackToLogin = function() {
       _aloClearCountdown();
       try {
-        ["session", "mandir_remember_token", "adminSession"].forEach(function(k) {
+        var _rmKey = ((typeof APP !== "undefined" && APP.shortName) ? APP.shortName.toLowerCase() : "mandir") + "_remember_token";
+        ["session", _rmKey, "adminSession"].forEach(function(k) {
           localStorage.removeItem(k);
         });
       } catch(e) {}
@@ -3053,6 +3066,21 @@
     }
 
     async function init() {
+      // SESSION GUARD: Check session BEFORE firing any backend call.
+      // Without this, if _forceLogout() cleared localStorage (session expiry, cross-device kick),
+      // getCached("getAllData") fires immediately with no userId/token → REJECTED_NO_TOKEN logged
+      // as "Unknown". This guard stops all backend calls and lets _forceLogout handle the redirect.
+      try {
+        const _initSess = JSON.parse(localStorage.getItem("session") || "null");
+        if (!_initSess || !_initSess.userId || !_initSess.sessionToken || Date.now() > (_initSess.expiry || 0)) {
+          if (typeof _forceLogout === "function") {
+            _forceLogout("Session expired. Please login again.", "Session expired - init guard");
+          } else {
+            location.replace("login.html");
+          }
+          return;
+        }
+      } catch(_e) { /* storage error — let init proceed, getData will get rejected cleanly */ }
       // Preserve scroll position so saves don't jump user to top
       const _scrollY = window.scrollY;
       _resetLoadingOverlay();
@@ -3104,9 +3132,13 @@
           }, 2 * 60 * 1000);
         }
         // Populate email quota sidebar counter on page load.
+        // FIX: Delay by 3s so the session token write from login has time to complete
+        // before hitting getEmailQuota. Previously caused VERIFY_SESSION_ERROR in audit log.
         // _refreshEmailQuotaUI is the single owner of sb_email_quota —
         // updateSidebarSummary no longer reads quota to avoid async race.
-        if (typeof _refreshEmailQuotaUI === "function") _refreshEmailQuotaUI();
+        setTimeout(function() {
+          if (typeof _refreshEmailQuotaUI === "function") _refreshEmailQuotaUI();
+        }, 3000);
         // Auto-run health check once after data loads so the header
         // heartbeat dot shows the correct status colour from login
         if (!window._hcRanOnce && typeof runHealthCheck === "function") {
@@ -3295,7 +3327,7 @@
               (o) => String(o.OccasionId) === String(c.OccasionId)
             )?.OccasionName || "";
           const _rid = _storeReceipt(c, name, tName, oName);
-          let displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+          let displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
           let walkInBadge = String(c.UserId).startsWith("WALKIN_")
             ? `<span style="font-size:9px;background:#946c44;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">WALK-IN</span>`
             : "";
@@ -3468,7 +3500,7 @@
       var filtered = data.filter(function(c) {
         var user = users.find(function(u) { return String(u.UserId) === String(c.UserId); });
         var isWalkIn = String(c.UserId).startsWith("WALKIN_");
-        var displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        var displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
         var walkInName = isWalkIn
           ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "").toLowerCase()
           : "";
@@ -3896,31 +3928,35 @@
       let contribTotal = data
         .filter((c) => String(c.UserId) === id)
         .reduce((s, c) => s + Number(c.Amount || 0), 0);
-      showDetailPopup(
-        "Member Details",
-        [
-          ["Name", escapeHtml(u.Name)],
-          ["Mobile", escapeHtml(String(u.Mobile || "—"))],
-          ["Email", escapeHtml(u.Email || "—")],
-          [
-            "Role",
-            `<span class="badge ${u.Role === "Admin" ? "badge-red" : "badge-green"
-            }">${u.Role}</span>`,
-          ],
-          [
-            "Status",
-            `<span class="badge ${u.Status === "Active" ? "badge-green" : "badge-red"
-            }">${u.Status || "Active"}</span>`,
-          ],
-          [
-            "Total Contributions",
-            "<span style='color:#27ae60;font-weight:700;'>₹ " +
-            fmt(contribTotal) +
-            "</span>",
-          ],
-        ],
-        `openEditUser('${id}')`
-      );
+      // FIX: Use openModal directly instead of showDetailPopup.
+      // showDetailPopup (app.js) escapes values as plain text, so HTML strings for
+      // Role, Status and Total Contributions were rendered as raw markup in the popup.
+      const roleClass  = u.Role === "Admin" ? "badge-red" : "badge-green";
+      const statClass  = u.Status === "Active" ? "badge-green" : "badge-red";
+      const rows = [
+        ["Name",               escapeHtml(u.Name || "—")],
+        ["Mobile",             escapeHtml(String(u.Mobile || "—"))],
+        ["Email",              escapeHtml(u.Email || "—")],
+        ["Role",               '<span class="badge ' + roleClass + '">' + escapeHtml(u.Role || "User") + '</span>'],
+        ["Status",             '<span class="badge ' + statClass + '">' + escapeHtml(u.Status || "Active") + '</span>'],
+        ["Total Contributions",'<span style="color:#27ae60;font-weight:700;">&#8377; ' + fmt(contribTotal) + '</span>'],
+      ];
+      const tableRows = rows.map(function(r) {
+        return '<tr>'
+          + '<td style="padding:10px 14px;font-size:13px;color:#64748b;white-space:nowrap;border-bottom:1px solid #f1f5f9;">' + r[0] + '</td>'
+          + '<td style="padding:10px 14px;font-size:13px;color:#1e293b;font-weight:600;border-bottom:1px solid #f1f5f9;text-align:right;">' + r[1] + '</td>'
+          + '</tr>';
+      }).join("");
+      const _safeId = String(id).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+      const html = '<div class="_mhdr"><h3><i class="fa-solid fa-eye" style="color:#f7a01a;margin-right:6px;"></i> Member Details</h3><button class="_mcls" onclick="closeModal()">×</button></div>'
+        + '<div class="_mbdy" style="padding:10px 16px;">'
+        + '<table style="width:100%;border-collapse:collapse;">' + tableRows + '</table>'
+        + '</div>'
+        + '<div class="_mft">'
+        + '<button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>'
+        + '<button class="_mbtn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);" onclick="closeModal();openEditUser(\'' + _safeId + '\')"><i class="fa-solid fa-pen"></i> Edit</button>'
+        + '</div>';
+      openModal(html, "460px");
     }
 
     /* ── DOB format helpers ──────────────────────────────────────────────
@@ -4103,8 +4139,11 @@
               base64: _adminPendingCroppedB64,
               fileName: "User_" + id + "_" + Date.now() + ".jpg",
               oldPhotoURL: u?.PhotoURL || "",
+              userId: s.userId || "",
+              sessionToken: s.sessionToken || ""
             }),
           });
+          if (!response.ok) throw new Error("Server error: " + response.status);
           let res = await response.json();
           if (res.status === "success") {
             photoURL = res.photoUrl;
@@ -4274,8 +4313,9 @@
       window._mdEditing = null;
       if (res && res.status === 'updated') {
         toast('✅ Updated.');
-        // also refresh dropdowns that use types/expenseTypes
+        // Refresh dropdowns that use types/occasions/expenseTypes
         if (listName === 'types') loadTypes();
+        if (listName === 'occasions') loadOccasions();
         if (listName === 'expenseTypes') loadExpenseTypes();
       } else {
         toast('❌ Update failed.', 'error');
@@ -4578,21 +4618,19 @@
       }
       closeModal();
       const s = JSON.parse(localStorage.getItem("session") || "{}");
-      let done = 0, failed = 0;
       toast("Inserting " + finalRows.length + " entries...", "warn");
-      for (let r of finalRows) {
-        try {
-          let res = await postData({
-            action: "addContribution",
-            Id: Date.now() + "_" + r.month,
-            UserId: userId, Amount: r.amount, ForMonth: r.month,
-            Year: year, TypeId: typeId, OccasionId: "", Note: note,
-            sessionToken: s.sessionToken || "", userId: s.userId || ""
-          });
-          if (res.status === "success") done++; else failed++;
-        } catch (e) { failed++; }
-        await new Promise(r => setTimeout(r, 300));
-      }
+      // Send all entries in parallel instead of sequentially — reduces ~18s to ~2s for a full year
+      const results = await Promise.all(finalRows.map(function(r) {
+        return postData({
+          action: "addContribution",
+          Id: Date.now() + "_" + r.month,
+          UserId: userId, Amount: r.amount, ForMonth: r.month,
+          Year: year, TypeId: typeId, OccasionId: "", Note: note,
+          sessionToken: s.sessionToken || "", userId: s.userId || ""
+        }).catch(function() { return { status: "error" }; });
+      }));
+      const done   = results.filter(function(r) { return r && r.status === "success"; }).length;
+      const failed = results.length - done;
       toast(done > 0 ? "✅ Bulk insert: " + done + " added" + (failed > 0 ? ", " + failed + " failed" : ".") : "❌ All inserts failed.", done > 0 ? "" : "error");
       smartRefresh("contributions");
     }
@@ -4740,6 +4778,7 @@
         return toast("Please select a user and enter a valid amount.", "error");
       }
       try {
+        const _ps = JSON.parse(localStorage.getItem("session") || "{}");
         const payload = {
           action: "addContribution",
           Id: Date.now(),
@@ -4751,6 +4790,9 @@
           OccasionId: document.getElementById("prev_occasion").value,
           Note: document.getElementById("prev_note").value,
           PaymentMode: document.getElementById("prev_mode").value,
+          sessionToken: _ps.sessionToken || "",
+          userId: _ps.userId || "",
+          AdminName: _ps.name || "Admin",
         };
         let res = await postData(payload);
         if (res.status === "success") {
@@ -4807,15 +4849,21 @@
       confirmModal("Delete this contribution?", async () => {
         try {
           const _s = JSON.parse(localStorage.getItem("session") || "{}");
-          let res = await postData({ action: "deleteContribution", Id: id, sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
+          let res = await postData({ action: "deleteContribution", Id: id, AdminName: _s.name || "Admin", sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
           if (res.status === "deleted") {
             smartRefresh("contributions");
             // UNDO: show toast with undo option
             if (typeof _showUndoToast === "function") {
               _showUndoToast(_undoLabel, function() {
                 if (_undoSaved) {
+                  // FIX: Keep ALL original fields (Id, ReceiptID, PaymentDate) so the
+                  // restored record is byte-for-byte identical to what was deleted.
+                  // Old code deleted payload.Id causing backend to generate a new Id,
+                  // new PaymentDate and new ReceiptID. Record is already gone — no duplicate risk.
                   var payload = Object.assign({ action: "addContribution" }, _undoSaved);
-                  delete payload.ReceiptID;
+                  payload.Id          = _undoSaved.Id;
+                  payload.ReceiptID   = _undoSaved.ReceiptID;
+                  payload.PaymentDate = _undoSaved.PaymentDate;
                   postData(payload).then(function() {
                     smartRefresh("contributions");
                     toast("↩ Contribution restored.");
@@ -5028,9 +5076,12 @@
             base64: _rcptB64,
             fileName: _rcptFileName,
             existingURLs: JSON.stringify(existingUrls),
-            AdminName: s.name || "Admin"
+            AdminName: s.name || "Admin",
+            userId: s.userId || "",
+            sessionToken: s.sessionToken || ""
           })
         });
+        if (!response.ok) throw new Error("Server error: " + response.status);
         const res = await response.json();
 
         if (res.status === "success") {
@@ -6010,7 +6061,7 @@
       const d = window._rcptStore ? window._rcptStore[rid] : null;
       if (!d) { showReceiptById(rid); return; }
       const { c, userName, typeName, occasionName } = d;
-      const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+      const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
       const html = `
         <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Contribution Details</h3><button class="_mcls" onclick="closeModal()">×</button></div>
         <div class="_mbdy">
@@ -6523,7 +6574,7 @@
 
       const list = data.filter(function (c) {
         const user = users.find(u => String(u.UserId) === String(c.UserId));
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
         const walkInName = String(c.UserId).startsWith("WALKIN_")
           ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "").toLowerCase()
           : "";
@@ -6567,7 +6618,7 @@
         const mobile = user?.Mobile || (isWalkIn ? (String(c.Note || "").match(/\|\s*(\d+)/)?.[1] || "") : "");
         const typeName = types.find(t => String(t.TypeId) === String(c.TypeId))?.TypeName || "";
         const occName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "";
-        const rid = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        const rid = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
         const pDate = formatPaymentDate(c.PaymentDate);
 
         return [
@@ -8028,6 +8079,7 @@
           _origShowPage(id, el);
           if (id === "broadcastPage") _loadBroadcastQuotaInfo();
           if (id === "healthCheckPage" && !window._hcRanOnce) { window._hcRanOnce = true; runHealthCheck(); }
+          if (id === "healthCheckPage") { loadTrafficStats(); }
           if (id === "contributionRequestsPage") loadContributionRequests();
         };
       }
@@ -8035,6 +8087,13 @@
       setTimeout(function() {
         if (typeof _hcSilentLoginCheck === "function") _hcSilentLoginCheck();
       }, 3000);
+
+      // FIX: Ensure _uniModal always renders above loadingOverlay (which can have
+      // a high z-index in admin.css). Without this, approve/reject modals open
+      // behind the overlay and appear invisible / unclickable.
+      var modalZFix = document.createElement("style");
+      modalZFix.textContent = "#_uniModal { z-index: 999990 !important; }";
+      document.head.appendChild(modalZFix);
     });
 
     // ── L3: Shortcut help popup
@@ -8149,9 +8208,10 @@
           ? '<a href="' + escapeHtml(r.SlipURL) + '" target="_blank" style="color:#3b82f6;font-size:11px;text-decoration:none;"><i class="fa-solid fa-image"></i> View</a>'
           : '<span style="color:#aaa;font-size:11px;">—</span>';
         const rejNote = r.RejectionNote ? '<br><span style="font-size:10px;color:#ef4444;">Reason: ' + escapeHtml(r.RejectionNote) + '</span>' : "";
+        const _safeReqId = String(r.ReqId).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
         const actBtns = st === "Pending"
-          ? '<button onclick="_approveContribRequest(' + JSON.stringify(r.ReqId) + ')" style="background:#22c55e;padding:5px 10px;font-size:11px;border-radius:6px;margin-right:4px;"><i class="fa-solid fa-check"></i> Approve</button>'
-          + '<button onclick="_rejectContribRequest(' + JSON.stringify(r.ReqId) + ')" style="background:#ef4444;padding:5px 10px;font-size:11px;border-radius:6px;"><i class="fa-solid fa-xmark"></i> Reject</button>'
+          ? '<button onclick="_approveContribRequest(\'' + _safeReqId + '\')" style="background:#22c55e;padding:5px 10px;font-size:11px;border-radius:6px;margin-right:4px;"><i class="fa-solid fa-check"></i> Approve</button>'
+          + '<button onclick="_rejectContribRequest(\'' + _safeReqId + '\')" style="background:#ef4444;padding:5px 10px;font-size:11px;border-radius:6px;"><i class="fa-solid fa-xmark"></i> Reject</button>'
           : '<span style="font-size:11px;color:#94a3b8;">' + st + '</span>';
         return '<tr>'
           + '<td>' + (i + 1) + '</td>'
@@ -8170,8 +8230,16 @@
     }
 
     function _approveContribRequest(reqId) {
-      const r = (window._reqListRendered || []).find(function(x) { return String(x.ReqId) === String(reqId); });
-      if (!r) return;
+      // FIX: Search _allRequests (full unfiltered list) instead of _reqListRendered
+      // (which could be an empty/stale filtered subset), causing silent no-op on button click.
+      const r = (window._allRequests || []).find(function(x) { return String(x.ReqId) === String(reqId); });
+      if (!r) { toast("Request not found. Please refresh the page.", "error"); return; }
+      // FIX: Guard against types not loaded yet — dropdown would be empty and
+      // the admin would be stuck unable to select a type or proceed.
+      if (!types || types.length === 0) {
+        toast("Contribution types not loaded yet. Please wait a moment and try again.", "warn");
+        return;
+      }
       const u = (users || []).find(function (u) { return String(u.UserId) === String(r.UserId); });
       const name = u ? u.Name : "this member";
       const typeOpts = (types || []).map(function (t) {
@@ -8205,7 +8273,7 @@
           closeModal();
           _doApproveContribRequest(r, selTypeId);
         });
-      }, 50);
+      }, 150);
     }
 
     async function _doApproveContribRequest(r, selTypeId) {
@@ -8227,15 +8295,33 @@
           PaymentMode: r.PaymentMode || "UPI",
         });
         if (!contribRes || contribRes.status !== "success") {
-          toast("Failed to record contribution.", "error"); return;
+          toast("Failed to record contribution.", "error");
+          window._approveReqInFlight = false;
+          return;
         }
-        await postData({
-          action: "resolveContributionRequest",
-          ReqId: r.ReqId,
-          Status: "Approved",
-          AdminName: s.Name || "Admin",
-          RejectionNote: ""
-        });
+        let resolveRes;
+        try {
+          resolveRes = await postData({
+            action: "resolveContributionRequest",
+            ReqId: r.ReqId,
+            Status: "Approved",
+            AdminName: s.Name || s.name || "Admin",
+            RejectionNote: ""
+          });
+        } catch (resolveErr) {
+          // FIX: addContribution already succeeded — warn admin rather than silently failing.
+          // The contribution is recorded but the request stays "Pending" until manually resolved.
+          toast("⚠️ Contribution recorded but request status update failed. Please re-open this request and approve again to resolve it.", "warn");
+          loadContributionRequests();
+          window._approveReqInFlight = false;
+          return;
+        }
+        if (resolveRes && resolveRes.status === "already_resolved") {
+          toast("⚠️ This request was already approved by another admin.", "warn");
+          loadContributionRequests();
+          window._approveReqInFlight = false;
+          return;
+        }
         let msg = "Request approved! Receipt: " + (contribRes.receiptId || "");
         if (contribRes.emailSent) msg += " · Receipt email sent";
         if (contribRes.emailSkipped) msg += " · Email quota reached";
@@ -8252,8 +8338,9 @@
     }
 
     function _rejectContribRequest(reqId) {
-      const r = (window._reqListRendered || []).find(function(x) { return String(x.ReqId) === String(reqId); });
-      if (!r) return;
+      // FIX: Search _allRequests (full unfiltered list) instead of _reqListRendered.
+      const r = (window._allRequests || []).find(function(x) { return String(x.ReqId) === String(reqId); });
+      if (!r) { toast("Request not found. Please refresh the page.", "error"); return; }
       const u = (users || []).find(function (u) { return String(u.UserId) === String(r.UserId); });
       const name = u ? u.Name : "this member";
       const html = '<div class="_mhdr"><h3><i class="fa-solid fa-circle-xmark" style="color:#ef4444;"></i> Reject Request</h3><button class="_mcls" onclick="closeModal()">×</button></div>'
@@ -8276,7 +8363,7 @@
           closeModal();
           _doRejectContribRequest(r, reason);
         });
-      }, 50);
+      }, 150);
     }
 
     async function _doRejectContribRequest(r, reason) {
@@ -8297,6 +8384,11 @@
         toast("Error: " + err.message, "error");
       }
     }
+
+    // FIX: Expose contribution request handlers on window so inline onclick="..." in
+    // dynamically-rendered table rows always resolves them, regardless of JS execution scope.
+    window._approveContribRequest = _approveContribRequest;
+    window._rejectContribRequest  = _rejectContribRequest;
 
     // ── L2: Dark mode toggle
     function toggleDarkMode() {
@@ -8569,6 +8661,222 @@
         if (sel) sel.style.display = "none";
       }
     }
+
+    // ══════════════════════════════════════════════════════════
+    //  TRAFFIC STATS — loadTrafficStats, tcToggleAutoRefresh,
+    //  confirmResetTraffic
+    //  Quota facts (gmail.com free account):
+    //    doGet / URL Fetch : 20,000 / day
+    //    PropertiesService : 50,000 / day  (2 calls/request after batch fix)
+    //    Email recipients  : 100 / day (CFG.emailDailyLimit = 90 with buffer)
+    // ══════════════════════════════════════════════════════════
+    var _tcRefreshTimer = null;
+
+    // ── Inject reset confirmation modal (matches _fbModalOverlay style) ──
+    (function injectTcResetModal() {
+      if (document.getElementById("_tcResetOverlay")) return;
+      var style = document.createElement("style");
+      style.textContent =
+        "#_tcResetOverlay{position:fixed;inset:0;z-index:999995;background:rgba(15,23,42,0.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.22s ease;}" +
+        "#_tcResetOverlay.show{opacity:1;pointer-events:all;}" +
+        "#_tcResetBox{background:#fff;border-radius:20px;padding:32px 28px 24px;max-width:360px;width:90%;box-shadow:0 24px 60px rgba(0,0,0,0.22),0 0 0 1px rgba(0,0,0,0.04);transform:scale(0.88) translateY(16px);transition:transform 0.26s cubic-bezier(0.34,1.56,0.64,1),opacity 0.22s ease;opacity:0;text-align:center;}" +
+        "#_tcResetOverlay.show #_tcResetBox{transform:scale(1) translateY(0);opacity:1;}" +
+        "#_tcResetIconWrap{width:66px;height:66px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;font-size:1.7rem;color:#dc2626;margin:0 auto 16px;}" +
+        "#_tcResetTitle{font-size:1.1rem;font-weight:700;color:#0f172a;margin:0 0 8px;font-family:Poppins,sans-serif;}" +
+        "#_tcResetMsg{font-size:0.85rem;color:#64748b;line-height:1.65;margin:0 0 16px;font-family:Poppins,sans-serif;}" +
+        "#_tcResetWarn{background:#fef9ec;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin:0 0 22px;font-size:11.5px;color:#92400e;font-family:Poppins,sans-serif;text-align:left;line-height:1.6;}" +
+        "._tcResetBtns{display:flex;gap:10px;justify-content:center;}" +
+        "._tcResetBtns button{flex:1;max-width:148px;padding:11px 0;border-radius:10px;border:none;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:Poppins,sans-serif;transition:transform 0.15s,box-shadow 0.15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;}" +
+        "._tcResetBtns button:hover{transform:translateY(-2px);}" +
+        "#_tcResetCancel{background:#f1f5f9;color:#475569;}" +
+        "#_tcResetCancel:hover{background:#e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,0.08);}" +
+        "#_tcResetConfirm{background:linear-gradient(135deg,#f87171,#dc2626);color:#fff;box-shadow:0 4px 14px rgba(220,38,38,0.3);}" +
+        "#_tcResetConfirm:hover{box-shadow:0 8px 20px rgba(220,38,38,0.45);}";
+      document.head.appendChild(style);
+      var ov = document.createElement("div");
+      ov.id = "_tcResetOverlay";
+      ov.innerHTML =
+        '<div id="_tcResetBox">' +
+          '<div id="_tcResetIconWrap"><i class="fa-solid fa-rotate-left"></i></div>' +
+          '<div id="_tcResetTitle">Reset Traffic Stats?</div>' +
+          '<div id="_tcResetMsg">This will permanently clear all counters, bar charts, and action breakdown data.</div>' +
+          '<div id="_tcResetWarn">⚠️ <strong>Cannot be undone.</strong> Peak records, daily totals, and hourly history will all be erased. Only do this to start fresh.</div>' +
+          '<div class="_tcResetBtns">' +
+            '<button id="_tcResetCancel" onclick="_tcResetClose()"><i class="fa-solid fa-xmark"></i> Cancel</button>' +
+            '<button id="_tcResetConfirm" onclick="_tcDoReset()"><i class="fa-solid fa-trash"></i> Yes, Reset</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(ov);
+      ov.addEventListener("click", function(e) { if (e.target === ov) _tcResetClose(); });
+      document.addEventListener("keydown", function(e) { if (e.key === "Escape") _tcResetClose(); });
+    })();
+
+    window._tcResetClose = function() {
+      var ov = document.getElementById("_tcResetOverlay");
+      if (ov) ov.classList.remove("show");
+    };
+
+    window._tcDoReset = function() {
+      _tcResetClose();
+      getData("resetTrafficStats").then(function(res) {
+        if (res && res.status === "ok") {
+          toast("✅ " + (res.message || "Traffic stats reset."));
+          loadTrafficStats();
+        } else {
+          toast("❌ Reset failed: " + (res && res.message || "Unknown error"), "error");
+        }
+      }).catch(function() {
+        toast("❌ Reset failed. Check console.", "error");
+      });
+    };
+
+    function loadTrafficStats() {
+      var loading = document.getElementById("tc_loading");
+      var content = document.getElementById("tc_content");
+      if (loading) loading.style.display = "block";
+      if (content) content.style.display = "none";
+
+      // Always live — no cache, same pattern as runHealthCheck
+      getData("getTrafficStats").then(function(d) {
+        if (loading) loading.style.display = "none";
+        if (!d || d.status !== "ok") {
+          if (loading) loading.innerHTML = "<span style='color:#dc2626;'>Failed to load traffic data.</span>";
+          return;
+        }
+        if (content) content.style.display = "block";
+
+        // ── Quota bars (doGet + Email) ──
+        var limitWrap = document.getElementById("tc_limit_wrap");
+        if (limitWrap) limitWrap.style.display = "block";
+
+        // doGet bar
+        var doGetPct   = Math.min(100, d.usedPct || 0);
+        var doGetColor = doGetPct >= 90 ? "#dc2626" : doGetPct >= 70 ? "#f7a01a" : "#22c55e";
+        var doGetRemaining = (d.dailyLimit || 20000) - (d.today || 0);
+        var doGetBar = document.getElementById("tc_limit_bar");
+        var doGetLbl = document.getElementById("tc_limit_label");
+        var doGetSts = document.getElementById("tc_limit_status");
+        if (doGetBar) { doGetBar.style.width = doGetPct + "%"; doGetBar.style.background = doGetColor; }
+        if (doGetLbl) doGetLbl.textContent = (d.today || 0).toLocaleString("en-IN") + " / " + (d.dailyLimit || 20000).toLocaleString("en-IN");
+        if (doGetSts) {
+          var doGetMsg = doGetPct >= 90 ? "⚠️ Critical — " + doGetRemaining.toLocaleString("en-IN") + " requests left today"
+                       : doGetPct >= 70 ? "🟡 Moderate — " + doGetRemaining.toLocaleString("en-IN") + " requests left today"
+                       : "🟢 Healthy — " + doGetRemaining.toLocaleString("en-IN") + " requests left today";
+          doGetSts.textContent = doGetMsg;
+          doGetSts.style.color = doGetPct >= 90 ? "#dc2626" : doGetPct >= 70 ? "#b45309" : "#15803d";
+        }
+
+        // Email bar
+        var emailPct   = Math.min(100, d.emailPct || 0);
+        var emailColor = emailPct >= 90 ? "#dc2626" : emailPct >= 70 ? "#f7a01a" : "#22c55e";
+        var emailRemaining = (d.emailLimit || 90) - (d.emailUsed || 0);
+        var emailBar = document.getElementById("tc_email_bar");
+        var emailLbl = document.getElementById("tc_email_label");
+        var emailSts = document.getElementById("tc_email_status");
+        if (emailBar) { emailBar.style.width = emailPct + "%"; emailBar.style.background = emailColor; }
+        if (emailLbl) emailLbl.textContent = (d.emailUsed || 0) + " / " + (d.emailLimit || 90) + " emails";
+        if (emailSts) {
+          var emailMsg = emailPct >= 90 ? "⚠️ Critical — " + emailRemaining + " emails left today (bulk trigger may fail!)"
+                       : emailPct >= 70 ? "🟡 Moderate — " + emailRemaining + " emails left today"
+                       : "🟢 Healthy — " + emailRemaining + " emails remaining today";
+          emailSts.textContent = emailMsg;
+          emailSts.style.color = emailPct >= 90 ? "#dc2626" : emailPct >= 70 ? "#b45309" : "#15803d";
+        }
+
+        // ── Summary pills ──
+        var pills = [
+          { label: "Total Ever",  val: d.total,    color: "#334155", icon: "fa-infinity" },
+          { label: "Today",       val: d.today,    color: "#2563eb", icon: "fa-calendar-day" },
+          { label: "This Hour",   val: d.thisHour, color: "#16a34a", icon: "fa-clock" },
+          { label: "Peak Hour",   val: d.peakHour, color: "#f7a01a", icon: "fa-bolt" },
+          { label: "Peak Day",    val: d.peakDay,  color: "#7c3aed", icon: "fa-crown" },
+        ];
+        var summaryEl = document.getElementById("tc_summary");
+        if (summaryEl) {
+          summaryEl.innerHTML = pills.map(function(p) {
+            return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;text-align:center;min-width:90px;flex:1;">' +
+              '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;"><i class="fa-solid ' + p.icon + '"></i></div>' +
+              '<div style="font-size:1.35rem;font-weight:700;color:' + p.color + ';">' + (p.val || 0).toLocaleString("en-IN") + '</div>' +
+              '<div style="font-size:10px;color:#94a3b8;margin-top:3px;">' + p.label + '</div>' +
+            '</div>';
+          }).join("");
+        }
+
+        // ── Bar chart helper ──
+        function renderBars(containerId, data, labelKey, countKey, barColor) {
+          var el = document.getElementById(containerId);
+          if (!el) return;
+          var max = Math.max(1, Math.max.apply(null, data.map(function(x){ return x[countKey]; })));
+          el.innerHTML = data.map(function(item) {
+            var h   = Math.max(4, Math.round((item[countKey] / max) * 64));
+            var has = item[countKey] > 0;
+            return '<div title="' + item[labelKey] + ": " + item[countKey] + " requests" + '" ' +
+              'style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:default;">' +
+              '<div style="font-size:8px;color:#94a3b8;line-height:1;">' + (has ? item[countKey] : "") + '</div>' +
+              '<div style="width:100%;height:' + h + 'px;background:' + (has ? barColor : "#e2e8f0") + ';border-radius:3px 3px 0 0;transition:height .3s;"></div>' +
+              '<div style="font-size:7px;color:#94a3b8;white-space:nowrap;overflow:hidden;max-width:30px;text-overflow:ellipsis;text-align:center;">' + item[labelKey] + '</div>' +
+            '</div>';
+          }).join("");
+        }
+
+        renderBars("tc_hour_chart", d.last24Hours, "hour", "count", "#f7a01a");
+        renderBars("tc_day_chart",  d.last14Days,  "date", "count", "#2563eb");
+
+        // ── Top actions table ──
+        var actEl = document.getElementById("tc_actions");
+        if (actEl) {
+          if (!d.topActions || d.topActions.length === 0) {
+            actEl.innerHTML = '<div style="font-size:12px;color:#94a3b8;padding:8px 0;text-align:center;">No actions tracked yet — data appears after first request.</div>';
+          } else {
+            actEl.innerHTML =
+              '<table style="width:100%;border-collapse:collapse;">' +
+              d.topActions.map(function(a, i) {
+                var pct = Math.round(a.count / Math.max(1, d.total) * 100);
+                var medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
+                return '<tr style="border-bottom:1px solid #f1f5f9;">' +
+                  '<td style="padding:6px 4px 6px 0;color:#94a3b8;font-size:11px;width:20px;">' + (medal || (i+1)) + '</td>' +
+                  '<td style="padding:6px 0;color:#334155;font-size:12px;font-weight:600;">' + a.action + '</td>' +
+                  '<td style="padding:6px 0;text-align:right;font-size:12px;font-weight:700;color:#334155;white-space:nowrap;padding-right:10px;">' + a.count.toLocaleString("en-IN") + '</td>' +
+                  '<td style="padding:6px 0;width:90px;">' +
+                    '<div style="height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;">' +
+                      '<div style="height:6px;width:' + pct + '%;background:linear-gradient(90deg,#f7a01a,#f59e0b);border-radius:3px;transition:width .4s;"></div>' +
+                    '</div>' +
+                    '<div style="font-size:9px;color:#94a3b8;margin-top:1px;">' + pct + '%</div>' +
+                  '</td>' +
+                '</tr>';
+              }).join("") +
+              '</table>';
+          }
+        }
+
+        var genEl = document.getElementById("tc_generated");
+        if (genEl) genEl.textContent = "Generated: " + (d.generatedAt || "");
+
+      }).catch(function() {
+        var loading2 = document.getElementById("tc_loading");
+        if (loading2) loading2.innerHTML = "<span style='color:#dc2626;'><i class='fa-solid fa-triangle-exclamation'></i> Error loading traffic data.</span>";
+      });
+    }
+
+    function tcToggleAutoRefresh() {
+      var cb  = document.getElementById("tc_autorefresh");
+      var sel = document.getElementById("tc_interval");
+      if (!cb) return;
+      if (_tcRefreshTimer) { clearInterval(_tcRefreshTimer); _tcRefreshTimer = null; }
+      if (cb.checked) {
+        if (sel) sel.style.display = "inline-block";
+        var ms = sel ? parseInt(sel.value, 10) : 60000;
+        _tcRefreshTimer = setInterval(function() { loadTrafficStats(); }, ms);
+      } else {
+        if (sel) sel.style.display = "none";
+      }
+    }
+
+    function confirmResetTraffic() {
+      var ov = document.getElementById("_tcResetOverlay");
+      if (ov) ov.classList.add("show");
+    }
+    // ══════════════════════════════════════════════════════════
 
     // ── H14: Silent health check on login — no spinner, just badge + one toast ──
     function _hcSilentLoginCheck() {
@@ -8915,7 +9223,7 @@
         const uMatch = !txt ||
           (user?.Name.toLowerCase() || "").includes(txt) ||
           String(user?.Mobile || "").includes(txt);
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
         const trkMatch = !trackTxt ||
           (c.ReceiptID || "").toLowerCase().includes(trackTxt) ||
           displayRID.toLowerCase().includes(trackTxt);
@@ -9569,7 +9877,7 @@
         const mobile = user?.Mobile || "";
         if (fName && !name.toLowerCase().includes(fName) && !String(mobile).includes(fName)) return false;
         const rid = (c.ReceiptID || "");
-        const dispRid = rid.replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+        const dispRid = rid.replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
         if (fTrack && !rid.toLowerCase().includes(fTrack) && !dispRid.toLowerCase().includes(fTrack)) return false;
         if (fType && String(c.TypeId) !== String(fType)) return false;
         if (fOcc && String(c.OccasionId) !== String(fOcc)) return false;
@@ -9778,7 +10086,7 @@
             const name  = dash_getDisplayName(c.UserId, c.Note);
             const tName = dash_types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
             const oName = dash_occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
-            const rid   = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "MNR") + "-");
+            const rid   = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
             const _drid = _storeReceipt(c, name, tName, oName);
             const streak = isWalkIn
               ? `<div class="ct-streak" style="opacity:.25;">${"<div class='ct-sd ct-sd-off'></div>".repeat(12)}</div>`
@@ -10392,17 +10700,22 @@
 
       var toast = document.createElement("div");
       toast.id = "_undoToast";
+      // FIX: Moved from bottom-center to top-right below the header.
+      // top:68px clears the fixed sidebar header on desktop and app header on mobile.
+      // max-width + right:16px keeps it safe on narrow mobile screens.
       toast.style.cssText =
-        "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);" +
-        "background:#1e293b;color:#fff;padding:12px 20px;border-radius:12px;" +
+        "position:fixed;top:68px;right:16px;" +
+        "background:#1e293b;color:#fff;padding:12px 16px;border-radius:12px;" +
         "font-size:13px;font-family:Poppins,sans-serif;z-index:99999;" +
-        "display:flex;align-items:center;gap:14px;box-shadow:0 8px 28px rgba(0,0,0,0.3);" +
-        "animation:_undoFadeIn 0.25s ease;";
+        "display:flex;align-items:center;gap:12px;" +
+        "box-shadow:0 8px 28px rgba(0,0,0,0.35);" +
+        "max-width:calc(100vw - 32px);box-sizing:border-box;" +
+        "animation:_undoSlideIn 0.25s ease;";
       toast.innerHTML =
-        '<span>🗑️ ' + label + ' deleted</span>' +
+        '<span style="flex:1;min-width:0;">🗑️ <b>' + label + '</b> deleted</span>' +
         '<button onclick="_doUndo()" style="background:#f7a01a;border:none;color:#fff;' +
         'padding:5px 14px;border-radius:7px;cursor:pointer;font-weight:700;font-size:12px;' +
-        'font-family:Poppins,sans-serif;box-shadow:none;">↩ Undo</button>' +
+        'font-family:Poppins,sans-serif;box-shadow:none;white-space:nowrap;flex-shrink:0;">↩ Undo</button>' +
         '<div id="_undoProgress" style="position:absolute;bottom:0;left:0;height:3px;' +
         'background:#f7a01a;border-radius:0 0 12px 12px;width:100%;' +
         'transition:width 30s linear;"></div>';
@@ -10434,11 +10747,14 @@
       if (typeof fn === "function") fn();
     };
 
-    // Undo is wired directly into del() function body below — no patch needed here
+    // FIX: Expose _showUndoToast on window so del(), deleteGoal() and other
+    // functions in outer scopes can reach it. Without this the typeof check
+    // always returned false and the undo toast never appeared.
+    window._showUndoToast = _showUndoToast;
 
     // Inject undo animation keyframes
     var undoStyle = document.createElement("style");
-    undoStyle.textContent = "@keyframes _undoFadeIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }";
+    undoStyle.textContent = "@keyframes _undoSlideIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }";
     document.head.appendChild(undoStyle);
 
 

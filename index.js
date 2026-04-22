@@ -184,12 +184,10 @@
       var _statsAnimated = false;
       function loadCommunityStats() {
         if (typeof getData !== "function") return;
-        getData("getUsers").then(function(users) {
-          var list = Array.isArray(users) ? users : [];
-          var members = list.filter(function(u) {
-            return !u.Status || String(u.Status).toLowerCase() !== "inactive";
-          }).length;
-          _animateMemberCount(document.getElementById("csMembers"), members, 1800);
+        // getPublicStats is public — no session needed. Returns memberCount directly.
+        getData("getPublicStats").then(function(res) {
+          if (!res || res.status === "error") return;
+          _animateMemberCount(document.getElementById("csMembers"), Number(res.memberCount || 0), 1800);
         }).catch(function() {});
       }
 
@@ -593,66 +591,84 @@ var _trLoaded = false;
 
 /* ── Payment Modal ── */
       /* ── Payment Modal ── */
+      /* ── Payment details cache — fetched once per page load, public for all visitors ── */
+      var _payDetails = null;
+
       function _initPayModalFields() {
-        if (typeof APP === 'undefined') return;
-        var accName = document.getElementById('payAccName');
-        var accNo   = document.getElementById('payAccNo');
-        var ifsc    = document.getElementById('payIfsc');
-        var bank    = document.getElementById('payBankName');
-        var branch  = document.getElementById('payBranch');
-        var accType = document.getElementById('payAccType');
-        var upiEl   = document.getElementById('payUpiId');
-        if (accName) accName.textContent = APP.accountName  || 'Shree Hanuman Mandir';
-        if (accNo)   accNo.textContent   = APP.accountNo    || 'Contact Temple Office';
-        if (ifsc)    ifsc.textContent    = APP.ifscCode     || 'Contact Temple Office';
-        if (bank)    bank.textContent    = APP.bankName     || 'Bank of India';
-        if (branch)  branch.textContent  = APP.bankBranch   || 'Paliya Branch';
-        if (accType) accType.textContent = APP.accountType  || 'Savings';
-        if (upiEl)   upiEl.textContent   = APP.upiId        || 'mandir@upi';
+        // Already cached this page load — fill instantly
+        if (_payDetails) { _applyPayDetails(_payDetails); return; }
+        // Fetch from server — getPublicPaymentDetails requires no session
+        if (typeof getData === "function") {
+          getData("getPublicPaymentDetails").then(function(res) {
+            if (res && res.status === "ok") {
+              _payDetails = res;
+              _applyPayDetails(res);
+            }
+          }).catch(function() {});
+        }
       }
-      /* Pre-fill fields as soon as DOM is ready */
-      document.addEventListener('DOMContentLoaded', _initPayModalFields);
+
+      function _applyPayDetails(p) {
+        var set = function(id, val) {
+          var el = document.getElementById(id);
+          if (el) el.textContent = val || "—";
+        };
+        set("payAccName", p.accountName);
+        set("payAccNo",   p.accountNo);
+        set("payIfsc",    p.ifscCode);
+        set("payBankName",p.bankName);
+        set("payBranch",  p.bankBranch);
+        set("payAccType", p.accountType);
+        set("payUpiId",   p.upiId);
+      }
+
+      /* Data is fetched lazily on first openPayModal() click — no need to pre-fetch
+         on every page load since most visitors never open the donate modal.
+         _initPayModalFields() caches the result in _payDetails so the second
+         open is instant. The DOMContentLoaded pre-fetch was an unnecessary backend
+         call on every index page visit. */
 
       function _generatePayQR() {
-        var upiId = (typeof APP !== 'undefined' && APP.upiId) ? APP.upiId : 'mandir@upi';
-        var name  = (typeof APP !== 'undefined' && APP.name)  ? APP.name  : 'Shree Hanuman Mandir';
-        var upiStr = 'upi://pay?pa=' + encodeURIComponent(upiId) + '&pn=' + encodeURIComponent(name) + '&cu=INR';
-        var box = document.getElementById('payQrBox');
+        var upiId = (_payDetails && _payDetails.upiId)
+          ? _payDetails.upiId
+          : ((typeof APP !== "undefined" && APP.upiId) ? APP.upiId : "mandir@upi");
+        var name  = (typeof APP !== "undefined" && APP.name) ? APP.name : 'Mandir';
+        var upiStr = "upi://pay?pa=" + encodeURIComponent(upiId) + "&pn=" + encodeURIComponent(name) + "&cu=INR";
+        var box = document.getElementById("payQrBox");
         if (!box) return;
-        // Clear previous QR
-        box.innerHTML = '';
+        box.innerHTML = "";
         if (window.QRCode) {
           try {
             new window.QRCode(box, {
               text: upiStr,
-              width: 148,
-              height: 148,
-              colorDark: '#1a0800',
-              colorLight: '#ffffff',
+              width: 148, height: 148,
+              colorDark: "#1a0800", colorLight: "#ffffff",
               correctLevel: window.QRCode.CorrectLevel.M
             });
           } catch(e) {
-            box.innerHTML = '<div class="pay-qr-placeholder"><i class="fa-solid fa-qrcode"></i><span>QR Ready<br>' + upiId + '</span></div>';
+            box.innerHTML = "<div class=\"pay-qr-placeholder\"><i class=\"fa-solid fa-qrcode\"></i><span>QR Ready<br>" + upiId + "</span></div>";
           }
         } else {
-          // Load QRCode.js on demand
-          var s = document.createElement('script');
-          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+          var s = document.createElement("script");
+          s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
           s.onload = function() { _generatePayQR(); };
           s.onerror = function() {
-            box.innerHTML = '<div class="pay-qr-placeholder"><i class="fa-solid fa-qrcode"></i><span>' + upiId + '</span></div>';
+            box.innerHTML = "<div class=\"pay-qr-placeholder\"><i class=\"fa-solid fa-qrcode\"></i><span>" + upiId + "</span></div>";
           };
           document.head.appendChild(s);
         }
       }
 
       function openPayModal() {
-        var m = document.getElementById('payModal');
-        m.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        var m = document.getElementById("payModal");
+        m.classList.add("open");
+        document.body.style.overflow = "hidden";
         m.scrollTop = 0;
+        // Fields pre-fetched on DOMContentLoaded — should already be filled.
+        // Call again in case the first fetch hadn't completed yet.
         _initPayModalFields();
-        _generatePayQR();
+        // QR uses the cached UPI ID. Small delay ensures _payDetails is populated first.
+        setTimeout(_generatePayQR, 100);
         spawnPayParticles();
       }
       function closePayModal() {
@@ -694,7 +710,7 @@ var _trLoaded = false;
         var ifsc   = document.getElementById('payIfsc').innerText;
         var bank   = document.getElementById('payBankName').innerText;
         var branch = document.getElementById('payBranch').innerText;
-        var name   = (typeof APP !== 'undefined' && APP.name) ? APP.name : 'Shree Hanuman Mandir';
+        var name   = (typeof APP !== 'undefined' && APP.name) ? APP.name : 'Mandir';
         var text   = name + '\nAccount No: ' + accNo + '\nIFSC: ' + ifsc + '\nBank: ' + bank + ', ' + branch;
         navigator.clipboard.writeText(text).then(function() {
           var btn = document.getElementById('copyBankBtn');
@@ -720,36 +736,92 @@ var _trLoaded = false;
         }).catch(function() {});
       }
 
-/* ── Service Worker Registration ── */
-  /* ── Service Worker registration ── */
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function() {
-      navigator.serviceWorker.register("./sw.js").then(function(reg) {
-   
-        // Detect when a new SW version is waiting — prompt user to refresh
-        reg.addEventListener("updatefound", function() {
-          const newWorker = reg.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener("statechange", function() {
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              // New version available — show update toast if toast() is available
-              // Otherwise show a simple confirm dialog
-              if (typeof toast === "function") {
-                toast("🔄 App updated — tap here to refresh", "warn");
-                // Auto-reload after 4 seconds so admin always gets latest code
-                setTimeout(function() { location.reload(); }, 4000);
-              } else {
-                if (confirm("App updated. Reload now for the latest version?")) {
-                  location.reload();
-                }
-              }
-            }
-          });
-        });
-   
-      }).catch(function(err) {
-        // SW registration failed — app still works normally without it
-        console.warn("Service Worker registration failed:", err);
+/* ══ CHAUPAI TICKER ══
+   Moved here from inline <script> in index.html.
+   Runs on DOMContentLoaded — requires #chaupaiDisplay and #chaupaiSpacer in DOM. */
+(function _initChaupai() {
+  var chaupais = [
+    'प्रबिसि नगर कीजे सब काजा। हृदयँ राखि कोसलपुर राजा॥',
+    'मंगल भवन अमंगल हारी। द्रवहु सुदसरथ अजर बिहारी।।'
+  ];
+
+  function init() {
+    var container = document.getElementById('chaupaiDisplay');
+    var spacer    = document.getElementById('chaupaiSpacer');
+    if (!container || !spacer) return;
+
+    var ci = 0;
+
+    /* Spacer always = longest string → layout is permanently locked */
+    spacer.textContent = chaupais.reduce(function(a, b) {
+      return b.length > a.length ? b : a;
+    }, '');
+
+    /* Split string into Unicode-aware grapheme clusters (handles Hindi matras correctly) */
+    function getChars(str) {
+      if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        var seg = new Intl.Segmenter('hi', { granularity: 'grapheme' });
+        return Array.from(seg.segment(str), function(s) { return s.segment; });
+      }
+      return Array.from(str); /* fallback */
+    }
+
+    /* Build one <span class="cp-char"><span>c</span></span> per grapheme */
+    function buildCharEls(chars) {
+      container.innerHTML = '';
+      var els = [];
+      chars.forEach(function(ch) {
+        var wrap  = document.createElement('span');
+        wrap.className = 'cp-char';
+        var inner = document.createElement('span');
+        inner.textContent = ch;
+        wrap.appendChild(inner);
+        container.appendChild(wrap);
+        els.push(inner);
       });
-    });
+      return els;
+    }
+
+    function showChaupai() {
+      var chars = getChars(chaupais[ci]);
+      var els   = buildCharEls(chars);
+      var i = 0;
+
+      /* Reveal one character at a time, left → right */
+      function revealNext() {
+        if (i < els.length) {
+          els[i].classList.add('cp-in');
+          i++;
+          setTimeout(revealNext, 55); /* 55 ms per character */
+        } else {
+          /* Hold fully visible, then hide */
+          setTimeout(function() { hideFrom(els.length - 1); }, 2600);
+        }
+      }
+
+      /* Hide one character at a time, right → left */
+      function hideFrom(j) {
+        if (j >= 0) {
+          els[j].classList.remove('cp-in');
+          els[j].classList.add('cp-out');
+          j--;
+          setTimeout(function() { hideFrom(j); }, 40); /* 40 ms per character */
+        } else {
+          /* Next chaupai — spacer stays, no layout shift */
+          ci = (ci + 1) % chaupais.length;
+          setTimeout(showChaupai, 500);
+        }
+      }
+
+      revealNext();
+    }
+
+    showChaupai();
   }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init(); /* DOM already ready */
+  }
+}());

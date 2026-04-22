@@ -1,7 +1,8 @@
 // ══════════════════════════════════════════════════════════════════
 //  REMEMBER ME — 24-hour token (H12)
 // ══════════════════════════════════════════════════════════════════
-const _RMK = "mandir_remember_token";
+// Storage key derived from APP.shortName so it updates automatically when temple changes
+const _RMK = ((typeof APP !== "undefined" && APP.shortName) ? APP.shortName.toLowerCase() : "mandir") + "_remember_token";
 function saveRememberToken(userId,name,role,email,token){
   try{localStorage.setItem(_RMK,JSON.stringify({userId,name,role,email:email||"",sessionToken:token||"",expiry:Date.now()+24*60*60*1000}));}catch(e){}
 }
@@ -90,18 +91,27 @@ function postData(data){
 }
 
 function setSessionTokenOnServer(userId,token){
-  function _attempt(n){
-    try{
-      const cb="cb_sst_"+Date.now()+"_"+n;
-      const s=document.createElement("script");let done=false;
-      window[cb]=function(){if(done)return;done=true;try{delete window[cb];s.remove();}catch(e){}};
-      s.onerror=function(){if(done)return;done=true;try{delete window[cb];s.remove();}catch(e){};if(n===1)setTimeout(()=>_attempt(2),4000);};
-      s.src=API_URL+"?action=setSessionToken&userId="+encodeURIComponent(userId)+"&token="+encodeURIComponent(token)+"&callback="+cb;
-      document.body.appendChild(s);
-      setTimeout(()=>{if(!done){done=true;try{delete window[cb];s.remove();}catch(e){}}},10000);
-    }catch(e){}
-  }
-  _attempt(1);
+  // Returns a Promise that resolves when the token is confirmed written (or after timeout/error).
+  // This allows doLogin() to await it before redirecting, preventing SESSION_TOKEN_MISMATCH
+  // and VERIFY_SESSION_ERROR caused by the page loading before the token hits the server.
+  return new Promise(function(resolve){
+    function _attempt(n){
+      try{
+        const cb="cb_sst_"+Date.now()+"_"+n;
+        const s=document.createElement("script");let done=false;
+        window[cb]=function(){if(done)return;done=true;try{delete window[cb];s.remove();}catch(e){}resolve();};
+        s.onerror=function(){
+          if(done)return;done=true;try{delete window[cb];s.remove();}catch(e){};
+          if(n===1){setTimeout(()=>_attempt(2),2000);}else{resolve();} // resolve after retry so we don't block forever
+        };
+        s.src=API_URL+"?action=setSessionToken&userId="+encodeURIComponent(userId)+"&token="+encodeURIComponent(token)+"&callback="+cb;
+        document.body.appendChild(s);
+        // Timeout safety: resolve after 5s max so redirect is never stuck
+        setTimeout(()=>{if(!done){done=true;try{delete window[cb];s.remove();}catch(e){}}resolve();},5000);
+      }catch(e){resolve();}
+    }
+    _attempt(1);
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -179,7 +189,6 @@ async function doLogin(){
       const sessionToken=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)+Date.now();
       const sessionData={userId:user.UserId,name:user.Name,role:user.Role,email:user.Email||"",photoURL:user.PhotoURL||"",expiry:Date.now()+30*60*1000,sessionToken};
       localStorage.setItem("session",JSON.stringify(sessionData));
-      setSessionTokenOnServer(String(user.UserId),sessionToken);
       if(document.getElementById("rememberMe").checked){
         saveRememberToken(user.UserId,user.Name,user.Role,user.Email||"",sessionToken);
       }
@@ -188,7 +197,12 @@ async function doLogin(){
       const lastLoginStr = res.lastLogin ? " · Last login: "+res.lastLogin : "";
       setMsg("loginMsg","✓ Login successful! Redirecting..."+lastLoginStr,"success");
       _loginSuccess();
-      setTimeout(()=>{location.href=user.Role==="Admin"?"admin.html":"user.html";},700);
+      // FIX: Await token write BEFORE redirecting. This prevents SESSION_TOKEN_MISMATCH
+      // and VERIFY_SESSION_ERROR that occurred when admin.html loaded and called getAllData/
+      // getEmailQuota before the new sessionToken was persisted on the server.
+      setSessionTokenOnServer(String(user.UserId),sessionToken).then(function(){
+        location.href=user.Role==="Admin"?"admin.html":"user.html";
+      });
     }else if(res.status==="pending"){
       setMsg("loginMsg","Your account is awaiting approval. You'll receive an email once the temple admin reviews your request.","pending");
     }else if(res.status==="error"){

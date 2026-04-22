@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login — Mandir System</title>
+  <title id="loginPageTitle">Login — Mandir System</title>
+  <meta name="description" id="loginMetaDesc" content="Login to the temple management system."/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet"/>
@@ -23,7 +24,7 @@
         <i id="hdrIcon" class="fa-solid fa-place-of-worship" style="display:none;color:#f7a01a;font-size:1.4rem;"></i>
       </div>
       <h2>Mandir Login</h2>
-      <span class="card-subtitle">Shree Hanuman Mandir, Paliya</span>
+      <span class="card-subtitle" id="loginSubtitle"></span>
     </div>
 
     <!-- Form body -->
@@ -32,12 +33,12 @@
 
       <div class="input-group">
         <i class="icon fa-solid fa-phone"></i>
-        <input type="text" id="mobile" placeholder="Mobile Number" maxlength="10" inputmode="numeric"/>
+        <input type="text" id="mobile" placeholder="Mobile Number" maxlength="10" inputmode="numeric" autocomplete="username"/>
       </div>
 
       <div class="input-group">
         <i class="icon fa-solid fa-lock"></i>
-        <input type="password" id="password" placeholder="Password"/>
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password"/>
         <i class="fa-solid fa-eye pwd-eye" id="togglePassword"></i>
       </div>
 
@@ -373,7 +374,7 @@
       <div id="tcScrollArea" style="max-height:300px;overflow-y:auto;padding:20px 24px 12px;border-bottom:1px solid #fde68a;" onscroll="checkTCScroll()">
         <div style="display:flex;align-items:center;gap:9px;background:#fffbf5;border:1.5px solid #fde68a;border-radius:10px;padding:11px 14px;margin-bottom:16px;">
           <i class="fa-solid fa-shield-halved" style="color:#f7a01a;font-size:1.1rem;"></i>
-          <span style="font-size:12.5px;font-weight:700;color:#78350f;">Shree Hanuman Mandir — Privacy &amp; Usage Policy</span>
+          <span style="font-size:12.5px;font-weight:700;color:#78350f;" id="tcModalTitle">Shree Hanuman Mandir — Privacy &amp; Usage Policy</span>
         </div>
         <div style="font-size:13px;color:#444;line-height:1.75;display:flex;flex-direction:column;gap:14px;">
           <div>
@@ -397,7 +398,7 @@
             <p style="margin:0;">Registration requests are reviewed by the temple admin. Accounts are activated only after approval. The temple trust reserves the right to approve or decline any registration request.</p>
           </div>
           <div style="background:#fffbf5;border-radius:9px;padding:10px 13px;font-size:12px;color:#92400e;font-weight:600;margin-top:4px;">
-            🙏 By accepting, you confirm you have read, understood, and agree to these terms. — Jai Shree Ram
+            🙏 By accepting, you confirm you have read, understood, and agree to these terms. — <span id="tcTagline">Jai Shree Ram</span>
           </div>
         </div>
       </div>
@@ -418,6 +419,31 @@
 <div id="_tw"></div>
 
 <script src="constants.js"></script>
+<script>
+  // ── Populate dynamic fields from constants.js (APP object) ──
+  (function() {
+    if (typeof APP === 'undefined') return;
+    var name    = APP.name    || 'Mandir';
+    var loc     = APP.village || APP.location || '';
+    var tagline = APP.tagline || 'Jai Shree Ram';
+    // Page title & meta
+    document.title = 'Login — ' + name;
+    var lpt = document.getElementById('loginPageTitle'); if (lpt) lpt.textContent = 'Login — ' + name;
+    var lmd = document.getElementById('loginMetaDesc'); if (lmd) lmd.setAttribute('content', 'Login to ' + name + ' management system.');
+    // Login card subtitle
+    var sub = document.getElementById('loginSubtitle');
+    if (sub) sub.textContent = name + (loc ? ', ' + loc : '');
+    // T&C modal title & tagline
+    var tct = document.getElementById('tcModalTitle');
+    if (tct) tct.textContent = name + ' — Privacy & Usage Policy';
+    var tcTag = document.getElementById('tcTagline');
+    if (tcTag) tcTag.textContent = tagline;
+    // Version footer
+    if (typeof APP !== 'undefined' && APP.version) {
+      var vf = document.getElementById('versionFooter'); if (vf) vf.textContent = 'v' + APP.version;
+    }
+  })();
+</script>
 <script src="config.js"></script>
 <script src="login.js"></script>
 </body>

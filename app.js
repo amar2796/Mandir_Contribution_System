@@ -171,6 +171,13 @@ function postData(data) {
       if (_action === "addContribution") {
         const _sentId = String(data.Id || "");
         setTimeout(function() {
+          // SESSION GUARD: If session was cleared (force logout, cross-device kick) during the
+          // 23-second window (20s timeout + 3s delay), getData("getAllData") would fire with no
+          // userId/token → REJECTED_NO_TOKEN logged as "Unknown". Skip fallback if session gone.
+          try {
+            var _fb_sess = JSON.parse(localStorage.getItem("session") || "null");
+            if (!_fb_sess || !_fb_sess.userId || !_fb_sess.sessionToken) return;
+          } catch(_fbe) { return; }
           mandirCacheBust("getAllData");
           getData("getAllData").then(function(fresh) {
             const contribs = (fresh && fresh.contributions) || [];
@@ -188,6 +195,15 @@ function postData(data) {
       }
     },20000);
     script.onerror=function(){ _fin(); clearTimeout(timer); window[cb]=function(){try{delete window[cb];}catch(e){}}; try{script.remove();}catch(e){} reject(new Error("Network error.")); };
+    // ── AUTO-INJECT session token + userId so every write action is authenticated.
+    // Only fills in missing fields — never overwrites values the caller already set.
+    try {
+      var _sess = JSON.parse(localStorage.getItem("session") || "{}");
+      if (_sess && (_sess.sessionToken || _sess.token)) {
+        if (!data.sessionToken && !data.token) data.sessionToken = _sess.sessionToken || _sess.token || "";
+        if (!data.userId)                       data.userId      = _sess.userId || "";
+      }
+    } catch(_e) { /* never block the call on a storage error */ }
     script.src=API_URL+"?"+new URLSearchParams(data).toString()+"&callback="+cb; document.body.appendChild(script);
   });
 }
@@ -742,9 +758,16 @@ function checkSession() {
 
 /* ═══ LOCAL UPDATE ═══ */
 function updateLocalData(category,id,newData){
-  if(category==="contributions"){let i=data.findIndex(x=>String(x.Id)===String(id));if(i!==-1)data[i]={...data[i],...newData};}
-  else if(category==="expenses"){let i=expenses.findIndex(x=>String(x.Id)===String(id));if(i!==-1)expenses[i]={...expenses[i],...newData};}
-  render();if(typeof renderExpenses==="function")renderExpenses();loadSummary();
+  if(category==="contributions"){
+    let i=data.findIndex(x=>String(x.Id)===String(id));
+    if(i!==-1)data[i]={...data[i],...newData};
+    if(typeof render==="function")render();
+  } else if(category==="expenses"){
+    let i=expenses.findIndex(x=>String(x.Id)===String(id));
+    if(i!==-1)expenses[i]={...expenses[i],...newData};
+    if(typeof renderExpenses==="function")renderExpenses();
+  }
+  loadSummary();
 }
 
 /* ═══ YEAR DROPDOWN ═══ */
@@ -1018,10 +1041,8 @@ setTimeout(function(){ _getLogoB64(function(){}); }, 500);
 
 /** Normalises a ReceiptID: migrates legacy TRX- prefix to APP.receiptPrefix */
 function _displayRID(c) {
-  return (c.ReceiptID || "—").replace(
-    /^TRX-/,
-    (typeof APP !== "undefined" && APP.receiptPrefix ? APP.receiptPrefix : APP.legacyReceiptPrefix || "MNR") + "-"
-  );
+  const prefix = (typeof APP !== "undefined" && APP.receiptPrefix) ? APP.receiptPrefix : "REC";
+  return (c.ReceiptID || "—").replace(/^TRX-/, prefix + "-");
 }
 
 /** Builds the WhatsApp text body for a contribution receipt (no duplicates) */
@@ -1524,7 +1545,7 @@ async function _generateQRDataUrl(text, sizePx) {
 
 /* ═══ VIEW-ONLY DETAIL POPUP ═══ */
 function showDetailPopup(title, rows, editFn){
-  let rowsHtml = rows.map(r=>`<div class="_row"><span class="_rl">${r[0]}</span><span class="_rv">${r[1]}</span></div>`).join("");
+  let rowsHtml = rows.map(r=>`<div class="_row"><span class="_rl">${escapeHtml(String(r[0]||""))}</span><span class="_rv">${escapeHtml(String(r[1]||""))}</span></div>`).join("");
   let editBtn = editFn ? `<button class="_mbtn" style="background:#f7a01a;" onclick="${editFn}"><i class="fa-solid fa-pen"></i> Edit</button>` : "";
   let html=`
     <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> ${title}</h3><button class="_mcls" onclick="closeModal()">×</button></div>
@@ -1555,7 +1576,7 @@ function showVersionInSidebar(containerId) {
 //  login.html has its own copy; these are for the protected pages
 //  to validate and clear the remember-me token on logout.
 // ════════════════════════════════════════════════════════════════
-const REMEMBER_TOKEN_KEY = "mandir_remember_token";
+const REMEMBER_TOKEN_KEY = ((typeof APP !== "undefined" && APP.shortName) ? APP.shortName.toLowerCase() : "mandir") + "_remember_token";
 
 function getRememberToken() {
   try {
