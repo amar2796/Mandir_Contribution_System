@@ -1362,13 +1362,13 @@ function doGet(e) {
         const headers  = allData[0];
         const tokenCol  = headers.indexOf("SessionToken");
         const expiryCol = headers.indexOf("TokenExpiry");
-        if (tokenCol !== -1) {
-          for (let i = 1; i < allData.length; i++) {
-            if (String(allData[i][0]) === userId) {
-              sheet.getRange(i + 1, tokenCol + 1).setValue("");
-              if (expiryCol !== -1) sheet.getRange(i + 1, expiryCol + 1).setValue("");
-              SpreadsheetApp.flush(); break;
-            }
+        // FIX: Clear each column independently — do NOT nest expiryCol inside tokenCol check.
+        // If TokenExpiry column exists but SessionToken does not (edge case), expiry must still clear.
+        for (let i = 1; i < allData.length; i++) {
+          if (String(allData[i][0]) === userId) {
+            if (tokenCol  !== -1) sheet.getRange(i + 1, tokenCol  + 1).setValue("");
+            if (expiryCol !== -1) sheet.getRange(i + 1, expiryCol + 1).setValue("");
+            SpreadsheetApp.flush(); break;
           }
         }
       } catch(e) { /* silent */ }

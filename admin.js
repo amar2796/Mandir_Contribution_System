@@ -669,11 +669,22 @@
     }
 
     function logout() {
-      // Log logout before clearing session
+      // Log logout + clear session token before redirecting
       try {
         const s = JSON.parse(localStorage.getItem("session") || "{}");
         if (s && s.userId) {
           const devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
+          // [SEC] FIX: Clear SessionToken + TokenExpiry on server so the session is immediately
+          // invalidated. Previously only action=logout (audit log only) was called, leaving
+          // the token alive in the sheet until it expired naturally.
+          const clearParams = new URLSearchParams({
+            action:   "clearSessionToken",
+            userId:   s.userId,
+            reason:   "Admin clicked logout button",
+            callback: "cb_clr"
+          });
+          try { navigator.sendBeacon(API_URL + "?" + clearParams.toString()); } catch (e) { }
+          // Also log the logout action for audit trail
           const params = new URLSearchParams({
             action:       "logout",
             userId:       s.userId,
@@ -687,7 +698,7 @@
                      deviceInfo: devInfo, logoutReason: "Admin clicked logout button" }).catch(() => { });
         }
       } catch (e) { }
-      // Set _navFlag so beforeunload skips the beacon (logout already handled token clear above)
+      // Set _navFlag so beforeunload skips the beacon (logout already cleared token above)
       window._navFlag = true;
       clearRememberToken(); // H12: clear remember-me on explicit logout
       localStorage.clear();
@@ -3269,6 +3280,15 @@
         contribEl.value = cur;
       }
 
+      // expYear — expense year dropdown (same year range, plain labels)
+      // FIX: was never populated, leaving the dropdown empty on the Add Expense form
+      const expYearEl = document.getElementById("expYear");
+      if (expYearEl) {
+        expYearEl.innerHTML = sortedYears.map((y) =>
+          `<option value="${y}"${y === cur ? " selected" : ""}>${y}</option>`
+        ).join("");
+      }
+
       // Initialize receipt year hint display
       const hintEl = document.getElementById("contribYearHint");
       if (hintEl) hintEl.textContent = "Receipt will be: MNR-" + cur + "-NNNNN";
@@ -4698,7 +4718,7 @@
       const results = await Promise.all(finalRows.map(function(r) {
         return postData({
           action: "addContribution",
-          Id: Date.now() + "_" + r.month,
+          // [ID] FIX: No Id passed — backend generates CONT-NNNNN for each entry
           UserId: userId, Amount: r.amount, ForMonth: r.month,
           Year: year, TypeId: typeId, OccasionId: "", Note: note,
           sessionToken: s.sessionToken || "", userId: s.userId || ""
@@ -4859,7 +4879,7 @@
         const _ps = JSON.parse(localStorage.getItem("session") || "{}");
         const payload = {
           action: "addContribution",
-          Id: Date.now(),
+          // [ID] FIX: No Id passed — backend generates CONT-NNNNN sequentially
           UserId: userId,
           Amount: amount,
           ForMonth: document.getElementById("prev_month").value,
@@ -4967,7 +4987,7 @@
       try {
         let res = await postData({
           action: "addExpense",
-          Id: Date.now(),
+          // [ID] FIX: No Id passed — backend generates EXP-YYYY-NNNNN sequentially
           Title: title,
           Amount: amount,
           Year: year,
@@ -5755,7 +5775,7 @@
       try {
         const res = await postData({
           action: "addEvent",
-          EventId: "EVT_" + Date.now(),
+          // [ID] FIX: No EventId passed — backend generates EVT-NNNNN sequentially
           EventName: name,
           Category: cat,
           Status: status,
@@ -5911,7 +5931,7 @@
       try {
         const res = await postData({
           action: "addEventExpense",
-          Id: "EEX_" + Date.now(),
+          // [ID] FIX: No Id passed — backend generates EEXP-NNNNN sequentially
           EventId: eventId,
           Title: title,
           Amount: Number(amt),
@@ -6016,12 +6036,10 @@
       let status = document.getElementById("g_status").value;
       if (!name || !target || Number(target) <= 0)
         return toast("Please enter goal name and target amount.", "error");
-      const newGoalId =
-        "G" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
       try {
         let res = await postData({
           action: "addGoal",
-          GoalId: newGoalId,
+          // [ID] FIX: No GoalId passed — backend generates GOAL-NNNNN sequentially
           GoalName: name,
           TargetAmount: target,
           CurrentAmount: current,
@@ -7300,7 +7318,7 @@
       try {
         let payload = {
           action: "addContribution",
-          Id: "wi_" + Date.now(),
+          // [ID] FIX: No Id passed — backend generates CONT-NNNNN sequentially
           UserId: walkInUserId,
           Amount: amount,
           ForMonth: month || "General",
@@ -8365,7 +8383,9 @@
       try {
         const contribRes = await postData({
           action: "addContribution",
-          Id: "REQ_" + (r.ReqId || Date.now()),
+          // [ID] FIX: Do NOT pass Id — backend generates CONT-NNNNN sequentially.
+          // Previously "REQ_" + r.ReqId was passed, bypassing sequential ID generation
+          // and causing duplicate/malformed IDs like REQ_REQ-00001.
           UserId: r.UserId,
           Amount: r.Amount,
           ForMonth: r.ForMonth,
