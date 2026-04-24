@@ -545,28 +545,28 @@
           _pageHiddenAt = null;
           if (hiddenDuration >= _VISIBILITY_TIMEOUT_MS) {
             // Hidden for 30+ min — treat as session timeout, force logout
+            // [FIX] Same race-condition fix as logout(): wait for clearSessionToken
+            // JSONP to resolve before wiping localStorage + redirecting.
             try {
               var s = JSON.parse(localStorage.getItem("session") || "{}");
               if (s && s.userId) {
-                // [FIX-C] sendBeacon → doPost was silently dropped (no handler).
-                // Use postData (JSON → doPost clearSessionToken handler) instead.
+                var _visDone = false;
+                function _visFinish() {
+                  if (_visDone) return; _visDone = true;
+                  localStorage.clear(); sessionStorage.clear(); location.replace("login.html");
+                }
                 postData({
                   action:       "clearSessionToken",
                   userId:       s.userId,
                   sessionToken: s.sessionToken || "",
                   reason:       "Session expired - 30 min screen lock / inactivity"
-                }).catch(function(){
-                  try {
-                    var p = new URLSearchParams({ action:"clearSessionToken", userId:s.userId, reason:"visibility-beacon-fallback", callback:"cb_vis" });
-                    navigator.sendBeacon(API_URL + "?" + p.toString());
-                  } catch(be){}
-                });
+                }).then(function(){ _visFinish(); }).catch(function(){ _visFinish(); });
+                setTimeout(_visFinish, 3000); // safety net
+                return;
               }
-            } catch(e) { console.error("[ADMIN SESSION] visibilitychange error:", e); }
-            localStorage.clear();
-            sessionStorage.clear();
-            location.replace("login.html");
-            return; // stop here — page is redirecting
+            } catch(e) {}
+            localStorage.clear(); sessionStorage.clear(); location.replace("login.html");
+            return;
           }
         }
         // Visible again within timeout — re-check session validity (existing behaviour)
