@@ -201,6 +201,27 @@ function generateSheetId(prefix, yearReset) {
   }
 }
 
+// ── [FIX-1] generateSheetIdForYear — like generateSheetId but uses an explicit year
+// Used for WALKIN IDs so that backdated entries (e.g. year 2025 selected in form)
+// generate WALKIN_2025_NNNNN instead of WALKIN_2026_NNNNN (server clock year).
+function generateSheetIdForYear(prefix, year) {
+  const lock = LockService.getScriptLock();
+  let lockAcquired = false;
+  try {
+    lock.waitLock(10000);
+    lockAcquired = true;
+    const props = PropertiesService.getScriptProperties();
+    const key   = "ID_CNT_" + prefix + "_" + year;
+    let counter = parseInt(props.getProperty(key) || "0", 10);
+    counter++;
+    props.setProperty(key, String(counter));
+    const padded = String(counter).padStart(5, "0");
+    return prefix + "_" + year + "_" + padded; // e.g. WALKIN_2025_00001
+  } finally {
+    if (lockAcquired) lock.releaseLock();
+  }
+}
+
 // ── Role-aware user ID: USER-00001 for members, ADMIN-00001 for admins
 function _genUserId(role) {
   const prefix = (String(role || "").toLowerCase() === "admin") ? "ADMIN" : "USER";
@@ -1324,27 +1345,44 @@ function doGet(e) {
         const headers  = allData[0];
         const tokenCol  = headers.indexOf("SessionToken");
         const expiryCol = headers.indexOf("TokenExpiry");
+        const nameCol   = headers.indexOf("Name");  // [FIX-C] match by Name too
         if (tokenCol === -1) { result = { valid: true }; }
         else {
           let isValid = true;
           let expiredReason = "";
+          let foundRow = -1;
           for (let i = 1; i < allData.length; i++) {
-            if (String(allData[i][0]) === userId) {
-              const stored = String(allData[i][tokenCol] || "").trim();
-              if (stored === "") { isValid = true; break; } // legacy session, allow
-              if (stored !== token) { isValid = false; expiredReason = "token_mismatch"; break; }
-              // [SEC] Check TokenExpiry
-              if (expiryCol !== -1) {
-                const expiryVal = allData[i][expiryCol];
-                if (expiryVal) {
-                  const expiryTime = expiryVal instanceof Date ? expiryVal.getTime() : new Date(expiryVal).getTime();
-                  if (!isNaN(expiryTime) && Date.now() > expiryTime) {
-                    isValid = false; expiredReason = "expired"; break;
-                  }
+            // [FIX-C] Match by UserId (col 0) OR Name — same as _verifySession
+            const rowUserId = String(allData[i][0] || "").trim();
+            const rowName   = nameCol !== -1 ? String(allData[i][nameCol] || "").trim() : "";
+            if (!((rowUserId && rowUserId === userId) || (rowName && rowName === userId))) continue;
+            foundRow = i;
+            const stored = String(allData[i][tokenCol] || "").trim();
+            if (stored === "") { isValid = true; break; }           // legacy session, allow
+            if (stored !== token) { isValid = false; expiredReason = "token_mismatch"; break; }
+            // Check TokenExpiry
+            if (expiryCol !== -1) {
+              const expiryVal = allData[i][expiryCol];
+              if (expiryVal) {
+                const expiryTime = expiryVal instanceof Date ? expiryVal.getTime() : new Date(expiryVal).getTime();
+                if (!isNaN(expiryTime) && Date.now() > expiryTime) {
+                  isValid = false; expiredReason = "expired";
+                  // [FIX-C] Auto-clear stale token + expiry so sheet stays clean
+                  // Previously checkSession only returned { valid:false } but never
+                  // cleaned up — expired token sat in sheet until next manual logout.
+                  try {
+                    sheet.getRange(i + 1, tokenCol  + 1).setValue("");
+                    sheet.getRange(i + 1, expiryCol + 1).setValue("");
+                    SpreadsheetApp.flush();
+                    logAction(userId, "SESSION_EXPIRED_AUTO_CLEARED",
+                      "checkSession detected expiry — token auto-cleared from sheet", "", "",
+                      { severity:"INFO", result:"SUCCESS" });
+                  } catch(clrErr) { /* non-fatal */ }
+                  break;
                 }
               }
-              isValid = true; break;
             }
+            isValid = true; break;
           }
           result = { valid: isValid, reason: expiredReason || undefined };
         }
@@ -1362,10 +1400,15 @@ function doGet(e) {
         const headers  = allData[0];
         const tokenCol  = headers.indexOf("SessionToken");
         const expiryCol = headers.indexOf("TokenExpiry");
+        const nameCol   = headers.indexOf("Name");
         // FIX: Clear each column independently — do NOT nest expiryCol inside tokenCol check.
         // If TokenExpiry column exists but SessionToken does not (edge case), expiry must still clear.
+        // [FIX-2] Match by UserId (col 0) OR Name — mirrors _verifySession so logout always finds the row
+        // even when localStorage stores the user's display name instead of UserId.
         for (let i = 1; i < allData.length; i++) {
-          if (String(allData[i][0]) === userId) {
+          const rowUserId = String(allData[i][0] || "").trim();
+          const rowName   = nameCol !== -1 ? String(allData[i][nameCol] || "").trim() : "";
+          if ((rowUserId && rowUserId === userId) || (rowName && rowName === userId)) {
             if (tokenCol  !== -1) sheet.getRange(i + 1, tokenCol  + 1).setValue("");
             if (expiryCol !== -1) sheet.getRange(i + 1, expiryCol + 1).setValue("");
             SpreadsheetApp.flush(); break;
@@ -2149,9 +2192,11 @@ function doGet(e) {
     const receiptId   = suppliedReceiptId || generateReceiptId(year);
     const paymentMode = sanitize(e.parameter.PaymentMode, 30) || "UPI";
     // [ID] Walk-in signal: frontend sends UserId="WALKIN" → backend generates WALKIN_YYYY_NNNNN
+    // [FIX-1] Use WalkInYear param (form's selected year) so backdated entries get correct year in UserId
     let userId = sanitize(e.parameter.UserId, 30);
     if (userId === "WALKIN") {
-      userId = generateSheetId("WALKIN", true); // e.g. WALKIN_2025_00001
+      const walkInYear = sanitize(e.parameter.WalkInYear, 10) || String(new Date().getFullYear());
+      userId = generateSheetIdForYear("WALKIN", walkInYear); // e.g. WALKIN_2025_00001
     }
     const amount      = Number(sanitize(e.parameter.Amount, 20)) || 0;
     const forMonth    = sanitize(e.parameter.ForMonth, 20);
@@ -2243,10 +2288,11 @@ function doGet(e) {
     }
 
     result = {
-      status:       "success",
-      receiptId:    receiptId,
-      emailSent:    emailSent,
-      emailSkipped: emailSkipped
+      status:        "success",
+      receiptId:     receiptId,
+      walkInUserId:  userId.indexOf("WALKIN_") === 0 ? userId : undefined, // [FIX-1] Return generated ID to client
+      emailSent:     emailSent,
+      emailSkipped:  emailSkipped
     };
   }
 
@@ -3521,6 +3567,34 @@ function doPost(e) {
   let result = {};
   try {
     const data = JSON.parse(e.postData.contents);
+
+    // [FIX-TOKEN] Handle clearSessionToken BEFORE auth check — this action clears
+    // the token itself so it must not require a valid token to run.
+    // Called by admin.js logout() via postData (reliable JSON POST path).
+    if (data.action === "clearSessionToken") {
+      const userId = sanitize(data.userId || data.UserId || "", 30);
+      if (userId) {
+        try {
+          const sheet    = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+          const allData  = sheet.getDataRange().getValues();
+          const headers  = allData[0];
+          const tokenCol  = headers.indexOf("SessionToken");
+          const expiryCol = headers.indexOf("TokenExpiry");
+          const nameCol   = headers.indexOf("Name");
+          for (let i = 1; i < allData.length; i++) {
+            const rowUserId = String(allData[i][0] || "").trim();
+            const rowName   = nameCol !== -1 ? String(allData[i][nameCol] || "").trim() : "";
+            if ((rowUserId && rowUserId === userId) || (rowName && rowName === userId)) {
+              if (tokenCol  !== -1) sheet.getRange(i + 1, tokenCol  + 1).setValue("");
+              if (expiryCol !== -1) sheet.getRange(i + 1, expiryCol + 1).setValue("");
+              SpreadsheetApp.flush(); break;
+            }
+          }
+        } catch(clrErr) { /* non-fatal */ }
+        logAction(userId, "SESSION_TOKEN_CLEARED", "UserId: " + userId, sanitize(data.reason||"Logout",200), "", { severity:"INFO", result:"SUCCESS" });
+      }
+      return ContentService.createTextOutput(JSON.stringify({ status: "ok" })).setMimeType(ContentService.MimeType.JSON);
+    }
 
     // FIX SEC-9: Verify session token on all doPost actions — photo uploads modify Drive and user data
     const _postUserId = sanitize(data.UserId || data.userId || "", 30);

@@ -86,27 +86,38 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
   window._getDeviceInfo = _getDeviceInfo;
 
   function logout() {
+    // [FIX] postData is JSONP (async script tag). Must WAIT for clearSessionToken
+    // to complete before wiping localStorage + redirecting — otherwise the page
+    // unloads before JSONP fires and TokenExpiry is never cleared in the sheet.
+    function _doRedirect() {
+      try { localStorage.removeItem(_U_RMK); } catch (e) { }
+      ["session",_U_RMK,_U_DARK,_U_LANG].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+      sessionStorage.clear();
+      history.replaceState(null, "", "login.html");
+      location.replace("login.html");
+    }
     try {
-      const s = _sess();
+      var s = _sess();
       if (s && s.userId) {
-        const devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
-        const p = new URLSearchParams({
-          action:       "logout",
-          userId:       s.userId,
-          userName:     s.name || "User",
-          deviceInfo:   devInfo,
-          logoutReason: "User clicked logout button",
-          callback:     "cb_logout"
-        });
-        try { navigator.sendBeacon(API_URL + "?" + p.toString()); } catch (e) { }
+        var devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
+        // Audit log — fire-and-forget, do not await
         postData({ action: "logout", userId: s.userId, userName: s.name || "User",
-                   deviceInfo: devInfo, logoutReason: "User clicked logout button" }).catch(() => { });
+                   deviceInfo: devInfo, logoutReason: "User clicked logout button" }).catch(function(){});
+        // Clear server token FIRST, then redirect when done (or after 3s safety timeout)
+        var _done = false;
+        function _finish() { if (_done) return; _done = true; _doRedirect(); }
+        postData({
+          action:       "clearSessionToken",
+          userId:       s.userId,
+          sessionToken: s.sessionToken || "",
+          reason:       "User clicked logout button"
+        }).then(function() { _finish(); }).catch(function() { _finish(); });
+        // Safety net: redirect after 3s even if postData never resolves
+        setTimeout(_finish, 3000);
+        return; // _doRedirect called by _finish above
       }
     } catch (e) { }
-    // H12: also clear remember-me token on explicit logout
-    try { localStorage.removeItem(_U_RMK); } catch (e) { }
-    ["session",_U_RMK,_U_DARK,_U_LANG].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
-    sessionStorage.clear(); setTimeout(() => { history.replaceState(null, "", "login.html"); location.replace("login.html"); }, 150);
+    _doRedirect(); // no session — redirect immediately
   }
 
   function toggleUserDropdown() {

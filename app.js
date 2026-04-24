@@ -594,49 +594,63 @@ function setSessionTokenOnServer(userId, token){
 
   function _poll(){
     try {
-      const s = JSON.parse(localStorage.getItem("session") || "null");
-      // Skip poll entirely if session has no token (old session before redeployment,
-      // or Apps Script not yet updated — never log out in this case)
-      if(!s || !s.userId) return;
-      if(!s.sessionToken) return; // token not set yet — skip silently
-      if(Date.now() > s.expiry) return; // expiry timer handles this separately
+      var s = JSON.parse(localStorage.getItem("session") || "null");
+      if(!s || !s.userId) {
+        return;
+      }
+      if(!s.sessionToken) {
+        return;
+      }
+      if(Date.now() > s.expiry) {
+        return;
+      }
 
-      const cb = "cb_cs_" + Date.now();
-      const script = document.createElement("script");
-      let done = false;
+
+      var cb = "cb_cs_" + Date.now();
+      var script = document.createElement("script");
+      var done = false;
 
       window[cb] = function(res){
         if(done) return; done = true;
         try{ delete window[cb]; script.remove(); }catch(e){}
-        // Only force logout on explicit { valid: false } — not on errors or missing fields
-        if(res && res.valid === false){
-          _forceLogout("⚠️ Your account was logged in from another device. This session has ended.",
-                       "Kicked - login from another device");
+
+        // [DEBUG] Log every poll result clearly
+        if(!res) {
+        } else if(res.valid === true) {
+        } else if(res.valid === false) {
+        } else {
         }
-        // res.valid === true → do nothing, session is valid
-        // res is undefined/error → do nothing, skip this poll safely
+
+        // Only force logout on explicit { valid: false }
+        if(res && res.valid === false){
+          _forceLogout(
+            res.reason === "expired"
+              ? "⏱️ Your session has expired. Please login again."
+              : "⚠️ Your account was logged in from another device. This session has ended.",
+            res.reason === "expired"
+              ? "Session expired - server TokenExpiry past"
+              : "Kicked - login from another device"
+          );
+        }
       };
 
-      const timer = setTimeout(function(){
+      var timer = setTimeout(function(){
         if(done) return; done = true;
-        // On timeout: leave a stub so a late JSONP response doesn't throw ReferenceError
         window[cb] = function(){ try{ delete window[cb]; script.remove(); }catch(e){} };
         try{ script.remove(); }catch(e){}
-        // Timeout — network issue, skip this poll, never log out
       }, 15000);
 
       script.onerror = function(){
         if(done) return; done = true;
         clearTimeout(timer);
         try{ delete window[cb]; script.remove(); }catch(e){}
-        // Script load error (e.g. HTML error page) — skip poll, never crash
       };
 
       script.src = API_URL + "?action=checkSession&userId=" +
         encodeURIComponent(s.userId) + "&token=" +
         encodeURIComponent(s.sessionToken) + "&callback=" + cb;
       document.body.appendChild(script);
-    } catch(e){ /* silent — poll is best-effort */ }
+    } catch(e){ console.error("[SESSION POLL] Unexpected error:", e); }
   }
 
   // Start polling after 30s (extra time for setSessionToken to settle on slow connections)
@@ -662,22 +676,47 @@ function setSessionTokenOnServer(userId, token){
 function _forceLogout(message, logoutReason){
   // Stop session poll immediately so no further API calls fire after logout
   if(window._pollInterval){ clearInterval(window._pollInterval); window._pollInterval = null; }
-  const s = JSON.parse(localStorage.getItem("session") || "null");
+  var s = JSON.parse(localStorage.getItem("session") || "null");
+
+  // [FIX] postData is JSONP (async script tag). Must WAIT for clearSessionToken
+  // to complete before localStorage.clear() + redirect — otherwise the page
+  // unloads before JSONP fires and the token is never cleared in the sheet.
+  function _doRedirect() {
+    window._navFlag = true;
+    localStorage.clear();
+    sessionStorage.clear();
+    toast(message || "Session ended. Please login again.", "warn");
+    setTimeout(function(){ window._navFlag=false; location.replace("login.html"); }, 800);
+  }
+
   try {
     if(s && s.userId){
-      const devInfo = typeof window._getDeviceInfo==="function" ? window._getDeviceInfo() : "";
-      const reason = logoutReason || message || "Session ended";
+      var devInfo = typeof window._getDeviceInfo==="function" ? window._getDeviceInfo() : "";
+      var reason  = logoutReason || message || "Session ended";
+
+      // Audit log — fire-and-forget, do not await
       postData({ action:"logout", userId:s.userId, userName:s.name||"User",
-                 deviceInfo:devInfo, logoutReason:reason }).catch(()=>{});
+                 deviceInfo:devInfo, logoutReason:reason }).catch(function(){});
+
+      // Clear server token, THEN redirect when done (or after 3s safety timeout)
+      var _done = false;
+      function _finish() { if(_done) return; _done=true; _doRedirect(); }
+      postData({
+        action:       "clearSessionToken",
+        userId:       s.userId,
+        sessionToken: s.sessionToken || "",
+        reason:       reason
+      }).then(function(r){
+        _finish();
+      }).catch(function(err){
+        _finish();
+      });
+      // Safety net: redirect after 3s even if postData never resolves
+      setTimeout(_finish, 3000);
+      return; // _doRedirect called by _finish
     }
-  } catch(e){}
-  // Set nav flag so beforeunload does NOT fire another clearSessionToken beacon
-  // (logout already handles token clearing via postData above)
-  window._navFlag = true;
-  localStorage.clear();
-  sessionStorage.clear();
-  toast(message || "Session ended. Please login again.", "warn");
-  setTimeout(()=>{ window._navFlag=false; location.replace("login.html"); }, 2200);
+  } catch(e){ console.error("[SESSION] _forceLogout error:", e); }
+  _doRedirect(); // no session — redirect immediately
 }
 
 /* ── Auto-clear token on browser/tab close ── */
@@ -702,17 +741,26 @@ function _forceLogout(message, logoutReason){
 
   window.addEventListener("beforeunload", function(){
     try {
-      // Skip if this is an in-app navigation (not a true close/refresh)
-      if(window._navFlag) return;
-      const s = JSON.parse(localStorage.getItem("session") || "null");
+      if(window._navFlag) return; // in-app navigation — skip
+      var s = JSON.parse(localStorage.getItem("session") || "null");
       if(!s || !s.userId) return;
-      const params = new URLSearchParams({
-        action:   "clearSessionToken",
-        userId:   String(s.userId),
-        callback: "cb_beacon"
+      // [FIX-B] sendBeacon always sends HTTP POST → hits doPost, not doGet.
+      // clearSessionToken was only in doGet so it was silently dropped every time.
+      // postData (JSON body → doPost) is the correct reliable path.
+      // sendBeacon kept as backup only — browser may still cancel postData on unload.
+      postData({
+        action:       "clearSessionToken",
+        userId:       s.userId,
+        sessionToken: s.sessionToken || "",
+        reason:       "Tab or browser closed"
+      }).catch(function(){
+        // postData cancelled by browser — beacon as last resort
+        try {
+          var p = new URLSearchParams({ action:"clearSessionToken", userId:String(s.userId), reason:"unload-beacon-fallback", callback:"cb_beacon" });
+          navigator.sendBeacon(API_URL + "?" + p.toString());
+        } catch(be){}
       });
-      navigator.sendBeacon(API_URL + "?" + params.toString());
-    } catch(e){ /* silent */ }
+    } catch(e){}
   });
 })();
 

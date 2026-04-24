@@ -446,25 +446,33 @@
 
     /* ── SESSION — security: prevents back-button bypass + URL copy ── */
     function _checkAdminSession() {
-      let s = JSON.parse(localStorage.getItem("session") || "null");
+      var s = JSON.parse(localStorage.getItem("session") || "null");
+
+      // [DEBUG] Log every admin session check — visible in browser DevTools console
+      if (!s) {
+      } else {
+        var _timeLeftSec = Math.round((s.expiry - Date.now()) / 1000);
+      }
+
       if (!s || Date.now() > s.expiry || s.role !== "Admin") {
         // H12: try remember-me token before redirecting to login
         try {
-          const rt = getRememberToken();
+          var rt = getRememberToken();
           if (rt && rt.role === "Admin" && Date.now() < rt.expiry) {
             s = {
               userId: rt.userId, name: rt.name, role: rt.role, email: rt.email || "",
               sessionToken: rt.sessionToken || "", expiry: Date.now() + 30 * 60 * 1000
             };
             localStorage.setItem("session", JSON.stringify(s));
-            return true; // restored from remember-me token
+            return true;
           }
-        } catch (e) { }
+        } catch (e) { console.error("[ADMIN SESSION] remember-me restore error:", e); }
         localStorage.clear();
         history.replaceState(null, "", "login.html");
         location.replace("login.html");
         return false;
       }
+      // Slide client-side expiry forward 30 min (mirrors server sliding window)
       s.expiry = Date.now() + 30 * 60 * 1000;
       localStorage.setItem("session", JSON.stringify(s));
       return true;
@@ -500,15 +508,24 @@
       try {
         var s = JSON.parse(localStorage.getItem("session") || "{}");
         if (s && s.userId && s.sessionToken) {
-          var params = new URLSearchParams({
-            action:   "clearSessionToken",
-            userId:   s.userId,
-            reason:   "Tab or browser closed",
-            callback: "cb_unload"
+          // [FIX-B] sendBeacon always POSTs → hits doPost, not doGet.
+          // clearSessionToken was only in doGet so beacon was silently dropped.
+          // postData (JSON body → doPost) is correct path. Beacon as fallback only.
+          postData({
+            action:       "clearSessionToken",
+            userId:       s.userId,
+            sessionToken: s.sessionToken || "",
+            reason:       "Admin tab or browser closed"
+          }).then(function(r){
+          }).catch(function(){
+            // Browser cancelled postData on unload — beacon as last resort
+            try {
+              var p = new URLSearchParams({ action:"clearSessionToken", userId:s.userId, reason:"unload-beacon-fallback", callback:"cb_unload" });
+              navigator.sendBeacon(API_URL + "?" + p.toString());
+            } catch(be){}
           });
-          navigator.sendBeacon(API_URL + "?" + params.toString());
         }
-      } catch(e) {}
+      } catch(e) { console.error("[ADMIN SESSION] beforeunload error:", e); }
     });
 
     // ── [SEC] SCREEN LOCK / APP SWITCH — Visibility API hidden-duration check
@@ -531,15 +548,21 @@
             try {
               var s = JSON.parse(localStorage.getItem("session") || "{}");
               if (s && s.userId) {
-                var params = new URLSearchParams({
-                  action:   "clearSessionToken",
-                  userId:   s.userId,
-                  reason:   "Session expired - 30 min screen lock / inactivity",
-                  callback: "cb_vis"
+                // [FIX-C] sendBeacon → doPost was silently dropped (no handler).
+                // Use postData (JSON → doPost clearSessionToken handler) instead.
+                postData({
+                  action:       "clearSessionToken",
+                  userId:       s.userId,
+                  sessionToken: s.sessionToken || "",
+                  reason:       "Session expired - 30 min screen lock / inactivity"
+                }).catch(function(){
+                  try {
+                    var p = new URLSearchParams({ action:"clearSessionToken", userId:s.userId, reason:"visibility-beacon-fallback", callback:"cb_vis" });
+                    navigator.sendBeacon(API_URL + "?" + p.toString());
+                  } catch(be){}
                 });
-                navigator.sendBeacon(API_URL + "?" + params.toString());
               }
-            } catch(e) {}
+            } catch(e) { console.error("[ADMIN SESSION] visibilitychange error:", e); }
             localStorage.clear();
             sessionStorage.clear();
             location.replace("login.html");
@@ -669,45 +692,45 @@
     }
 
     function logout() {
-      // Log logout + clear session token before redirecting
-      try {
-        const s = JSON.parse(localStorage.getItem("session") || "{}");
-        if (s && s.userId) {
-          const devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
-          // [SEC] FIX: Clear SessionToken + TokenExpiry on server so the session is immediately
-          // invalidated. Previously only action=logout (audit log only) was called, leaving
-          // the token alive in the sheet until it expired naturally.
-          const clearParams = new URLSearchParams({
-            action:   "clearSessionToken",
-            userId:   s.userId,
-            reason:   "Admin clicked logout button",
-            callback: "cb_clr"
-          });
-          try { navigator.sendBeacon(API_URL + "?" + clearParams.toString()); } catch (e) { }
-          // Also log the logout action for audit trail
-          const params = new URLSearchParams({
-            action:       "logout",
-            userId:       s.userId,
-            userName:     s.name || "Admin",
-            deviceInfo:   devInfo,
-            logoutReason: "Admin clicked logout button",
-            callback:     "cb_logout",
-          });
-          try { navigator.sendBeacon(API_URL + "?" + params.toString()); } catch (e) { }
-          postData({ action: "logout", userId: s.userId, userName: s.name || "Admin",
-                     deviceInfo: devInfo, logoutReason: "Admin clicked logout button" }).catch(() => { });
-        }
-      } catch (e) { }
-      // Set _navFlag so beforeunload skips the beacon (logout already cleared token above)
-      window._navFlag = true;
-      clearRememberToken(); // H12: clear remember-me on explicit logout
-      localStorage.clear();
-      sessionStorage.clear();
-      setTimeout(() => {
-        window._navFlag = false;
+      // [FIX] postData is JSONP (async script tag). We must WAIT for clearSessionToken
+      // to complete before calling localStorage.clear() + location.replace().
+      // Previously localStorage.clear() ran synchronously right after postData() was
+      // called — the page unloaded before the JSONP script tag even got a response,
+      // so the token was never cleared in the sheet.
+      function _doRedirect() {
+        window._navFlag = true;
+        clearRememberToken();
+        localStorage.clear();
+        sessionStorage.clear();
         history.replaceState(null, "", "login.html");
         location.replace("login.html");
-      }, 300);
+      }
+      try {
+        var s = JSON.parse(localStorage.getItem("session") || "{}");
+        if (s && s.userId) {
+          var devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
+          // Fire audit log (fire-and-forget, do not await)
+          postData({ action: "logout", userId: s.userId, userName: s.name || "Admin",
+                     deviceInfo: devInfo, logoutReason: "Admin clicked logout button" }).catch(function(){});
+          // Clear server-side token FIRST, then redirect when done (or after 3s timeout)
+          var _done = false;
+          function _finish() { if (_done) return; _done = true; _doRedirect(); }
+          postData({
+            action:       "clearSessionToken",
+            userId:       s.userId,
+            sessionToken: s.sessionToken || "",
+            reason:       "Admin clicked logout button"
+          }).then(function(r) {
+            _finish();
+          }).catch(function(err) {
+            _finish();
+          });
+          // Safety net: redirect after 3s even if postData never resolves
+          setTimeout(_finish, 3000);
+          return; // _doRedirect called by _finish above
+        }
+      } catch (e) { console.error("[ADMIN SESSION] logout error:", e); }
+      _doRedirect(); // no session — redirect immediately
     }
 
     function toggleAdminDropdown() {
@@ -1417,6 +1440,7 @@
       var session = JSON.parse(localStorage.getItem("session") || "{}");
       var btn = document.getElementById("glryUploadBtn");
       btn.disabled = true;
+      btn._noAutoLoad = true; // [FIX-2] Tell _wrapFn to skip auto-reset — we manage this button manually
       btn.style.cssText = "background:#ccc;color:#fff;border:none;padding:11px 28px;border-radius:8px;font-weight:600;font-size:14px;cursor:not-allowed;width:100%;";
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Uploading...';
       try {
@@ -1444,9 +1468,13 @@
           var tagsEl = document.getElementById("glryTagsInput"); if (tagsEl) tagsEl.value = "";
           document.getElementById("glryCroppedPreviewWrap").style.display = "none";
           document.getElementById("glryCroppedPreviewImg").src = "";
-          btn.disabled = true;
-          btn.style.cssText = "background:#ccc;color:#fff;border:none;padding:11px 28px;border-radius:8px;font-weight:600;font-size:14px;cursor:not-allowed;width:100%;";
+          // [FIX-2] Re-enable button after success so admin can upload another photo
+          btn.disabled = false;
+          btn.style.cssText = "background:#f7a01a;color:#fff;border:none;padding:11px 28px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;width:100%;";
           btn.innerHTML = '<i class="fa-solid fa-upload"></i>&nbsp; Upload to Gallery';
+          // [FIX-2] Bust getGallery cache — upload used raw fetch (not postData) so
+          // _CACHE_BUST_ON_WRITE didn't fire; without this, loadGalleryAdmin shows stale data
+          if (typeof mandirCacheBust === "function") mandirCacheBust("getGallery");
           loadGalleryAdmin();
         } else {
           toast("Upload failed: " + (res.message || "Unknown error"), "error");
@@ -1482,8 +1510,10 @@
               .map(t => '<span style="background:#fef3c7;color:#92400e;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;white-space:nowrap;">' + escapeHtml(t) + '</span>')
               .join(" ")
             : "";
+          // [FIX-1] Use data-drivesrc + data-rawphoto so _lazyLoadDriveImgs()
+          // fetches via base64 proxy — avoids NS_BINDING_ABORTED on Drive URLs
           card.innerHTML =
-            '<img src="' + escapeHtml(p.PhotoURL) + '" alt="' + escapeHtml(p.Caption || "") + '" loading="lazy">' +
+            '<img data-drivesrc="' + escapeHtml(p.PhotoURL) + '" data-rawphoto="' + escapeHtml(p.PhotoURL) + '" alt="' + escapeHtml(p.Caption || "") + '" loading="lazy" src="" style="background:#f1f5f9;">' +
             '<div style="padding:8px 10px 10px;">' +
             '<div style="font-size:12px;font-weight:600;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
             escapeHtml(p.Caption || "—") +
@@ -1497,6 +1527,8 @@
             '<i class="fa-solid fa-trash"></i></button>';
           grid.appendChild(card);
         });
+        // [FIX-1] Trigger lazy Drive image loader after all cards are in DOM
+        if (typeof window._lazyLoadDriveImgs === "function") window._lazyLoadDriveImgs(grid);
       } catch (err) {
         grid.innerHTML = "<p style='color:#e74c3c;font-size:13px;'>Error loading gallery.</p>";
       }
@@ -5823,9 +5855,9 @@
       <label class="_fl">Status</label>
       <select class="_fi" id="ee_status">${stOpts}</select>
       <label class="_fl">Start Date</label>
-      <input class="_fi" type="date" id="ee_start" value="${escapeHtml(ev.StartDate || '')}"/>
+      <input class="_fi" type="date" id="ee_start" value="${escapeHtml((ev.StartDate || '').slice(0, 10))}"/>
       <label class="_fl">End Date</label>
-      <input class="_fi" type="date" id="ee_end" value="${escapeHtml(ev.EndDate || '')}"/>
+      <input class="_fi" type="date" id="ee_end" value="${escapeHtml((ev.EndDate || '').slice(0, 10))}"/>
       <label class="_fl">Budget (₹)</label>
       <input class="_fi" type="number" id="ee_budget" value="${Number(ev.Budget || 0)}" min="0"/>
       <label class="_fl">Description</label>
@@ -7314,12 +7346,14 @@
       if (!name) { if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter donor name.", "error"); }
       if (!amount || Number(amount) <= 0) { if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter a valid amount.", "error"); }
       // [ID] Send "WALKIN" as signal — backend generates WALKIN_YYYY_NNNNN (year-wise sequential)
+      // [FIX-1] Also pass WalkInYear so backend uses the form's selected year (not server clock year)
       const walkInUserId = "WALKIN";
       try {
         let payload = {
           action: "addContribution",
           // [ID] FIX: No Id passed — backend generates CONT-NNNNN sequentially
           UserId: walkInUserId,
+          WalkInYear: year,   // [FIX-1] Backend uses this year for WALKIN_YYYY_NNNNN
           Amount: amount,
           ForMonth: month || "General",
           Year: year,
@@ -7338,6 +7372,7 @@
           toast(msg);
           const mockC = {
             ReceiptID: res.receiptId || "TRX-wi" + Date.now(),
+            UserId: res.walkInUserId || "WALKIN",   // [FIX-4] Use generated WALKIN_YYYY_NNNNN from server
             Amount: amount,
             ForMonth: month || "General",
             Year: year,
