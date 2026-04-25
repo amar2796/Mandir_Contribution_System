@@ -1535,13 +1535,14 @@
     }
 
     async function deleteGalleryPhoto(photoId) {
-      if (!confirm("Delete this photo from the gallery? This cannot be undone.")) return;
-      var session = JSON.parse(localStorage.getItem("session") || "{}");
-      try {
-        var res = await postData({ action: "deleteGalleryPhoto", PhotoId: photoId, AdminName: session.name || "Admin" });
-        if (res.status === "deleted") { toast("Photo deleted from gallery.", "success"); loadGalleryAdmin(); }
-        else toast("Delete failed: " + (res.message || "Not found"), "error");
-      } catch (err) { toast("Error: " + err.message, "error"); }
+      confirmModal("Delete this photo from the gallery? This cannot be undone.", async function() {
+        var session = JSON.parse(localStorage.getItem("session") || "{}");
+        try {
+          var res = await postData({ action: "deleteGalleryPhoto", PhotoId: photoId, AdminName: session.name || "Admin" });
+          if (res.status === "deleted") { toast("Photo deleted from gallery.", "success"); loadGalleryAdmin(); }
+          else toast("Delete failed: " + (res.message || "Not found"), "error");
+        } catch (err) { toast("Error: " + err.message, "error"); }
+      }, "Delete", "#e74c3c");
     }
 
     /* ══════════════════════════════
@@ -1626,13 +1627,14 @@
 
     async function clearAnnouncement() {
       if (!checkSession()) return;
-      if (!confirm("Remove the current announcement banner from the home page?")) return;
-      var session = JSON.parse(localStorage.getItem("session") || "{}");
-      try {
-        var res = await postData({ action: "clearAnnouncement", AdminName: session.name || "Admin" });
-        toast("Banner removed.", "success");
-        loadAnnouncementAdmin();
-      } catch (e) { toast("Error: " + e.message, "error"); }
+      confirmModal("Remove the current announcement banner from the home page?", async function() {
+        var session = JSON.parse(localStorage.getItem("session") || "{}");
+        try {
+          var res = await postData({ action: "clearAnnouncement", AdminName: session.name || "Admin" });
+          toast("Banner removed.", "success");
+          loadAnnouncementAdmin();
+        } catch (e) { toast("Error: " + e.message, "error"); }
+      }, "Remove", "#f7a01a");
     }
 
     async function loadAnnouncementAdmin() {
@@ -3474,7 +3476,7 @@
             <button class="btn-sm btn-info" onclick="viewContrib_receipt('${_rid}')" title="View Receipt"><i class="fa-solid fa-receipt"></i></button>
             <button class="btn-sm" onclick="openEditContrib('${c.Id
             }')" title="Edit"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn-sm btn-danger" onclick="del('${c.Id
+            <button class="btn-sm btn-danger" onclick="deleteContribution('${c.Id
             }')" title="Delete"><i class="fa-solid fa-trash"></i></button>
           </div>
         </td>
@@ -3727,14 +3729,17 @@
               (t) => String(t.ExpenseTypeId) === String(e.ExpenseTypeId)
             )?.Name || "—";
           let mn = e.ForMonth || e.Note || "—";
+          var isCorr = String(e.Id).startsWith("CORR_") || String(e.Title||"").startsWith("↩ VOID:");
+          var corrStyle = isCorr ? "background:#f0fdf4;opacity:0.85;" : "";
+          var amtStyle  = isCorr ? "color:#16a34a;font-weight:600;" : "";
           return `<tr class="clickable-row" onclick="viewExpense('${e.Id
-            }')" title="Click to view details">
+            }')" title="Click to view details" style="${corrStyle}">
         <td>${n}</td>
-        <td><b>${escapeHtml(e.Title || "")}</b></td>
+        <td><b>${isCorr ? '<i class="fa-solid fa-rotate-left" style="color:#16a34a;margin-right:4px;font-size:10px;"></i>' : ''}${escapeHtml(e.Title || "")}</b></td>
         <td>${escapeHtml(tName)}</td>
         <td>${escapeHtml(mn)}</td>
         <td>${escapeHtml(String(e.Year || "—"))}</td>
-        <td class="amt-red">₹ ${fmt(e.Amount)}</td>
+        <td class="${isCorr ? '' : 'amt-red'}" style="${amtStyle}">₹ ${fmt(e.Amount)}</td>
         <td style="font-size:12px;color:#888;">${formatPaymentDate(e.PaymentDate)}</td>
             <td onclick="event.stopPropagation()">
       <div class="action-btns">
@@ -4571,20 +4576,24 @@
             `<option value="${t.TypeId}">${escapeHtml(t.TypeName)}</option>`
         )
         .join("");
-      let yearOpts = Array.from(
-        new Set([
-          ...data.map((d) => Number(d.Year)),
-          new Date().getFullYear(),
-          new Date().getFullYear() + 1,
-        ])
-      )
-        .filter((y) => y > 2000)
-        .sort((a, b) => b - a)
-        .map(
-          (y) =>
-            `<option value="${y}"${y === new Date().getFullYear() ? " selected" : ""
-            }>${y}</option>`
-        )
+      // [FIX-3] Show ALL years from 2020 to current+1 regardless of existing data.
+      // Previously only years found in contributions data were shown — if no entries
+      // existed for a year (e.g. new year or past year), it was missing from the list.
+      var _bkCurYear = new Date().getFullYear();
+      // Use the earliest year from yearConfig (same as contribution records), fallback to current year
+      var _bkStartYear = _bkCurYear;
+      if (typeof yearConfig !== "undefined" && yearConfig.length) {
+        var _ycYears = yearConfig.map(function(r){ return Number(r.Year); }).filter(function(y){ return y > 2000; });
+        if (_ycYears.length) _bkStartYear = Math.min.apply(null, _ycYears);
+      }
+      var _bkYearPool = new Set([...(data||[]).map(function(d){ return Number(d.Year); })]);
+      for (var _y = _bkStartYear; _y <= _bkCurYear + 1; _y++) _bkYearPool.add(_y);
+      let yearOpts = Array.from(_bkYearPool)
+        .filter(function(y){ return y > 2000; })
+        .sort(function(a,b){ return b - a; })
+        .map(function(y){
+          return '<option value="' + y + '"' + (y === _bkCurYear ? ' selected' : '') + '>' + y + '</option>';
+        })
         .join("");
 
       let html = `
@@ -4970,13 +4979,26 @@
         if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
       }
     }
-    async function del(id) {
+    // Exposed as window.deleteContribution so _wrapFn can add spinner to the trash button
+    async function deleteContribution(id) {
       if (!checkSession()) return;
       // UNDO: capture contribution before confirm dialog
       const _undoC = (typeof data !== "undefined") ? data.find(c => String(c.Id) === String(id)) : null;
       const _undoLabel = _undoC ? ("₹" + Number(_undoC.Amount||0).toLocaleString("en-IN") + " — " + (_undoC.ForMonth||"") + " " + (_undoC.Year||"")) : "Contribution";
       const _undoSaved = _undoC ? JSON.parse(JSON.stringify(_undoC)) : null;
-      confirmModal("Delete this contribution?", async () => {
+      // Rich confirm: show exactly which contribution is being deleted
+      const _cMemberName = _undoC ? (typeof users !== "undefined" ? (users.find(function(u){ return String(u.UserId) === String(_undoC.UserId); }) || {}) : {}) : {};
+      const _cName = _cMemberName.Name ? escapeHtml(_cMemberName.Name) : "";
+      const _cDetailHtml = _undoC
+        ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin:0 0 4px;text-align:left;font-size:12.5px;color:#7f1d1d;">' +
+          (_cName ? '<span style="font-weight:700;color:#dc2626;">' + _cName + '</span> &nbsp;·&nbsp; ' : '') +
+          '<span style="color:#b91c1c;">₹' + Number(_undoC.Amount||0).toLocaleString("en-IN") + '</span>' +
+          (_undoC.ForMonth ? ' &nbsp;·&nbsp; <span style="color:#9b1b1b;">' + escapeHtml(_undoC.ForMonth) + ' ' + (_undoC.Year||"") + '</span>' : '') +
+          '</div>'
+        : '';
+      confirmModal(
+        "Delete this contribution?" + (_cDetailHtml ? '<br><br>' + _cDetailHtml : ''),
+        async () => {
         try {
           const _s = JSON.parse(localStorage.getItem("session") || "{}");
           let res = await postData({ action: "deleteContribution", Id: id, AdminName: _s.name || "Admin", sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
@@ -5295,54 +5317,55 @@
     }
 
     async function deleteExpense(id) {
-      // H11: Expense correction entry instead of hard delete
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
-      const html = `
-          <div class="_mhdr"><h3><i class="fa-solid fa-triangle-exclamation" style="color:#e67e22;"></i> Correct / Void Expense</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-          <div class="_mbdy">
-            <p style="font-size:13px;color:#64748b;margin-bottom:16px;">For financial accountability, expenses are not deleted — a correction (reversal) entry is recorded instead. This preserves the full audit trail.</p>
-            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:6px;">Reason for correction *</label>
-            <textarea id="corrReason" placeholder="e.g. Entered wrong amount, duplicate entry, vendor refunded..." style="width:100%;min-height:80px;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
-          </div>
-          <div class="_mft">
-            <button class="_mbtn" style="background:#999;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Cancel</button>
-            <button class="_mbtn" style="background:#e67e22;" onclick="_confirmCorrectionEntry('${id}')"><i class="fa-solid fa-rotate-left"></i> Record Correction Entry</button>
-          </div>`;
-      openModal(html, "480px");
+      if (!checkSession()) return;
+      // Capture expense record before confirm so undo can restore it
+      const _undoE = (typeof expenses !== "undefined") ? expenses.find(function(e){ return String(e.Id) === String(id); }) : null;
+      const _expTitle  = _undoE ? escapeHtml(_undoE.Title || "Expense") : "Expense";
+      const _expAmt    = _undoE ? "₹" + Number(_undoE.Amount||0).toLocaleString("en-IN") : "";
+      const _expMonth  = _undoE ? ((_undoE.ForMonth ? _undoE.ForMonth + " " : "") + (_undoE.Year || "")) : "";
+      const _undoLabel = _expAmt ? (_expAmt + " — " + _expTitle) : _expTitle;
+      const _undoSaved = _undoE ? JSON.parse(JSON.stringify(_undoE)) : null;
+
+      // Rich confirm: show exactly what is being deleted
+      const _detailHtml = _undoE
+        ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin:0 0 4px;text-align:left;font-size:12.5px;color:#7f1d1d;">' +
+          '<span style="font-weight:700;color:#dc2626;">' + _expTitle + '</span>' +
+          (_expAmt    ? ' &nbsp;·&nbsp; <span style="color:#b91c1c;">' + _expAmt + '</span>' : '') +
+          (_expMonth  ? ' &nbsp;·&nbsp; <span style="color:#9b1b1b;">' + _expMonth + '</span>' : '') +
+          '</div>'
+        : '';
+
+      confirmModal(
+        "Delete this expense?" + (_detailHtml ? '<br><br>' + _detailHtml : ''),
+        async function() {
+          try {
+            const _s = JSON.parse(localStorage.getItem("session") || "{}");
+            const res = await postData({ action: "deleteExpense", Id: id, AdminName: _s.name || "Admin", sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
+            if (res.status === "deleted" || res.status === "success") {
+              smartRefresh("expenses");
+              if (_undoSaved && typeof _showUndoToast === "function") {
+                _showUndoToast(_undoLabel, function() {
+                  var payload = Object.assign({ action: "addExpense" }, _undoSaved);
+                  postData(payload).then(function() {
+                    smartRefresh("expenses");
+                    toast("↩ Expense restored.");
+                  });
+                });
+              } else {
+                toast("✅ Expense deleted.");
+              }
+            } else {
+              toast("❌ Delete failed: " + (res.message || ""), "error");
+            }
+          } catch (err) {
+            toast("❌ " + err.message, "error");
+          }
+        }
+      );
     }
 
-    async function _confirmCorrectionEntry(expId) {
-      const reason = (document.getElementById("corrReason") || {}).value || "";
-      if (!reason.trim()) { toast("Please enter a reason for the correction.", "warn"); return; }
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
-      try {
-        closeModal();
-        // Fetch the expense to get its amount
-        const allExp = expenses || [];
-        const exp = allExp.find(e => String(e.Id) === String(expId));
-        if (!exp) { toast("Expense not found in local data.", "error"); return; }
-        // Create a negative correction entry
-        const corrId = "CORR_" + Date.now();
-        const res = await postData({
-          action: "addExpense",
-          Id: corrId,
-          Title: "CORRECTION: " + (exp.Title || "Expense") + " | Reason: " + reason,
-          Amount: -(Math.abs(Number(exp.Amount || 0))),
-          Year: exp.Year || new Date().getFullYear(),
-          ExpenseTypeId: exp.ExpenseTypeId || "",
-          ForMonth: exp.ForMonth || "",
-          AdminName: s.name || "Admin",
-          sessionToken: s.sessionToken || "",
-          userId: s.userId || ""
-        });
-        if (res.status === "success") {
-          toast("✅ Correction entry recorded. Original expense preserved in audit trail.");
-          smartRefresh("expenses");
-        } else {
-          toast("❌ Failed to record correction: " + (res.message || ""), "error");
-        }
-      } catch (err) { toast("❌ " + err.message, "error"); }
-    }
+    // _confirmCorrectionEntry kept as no-op stub so _wrapFn spinner list doesn't break
+    async function _confirmCorrectionEntry() {}
     async function addUser() {
       if (!checkSession()) return;
       let name = document.getElementById("u_name").value.trim(),
@@ -8401,20 +8424,38 @@
       openModal(html, "460px");
       setTimeout(function () {
         const btn = document.getElementById("_approveReqBtn");
-        if (btn) btn.addEventListener("click", function () {
+        if (btn) btn.addEventListener("click", async function () {
+          if (btn._inFlight) return; // double-submit guard
           const selTypeId = (document.getElementById("_approveTypeSelect") || {}).value || "";
           if (!selTypeId) { toast("Please select a contribution type.", "warn"); return; }
-          closeModal();
-          _doApproveContribRequest(r, selTypeId);
+          // Keep modal open — show spinner until processing finishes
+          btn._inFlight = true;
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Approving...';
+          var cancelBtn = btn.parentElement ? btn.parentElement.querySelector("button:not(#_approveReqBtn)") : null;
+          if (cancelBtn) cancelBtn.disabled = true;
+          await _doApproveContribRequest(r, selTypeId, btn, cancelBtn);
         });
       }, 150);
     }
 
-    async function _doApproveContribRequest(r, selTypeId) {
-      if (!checkSession()) return;
+    async function _doApproveContribRequest(r, selTypeId, _btn, _cancelBtn) {
+      if (!checkSession()) {
+        // Re-enable buttons if session check fails
+        if (_btn) { _btn._inFlight = false; _btn.disabled = false; _btn.innerHTML = '<i class="fa-solid fa-check"></i> Approve &amp; Record'; }
+        if (_cancelBtn) _cancelBtn.disabled = false;
+        return;
+      }
       if (window._approveReqInFlight) return; // double-submit guard
       window._approveReqInFlight = true;
       const s = JSON.parse(localStorage.getItem("session") || "{}");
+
+      function _resetApproveBtn() {
+        if (_btn) { _btn._inFlight = false; _btn.disabled = false; _btn.innerHTML = '<i class="fa-solid fa-check"></i> Approve &amp; Record'; }
+        if (_cancelBtn) _cancelBtn.disabled = false;
+        window._approveReqInFlight = false;
+      }
+
       try {
         const contribRes = await postData({
           action: "addContribution",
@@ -8432,7 +8473,7 @@
         });
         if (!contribRes || contribRes.status !== "success") {
           toast("Failed to record contribution.", "error");
-          window._approveReqInFlight = false;
+          _resetApproveBtn();
           return;
         }
         let resolveRes;
@@ -8448,28 +8489,32 @@
           // FIX: addContribution already succeeded — warn admin rather than silently failing.
           // The contribution is recorded but the request stays "Pending" until manually resolved.
           toast("⚠️ Contribution recorded but request status update failed. Please re-open this request and approve again to resolve it.", "warn");
+          closeModal();
           loadContributionRequests();
-          window._approveReqInFlight = false;
+          _resetApproveBtn();
           return;
         }
         if (resolveRes && resolveRes.status === "already_resolved") {
           toast("⚠️ This request was already approved by another admin.", "warn");
+          closeModal();
           loadContributionRequests();
-          window._approveReqInFlight = false;
+          _resetApproveBtn();
           return;
         }
         let msg = "Request approved! Receipt: " + (contribRes.receiptId || "");
         if (contribRes.emailSent) msg += " · Receipt email sent";
         if (contribRes.emailSkipped) msg += " · Email quota reached";
+        // Close modal only after full success
+        closeModal();
         toast(msg);
         // D7: removed manual mandirCacheBust("getAllData") — addContribution is in
         // _CACHE_BUST_ON_WRITE so postData() already busted it automatically.
         smartRefresh("contributions");
         loadContributionRequests();
-        window._approveReqInFlight = false;
+        _resetApproveBtn();
       } catch (err) {
-        window._approveReqInFlight = false;
         toast("Error: " + err.message, "error");
+        _resetApproveBtn();
       }
     }
 
@@ -8490,21 +8535,32 @@
       openModal(html, "460px");
       setTimeout(function () {
         const btn = document.getElementById("_rejectReqBtn");
-        if (btn) btn.addEventListener("click", function () {
+        if (btn) btn.addEventListener("click", async function () {
           if (btn._inFlight) return; // double-submit guard
           btn._inFlight = true;
           btn.disabled = true;
           btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Rejecting...';
+          var cancelBtn = btn.parentElement ? btn.parentElement.querySelector("button:not(#_rejectReqBtn)") : null;
+          if (cancelBtn) cancelBtn.disabled = true;
           const reason = (document.getElementById("_rejectReasonInput") || {}).value || "";
-          closeModal();
-          _doRejectContribRequest(r, reason);
+          await _doRejectContribRequest(r, reason, btn, cancelBtn);
         });
       }, 150);
     }
 
-    async function _doRejectContribRequest(r, reason) {
-      if (!checkSession()) return;
+    async function _doRejectContribRequest(r, reason, _btn, _cancelBtn) {
+      if (!checkSession()) {
+        if (_btn) { _btn._inFlight = false; _btn.disabled = false; _btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Reject Request'; }
+        if (_cancelBtn) _cancelBtn.disabled = false;
+        return;
+      }
       const s = JSON.parse(localStorage.getItem("session") || "{}");
+
+      function _resetRejectBtn() {
+        if (_btn) { _btn._inFlight = false; _btn.disabled = false; _btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Reject Request'; }
+        if (_cancelBtn) _cancelBtn.disabled = false;
+      }
+
       try {
         await postData({
           action: "resolveContributionRequest",
@@ -8513,11 +8569,15 @@
           AdminName: s.Name || "Admin",
           RejectionNote: reason
         });
+        // Close modal only after success
+        closeModal();
         toast("Request rejected" + (reason ? " with reason." : "."), "warn");
         loadContributionRequests();
         smartRefresh("requests"); // C3: update badge + contributions list (mirrors approve flow)
+        _resetRejectBtn();
       } catch (err) {
         toast("Error: " + err.message, "error");
+        _resetRejectBtn();
       }
     }
 
@@ -10430,6 +10490,7 @@
       'saveEditContrib','saveEditUser','saveEditEvent','saveEventExpense','saveEditGoal',
       'saveAnnouncement','clearAnnouncement','saveChatbotSettings',
       'saveWalkIn','saveAdminProfile','saveAdminNewPassword',
+      'deleteContribution','deleteUser','deleteType','deleteOccasion','deleteExpenseType',
       'deleteExpense','deleteEvent','deleteGoal','deleteGalleryPhoto',
       'uploadGalleryPhoto','uploadExpenseReceipt','openReceiptAttach',
       'exportContribCSV','exportExpenseCSV','exportAuditCSV','exportAnnualReportPDF',
@@ -10437,7 +10498,7 @@
       'sendBroadcast','scheduleBroadcast','previewBroadcast',
       'sendTrackerMsg','sendWhatsAppReport','sendWhatsAppPDFReport',
       'triggerManualMonthlyReport',
-      'runHealthCheck','runTracker',
+      'runHealthCheck','runTracker','loadTrafficStats',
       'runBulkInsert','_executeBulkInsert',
       'loadContributionRequests','loadFeedbackAdmin','loadAuditLog','loadYearSummary',
       'refreshDashboardData',
@@ -10457,6 +10518,9 @@
       saveEditEvent: 'Saving…', saveAnnouncement: 'Saving…', saveChatbotSettings: 'Saving…',
       saveWalkIn: 'Saving…', saveAdminProfile: 'Saving…',
       saveAdminNewPassword: 'Updating…',
+      deleteContribution: 'Deleting…',
+      deleteUser: 'Deleting…', deleteType: 'Deleting…',
+      deleteOccasion: 'Deleting…', deleteExpenseType: 'Deleting…',
       deleteExpense: 'Deleting…', deleteEvent: 'Deleting…', deleteGoal: 'Deleting…',
       deleteGalleryPhoto: 'Deleting…',
       uploadGalleryPhoto: 'Uploading…', uploadExpenseReceipt: 'Uploading…',
@@ -10466,7 +10530,7 @@
       sendBroadcast: 'Sending…', sendTrackerMsg: 'Sending…',
       sendWhatsAppReport: 'Preparing…', sendWhatsAppPDFReport: 'Preparing PDF…',
       triggerManualMonthlyReport: 'Sending…',
-      runHealthCheck: 'Checking…', runTracker: 'Loading…',
+      runHealthCheck: 'Checking…', runTracker: 'Loading…', loadTrafficStats: 'Loading…',
       runBulkInsert: 'Inserting…',
       loadContributionRequests: 'Loading…', loadFeedbackAdmin: 'Loading…',
       loadAuditLog: 'Loading…', loadYearSummary: 'Loading…',
@@ -10523,6 +10587,11 @@
         const btn = (window._lastClickedBtn && window._lastClickedBtn._fnName === fnName)
           ? window._lastClickedBtn.el : null;
 
+        // [FIX-4] Double-click prevention: if this button already has a request in-flight,
+        // silently ignore the second click. Resets automatically when the promise settles.
+        if (btn && btn._inFlight) return;
+        if (btn) btn._inFlight = true;
+
         const result = orig.apply(this, args);
 
         if (result && typeof result.then === 'function') {
@@ -10532,10 +10601,15 @@
           // Skipping _setBtnLoading for these prevents a double-spinner conflict.
           if (btn && !btn._noAutoLoad) _setBtnLoading(btn, fnName);
           result.then(() => {
+            if (btn) btn._inFlight = false;
             if (btn && !btn._noAutoLoad) { _resetBtn(btn); _flashSuccess(btn); }
           }).catch(() => {
+            if (btn) btn._inFlight = false;
             if (btn && !btn._noAutoLoad) _resetBtn(btn);
           });
+        } else {
+          // Sync function — clear flag immediately
+          if (btn) btn._inFlight = false;
         }
         return result;
       };
@@ -10831,55 +10905,103 @@
     function _showUndoToast(label, undoFn) {
       // Remove existing undo toast if any
       var ex = document.getElementById("_undoToast");
-      if (ex) ex.remove();
+      if (ex) { ex.style.animation = "_undoSlideOut 0.2s ease forwards"; setTimeout(function(){ if(ex.parentNode) ex.remove(); }, 200); }
       if (_undoQueue && _undoQueue.timer) clearTimeout(_undoQueue.timer);
+      if (_undoQueue && _undoQueue.rafId) cancelAnimationFrame(_undoQueue.rafId);
 
-      var toast = document.createElement("div");
-      toast.id = "_undoToast";
-      // FIX: Moved from bottom-center to top-right below the header.
-      // top:68px clears the fixed sidebar header on desktop and app header on mobile.
-      // max-width + right:16px keeps it safe on narrow mobile screens.
-      toast.style.cssText =
+      var DURATION = 30000; // 30 seconds
+      var _startTime = Date.now();
+
+      var toastEl = document.createElement("div");
+      toastEl.id = "_undoToast";
+      toastEl.style.cssText =
         "position:fixed;top:68px;right:16px;" +
-        "background:#1e293b;color:#fff;padding:12px 16px;border-radius:12px;" +
+        "background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);" +
+        "color:#fff;padding:14px 16px 14px 14px;border-radius:16px;" +
         "font-size:13px;font-family:Poppins,sans-serif;z-index:99999;" +
         "display:flex;align-items:center;gap:12px;" +
-        "box-shadow:0 8px 28px rgba(0,0,0,0.35);" +
+        "box-shadow:0 12px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(255,255,255,0.06);" +
         "max-width:calc(100vw - 32px);box-sizing:border-box;" +
-        "animation:_undoSlideIn 0.25s ease;";
-      toast.innerHTML =
-        '<span style="flex:1;min-width:0;">🗑️ <b>' + label + '</b> deleted</span>' +
-        '<button onclick="_doUndo()" style="background:#f7a01a;border:none;color:#fff;' +
-        'padding:5px 14px;border-radius:7px;cursor:pointer;font-weight:700;font-size:12px;' +
-        'font-family:Poppins,sans-serif;box-shadow:none;white-space:nowrap;flex-shrink:0;">↩ Undo</button>' +
-        '<div id="_undoProgress" style="position:absolute;bottom:0;left:0;height:3px;' +
-        'background:#f7a01a;border-radius:0 0 12px 12px;width:100%;' +
-        'transition:width 30s linear;"></div>';
-      document.body.appendChild(toast);
+        "animation:_undoSlideIn 0.3s cubic-bezier(.34,1.56,.64,1);";
 
-      // Animate progress bar
-      requestAnimationFrame(function() {
-        var bar = document.getElementById("_undoProgress");
-        if (bar) { bar.style.transition = "width 30s linear"; bar.style.width = "0%"; }
-      });
+      // SVG countdown ring (38px circle, 30s drain)
+      var R = 15, CIRC = 2 * Math.PI * R;
+      toastEl.innerHTML =
+        // Ring container
+        '<div style="position:relative;flex-shrink:0;width:38px;height:38px;">' +
+          '<svg width="38" height="38" viewBox="0 0 38 38" style="transform:rotate(-90deg);">' +
+            '<circle cx="19" cy="19" r="' + R + '" fill="none" stroke="rgba(247,160,26,0.18)" stroke-width="3"/>' +
+            '<circle id="_undoRing" cx="19" cy="19" r="' + R + '" fill="none" stroke="#f7a01a" stroke-width="3"' +
+            ' stroke-dasharray="' + CIRC + '" stroke-dashoffset="0" stroke-linecap="round"' +
+            ' style="transition:stroke-dashoffset 0.1s linear;"/>' +
+          '</svg>' +
+          '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#f7a01a;" id="_undoSec">30</span>' +
+        '</div>' +
+        // Text
+        '<div style="flex:1;min-width:0;line-height:1.4;">' +
+          '<div style="font-size:11px;font-weight:600;color:#f7a01a;letter-spacing:0.4px;text-transform:uppercase;margin-bottom:1px;">Deleted</div>' +
+          '<div style="font-size:12.5px;font-weight:600;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + label + '">' + label + '</div>' +
+        '</div>' +
+        // Undo button
+        '<button id="_undoBtn" onclick="_doUndo()" style="' +
+          'background:linear-gradient(135deg,#f7a01a,#f59e0b);border:none;color:#fff;' +
+          'padding:7px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-size:12px;' +
+          'font-family:Poppins,sans-serif;box-shadow:0 4px 12px rgba(247,160,26,0.4);' +
+          'white-space:nowrap;flex-shrink:0;transition:transform 0.1s,box-shadow 0.1s;' +
+          'display:flex;align-items:center;gap:6px;">' +
+          '<i class="fa-solid fa-rotate-left"></i> Undo' +
+        '</button>';
+
+      document.body.appendChild(toastEl);
+
+      // Hover effects on undo button
+      var btn = document.getElementById("_undoBtn");
+      if (btn) {
+        btn.onmouseenter = function(){ this.style.transform="scale(1.06)"; this.style.boxShadow="0 6px 18px rgba(247,160,26,0.55)"; };
+        btn.onmouseleave = function(){ this.style.transform=""; this.style.boxShadow="0 4px 12px rgba(247,160,26,0.4)"; };
+      }
+
+      // Animate ring drain frame-by-frame
+      function _animateRing() {
+        var elapsed = Date.now() - _startTime;
+        var progress = Math.min(elapsed / DURATION, 1);
+        var ring = document.getElementById("_undoRing");
+        var sec  = document.getElementById("_undoSec");
+        if (ring) ring.style.strokeDashoffset = String(CIRC * progress);
+        if (sec)  sec.textContent = String(Math.max(0, Math.ceil((DURATION - elapsed) / 1000)));
+        // Change ring color to red in last 5s
+        if (ring) ring.style.stroke = elapsed > DURATION * 0.83 ? "#ef4444" : "#f7a01a";
+        if (sec)  sec.style.color   = elapsed > DURATION * 0.83 ? "#ef4444" : "#f7a01a";
+        if (progress < 1 && document.getElementById("_undoToast")) {
+          _undoQueue.rafId = requestAnimationFrame(_animateRing);
+        }
+      }
 
       _undoQueue = {
         undoFn: undoFn,
+        rafId: requestAnimationFrame(_animateRing),
         timer: setTimeout(function() {
           var t = document.getElementById("_undoToast");
-          if (t) t.remove();
+          if (t) { t.style.animation = "_undoSlideOut 0.25s ease forwards"; setTimeout(function(){ if(t.parentNode) t.remove(); }, 250); }
           _undoQueue = null;
-        }, 30000)
+        }, DURATION)
       };
     }
 
     window._doUndo = function() {
       if (!_undoQueue) return;
       clearTimeout(_undoQueue.timer);
+      if (_undoQueue.rafId) cancelAnimationFrame(_undoQueue.rafId);
       var fn = _undoQueue.undoFn;
       _undoQueue = null;
       var t = document.getElementById("_undoToast");
-      if (t) t.remove();
+      if (t) {
+        // Flash green before dismissing
+        t.style.background = "linear-gradient(135deg,#14532d,#166534)";
+        t.style.boxShadow = "0 12px 40px rgba(34,197,94,0.35)";
+        t.style.transition = "background 0.2s,box-shadow 0.2s";
+        setTimeout(function(){ t.style.animation = "_undoSlideOut 0.25s ease forwards"; setTimeout(function(){ if(t.parentNode) t.remove(); }, 250); }, 200);
+      }
       if (typeof fn === "function") fn();
     };
 
@@ -10890,7 +11012,9 @@
 
     // Inject undo animation keyframes
     var undoStyle = document.createElement("style");
-    undoStyle.textContent = "@keyframes _undoSlideIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }";
+    undoStyle.textContent =
+      "@keyframes _undoSlideIn { from{opacity:0;transform:translateX(30px) scale(0.95)} to{opacity:1;transform:translateX(0) scale(1)} }" +
+      "@keyframes _undoSlideOut { from{opacity:1;transform:translateX(0) scale(1)} to{opacity:0;transform:translateX(30px) scale(0.92)} }";
     document.head.appendChild(undoStyle);
 
 

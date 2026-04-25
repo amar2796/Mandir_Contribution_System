@@ -756,25 +756,26 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
   async function _mobileResendOTP() {
     const resendBtn = document.getElementById("_mobileResendBtn");
     const countdownEl = document.getElementById("_mobileResendCountdown");
-    if (resendBtn) { resendBtn.style.display = "none"; }
+    if (resendBtn) { resendBtn.disabled = true; resendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size:10px;"></i> Sending…'; }
     if (countdownEl) { countdownEl.style.display = ""; }
     // Go back to step 2 state briefly, then re-trigger send
     const newMobile = (document.getElementById("_mobileNewInput") || {}).value || "";
-    if (!newMobile) { _mobilePopupMsg("Please go back and re-enter mobile number.", false); return; }
+    if (!newMobile) { _mobilePopupMsg("Please go back and re-enter mobile number.", false); if (resendBtn) { resendBtn.disabled = false; resendBtn.style.display = "inline-block"; resendBtn.innerHTML = '<i class="fa-solid fa-rotate-right" style="font-size:10px;"></i> Resend OTP'; } return; }
     const s = (_sess() || {});
     _mobilePopupMsg("", true);
     try {
       const res = await getData("sendMobileChangeOTP&userId=" + encodeURIComponent(s.userId) + "&newMobile=" + encodeURIComponent(newMobile));
       if (res && res.status === "success") {
         _mobilePopupMsg("✅ OTP resent to your registered email.", true);
+        if (resendBtn) { resendBtn.style.display = "none"; resendBtn.disabled = false; resendBtn.innerHTML = '<i class="fa-solid fa-rotate-right" style="font-size:10px;"></i> Resend OTP'; }
         _startMobileOtpCountdown(5 * 60);
       } else {
         _mobilePopupMsg("❌ " + (res?.message || "Failed to resend OTP."), false);
-        if (resendBtn) resendBtn.style.display = "inline-block";
+        if (resendBtn) { resendBtn.disabled = false; resendBtn.style.display = "inline-block"; resendBtn.innerHTML = '<i class="fa-solid fa-rotate-right" style="font-size:10px;"></i> Resend OTP'; }
       }
     } catch(e) {
       _mobilePopupMsg("❌ " + e.message, false);
-      if (resendBtn) resendBtn.style.display = "inline-block";
+      if (resendBtn) { resendBtn.disabled = false; resendBtn.style.display = "inline-block"; resendBtn.innerHTML = '<i class="fa-solid fa-rotate-right" style="font-size:10px;"></i> Resend OTP'; }
     }
   }
 
@@ -789,25 +790,32 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
     const rawDob = (document.getElementById("ep_dob")?.value || "").trim();
     const dob = rawDob ? rawDob.split("-").reverse().join("-") : (myProfile?.DOB || "");
     if (!name) { toast("Name cannot be empty.", "error"); return; }
+
+    // Lock the Save button for the full duration of the async operation
+    const _saveBtn = document.querySelector("._mbtn[onclick='saveProfile()']") ||
+                     document.querySelector("._mft ._mbtn:last-child");
+    if (_saveBtn) { _saveBtn.disabled = true; _saveBtn.dataset.origHtml = _saveBtn.innerHTML; _saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving…'; }
+
     let photoURL = myProfile?.PhotoURL || "";
     if (_pendingCroppedB64) {
-      toast("Uploading photo...", "warn");
+      if (_saveBtn) _saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading photo…';
       try {
         const _uploadCtrl = new AbortController();
         const _uploadTimer = setTimeout(function() { _uploadCtrl.abort(); }, 60000);
         let resp = await fetch(API_URL, { method: "POST", signal: _uploadCtrl.signal, body: JSON.stringify({ action: "uploadAndSaveProfile", UserId: s.userId, Name: name, Mobile: myProfile?.Mobile || "", Role: s.role, Password: "", Email: email, Village: village, Address: address, DOB: dob, Status: "Active", AdminName: name, base64: _pendingCroppedB64, fileName: "User_" + s.userId + "_" + Date.now() + ".jpg", oldPhotoURL: myProfile?.PhotoURL || "", sessionToken: s.sessionToken || "" }) });
         clearTimeout(_uploadTimer);
-        let res = await resp.json(); if (res.status === "success") { photoURL = res.photoUrl; if (myProfile?.PhotoURL) delete window._photoB64Cache[myProfile.PhotoURL]; toast("✅ Photo uploaded!"); } else toast("Photo upload failed, profile still updating.", "warn");
+        let res = await resp.json(); if (res.status === "success") { photoURL = res.photoUrl; if (myProfile?.PhotoURL) delete window._photoB64Cache[myProfile.PhotoURL]; } else toast("Photo upload failed, profile still updating.", "warn");
       } catch (e) {
-        if (e.name === "AbortError") { toast("Upload timed out. Try a smaller photo.", "error"); return; }
+        if (e.name === "AbortError") { toast("Upload timed out. Try a smaller photo.", "error"); if (_saveBtn) { _saveBtn.disabled = false; _saveBtn.innerHTML = _saveBtn.dataset.origHtml; } return; }
         toast("Photo upload error: " + e.message, "warn");
       }
     }
     try {
+      if (_saveBtn) _saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving…';
       let res = await postData({ action: "updateUser", UserId: s.userId, Name: name, Mobile: myProfile?.Mobile || "", Role: s.role, Status: myProfile?.Status || "Active", Email: email, Village: village, Address: address, DOB: dob, Password: "", PhotoURL: photoURL, AdminName: name, sessionToken: s.sessionToken || "" });
       if (res.status === "updated") { s.name = name; s.email = email; s.expiry = Date.now() + 30 * 60 * 1000; localStorage.setItem("session", JSON.stringify(s)); _pendingCroppedB64 = ""; toast("✅ Profile updated!"); closeModal(); _refreshAfterProfileSave(); }
-      else toast("❌ Update failed.", "error");
-    } catch (err) { toast("❌ " + err.message, "error"); }
+      else { toast("❌ Update failed.", "error"); if (_saveBtn) { _saveBtn.disabled = false; _saveBtn.innerHTML = _saveBtn.dataset.origHtml; } }
+    } catch (err) { toast("❌ " + err.message, "error"); if (_saveBtn) { _saveBtn.disabled = false; _saveBtn.innerHTML = _saveBtn.dataset.origHtml; } }
   }
 
   /* Silent refresh after a successful profile save — avoids triggering
@@ -3703,20 +3711,22 @@ if (isDark) {
     const wrap = document.getElementById("del-wrap-" + reqId);
     if (!wrap) return;
     wrap.innerHTML = `<span style="font-size:11px;color:var(--ink-soft);font-weight:600;white-space:nowrap;">Sure?</span>
-      <button onclick="_deleteContribRequest('${reqId}')" style="background:#ef4444;border:none;color:#fff;font-size:11px;padding:4px 10px;border-radius:20px;cursor:pointer;font-weight:700;box-shadow:none;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-check"></i> Yes</button>
+      <button id="_delYes_${reqId}" onclick="_deleteContribRequest('${reqId}', this)" style="background:#ef4444;border:none;color:#fff;font-size:11px;padding:4px 10px;border-radius:20px;cursor:pointer;font-weight:700;box-shadow:none;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-check"></i> Yes</button>
       <button onclick="_loadUserContribRequests()" style="background:var(--bg2);border:none;color:var(--ink-mid);font-size:11px;padding:4px 10px;border-radius:20px;cursor:pointer;font-weight:700;box-shadow:none;">No</button>`;
   }
 
-  async function _deleteContribRequest(reqId) {
+  async function _deleteContribRequest(reqId, yesBtn) {
     const s = (_sess() || {});
+    if (yesBtn) { yesBtn.disabled = true; yesBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
     try {
       const res = await postData({ action: "deleteContributionRequest", ReqId: reqId, userId: s.userId, sessionToken: s.sessionToken || "" });
       if (res?.status === "success" || res?.status === "deleted") {
         _loadUserContribRequests();
       } else {
         toast("Could not delete: " + (res?.message || "Unknown error"), "error");
+        if (yesBtn) { yesBtn.disabled = false; yesBtn.innerHTML = '<i class="fa-solid fa-check"></i> Yes'; }
       }
-    } catch (err) { console.error("[deleteContribRequest] Error:", err); toast("Error deleting request. Please try again.", "error"); }
+    } catch (err) { console.error("[deleteContribRequest] Error:", err); toast("Error deleting request. Please try again.", "error"); if (yesBtn) { yesBtn.disabled = false; yesBtn.innerHTML = '<i class="fa-solid fa-check"></i> Yes'; } }
   }
 
   // ── Preview slip in fullscreen modal — handles Google Drive thumbnail URLs
