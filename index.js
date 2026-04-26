@@ -4,8 +4,12 @@
       var _swiperInstance = null;
 
       function loadGallery() {
+        // Show skeleton on start
+        var loadEl = document.getElementById("galleryLoading");
+        if (loadEl) loadEl.style.display = "block";
+
         getData("getGallery").then(function(photos) {
-          document.getElementById("galleryLoading").style.display = "none";
+          if (loadEl) loadEl.style.display = "none";
           if (!Array.isArray(photos) || photos.length === 0) {
             document.getElementById("galleryEmpty").style.display = "block";
             return;
@@ -14,7 +18,7 @@
           _buildSwiper();
           document.getElementById("galleryCarouselWrap").style.display = "block";
         }).catch(function() {
-          document.getElementById("galleryLoading").style.display = "none";
+          if (loadEl) loadEl.style.display = "none";
           document.getElementById("galleryEmpty").style.display = "block";
         });
       }
@@ -523,33 +527,84 @@ var _trLoaded = false;
         setInterval(createFloatingRam, 900);
       }, 2000);
 
-      /* FIX #1 & #3: Feedback submit */
+      /* ── Input validation helpers ── */
+      function _fbSetError(id, msg) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add('input-error');
+        el.classList.remove('input-ok');
+        // Show inline error message if sibling .field-error-msg exists
+        var next = el.nextElementSibling;
+        if (next && next.classList.contains('field-error-msg')) {
+          next.textContent = msg;
+          next.classList.add('show');
+        }
+      }
+      function _fbClearError(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove('input-error');
+        el.classList.add('input-ok');
+        var next = el.nextElementSibling;
+        if (next && next.classList.contains('field-error-msg')) {
+          next.classList.remove('show');
+        }
+      }
+      function _fbClearAll() {
+        ['fb_name','fb_mobile','fb_address','fb_message'].forEach(function(id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          el.classList.remove('input-error','input-ok');
+          var next = el.nextElementSibling;
+          if (next && next.classList.contains('field-error-msg')) next.classList.remove('show');
+        });
+      }
+      // Live clear error on input
+      document.addEventListener('DOMContentLoaded', function() {
+        ['fb_name','fb_mobile','fb_message'].forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.addEventListener('input', function() {
+            if (el.value.trim()) _fbClearError(id);
+          });
+        });
+      });
+
+      /* FIX #1 & #3: Feedback submit — with inline validation */
       function submitFeedback() {
-        const name = (document.getElementById("fb_name").value || "").trim();
-        const mobile = (
-          document.getElementById("fb_mobile").value || ""
-        ).trim();
-        const address = (
-          document.getElementById("fb_address").value || ""
-        ).trim();
-        const message = (
-          document.getElementById("fb_message").value || ""
-        ).trim();
+        _fbClearAll();
+        var name    = (document.getElementById("fb_name").value    || "").trim();
+        var mobile  = (document.getElementById("fb_mobile").value  || "").trim();
+        var address = (document.getElementById("fb_address").value || "").trim();
+        var message = (document.getElementById("fb_message").value || "").trim();
+
+        var valid = true;
         if (!name) {
-          alert("Please enter your name.");
-          return;
+          _fbSetError('fb_name', 'Please enter your full name.');
+          valid = false;
         }
         if (!mobile) {
-          alert("Please enter your mobile number.");
-          return;
+          _fbSetError('fb_mobile', 'Please enter your mobile number.');
+          valid = false;
+        } else if (!/^\d{10}$/.test(mobile.replace(/\s/g,''))) {
+          _fbSetError('fb_mobile', 'Enter a valid 10-digit mobile number.');
+          valid = false;
         }
         if (!message) {
-          alert("Please enter your message.");
+          _fbSetError('fb_message', 'Please enter your message.');
+          valid = false;
+        }
+        if (!valid) {
+          // Scroll to first error
+          var firstErr = document.querySelector('.feedback-form .input-error');
+          if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
           return;
         }
 
+        // Show loading state on button
+        var btn = document.querySelector('.feedback-submit-btn');
+        if (btn) btn.classList.add('loading');
+
         // Send feedback via postData to backend (stored as audit/feedback log)
-        // Using the API to log as a feedback entry
         const feedbackNote = `FEEDBACK | Name: ${name} | Mobile: ${mobile} | Address: ${
           address || "—"
         } | Message: ${message}`;
@@ -566,12 +621,17 @@ var _trLoaded = false;
           }).catch(() => {}); // best-effort
         }
 
-        // Show thank you message below the form (don't hide the form)
+        // Remove loading state
+        if (btn) btn.classList.remove('loading');
+
+        // Mark fields as OK
+        _fbClearError('fb_name'); _fbClearError('fb_mobile'); _fbClearError('fb_message');
+
+        // Show thank you message
         const thanksEl = document.getElementById("feedbackThanks");
-        const formEl = document.getElementById("feedbackFormBox");
         thanksEl.style.display = "block";
-        // Scroll to thank you message
         thanksEl.scrollIntoView({ behavior: "smooth", block: "center" });
+
         // Auto-hide after 6 seconds and clear form
         setTimeout(() => {
           thanksEl.style.opacity = "0";
@@ -580,11 +640,11 @@ var _trLoaded = false;
             thanksEl.style.display = "none";
             thanksEl.style.opacity = "";
             thanksEl.style.transition = "";
-            // Clear form fields
             document.getElementById("fb_name").value = "";
             document.getElementById("fb_mobile").value = "";
             document.getElementById("fb_address").value = "";
             document.getElementById("fb_message").value = "";
+            _fbClearAll();
           }, 500);
         }, 6000);
       }

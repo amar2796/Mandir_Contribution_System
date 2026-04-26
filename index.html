@@ -95,7 +95,7 @@
          About</a
       >
       <a href="#features" onclick="closeNavMenu()">
-        <i class="fa-solid fa-info-circle"></i>
+        <i class="fa-solid fa-star"></i>
          Features</a
       >
       <a href="#gallery" onclick="closeNavMenu()">
@@ -174,7 +174,24 @@
         expenses, and maintain the yearly financial balance in a highly secure
         and transparent manner.
       </p>
-
+      <div class="about-stats-row">
+        <div class="about-stat">
+          <div class="about-stat-num">30+</div>
+          <div class="about-stat-label">Years of Service</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">🕉️</div>
+          <div class="about-stat-label">Daily Pooja</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">4+</div>
+          <div class="about-stat-label">Annual Events</div>
+        </div>
+        <div class="about-stat">
+          <div class="about-stat-num">100%</div>
+          <div class="about-stat-label">Transparent</div>
+        </div>
+      </div>
     </div>
 
     <!-- ══ OUR MEMBERS SECTION ══ -->
@@ -351,9 +368,13 @@
       <h2>Gallery</h2>
       <p>Moments from our Mandir events and celebrations</p>
 
-      <!-- Loading state -->
+      <!-- Loading state — skeleton shimmer cards -->
       <div class="gallery-loading-msg" id="galleryLoading">
-        <i class="fa-solid fa-spinner fa-spin"></i> Loading gallery...
+        <div class="gallery-skeleton-row">
+          <div class="gallery-skeleton-card"></div>
+          <div class="gallery-skeleton-card"></div>
+          <div class="gallery-skeleton-card"></div>
+        </div>
       </div>
 
       <!-- Empty state -->
@@ -411,6 +432,9 @@
 
     <!-- ══ COMMUNITY STATS SECTION ══ -->
     <div class="community-stats-section reveal" id="communityStats">
+      <!-- Background ambient orbs -->
+      <div class="cs-bg-orb-1"></div>
+      <div class="cs-bg-orb-2"></div>
 
       <div class="cs-eyebrow">
         <span class="cs-eyebrow-dot"></span>
@@ -428,7 +452,7 @@
         <div class="cs-label">Registered Members</div>
         <div class="cs-sublabel">Shree Hanuman Mandir family</div>
         <div class="cs-divider"></div>
-        <div class="cs-cta">Be a part of this family — <a href="#feedbackSection">join us today 🙏</a></div>
+        <div class="cs-cta">Be a part of this family — <a href="#feedbackSection">join us today</a></div>
       </div>
 
     </div>
@@ -539,16 +563,19 @@
             <div>
               <label>Full Name <span style="color: #e74c3c">*</span></label>
               <input id="fb_name" placeholder="Your full name" />
+              <span class="field-error-msg"></span>
             </div>
             <div>
               <label>Mobile Number <span style="color: #e74c3c">*</span></label>
-              <input id="fb_mobile" placeholder="10-digit mobile" maxlength="15" />
+              <input id="fb_mobile" placeholder="10-digit mobile" maxlength="15" inputmode="numeric" />
+              <span class="field-error-msg"></span>
             </div>
           </div>
           <label>Address</label>
           <input id="fb_address" placeholder="Village / City" />
           <label>Your Message / Suggestion <span style="color: #e74c3c">*</span></label>
           <textarea id="fb_message" placeholder="Share your feedback, ideas or suggestions for improvement..."></textarea>
+          <span class="field-error-msg"></span>
           <button class="feedback-submit-btn" onclick="submitFeedback()">
             <i class="fa-solid fa-paper-plane"></i> &nbsp; Submit Feedback
           </button>
@@ -569,7 +596,10 @@
       </div>
     </div>
 
-    <div class="footer" id="pageFooter">© 2026 Mandir System | Built with <span>❤️</span></div>
+    <div class="footer" id="pageFooter">
+      © 2026 Mandir System | Built with <span>❤️</span>
+      <span class="footer-tagline">॥ जय श्री राम ॥ — Serving the community with faith &amp; devotion</span>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js"></script>
     <script src="constants.js"></script>
@@ -639,7 +669,7 @@
 
         // Footer
         var pf = document.getElementById('pageFooter');
-        if (pf) pf.innerHTML = '&copy; ' + new Date().getFullYear() + ' ' + shortName + ' | Built with <span>&#10084;&#65039;</span>';
+        if (pf) pf.innerHTML = '&copy; ' + new Date().getFullYear() + ' ' + shortName + ' | Built with <span>&#10084;&#65039;</span><span class="footer-tagline">॥ ' + (tagline || 'जय श्री राम') + ' ॥ — Serving the community with faith &amp; devotion</span>';
       })();
     </script>
     <script src="config.js"></script>
