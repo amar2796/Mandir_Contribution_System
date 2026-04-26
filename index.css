@@ -1,8 +1,11 @@
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* remove grey flash on tap — mobile UX */
 }
 html {
   scroll-behavior: smooth;
+  /* Prevent horizontal overflow on all mobiles */
+  overflow-x: hidden;
 }
 body {
   margin: 0;
@@ -11,6 +14,8 @@ body {
   background: linear-gradient(135deg, #fdfbf7 0%, #f4f6f9 100%);
   color: #333;
   overflow-x: hidden;
+  /* Smooth momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 ::-webkit-scrollbar {
   width: 10px;
@@ -204,6 +209,9 @@ body {
   height: 64px;
   animation: fadeIn 1s ease-out 1.7s both;
   gap: 16px;
+  /* Fix Firefox scroll-linked positioning warning */
+  will-change: transform;
+  transform: translateZ(0);
 }
 /* subtle gold top line */
 .header::before {
@@ -1354,6 +1362,7 @@ body {
 .audio-btn {
   position: fixed;
   bottom: 24px;
+  bottom: max(24px, env(safe-area-inset-bottom, 24px));
   left: 24px;
   right: auto;
   background: linear-gradient(135deg, #f7a01a, #e08e12);
@@ -1396,72 +1405,148 @@ body {
   .hero {
     background-size: 100% 100%;
   }
+
+  /* ── Sections ── */
   .section {
-    padding: 40px 18px;
+    padding: 36px 16px;
   }
   .section h2 {
-    font-size: 1.7rem;
-  }
-  .section p {
-    font-size: 0.97rem;
-  }
-  .about-stats-row { gap: 12px; }
-  .about-stat { padding: 16px 18px; min-width: 100px; }
-  .about-stat-num { font-size: 1.6rem; }
-  .cards {
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-top: 20px;
-  }
-  .card {
-    padding: 20px 14px;
-  }
-  .feedback-section {
-    padding: 40px 16px;
-  }
-  .feedback-section h2 {
     font-size: 1.6rem;
   }
-  .feedback-form {
-    padding: 20px 16px;
+  .section p {
+    font-size: 0.95rem;
   }
-  .feedback-form .form-row2 {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-  /* Better touch targets for nav links */
-  .nav-menu a {
-    padding: 15px 24px;
-    min-height: 48px;
-  }
-  .member-dot {
-    width: 12px; height: 12px;
-    min-width: 44px; /* wide touch target via padding trick */
-  }
-  .audio-btn {
-    width: 48px;
-    height: 48px;
-    font-size: 16px;
-    bottom: 24px;
-    left: 14px;
-    right: auto;
-  }
-  .footer {
-    padding: 20px 16px;
-    font-size: 0.82rem;
-  }
-}
-@media (max-width: 420px) {
-  .cards {
-    grid-template-columns: 1fr;
-  }
-  .nav-menu {
-    top: 52px;
-  }
+
+  /* ── About stats: 2x2 grid on tablet ── */
   .about-stats-row {
-    grid-template-columns: 1fr 1fr;
     display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
   }
+  .about-stat { padding: 16px 12px; min-width: unset; }
+  .about-stat-num { font-size: 1.5rem; }
+  .about-stat-label { font-size: 0.68rem; }
+
+  /* ── Feature cards: 2 columns ── */
+  .cards {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .card { padding: 20px 14px; }
+
+  /* ── Gallery skeleton: 2 cols ── */
+  .gallery-skeleton-row { padding: 0 44px; grid-template-columns: 1fr 1fr; }
+  .gallery-skeleton-card:nth-child(3) { display: none; }
+
+  /* ── Community stats card: full width ── */
+  .cs-card { max-width: 100%; padding: 32px 20px 24px; }
+  .cs-big-num { font-size: 56px; }
+
+  /* ── Members section ── */
+  .members-section { padding: 40px 16px 56px; }
+  .member-info-side { padding: 24px 18px; }
+  .member-name { font-size: 1.4rem; }
+  .member-bio { font-size: 0.9rem; line-height: 1.65; }
+
+  /* ── Feedback section ── */
+  .feedback-section { padding: 36px 16px; }
+  .feedback-section h2 { font-size: 1.6rem; }
+  .feedback-form { padding: 20px 16px; }
+  .feedback-form .form-row2 { grid-template-columns: 1fr; gap: 0; }
+  /* Map stacks above form */
+  .feedback-map-side { min-height: 240px; }
+  .feedback-map-side iframe { min-height: 220px; }
+
+  /* ── Better touch targets ── */
+  .nav-menu a { padding: 15px 24px; min-height: 48px; }
+  .members-nav-btn { width: 48px; height: 48px; }
+  .feedback-submit-btn { padding: 15px; font-size: 16px; }
+
+  /* ── Audio button ── */
+  .audio-btn {
+    width: 48px; height: 48px; font-size: 16px;
+    bottom: 20px; left: 14px; right: auto;
+  }
+
+  /* ── Footer ── */
+  .footer { padding: 20px 16px; font-size: 0.8rem; }
+  .footer-tagline { font-size: 0.68rem; }
+}
+
+/* ── Small phones (≤480px) ── */
+@media (max-width: 480px) {
+  .header { height: 50px; padding: 0 10px; }
+  .header-logo { width: 30px; height: 30px; }
+  .header-brand-text .brand-main { font-size: 0.8rem; }
+  .nav-menu { top: 50px; }
+
+  .section { padding: 30px 14px; }
+  .section h2 { font-size: 1.45rem; }
+
+  /* About stats: 2x2 stays but tighter */
+  .about-stat { padding: 14px 10px; }
+  .about-stat-num { font-size: 1.35rem; }
+
+  /* Feature cards: 1 column on very small screens */
+  .cards { grid-template-columns: 1fr; gap: 10px; }
+  .card { padding: 18px 16px; }
+  .card h3 i { font-size: 1.5rem; }
+
+  /* Gallery skeleton: 1 col */
+  .gallery-skeleton-row { grid-template-columns: 1fr; padding: 0 20px; }
+  .gallery-skeleton-card:nth-child(2),
+  .gallery-skeleton-card:nth-child(3) { display: none; }
+  .gallery-skeleton-card { height: 220px; }
+
+  /* Community stats */
+  .cs-big-num { font-size: 52px; }
+  .cs-eyebrow { font-size: 10px; }
+  .community-stats-section { padding: 44px 16px; }
+
+  /* Members */
+  .member-photo-side { flex: 0 0 240px; min-height: 240px; }
+  .member-info-side { padding: 18px 14px; }
+  .member-name { font-size: 1.25rem; }
+  .members-title { font-size: 1.55rem; }
+  .member-role-badge { font-size: 10px; padding: 3px 10px; }
+  .member-bio { font-size: 0.88rem; }
+  .member-dots { margin-top: 20px; gap: 6px; }
+
+  /* Announcement banner */
+  .ann-inner { font-size: 0.75rem; padding: 8px 40px 8px 10px; gap: 6px; }
+
+  /* Feedback */
+  .feedback-section h2 { font-size: 1.4rem; }
+  .feedback-form-title { font-size: 1rem; }
+  .feedback-form input,
+  .feedback-form textarea { font-size: 13px; padding: 10px 12px; }
+  .feedback-submit-btn { font-size: 15px; }
+  .feedback-map-side { min-height: 200px; }
+  .feedback-map-side iframe { min-height: 180px; }
+
+  /* Section dividers less padding */
+  .section-divider { padding: 4px 0; }
+
+  /* Chaupai ticker */
+  .cp-char span, .cp-spacer { font-size: 0.82rem; }
+  .cp-ticker-wrap { padding: 4px 8px 2px; }
+
+  /* Footer */
+  .footer { padding: 18px 12px; }
+  .footer-tagline { display: none; } /* too cramped on tiny screens */
+}
+
+/* ── Very small (≤380px) ── */
+@media (max-width: 380px) {
+  .header-brand-text .brand-main { font-size: 0.74rem; }
+  .about-stats-row { gap: 8px; }
+  .about-stat { padding: 12px 8px; border-radius: 12px; }
+  .about-stat-num { font-size: 1.2rem; }
+  .cs-big-num { font-size: 46px; }
+  .member-photo-side { flex: 0 0 200px; min-height: 200px; }
+  .member-name { font-size: 1.1rem; }
 }
 
 /* ══ PAYMENT MODAL ══ */
@@ -2466,4 +2551,122 @@ font-size: 11px; color: #ccc; margin-top: 24px; text-align: center;
   .cp-char span,
   .cp-spacer { font-size: 0.88rem; letter-spacing: 0.2px; }
   .cp-ticker-wrap { padding: 6px 10px 4px; }
+}
+/* ══════════════════════════════════════════════
+   MOBILE-FIRST ADDITIONS — Notch / Safe Area /
+   Touch / Performance fixes
+══════════════════════════════════════════════ */
+
+/* Safe area insets — iPhone notch & home bar */
+@supports (padding: max(0px)) {
+  .header {
+    padding-left:  max(28px, env(safe-area-inset-left));
+    padding-right: max(28px, env(safe-area-inset-right));
+  }
+  .audio-btn {
+    left: max(14px, env(safe-area-inset-left, 14px));
+    bottom: max(20px, env(safe-area-inset-bottom, 20px));
+  }
+  .nav-menu {
+    padding-left:  env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .pay-modal-body {
+    padding-bottom: max(70px, env(safe-area-inset-bottom, 70px));
+  }
+}
+
+/* Splash — scale text so it never overflows on tiny phones */
+@media (max-width: 360px) {
+  .splash-text { font-size: 10vw; letter-spacing: -0.5px; }
+}
+
+/* Hero — prevent text clipping on landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero {
+    aspect-ratio: unset;
+    min-height: 200px;
+  }
+  .hero-box { bottom: 10%; }
+  .hero-box h1 { font-size: 4.5vw; }
+  .hero-box h1 span { font-size: 2.5vw; }
+}
+
+/* Member card — prevent bio text from creating horizontal scroll */
+.member-bio {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.member-name {
+  word-break: break-word;
+}
+
+/* Member card — stack properly at 480px with no gap overflow */
+@media (max-width: 480px) {
+  .member-card.active {
+    flex-direction: column;
+  }
+  .member-photo-side {
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 220px;
+    max-height: 260px;
+  }
+  .member-info-side {
+    padding: 18px 16px 22px;
+  }
+  /* Bio text smaller on tiny screens */
+  .member-bio { font-size: 0.86rem; line-height: 1.6; }
+  .member-name { font-size: 1.15rem; }
+}
+
+/* Feedback map iframe — avoid being too tall on small phones */
+@media (max-width: 480px) {
+  .feedback-map-side { min-height: 180px; }
+  .feedback-map-side iframe { min-height: 160px; max-height: 200px; }
+}
+
+/* Lightbox — full screen on mobile, hide side arrows (swipe already works) */
+@media (max-width: 480px) {
+  .gc-lb-panel { padding: 0 8px 8px; }
+  .gc-lb-frame img {
+    max-width: 98vw;
+    max-height: calc(100dvh - 70px);
+    border-radius: 10px;
+  }
+}
+
+/* Payment modal — single column, ensure readable on tiny phones */
+@media (max-width: 400px) {
+  .pay-cards-row { grid-template-columns: 1fr; gap: 14px; }
+  .pay-modal-body { padding: 4px 12px 60px; }
+  .pay-section-title { font-size: 1.25rem; }
+  .pay-card { padding: 18px 14px 16px; }
+  .pay-detail-label { font-size: 0.7rem; }
+  .pay-detail-value { font-size: 0.78rem; }
+}
+
+/* Nav menu — prevent scroll behind open menu on mobile */
+body.nav-open {
+  overflow: hidden;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* Focus visible — keyboard/accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #f7a01a;
+  outline-offset: 2px;
+  border-radius: 4px;
 }

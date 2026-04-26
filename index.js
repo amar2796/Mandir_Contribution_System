@@ -472,12 +472,15 @@ var _trLoaded = false;
         const icon = document.getElementById("hamburgerIcon");
         const isOpen = menu.classList.toggle("open");
         icon.className = isOpen ? "fa-solid fa-xmark" : "fa-solid fa-bars";
+        // Lock body scroll when menu is open (mobile)
+        document.body.classList.toggle("nav-open", isOpen);
       }
       function closeNavMenu() {
         const menu = document.getElementById("navMenu");
         const icon = document.getElementById("hamburgerIcon");
         menu.classList.remove("open");
         icon.className = "fa-solid fa-bars";
+        document.body.classList.remove("nav-open");
       }
       // Close menu when clicking outside
       document.addEventListener("click", function (e) {
