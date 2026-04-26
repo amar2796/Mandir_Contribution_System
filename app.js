@@ -826,7 +826,9 @@ function openModal(html, maxWidth){
   let old=document.getElementById("_uniModal"); if(old)old.remove();
   let overlay=document.createElement("div"); overlay.id="_uniModal";
   overlay.innerHTML=`<div class="_mbox" style="max-width:${maxWidth||"530px"};">${html}</div>`;
-  overlay.addEventListener("click",e=>{if(e.target===overlay)closeModal();});
+  overlay.addEventListener("click",e=>{
+    if(e.target===overlay && !overlay._confirmInProgress) closeModal();
+  });
   document.body.appendChild(overlay); document.body.style.overflow="hidden";
 }
 function closeModal(){
@@ -834,23 +836,88 @@ function closeModal(){
   if(m){m.style.opacity="0";m.style.transition="opacity .2s";setTimeout(()=>{m.remove();document.body.style.overflow="";},200);}
 }
 /* ═══ CONFIRM MODAL ═══ */
-// Usage: confirmModal("Delete this item?", () => { /* confirmed */ });
+// Usage: confirmModal("Delete this item?", () => { /* confirmed */ }, "Delete", "#e74c3c")
+// confirmColor: "#e74c3c" = danger red (default), "#f7a01a" = warning orange, "#22c55e" = safe green
 function confirmModal(message, onConfirm, confirmLabel, confirmColor) {
-  let label = confirmLabel || "Delete";
-  let color = confirmColor || "#e74c3c";
-  let html = `
-    <div class="_mhdr"><h3><i class="fa-solid fa-triangle-exclamation" style="color:${color};"></i> Confirm</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-    <div class="_mbdy" style="text-align:center;padding:20px 16px 10px;">
-      <p style="font-size:15px;color:#333;margin:0 0 20px;">${message}</p>
-      <div style="display:flex;gap:10px;justify-content:center;">
-        <button class="_mbtn" style="background:#999;min-width:90px;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Cancel</button>
-        <button class="_mbtn" style="background:${color};min-width:90px;" id="_confirmOkBtn"><i class="fa-solid fa-check"></i> ${label}</button>
+  var label = confirmLabel || "Delete";
+  var color = confirmColor || "#e74c3c";
+  // Icon and ring colour — red for danger, orange for warn, green for safe
+  var icon  = color === "#22c55e" ? "fa-circle-check"
+            : color === "#f7a01a" ? "fa-triangle-exclamation"
+            : "fa-triangle-exclamation";
+  var ringRgb = color === "#22c55e" ? "34,197,94"
+              : color === "#f7a01a" ? "247,160,26"
+              : "231,76,60";
+  var html = `
+    <div class="_mhdr" style="background:#fff;border-bottom:1px solid #f1f5f9;padding:18px 20px 14px;">
+      <span></span>
+      <button class="_mcls" onclick="closeModal()" style="color:#94a3b8!important;font-size:20px;line-height:1;">&#xd7;</button>
+    </div>
+    <div class="_mbdy" style="text-align:center;padding:8px 28px 28px;">
+      <div style="
+        width:64px;height:64px;border-radius:50%;margin:0 auto 18px;
+        background:rgba(${ringRgb},0.1);
+        display:flex;align-items:center;justify-content:center;
+        box-shadow:0 0 0 8px rgba(${ringRgb},0.07);
+        animation:_cmIconPop .35s cubic-bezier(.34,1.56,.64,1) both;
+      ">
+        <i class="fa-solid ${icon}" style="font-size:28px;color:${color};"></i>
       </div>
-    </div>`;
-  openModal(html, "360px");
-  setTimeout(() => {
-    let btn = document.getElementById("_confirmOkBtn");
-    if (btn) btn.addEventListener("click", () => { closeModal(); onConfirm(); });
+      <p style="font-size:15px;font-weight:600;color:#1e293b;margin:0 0 6px;line-height:1.4;">${message}</p>
+      <p style="font-size:12.5px;color:#94a3b8;margin:0 0 24px;">This action cannot be undone.</p>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="_mbtn _cmCancel" style="
+          background:#f1f5f9;color:#475569;min-width:100px;
+          border:1.5px solid #e2e8f0;font-size:13.5px;
+        " onclick="closeModal()">
+          <i class="fa-solid fa-xmark" style="margin-right:5px;"></i>Cancel
+        </button>
+        <button class="_mbtn" id="_confirmOkBtn" style="
+          background:${color};min-width:100px;font-size:13.5px;
+          box-shadow:0 4px 14px rgba(${ringRgb},0.35);
+        ">
+          <i class="fa-solid fa-check" style="margin-right:5px;"></i>${label}
+        </button>
+      </div>
+    </div>
+    <style>
+      @keyframes _cmIconPop{
+        from{opacity:0;transform:scale(.5) rotate(-10deg)}
+        to{opacity:1;transform:scale(1) rotate(0deg)}
+      }
+      ._cmCancel:hover{background:#e2e8f0!important;}
+      #_confirmOkBtn:hover{filter:brightness(1.08);transform:translateY(-1px);}
+      #_confirmOkBtn:active{transform:scale(0.97) translateY(0);}
+      #_confirmOkBtn.btn-loading{cursor:wait;pointer-events:none;opacity:0.8;}
+    </style>`;
+  openModal(html, "340px");
+  setTimeout(function() {
+    var btn = document.getElementById("_confirmOkBtn");
+    if (!btn) return;
+    btn.addEventListener("click", function() {
+      // [FIX-1] Keep modal open while action runs — spin confirm button, block cancel,
+      // close modal ONLY after onConfirm() resolves. Previously modal closed immediately
+      // so user saw a flash of old data before the entry disappeared.
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px;"></i>Processing…';
+      btn.classList.add("btn-loading");
+      // Also disable cancel button and backdrop click so user can't dismiss mid-action
+      var cancelBtn = document.querySelector("._cmCancel");
+      if (cancelBtn) { cancelBtn.disabled = true; cancelBtn.style.opacity = "0.4"; }
+      var overlay = document.getElementById("_uniModal");
+      if (overlay) overlay._confirmInProgress = true;
+      // Run the action — close modal when done (or after error)
+      var result = onConfirm();
+      var done = function() {
+        if (overlay) overlay._confirmInProgress = false;
+        closeModal();
+      };
+      if (result && typeof result.then === "function") {
+        result.then(done).catch(done);
+      } else {
+        done(); // sync callback
+      }
+    });
   }, 50);
 }
 

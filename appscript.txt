@@ -3,6 +3,16 @@
 //  IMPROVEMENTS: #1 Email Receipt, #3 Sequential Receipt ID,
 //                #4 Email Quota System, #7 Server-side Constants,
 //                #8 Email Automation Toggles, #9 Monthly End Reports
+//  v2.2 ADDITIONS:
+//    [ID]  Sequential prefixed IDs for all sheets (USER-00001 etc.)
+//    [ID]  Role-based user IDs: USER-NNNNN / ADMIN-NNNNN
+//    [ID]  Walk-in IDs: WALKIN_YEAR_NNNNN (year-wise reset)
+//    [SEC] Server-side session expiry: 30-min sliding window
+//    [PERF] Shared helpers: _findUserRow, _getSheet, _readSheetRaw
+//    [VAL] Server-side phone (10-digit) + email format validation
+//    [RPT] Yearly summary enhanced: receiptCount, expenseCount,
+//          memberCount, avgContribution per year
+//    [MNT] Comment cleanup, centralised helpers
 // ════════════════════════════════════════════════════════════════
 
 // ── SERVER-SIDE CONSTANTS (mirror of constants.js — edit here too)
@@ -10,7 +20,7 @@
 //    name, location/address, receiptPrefix, emailDailyLimit,
 //    signatory, designation, tagline, thankYouMsg, version
 const CFG = {
-  version:       "2.1.0",        // SYNC with APP.version in constants.js
+  version:       "2.2.0",        // SYNC with APP.version in constants.js
   name:          "Shree Hanuman Mandir",
   location:      "Paliya, Sultanpur",
   address:       "Paliya, Sultanpur, Uttar Pradesh",
@@ -76,17 +86,18 @@ const SHEETS = {
 
 
 // ════════════════════════════════════════════════════════════════
-//  MUST #7 — SERVER-SIDE SESSION TOKEN VERIFICATION
+//  [SEC] SERVER-SIDE SESSION TOKEN + EXPIRY VERIFICATION
 //  Call at the top of every write action in doGet().
-//  Returns true if session is valid, false if rejected.
-//  Skips verification if no token sent (legacy compatibility — 
-//  but logs the unverified call for audit visibility).
+//  Returns true if session is valid, false if rejected/expired.
+//
+//  TokenExpiry column in USERS sheet stores ISO timestamp.
+//  On every valid action, expiry slides forward by 30 minutes.
+//  On tab/browser close, clearSessionToken is called via sendBeacon.
 // ════════════════════════════════════════════════════════════════
 function _verifySession(params, actionName) {
   const userId = sanitize(params.userId || params.UserId || params.AdminName || "", 30);
   const token  = sanitize(params.sessionToken || params.token || "", 64);
   if (!token || !userId) {
-    // No token or userId — reject and log. No legacy bypass.
     logAction(userId || "Unknown", "REJECTED_NO_TOKEN", "Action: " + actionName + " — missing session token or userId", "", "", { severity:"WARN", result:"BLOCKED" });
     return false;
   }
@@ -94,25 +105,42 @@ function _verifySession(params, actionName) {
     const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
     const allData = sheet.getDataRange().getValues();
     const headers = allData[0];
-    const tokenCol = headers.indexOf("SessionToken");
+    const tokenCol  = headers.indexOf("SessionToken");
+    const expiryCol = headers.indexOf("TokenExpiry");
     if (tokenCol === -1) return true; // column not yet created — allow
     for (let i = 1; i < allData.length; i++) {
       const rowId = String(allData[i][headers.indexOf("UserId")] || allData[i][0] || "").trim();
       if (rowId && (rowId === userId || String(allData[i][headers.indexOf("Name")]||"") === userId)) {
         const stored = String(allData[i][tokenCol] || "").trim();
         if (!stored) return true; // empty token = legacy user, allow
-        // FIX SEC-5: explicit true/false — no fall-through to permissive return
-        if (stored === token) return true;
-        logAction(userId, "SESSION_TOKEN_MISMATCH", "Action: " + actionName + " — token rejected", "", "", { severity:"WARN", result:"BLOCKED" });
-        return false;
+        if (stored !== token) {
+          logAction(userId, "SESSION_TOKEN_MISMATCH", "Action: " + actionName + " — token rejected", "", "", { severity:"WARN", result:"BLOCKED" });
+          return false;
+        }
+        // [SEC] Check server-side expiry (30-min sliding window)
+        if (expiryCol !== -1) {
+          const expiryVal = allData[i][expiryCol];
+          if (expiryVal) {
+            const expiryTime = expiryVal instanceof Date ? expiryVal.getTime() : new Date(expiryVal).getTime();
+            if (!isNaN(expiryTime) && Date.now() > expiryTime) {
+              logAction(userId, "SESSION_EXPIRED", "Action: " + actionName + " — session expired (server-side)", "", "", { severity:"WARN", result:"BLOCKED" });
+              return false;
+            }
+            // Slide expiry forward by 30 min on every valid action (keep user active)
+            try {
+              const newExpiry = new Date(Date.now() + 30 * 60 * 1000);
+              sheet.getRange(i + 1, expiryCol + 1).setValue(Utilities.formatDate(newExpiry, "GMT+5:30", "dd-MM-yyyy HH:mm:ss"));
+            } catch(slErr) { /* non-fatal — don't block the action */ }
+          }
+        }
+        return true;
       }
     }
   } catch(e) {
-    // FIX SEC-5: log the error; still allow (don't block legitimate users on sheet errors)
     logAction(userId || "Unknown", "VERIFY_SESSION_ERROR", "Action: " + actionName + " — " + e.message);
     return true;
   }
-  return true; // user not found but allow (will fail at action level)
+  return true; // user not found — allow (will fail at action level)
 }
 // ── Hash password (SHA-256, matches client-side sha256())
 function hashPassword(pwd) {
@@ -125,9 +153,135 @@ function formatDate() {
   return Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
 }
 
-// ── Generate unique ID (UUID-style)
+// ── Generate unique ID (UUID-style) — kept for legacy/fallback use only
+// New code uses generateSheetId() for all sheet IDs.
 function generateId() {
   return Utilities.getUuid().replace(/-/g, "").substring(0, 16);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  [ID] SEQUENTIAL SHEET ID GENERATOR
+//  generateSheetId(prefix, yearReset)
+//    prefix    — e.g. "USER", "CONT", "EXP", "GOAL" etc.
+//    yearReset — true: counter resets Jan 1 each year (EXP, WALKIN)
+//                false/omit: ever-increasing counter (all others)
+//
+//  Format examples:
+//    USER-00001   ADMIN-00001   CONT-00001
+//    EXP-2025-00001  (year-reset)
+//    WALKIN_2025_00001 (year-reset, underscore separator for walk-ins)
+//
+//  Each prefix has its own independent PropertiesService counter key:
+//    ID_CNT_USER, ID_CNT_CONT, ID_CNT_EXP_2025, ID_CNT_WALKIN_2025 …
+//
+//  LockService prevents duplicate IDs under concurrent requests.
+// ════════════════════════════════════════════════════════════════
+function generateSheetId(prefix, yearReset) {
+  const lock = LockService.getScriptLock();
+  let lockAcquired = false;
+  try {
+    lock.waitLock(10000);
+    lockAcquired = true;
+    const props = PropertiesService.getScriptProperties();
+    const year  = new Date().getFullYear();
+    const key   = yearReset
+      ? "ID_CNT_" + prefix + "_" + year
+      : "ID_CNT_" + prefix;
+    let counter = parseInt(props.getProperty(key) || "0", 10);
+    counter++;
+    props.setProperty(key, String(counter));
+    const padded = String(counter).padStart(5, "0");
+    // Walk-in uses underscore separator; all others use hyphen
+    if (prefix === "WALKIN") return "WALKIN_" + year + "_" + padded;
+    return yearReset
+      ? prefix + "-" + year + "-" + padded
+      : prefix + "-" + padded;
+  } finally {
+    if (lockAcquired) lock.releaseLock();
+  }
+}
+
+// ── [FIX-1] generateSheetIdForYear — like generateSheetId but uses an explicit year
+// Used for WALKIN IDs so that backdated entries (e.g. year 2025 selected in form)
+// generate WALKIN_2025_NNNNN instead of WALKIN_2026_NNNNN (server clock year).
+function generateSheetIdForYear(prefix, year) {
+  const lock = LockService.getScriptLock();
+  let lockAcquired = false;
+  try {
+    lock.waitLock(10000);
+    lockAcquired = true;
+    const props = PropertiesService.getScriptProperties();
+    const key   = "ID_CNT_" + prefix + "_" + year;
+    let counter = parseInt(props.getProperty(key) || "0", 10);
+    counter++;
+    props.setProperty(key, String(counter));
+    const padded = String(counter).padStart(5, "0");
+    return prefix + "_" + year + "_" + padded; // e.g. WALKIN_2025_00001
+  } finally {
+    if (lockAcquired) lock.releaseLock();
+  }
+}
+
+// ── Role-aware user ID: USER-00001 for members, ADMIN-00001 for admins
+function _genUserId(role) {
+  const prefix = (String(role || "").toLowerCase() === "admin") ? "ADMIN" : "USER";
+  return generateSheetId(prefix);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  [PERF] SHARED SHEET HELPERS
+//  _findUserRow(userId) — find a user row by UserId, return context
+//  _getSheet(name)      — get sheet or throw clean error
+//  _readSheetRaw(name)  — return { sheet, headers, rows }
+// ════════════════════════════════════════════════════════════════
+function _findUserRow(userId) {
+  const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+  if (!sheet) return null;
+  const allData = sheet.getDataRange().getValues();
+  const headers = allData[0];
+  const idCol   = headers.indexOf("UserId");
+  for (let i = 1; i < allData.length; i++) {
+    if (String(allData[i][idCol < 0 ? 0 : idCol] || "").trim() === String(userId).trim()) {
+      return { sheet, allData, headers, rowIndex: i, sheetRow: i + 1 };
+    }
+  }
+  return null;
+}
+
+function _getSheet(name) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+  if (!sheet) throw new Error("Sheet not found: " + name);
+  return sheet;
+}
+
+function _readSheetRaw(name) {
+  const sheet = _getSheet(name);
+  const data  = sheet.getDataRange().getValues();
+  if (data.length < 1) return { sheet, headers: [], rows: [] };
+  const headers = data[0];
+  const rows    = data.slice(1);
+  return { sheet, headers, rows };
+}
+
+// ════════════════════════════════════════════════════════════════
+//  [VAL] SERVER-SIDE VALIDATION HELPERS
+//  _validateMobile(mobile) — exactly 10 digits, starts 6-9
+//  _validateEmail(email)   — basic format check (only if non-empty)
+// ════════════════════════════════════════════════════════════════
+function _validateMobile(mobile) {
+  if (!mobile) return "Mobile number is required.";
+  if (!/^[6-9]\d{9}$/.test(String(mobile).trim())) {
+    return "Invalid mobile number. Must be 10 digits starting with 6-9.";
+  }
+  return null; // null = valid
+}
+
+function _validateEmail(email) {
+  if (!email || String(email).trim() === "") return null; // email optional — skip if blank
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+    return "Invalid email address format.";
+  }
+  return null; // null = valid
 }
 
 // ── Sanitize a parameter value
@@ -363,12 +517,35 @@ function getSheetData(name) {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  IMPROVEMENT #3 — SEQUENTIAL RECEIPT ID SYSTEM
+//  SEQUENTIAL RECEIPT ID SYSTEM
 //  Format: MNR-YYYY-00001  (5-digit, e.g. MNR-2025-00042)
-//  Counter stored in PropertiesService, resets each year.
+//
+//  generateReceiptId(forYear)
+//    forYear — the Year selected in the contribution form dropdown.
+//              Falls back to current year if missing or invalid.
+//
+//  Each year has its OWN independent counter stored separately:
+//    Key: "RECEIPT_CNT_2024" → counter for year 2024
+//    Key: "RECEIPT_CNT_2025" → counter for year 2025
+//    Key: "RECEIPT_CNT_2026" → counter for year 2026
+//
+//  This means:
+//    • Old entry for 2024 added today  → MNR-2024-00087 (2024's count)
+//    • New 2026 entry                  → MNR-2026-00012 (2026's count)
+//    • Each year's count is always accurate regardless of when entered.
+//
+//  Legacy key "RECEIPT_COUNTER" is no longer incremented for new entries
+//  but left untouched — existing old receipts are completely unaffected.
 //  LockService prevents duplicate IDs under concurrent requests.
 // ════════════════════════════════════════════════════════════════
-function generateReceiptId() {
+function generateReceiptId(forYear) {
+  // Use the contribution's selected year; fall back to current year if invalid
+  const currentYear = new Date().getFullYear();
+  const parsedYear  = parseInt(forYear, 10);
+  const year        = (!isNaN(parsedYear) && parsedYear > 2000 && parsedYear <= currentYear + 1)
+                      ? parsedYear
+                      : currentYear;
+
   const lock = LockService.getScriptLock();
   let lockAcquired = false;
   try {
@@ -376,26 +553,17 @@ function generateReceiptId() {
     lockAcquired = true;
 
     const props      = PropertiesService.getScriptProperties();
-    const year       = new Date().getFullYear();
-    const yearKey    = "RECEIPT_YEAR";
-    const counterKey = "RECEIPT_COUNTER";
-
-    let storedYear = props.getProperty(yearKey);
-    let counter    = parseInt(props.getProperty(counterKey) || "0", 10);
-
-    // Reset counter when year changes
-    if (String(storedYear) !== String(year)) {
-      counter = 0;
-      props.setProperty(yearKey, String(year));
-      logAction("System", "RECEIPT_COUNTER_YEAR_RESET", "New year: " + year + " | Previous year: " + (storedYear||"none"), "Receipt ID counter reset for new year", "", { severity:"INFO", result:"SYSTEM" });
-    }
+    // Each year gets its own independent counter key — no shared state across years
+    const counterKey = "RECEIPT_CNT_" + year;
+    let counter      = parseInt(props.getProperty(counterKey) || "0", 10);
 
     counter++;
     props.setProperty(counterKey, String(counter));
 
-    // 5-digit padding: MNR-2025-00001 (handles up to 99999 per year)
+    // 5-digit padding: MNR-2025-00001 (handles up to 99,999 per year)
     const padded = String(counter).padStart(5, "0");
     return CFG.receiptPrefix + "-" + year + "-" + padded;
+
   } finally {
     if (lockAcquired) lock.releaseLock();
   }
@@ -1128,12 +1296,12 @@ function doGet(e) {
     }
   }
 
-  // ── SET SESSION TOKEN (token only — does NOT touch TokenExpiry column)
+  // ── SET SESSION TOKEN — writes token + TokenExpiry (30-min window) to USERS sheet
+  // [SEC] TokenExpiry is now server-enforced. Every subsequent write action
+  // checks this column and slides it forward by 30 min (see _verifySession).
   else if (action === "setSessionToken") {
     const userId = sanitize(e.parameter.userId, 30);
     const token  = sanitize(e.parameter.token,  64);
-    // NOTE: expiry param is accepted but intentionally ignored — we do NOT write
-    // TokenExpiry to the sheet. Session expiry is managed client-side only.
     if (!userId || !token) {
       result = { status: "error", message: "Missing userId or token" };
     } else {
@@ -1143,16 +1311,21 @@ function doGet(e) {
       // Ensure SessionToken column exists
       let tokenCol = headers.indexOf("SessionToken");
       if (tokenCol === -1) { tokenCol = headers.length; sheet.getRange(1, tokenCol + 1).setValue("SessionToken"); }
+      // Ensure TokenExpiry column exists
+      let expiryCol = headers.indexOf("TokenExpiry");
+      if (expiryCol === -1) { expiryCol = headers.length + (tokenCol === headers.length ? 1 : 0); sheet.getRange(1, expiryCol + 1).setValue("TokenExpiry"); }
       let found = false;
+      const expiryTime = Utilities.formatDate(new Date(Date.now() + 30 * 60 * 1000), "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
       for (let i = 1; i < data.length; i++) {
         if (String(data[i][0]) === userId) {
           sheet.getRange(i + 1, tokenCol + 1).setValue(token);
+          sheet.getRange(i + 1, expiryCol + 1).setValue(expiryTime);
           SpreadsheetApp.flush();
           found = true; break;
         }
       }
       if (found) {
-        logAction(userId, "SESSION_TOKEN_SET", "UserId: " + userId, "Session token stored after login", sanitize(e.parameter.deviceInfo||"",200), { severity:"INFO", result:"SUCCESS" });
+        logAction(userId, "SESSION_TOKEN_SET", "UserId: " + userId + " | Expiry: " + expiryTime, "Session token + expiry stored after login", sanitize(e.parameter.deviceInfo||"",200), { severity:"INFO", result:"SUCCESS" });
       } else {
         logAction(userId, "SESSION_TOKEN_SET_FAILED", "UserId: " + userId + " — user not found", "", "", { severity:"WARN", result:"FAILURE" });
       }
@@ -1160,7 +1333,7 @@ function doGet(e) {
     }
   }
 
-  // ── CHECK SESSION TOKEN
+  // ── CHECK SESSION TOKEN + EXPIRY
   else if (action === "checkSession") {
     const userId = sanitize(e.parameter.userId, 30);
     const token  = sanitize(e.parameter.token,  64);
@@ -1170,25 +1343,54 @@ function doGet(e) {
         const sheet    = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
         const allData  = sheet.getDataRange().getValues();
         const headers  = allData[0];
-        const tokenCol = headers.indexOf("SessionToken");
+        const tokenCol  = headers.indexOf("SessionToken");
+        const expiryCol = headers.indexOf("TokenExpiry");
+        const nameCol   = headers.indexOf("Name");  // [FIX-C] match by Name too
         if (tokenCol === -1) { result = { valid: true }; }
         else {
           let isValid = true;
+          let expiredReason = "";
+          let foundRow = -1;
           for (let i = 1; i < allData.length; i++) {
-            if (String(allData[i][0]) === userId) {
-              const stored = String(allData[i][tokenCol] || "").trim();
-              if (stored === "") { isValid = true; break; }  // no token = legacy session, allow
-              if (stored !== token) { isValid = false; break; } // token mismatch = another device
-              isValid = true; break;
+            // [FIX-C] Match by UserId (col 0) OR Name — same as _verifySession
+            const rowUserId = String(allData[i][0] || "").trim();
+            const rowName   = nameCol !== -1 ? String(allData[i][nameCol] || "").trim() : "";
+            if (!((rowUserId && rowUserId === userId) || (rowName && rowName === userId))) continue;
+            foundRow = i;
+            const stored = String(allData[i][tokenCol] || "").trim();
+            if (stored === "") { isValid = true; break; }           // legacy session, allow
+            if (stored !== token) { isValid = false; expiredReason = "token_mismatch"; break; }
+            // Check TokenExpiry
+            if (expiryCol !== -1) {
+              const expiryVal = allData[i][expiryCol];
+              if (expiryVal) {
+                const expiryTime = expiryVal instanceof Date ? expiryVal.getTime() : new Date(expiryVal).getTime();
+                if (!isNaN(expiryTime) && Date.now() > expiryTime) {
+                  isValid = false; expiredReason = "expired";
+                  // [FIX-C] Auto-clear stale token + expiry so sheet stays clean
+                  // Previously checkSession only returned { valid:false } but never
+                  // cleaned up — expired token sat in sheet until next manual logout.
+                  try {
+                    sheet.getRange(i + 1, tokenCol  + 1).setValue("");
+                    sheet.getRange(i + 1, expiryCol + 1).setValue("");
+                    SpreadsheetApp.flush();
+                    logAction(userId, "SESSION_EXPIRED_AUTO_CLEARED",
+                      "checkSession detected expiry — token auto-cleared from sheet", "", "",
+                      { severity:"INFO", result:"SUCCESS" });
+                  } catch(clrErr) { /* non-fatal */ }
+                  break;
+                }
+              }
             }
+            isValid = true; break;
           }
-          result = { valid: isValid };
+          result = { valid: isValid, reason: expiredReason || undefined };
         }
       } catch(err) { result = { valid: true }; }
     }
   }
 
-  // ── CLEAR SESSION TOKEN
+  // ── CLEAR SESSION TOKEN + EXPIRY (called on logout, tab close via sendBeacon)
   else if (action === "clearSessionToken") {
     const userId = sanitize(e.parameter.userId, 30);
     if (userId) {
@@ -1196,13 +1398,20 @@ function doGet(e) {
         const sheet    = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
         const allData  = sheet.getDataRange().getValues();
         const headers  = allData[0];
-        const tokenCol = headers.indexOf("SessionToken");
-        if (tokenCol !== -1) {
-          for (let i = 1; i < allData.length; i++) {
-            if (String(allData[i][0]) === userId) {
-              sheet.getRange(i + 1, tokenCol + 1).setValue("");
-              SpreadsheetApp.flush(); break;
-            }
+        const tokenCol  = headers.indexOf("SessionToken");
+        const expiryCol = headers.indexOf("TokenExpiry");
+        const nameCol   = headers.indexOf("Name");
+        // FIX: Clear each column independently — do NOT nest expiryCol inside tokenCol check.
+        // If TokenExpiry column exists but SessionToken does not (edge case), expiry must still clear.
+        // [FIX-2] Match by UserId (col 0) OR Name — mirrors _verifySession so logout always finds the row
+        // even when localStorage stores the user's display name instead of UserId.
+        for (let i = 1; i < allData.length; i++) {
+          const rowUserId = String(allData[i][0] || "").trim();
+          const rowName   = nameCol !== -1 ? String(allData[i][nameCol] || "").trim() : "";
+          if ((rowUserId && rowUserId === userId) || (rowName && rowName === userId)) {
+            if (tokenCol  !== -1) sheet.getRange(i + 1, tokenCol  + 1).setValue("");
+            if (expiryCol !== -1) sheet.getRange(i + 1, expiryCol + 1).setValue("");
+            SpreadsheetApp.flush(); break;
           }
         }
       } catch(e) { /* silent */ }
@@ -1392,7 +1601,7 @@ function doGet(e) {
     else {
       const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
       const row = headers.map(h => {
-        if (h === "GoalId")       return sanitize(e.parameter.GoalId, 50) || generateId();
+        if (h === "GoalId")       return sanitize(e.parameter.GoalId, 50) || generateSheetId("GOAL");
         if (h === "GoalName")     return sanitize(e.parameter.GoalName, 200);
         if (h === "TargetAmount") return Number(e.parameter.TargetAmount||0);
         if (h === "CurrentAmount")return Number(e.parameter.CurrentAmount||0);
@@ -1743,9 +1952,15 @@ function doGet(e) {
     let existingUsers = getSheetData(SHEETS.USERS);
     let mobile = sanitize(e.parameter.Mobile, 15);
     let email  = sanitize(e.parameter.Email || "", 200).toLowerCase();
+    const role = sanitize(e.parameter.Role || "User", 20);
 
+    // [VAL] Server-side mobile and email validation
+    const mobileErr = _validateMobile(mobile);
+    if (mobileErr) {
+      result = { status: "error", message: mobileErr };
+    }
     // Check duplicate mobile
-    if (existingUsers.some(u => String(u.Mobile) === mobile)) {
+    else if (existingUsers.some(u => String(u.Mobile) === mobile)) {
       result = { status: "error", message: "Mobile number already registered." };
     }
     // Check duplicate email (only against non-rejected accounts)
@@ -1755,21 +1970,28 @@ function doGet(e) {
     )) {
       result = { status: "error", message: "Email address already registered." };
     } else {
-      let pwd = sanitize(e.parameter.Password, 200);
-      let hashedPwd = pwd.length === 64 ? pwd : hashPassword(pwd);
-      addRow(SHEETS.USERS, [
-        sanitize(e.parameter.UserId, 30),
-        sanitize(e.parameter.Name,   100),
-        mobile,
-        sanitize(e.parameter.Role,   20),
-        hashedPwd,
-        sanitize(e.parameter.Email,  200),
-        "Active",
-        "",
-        sanitize(e.parameter.DOB || "", 12)   // DOB: DD-MM-YYYY or blank
-      ]);
-      logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add User", "Mobile: " + mobile + " | Name: " + sanitize(e.parameter.Name||"",100) + " | Role: " + sanitize(e.parameter.Role||"User",20));
-      result = { status: "success" };
+      const emailErr = _validateEmail(email);
+      if (emailErr) {
+        result = { status: "error", message: emailErr };
+      } else {
+        let pwd = sanitize(e.parameter.Password, 200);
+        let hashedPwd = pwd.length === 64 ? pwd : hashPassword(pwd);
+        // [ID] Generate role-aware sequential UserId — never trust frontend-supplied ID
+        const newUserId = _genUserId(role);
+        addRow(SHEETS.USERS, [
+          newUserId,
+          sanitize(e.parameter.Name,   100),
+          mobile,
+          role,
+          hashedPwd,
+          email,
+          "Active",
+          "",
+          sanitize(e.parameter.DOB || "", 12)   // DOB: DD-MM-YYYY or blank
+        ]);
+        logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add User", "UserId: " + newUserId + " | Mobile: " + mobile + " | Name: " + sanitize(e.parameter.Name||"",100) + " | Role: " + role);
+        result = { status: "success", userId: newUserId };
+      }
     }
   }
 
@@ -1895,7 +2117,7 @@ function doGet(e) {
   // ── CONTRIBUTION TYPES (with permanent SortOrder) ──────────────
   else if (action === "addType") {
     var nextSort = _getNextSortOrder(SHEETS.TYPES);
-    addRow(SHEETS.TYPES, [generateId(), sanitize(e.parameter.TypeName, 100), nextSort]);
+    addRow(SHEETS.TYPES, [generateSheetId("TYPE"), sanitize(e.parameter.TypeName, 100), nextSort]);
     logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Type", sanitize(e.parameter.TypeName||"",100));
     _bustSheetCache("c_types");
     result = { status: "success" };
@@ -1921,7 +2143,7 @@ function doGet(e) {
   // ── OCCASIONS (with permanent SortOrder) ────────────────────────
   else if (action === "addOccasion") {
     var nextSort = _getNextSortOrder(SHEETS.OCCASIONS);
-    addRow(SHEETS.OCCASIONS, [generateId(), sanitize(e.parameter.OccasionName, 100), nextSort]);
+    addRow(SHEETS.OCCASIONS, [generateSheetId("OCC"), sanitize(e.parameter.OccasionName, 100), nextSort]);
     _bustSheetCache("c_occasions");
     logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Occasion", sanitize(e.parameter.OccasionName,100));
     result = { status: "success" };
@@ -1941,7 +2163,7 @@ function doGet(e) {
   // ── EXPENSE TYPES (with permanent SortOrder) ─────────────────────
   else if (action === "addExpenseType") {
     var nextSort = _getNextSortOrder(SHEETS.EXPENSE_TYPES);
-    addRow(SHEETS.EXPENSE_TYPES, [generateId(), sanitize(e.parameter.Name, 100), nextSort]);
+    addRow(SHEETS.EXPENSE_TYPES, [generateSheetId("EXPT"), sanitize(e.parameter.Name, 100), nextSort]);
     _bustSheetCache("c_exptypes");
     logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Expense Type", sanitize(e.parameter.Name,100));
     result = { status: "success" };
@@ -1960,43 +2182,46 @@ function doGet(e) {
 
   // ════════════════════════════════════════════════════════════════
   //  IMPROVEMENT #1 + #3 — ADD CONTRIBUTION
-  //  Now uses: sequential receipt ID, saves PaymentMode column,
-  //            sends HTML receipt email with quota guard.
+  //  [ID] Contribution row ID: CONT-00001 (never resets)
+  //  [ID] Walk-in UserId: WALKIN_2025_00001 (year-wise, generated here)
+  //  Receipt ID: MNR-2025-00001 (year-wise, uses selected Year)
   // ════════════════════════════════════════════════════════════════
   else if (action === "addContribution") {
-    // #3 — sequential human-readable receipt ID.
-    // RESTORE FIX: If ReceiptID is supplied by the caller (undo restore), honour it
-    // and skip generateReceiptId() so the global counter is NOT incremented.
-    // Normal adds never pass ReceiptID so existing behaviour is unchanged.
     const suppliedReceiptId = sanitize(e.parameter.ReceiptID, 30);
-    const receiptId         = suppliedReceiptId || generateReceiptId();
+    const year        = sanitize(e.parameter.Year, 10);
+    const receiptId   = suppliedReceiptId || generateReceiptId(year);
     const paymentMode = sanitize(e.parameter.PaymentMode, 30) || "UPI";
-    const userId      = sanitize(e.parameter.UserId, 30);
+    // [ID] Walk-in signal: frontend sends UserId="WALKIN" → backend generates WALKIN_YYYY_NNNNN
+    // [FIX-1] Use WalkInYear param (form's selected year) so backdated entries get correct year in UserId
+    let userId = sanitize(e.parameter.UserId, 30);
+    if (userId === "WALKIN") {
+      const walkInYear = sanitize(e.parameter.WalkInYear, 10) || String(new Date().getFullYear());
+      userId = generateSheetIdForYear("WALKIN", walkInYear); // e.g. WALKIN_2025_00001
+    }
     const amount      = Number(sanitize(e.parameter.Amount, 20)) || 0;
     const forMonth    = sanitize(e.parameter.ForMonth, 20);
-    const year        = sanitize(e.parameter.Year, 10);
     const typeId      = sanitize(e.parameter.TypeId, 30);
     const occasionId  = sanitize(e.parameter.OccasionId, 30);
     const note        = sanitize(e.parameter.Note, 500);
-    // RESTORE FIX: If PaymentDate is supplied by the caller (undo restore), honour it
-    // so the restored record shows the original date, not the current timestamp.
     const suppliedPaymentDate = sanitize(e.parameter.PaymentDate, 30);
     const paymentDate         = suppliedPaymentDate || formatDate();
+    // [ID] Sequential contribution row ID: CONT-00001
+    const contribId = sanitize(e.parameter.Id, 30) || generateSheetId("CONT");
 
     addRow(SHEETS.CONTRIBUTIONS, [
-      sanitize(e.parameter.Id, 30) || generateId(),
+      contribId,
       userId,
       amount,
-      paymentDate,  // original date on restore, current timestamp on normal add
+      paymentDate,
       forMonth,
       year,
       typeId,
       occasionId,
       note,
-      receiptId,    // Col 10 — original receipt on restore, new MNR-YYYY-NNNN on normal add
-      paymentMode   // Col 11 — Payment Mode
+      receiptId,
+      paymentMode
     ]);
-    logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Contribution", "UserId: " + userId + " | Amount: ₹" + amount + " | Receipt: " + receiptId + " | Month: " + forMonth + " " + year + " | Mode: " + paymentMode);
+    logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Contribution", "Id: " + contribId + " | UserId: " + userId + " | Amount: ₹" + amount + " | Receipt: " + receiptId + " | Month: " + forMonth + " " + year + " | Mode: " + paymentMode);
 
     // #1 — Send receipt email (quota-guarded)
     // Case A: Walk-in entry with a directly provided email (WalkInEmail param)
@@ -2063,25 +2288,29 @@ function doGet(e) {
     }
 
     result = {
-      status:       "success",
-      receiptId:    receiptId,
-      emailSent:    emailSent,
-      emailSkipped: emailSkipped
+      status:        "success",
+      receiptId:     receiptId,
+      walkInUserId:  userId.indexOf("WALKIN_") === 0 ? userId : undefined, // [FIX-1] Return generated ID to client
+      emailSent:     emailSent,
+      emailSkipped:  emailSkipped
     };
   }
 
-  // ── ADD EXPENSE
+  // ── ADD EXPENSE — [ID] EXP-2025-00001 (year-wise reset)
   else if (action === "addExpense") {
+    const expYear = sanitize(e.parameter.Year, 10) || String(new Date().getFullYear());
+    // [ID] Year-wise expense ID so each year's expenses count from 00001
+    const expId = sanitize(e.parameter.Id, 30) || generateSheetId("EXP", true);
     addRow(SHEETS.EXPENSES, [
-      sanitize(e.parameter.Id, 30) || generateId(),
+      expId,
       sanitize(e.parameter.Title,         200),
       Number(sanitize(e.parameter.Amount,  20)) || 0,
       formatDate(),
-      sanitize(e.parameter.Year,           10) || new Date().getFullYear(),
+      expYear,
       sanitize(e.parameter.ExpenseTypeId,  30),
       sanitize(e.parameter.ForMonth,       20) || ""
     ]);
-    logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Expense", "Title: " + e.parameter.Title + " | Amount: ₹" + e.parameter.Amount + " | Year: " + e.parameter.Year);
+    logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add Expense", "Id: " + expId + " | Title: " + e.parameter.Title + " | Amount: ₹" + e.parameter.Amount + " | Year: " + expYear);
     result = { status: "success" };
   }
 
@@ -2216,9 +2445,14 @@ function doGet(e) {
         checks["sheet_" + name] = !!ss.getSheetByName(name);
       });
 
-      // Receipt counter
-      checks["receipt_counter"] = parseInt(props.getProperty("RECEIPT_COUNTER") || "0", 10);
-      checks["receipt_year"]    = props.getProperty("RECEIPT_YEAR") || "—";
+      // Per-year receipt counters (new system — one key per year: RECEIPT_CNT_YYYY)
+      const _hcCurYr = new Date().getFullYear();
+      for (var _ry = _hcCurYr - 2; _ry <= _hcCurYr + 1; _ry++) {
+        var _rval = parseInt(props.getProperty("RECEIPT_CNT_" + _ry) || "0", 10);
+        if (_rval > 0) checks["receipt_count_" + _ry] = _rval;
+      }
+      // Legacy single counter — no longer incremented, kept for reference only
+      checks["receipt_counter_legacy"] = parseInt(props.getProperty("RECEIPT_COUNTER") || "0", 10);
       
 
       // Email quota
@@ -2233,7 +2467,7 @@ function doGet(e) {
 
       // ── Column integrity check per sheet ──
       var expectedCols = {
-        "USERS":                 ["UserId","Name","Mobile","Role","Password","Email","Status","SessionToken","Village","Address","RegisteredAt","PhotoURL","MonthlyTarget","LastLogin","DOB"],
+        "USERS":                 ["UserId","Name","Mobile","Role","Password","Email","Status","SessionToken","Village","Address","RegisteredAt","PhotoURL","MonthlyTarget","LastLogin","DOB","TokenExpiry"],
         "CONTRIBUTION_REQUESTS": ["ReqId","UserId","Amount","PaymentMode","ForMonth","Year","Note","UtrRef","Status","RequestedAt","SlipURL","RejectionNote"],
         "BROADCAST":             ["BcId","Type","Priority","Title","Message","Time","AdminName"],
         "CONTRIBUTIONS":         ["Id","UserId","Amount","PaymentDate","ForMonth","Year","TypeId","OccasionId","Note","ReceiptID","PaymentMode"],
@@ -2419,7 +2653,7 @@ function doGet(e) {
           if (!hdrs.includes("SlipURL")) reqSheet.getRange(1, hdrs.length+1).setValue("SlipURL");
           if (!hdrs.includes("RejectionNote")) reqSheet.getRange(1, hdrs.length+1).setValue("RejectionNote");
         }
-        const newId = generateId();
+        const newId = generateSheetId("REQ");
         // Insert in exact sheet column order: ReqId,UserId,Amount,PaymentMode,ForMonth,Year,Note,UtrRef,Status,RequestedAt,SlipURL,RejectionNote
         reqSheet.appendRow([newId, userId, Number(amount)||0, mode, month, year, note, utrRef, "Pending",
           Utilities.formatDate(new Date(),"GMT+5:30","dd-MM-yyyy HH:mm:ss"), slipUrl, ""]);
@@ -2865,6 +3099,24 @@ function getYearlySummary() {
       if (!isNaN(y)) expenseByYear[y] = (expenseByYear[y] || 0) + Number(e.Amount || 0);
     });
 
+    // [RPT] Pre-aggregate enhanced stats per year: receipt count, expense count, unique members
+    const receiptCountByYear = {};
+    const expenseCountByYear = {};
+    const memberSetByYear    = {};
+    contributions.forEach(c => {
+      const y = parseInt(c.Year, 10);
+      if (isNaN(y)) return;
+      receiptCountByYear[y] = (receiptCountByYear[y] || 0) + 1;
+      if (!memberSetByYear[y]) memberSetByYear[y] = new Set();
+      if (c.UserId && !String(c.UserId).startsWith("WALKIN")) {
+        memberSetByYear[y].add(String(c.UserId));
+      }
+    });
+    expenses.forEach(e => {
+      const y = parseInt(e.Year, 10);
+      if (!isNaN(y)) expenseCountByYear[y] = (expenseCountByYear[y] || 0) + 1;
+    });
+
     // ── Build summary rows with carry-forward chain
     const rows = [];
     let carryForward = 0; // running carry-forward from previous year
@@ -2886,13 +3138,23 @@ function getYearlySummary() {
       // This year's closing becomes next year's carry-forward
       carryForward = closingBalance;
  
+      // [RPT] Enhanced stats for this year
+      const rc  = receiptCountByYear[year] || 0;
+      const ec  = expenseCountByYear[year] || 0;
+      const mc  = memberSetByYear[year] ? memberSetByYear[year].size : 0;
+      const avg = rc > 0 ? Math.round(totalCollection / rc) : 0;
+
       rows.push({
         year:            year,
         openingBalance:  openingBalance,
         totalCollection: totalCollection,
         totalExpense:    totalExpense,
         closingBalance:  closingBalance,
-        carryForward:    closingBalance  // same value — explicit for UI clarity
+        carryForward:    closingBalance,  // same value — explicit for UI clarity
+        receiptCount:    rc,              // how many contribution entries this year
+        expenseCount:    ec,              // how many expense entries this year
+        memberCount:     mc,              // unique members who contributed (excl. walk-ins)
+        avgContribution: avg              // average per receipt this year
       });
     });
  
@@ -2917,6 +3179,17 @@ function updateUser(p) {
   // CONTRIBUTIONS, EXPENSES and all financial records are NEVER touched here.
   // This is by design — inactive members' historical records must remain visible
   // and counted in all admin reports.
+
+  // [VAL] Server-side mobile + email validation
+  if (p.Mobile) {
+    const mErr = _validateMobile(sanitize(p.Mobile, 15));
+    if (mErr) return { status: "error", message: mErr };
+  }
+  if (p.Email) {
+    const eErr = _validateEmail(sanitize(p.Email, 200));
+    if (eErr) return { status: "error", message: eErr };
+  }
+
   let sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
   let data    = sheet.getDataRange().getValues();
   let headers = data[0];
@@ -3229,7 +3502,7 @@ function _saveAnnouncement(e) {
     for (let i=1;i<annData.length;i++) {
       if (String(annData[i][annHdrs.indexOf("Status")]||"Active").toLowerCase()==="active") annSheet.getRange(i+1,stCol).setValue("Past");
     }
-    const newId = generateId();
+    const newId = generateSheetId("ANN");
     const freshHdrs = annSheet.getRange(1,1,1,annSheet.getLastColumn()).getValues()[0];
     annSheet.appendRow(freshHdrs.map(h=>{
       if(h==="AnnId")    return newId;
@@ -3271,7 +3544,7 @@ function _saveBroadcast(e) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let bcSheet = ss.getSheetByName(SHEETS.BROADCAST);
     if (!bcSheet) { bcSheet = ss.insertSheet(SHEETS.BROADCAST); bcSheet.appendRow(["BcId","Type","Priority","Title","Message","Time","AdminName"]); }
-    const newBcId = generateId();
+    const newBcId = generateSheetId("BCAST");
     bcSheet.appendRow([
       newBcId,
       sanitize(e.parameter.type     ||"announcement",30),
@@ -3294,6 +3567,34 @@ function doPost(e) {
   let result = {};
   try {
     const data = JSON.parse(e.postData.contents);
+
+    // [FIX-TOKEN] Handle clearSessionToken BEFORE auth check — this action clears
+    // the token itself so it must not require a valid token to run.
+    // Called by admin.js logout() via postData (reliable JSON POST path).
+    if (data.action === "clearSessionToken") {
+      const userId = sanitize(data.userId || data.UserId || "", 30);
+      if (userId) {
+        try {
+          const sheet    = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+          const allData  = sheet.getDataRange().getValues();
+          const headers  = allData[0];
+          const tokenCol  = headers.indexOf("SessionToken");
+          const expiryCol = headers.indexOf("TokenExpiry");
+          const nameCol   = headers.indexOf("Name");
+          for (let i = 1; i < allData.length; i++) {
+            const rowUserId = String(allData[i][0] || "").trim();
+            const rowName   = nameCol !== -1 ? String(allData[i][nameCol] || "").trim() : "";
+            if ((rowUserId && rowUserId === userId) || (rowName && rowName === userId)) {
+              if (tokenCol  !== -1) sheet.getRange(i + 1, tokenCol  + 1).setValue("");
+              if (expiryCol !== -1) sheet.getRange(i + 1, expiryCol + 1).setValue("");
+              SpreadsheetApp.flush(); break;
+            }
+          }
+        } catch(clrErr) { /* non-fatal */ }
+        logAction(userId, "SESSION_TOKEN_CLEARED", "UserId: " + userId, sanitize(data.reason||"Logout",200), "", { severity:"INFO", result:"SUCCESS" });
+      }
+      return ContentService.createTextOutput(JSON.stringify({ status: "ok" })).setMimeType(ContentService.MimeType.JSON);
+    }
 
     // FIX SEC-9: Verify session token on all doPost actions — photo uploads modify Drive and user data
     const _postUserId = sanitize(data.UserId || data.userId || "", 30);
@@ -3400,7 +3701,7 @@ function doPost(e) {
         }
       }
       const headers = galSheet.getRange(1,1,1,galSheet.getLastColumn()).getValues()[0];
-      const newId = generateId();
+      const newId = generateSheetId("GAL");
       galSheet.appendRow(headers.map(h=>{
         if(h==="ImageId")  return newId;
         if(h==="Title")    return sanitize(data.caption||data.Caption||"",200);
@@ -3820,6 +4121,12 @@ function registerUser(params) {
       return { status: "error", message: "Name, Mobile, Email and Password are required." };
     }
 
+    // [VAL] Server-side mobile + email validation
+    const mobileErr = _validateMobile(mobile);
+    if (mobileErr) return { status: "error", message: mobileErr };
+    const emailErr = _validateEmail(email);
+    if (emailErr) return { status: "error", message: emailErr };
+
     // ── ATOMIC OTP VERIFICATION (new flow: OTP sent before form, verified here)
     //  If otpKey + otp are provided, verify and consume them now — one round trip.
     //  If not provided (legacy path or direct API), skip OTP check.
@@ -3869,7 +4176,8 @@ function registerUser(params) {
     // Refresh headers after possible additions
     headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
  
-    const newId = generateId();
+    // [ID] Always "User" role on self-registration → USER-NNNNN
+    const newId = _genUserId("User");
     const dob = sanitize(params.DOB || "", 12);
     const row = headers.map(h => {
       if (h === "UserId")       return newId;
@@ -4336,7 +4644,7 @@ function _addEvent(p) {  // FIX #3: Moved to global scope (was accidentally inde
       if (!sheet) return { status:"error", message:"EVENTS sheet not found." };
       const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
       const row = headers.map(function(h) {
-        if (h === "EventId")     return sanitize(p.EventId, 50) || generateId();
+        if (h === "EventId")     return sanitize(p.EventId, 50) || generateSheetId("EVT");
         if (h === "EventName")   return sanitize(p.EventName, 200);
         if (h === "Category")    return sanitize(p.Category, 50);
         if (h === "StartDate")   return sanitize(p.StartDate, 20);
@@ -4434,7 +4742,7 @@ function _addEventExpense(p) {  // FIX #3: Moved to global scope (was accidental
       if (!sheet) return { status:"error", message:"EVENT_EXPENSES sheet not found." };
       const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
       const row = headers.map(function(h) {
-        if (h === "Id")           return sanitize(p.Id, 50) || generateId();
+        if (h === "Id")           return sanitize(p.Id, 50) || generateSheetId("EEXP");
         if (h === "EventId")      return sanitize(p.EventId, 50);
         if (h === "Title")        return sanitize(p.Title, 200);
         if (h === "Amount")       return Number(p.Amount || 0);

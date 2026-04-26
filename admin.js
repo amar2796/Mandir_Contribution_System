@@ -446,25 +446,33 @@
 
     /* ── SESSION — security: prevents back-button bypass + URL copy ── */
     function _checkAdminSession() {
-      let s = JSON.parse(localStorage.getItem("session") || "null");
+      var s = JSON.parse(localStorage.getItem("session") || "null");
+
+      // [DEBUG] Log every admin session check — visible in browser DevTools console
+      if (!s) {
+      } else {
+        var _timeLeftSec = Math.round((s.expiry - Date.now()) / 1000);
+      }
+
       if (!s || Date.now() > s.expiry || s.role !== "Admin") {
         // H12: try remember-me token before redirecting to login
         try {
-          const rt = getRememberToken();
+          var rt = getRememberToken();
           if (rt && rt.role === "Admin" && Date.now() < rt.expiry) {
             s = {
               userId: rt.userId, name: rt.name, role: rt.role, email: rt.email || "",
               sessionToken: rt.sessionToken || "", expiry: Date.now() + 30 * 60 * 1000
             };
             localStorage.setItem("session", JSON.stringify(s));
-            return true; // restored from remember-me token
+            return true;
           }
-        } catch (e) { }
+        } catch (e) { console.error("[ADMIN SESSION] remember-me restore error:", e); }
         localStorage.clear();
         history.replaceState(null, "", "login.html");
         location.replace("login.html");
         return false;
       }
+      // Slide client-side expiry forward 30 min (mirrors server sliding window)
       s.expiry = Date.now() + 30 * 60 * 1000;
       localStorage.setItem("session", JSON.stringify(s));
       return true;
@@ -489,6 +497,81 @@
     setTimeout(function () { _vcReady = true; }, 2000);
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden && _vcReady) _checkAdminSession();
+    });
+
+    // ── [SEC] TAB / BROWSER CLOSE — clear session on server via sendBeacon
+    // sendBeacon is the only reliable way to fire a request on page unload.
+    // Regular fetch/XHR gets cancelled when the tab closes.
+    // _navFlag is set by logout() so we don't double-clear on intentional logout.
+    window.addEventListener("beforeunload", function () {
+      if (window._navFlag) return; // logout already cleared token — skip
+      try {
+        var s = JSON.parse(localStorage.getItem("session") || "{}");
+        if (s && s.userId && s.sessionToken) {
+          // [FIX-B] sendBeacon always POSTs → hits doPost, not doGet.
+          // clearSessionToken was only in doGet so beacon was silently dropped.
+          // postData (JSON body → doPost) is correct path. Beacon as fallback only.
+          postData({
+            action:       "clearSessionToken",
+            userId:       s.userId,
+            sessionToken: s.sessionToken || "",
+            reason:       "Admin tab or browser closed"
+          }).then(function(r){
+          }).catch(function(){
+            // Browser cancelled postData on unload — beacon as last resort
+            try {
+              var p = new URLSearchParams({ action:"clearSessionToken", userId:s.userId, reason:"unload-beacon-fallback", callback:"cb_unload" });
+              navigator.sendBeacon(API_URL + "?" + p.toString());
+            } catch(be){}
+          });
+        }
+      } catch(e) { console.error("[ADMIN SESSION] beforeunload error:", e); }
+    });
+
+    // ── [SEC] SCREEN LOCK / APP SWITCH — Visibility API hidden-duration check
+    // When a user locks their phone, switches apps, or minimises the browser,
+    // the page becomes "hidden". If it stays hidden > 30 min we force logout on return.
+    // This covers the scenario that beforeunload misses (screen lock never unloads page).
+    var _pageHiddenAt = null;
+    var _VISIBILITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        // Page just became hidden — record the time
+        _pageHiddenAt = Date.now();
+      } else {
+        // Page became visible again — check how long it was hidden
+        if (_pageHiddenAt !== null) {
+          var hiddenDuration = Date.now() - _pageHiddenAt;
+          _pageHiddenAt = null;
+          if (hiddenDuration >= _VISIBILITY_TIMEOUT_MS) {
+            // Hidden for 30+ min — treat as session timeout, force logout
+            // [FIX] Same race-condition fix as logout(): wait for clearSessionToken
+            // JSONP to resolve before wiping localStorage + redirecting.
+            try {
+              var s = JSON.parse(localStorage.getItem("session") || "{}");
+              if (s && s.userId) {
+                var _visDone = false;
+                function _visFinish() {
+                  if (_visDone) return; _visDone = true;
+                  localStorage.clear(); sessionStorage.clear(); location.replace("login.html");
+                }
+                postData({
+                  action:       "clearSessionToken",
+                  userId:       s.userId,
+                  sessionToken: s.sessionToken || "",
+                  reason:       "Session expired - 30 min screen lock / inactivity"
+                }).then(function(){ _visFinish(); }).catch(function(){ _visFinish(); });
+                setTimeout(_visFinish, 3000); // safety net
+                return;
+              }
+            } catch(e) {}
+            localStorage.clear(); sessionStorage.clear(); location.replace("login.html");
+            return;
+          }
+        }
+        // Visible again within timeout — re-check session validity (existing behaviour)
+        if (_vcReady) _checkAdminSession();
+      }
     });
 
     // FIX: Show session-expiry warning banner if admin leaves tab open long
@@ -609,34 +692,45 @@
     }
 
     function logout() {
-      // Log logout before clearing session
-      try {
-        const s = JSON.parse(localStorage.getItem("session") || "{}");
-        if (s && s.userId) {
-          const devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
-          const params = new URLSearchParams({
-            action:       "logout",
-            userId:       s.userId,
-            userName:     s.name || "Admin",
-            deviceInfo:   devInfo,
-            logoutReason: "Admin clicked logout button",
-            callback:     "cb_logout",
-          });
-          try { navigator.sendBeacon(API_URL + "?" + params.toString()); } catch (e) { }
-          postData({ action: "logout", userId: s.userId, userName: s.name || "Admin",
-                     deviceInfo: devInfo, logoutReason: "Admin clicked logout button" }).catch(() => { });
-        }
-      } catch (e) { }
-      // Set _navFlag so beforeunload skips the beacon (logout already handled token clear above)
-      window._navFlag = true;
-      clearRememberToken(); // H12: clear remember-me on explicit logout
-      localStorage.clear();
-      sessionStorage.clear();
-      setTimeout(() => {
-        window._navFlag = false;
+      // [FIX] postData is JSONP (async script tag). We must WAIT for clearSessionToken
+      // to complete before calling localStorage.clear() + location.replace().
+      // Previously localStorage.clear() ran synchronously right after postData() was
+      // called — the page unloaded before the JSONP script tag even got a response,
+      // so the token was never cleared in the sheet.
+      function _doRedirect() {
+        window._navFlag = true;
+        clearRememberToken();
+        localStorage.clear();
+        sessionStorage.clear();
         history.replaceState(null, "", "login.html");
         location.replace("login.html");
-      }, 300);
+      }
+      try {
+        var s = JSON.parse(localStorage.getItem("session") || "{}");
+        if (s && s.userId) {
+          var devInfo = typeof window._getDeviceInfo === "function" ? window._getDeviceInfo() : "";
+          // Fire audit log (fire-and-forget, do not await)
+          postData({ action: "logout", userId: s.userId, userName: s.name || "Admin",
+                     deviceInfo: devInfo, logoutReason: "Admin clicked logout button" }).catch(function(){});
+          // Clear server-side token FIRST, then redirect when done (or after 3s timeout)
+          var _done = false;
+          function _finish() { if (_done) return; _done = true; _doRedirect(); }
+          postData({
+            action:       "clearSessionToken",
+            userId:       s.userId,
+            sessionToken: s.sessionToken || "",
+            reason:       "Admin clicked logout button"
+          }).then(function(r) {
+            _finish();
+          }).catch(function(err) {
+            _finish();
+          });
+          // Safety net: redirect after 3s even if postData never resolves
+          setTimeout(_finish, 3000);
+          return; // _doRedirect called by _finish above
+        }
+      } catch (e) { console.error("[ADMIN SESSION] logout error:", e); }
+      _doRedirect(); // no session — redirect immediately
     }
 
     function toggleAdminDropdown() {
@@ -1346,6 +1440,7 @@
       var session = JSON.parse(localStorage.getItem("session") || "{}");
       var btn = document.getElementById("glryUploadBtn");
       btn.disabled = true;
+      btn._noAutoLoad = true; // [FIX-2] Tell _wrapFn to skip auto-reset — we manage this button manually
       btn.style.cssText = "background:#ccc;color:#fff;border:none;padding:11px 28px;border-radius:8px;font-weight:600;font-size:14px;cursor:not-allowed;width:100%;";
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>&nbsp; Uploading...';
       try {
@@ -1373,9 +1468,13 @@
           var tagsEl = document.getElementById("glryTagsInput"); if (tagsEl) tagsEl.value = "";
           document.getElementById("glryCroppedPreviewWrap").style.display = "none";
           document.getElementById("glryCroppedPreviewImg").src = "";
-          btn.disabled = true;
-          btn.style.cssText = "background:#ccc;color:#fff;border:none;padding:11px 28px;border-radius:8px;font-weight:600;font-size:14px;cursor:not-allowed;width:100%;";
+          // [FIX-2] Re-enable button after success so admin can upload another photo
+          btn.disabled = false;
+          btn.style.cssText = "background:#f7a01a;color:#fff;border:none;padding:11px 28px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;width:100%;";
           btn.innerHTML = '<i class="fa-solid fa-upload"></i>&nbsp; Upload to Gallery';
+          // [FIX-2] Bust getGallery cache — upload used raw fetch (not postData) so
+          // _CACHE_BUST_ON_WRITE didn't fire; without this, loadGalleryAdmin shows stale data
+          if (typeof mandirCacheBust === "function") mandirCacheBust("getGallery");
           loadGalleryAdmin();
         } else {
           toast("Upload failed: " + (res.message || "Unknown error"), "error");
@@ -1411,8 +1510,10 @@
               .map(t => '<span style="background:#fef3c7;color:#92400e;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;white-space:nowrap;">' + escapeHtml(t) + '</span>')
               .join(" ")
             : "";
+          // [FIX-1] Use data-drivesrc + data-rawphoto so _lazyLoadDriveImgs()
+          // fetches via base64 proxy — avoids NS_BINDING_ABORTED on Drive URLs
           card.innerHTML =
-            '<img src="' + escapeHtml(p.PhotoURL) + '" alt="' + escapeHtml(p.Caption || "") + '" loading="lazy">' +
+            '<img data-drivesrc="' + escapeHtml(p.PhotoURL) + '" data-rawphoto="' + escapeHtml(p.PhotoURL) + '" alt="' + escapeHtml(p.Caption || "") + '" loading="lazy" src="" style="background:#f1f5f9;">' +
             '<div style="padding:8px 10px 10px;">' +
             '<div style="font-size:12px;font-weight:600;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
             escapeHtml(p.Caption || "—") +
@@ -1426,19 +1527,22 @@
             '<i class="fa-solid fa-trash"></i></button>';
           grid.appendChild(card);
         });
+        // [FIX-1] Trigger lazy Drive image loader after all cards are in DOM
+        if (typeof window._lazyLoadDriveImgs === "function") window._lazyLoadDriveImgs(grid);
       } catch (err) {
         grid.innerHTML = "<p style='color:#e74c3c;font-size:13px;'>Error loading gallery.</p>";
       }
     }
 
     async function deleteGalleryPhoto(photoId) {
-      if (!confirm("Delete this photo from the gallery? This cannot be undone.")) return;
-      var session = JSON.parse(localStorage.getItem("session") || "{}");
-      try {
-        var res = await postData({ action: "deleteGalleryPhoto", PhotoId: photoId, AdminName: session.name || "Admin" });
-        if (res.status === "deleted") { toast("Photo deleted from gallery.", "success"); loadGalleryAdmin(); }
-        else toast("Delete failed: " + (res.message || "Not found"), "error");
-      } catch (err) { toast("Error: " + err.message, "error"); }
+      confirmModal("Delete this photo from the gallery? This cannot be undone.", async function() {
+        var session = JSON.parse(localStorage.getItem("session") || "{}");
+        try {
+          var res = await postData({ action: "deleteGalleryPhoto", PhotoId: photoId, AdminName: session.name || "Admin" });
+          if (res.status === "deleted") { toast("Photo deleted from gallery.", "success"); loadGalleryAdmin(); }
+          else toast("Delete failed: " + (res.message || "Not found"), "error");
+        } catch (err) { toast("Error: " + err.message, "error"); }
+      }, "Delete", "#e74c3c");
     }
 
     /* ══════════════════════════════
@@ -1523,13 +1627,14 @@
 
     async function clearAnnouncement() {
       if (!checkSession()) return;
-      if (!confirm("Remove the current announcement banner from the home page?")) return;
-      var session = JSON.parse(localStorage.getItem("session") || "{}");
-      try {
-        var res = await postData({ action: "clearAnnouncement", AdminName: session.name || "Admin" });
-        toast("Banner removed.", "success");
-        loadAnnouncementAdmin();
-      } catch (e) { toast("Error: " + e.message, "error"); }
+      confirmModal("Remove the current announcement banner from the home page?", async function() {
+        var session = JSON.parse(localStorage.getItem("session") || "{}");
+        try {
+          var res = await postData({ action: "clearAnnouncement", AdminName: session.name || "Admin" });
+          toast("Banner removed.", "success");
+          loadAnnouncementAdmin();
+        } catch (e) { toast("Error: " + e.message, "error"); }
+      }, "Remove", "#f7a01a");
     }
 
     async function loadAnnouncementAdmin() {
@@ -1924,7 +2029,10 @@
               '<td style="text-align:right;font-weight:700;color:' + (closing >= 0 ? "#27ae60" : "#e74c3c") + ';">' +
               (closing < 0 ? "−" : "") + "₹" + fmt(Math.abs(closing)) +
               '</td>' +
-              '<td style="text-align:right;color:#6366f1;">' + cfText + '</td>';
+              '<td style="text-align:right;color:#6366f1;">' + cfText + '</td>' +
+              '<td style="text-align:right;color:#334155;">' + (r.receiptCount || 0) + '</td>' +
+              '<td style="text-align:right;color:#334155;">' + (r.memberCount || 0) + '</td>' +
+              '<td style="text-align:right;color:#64748b;">₹' + fmt(r.avgContribution || 0) + '</td>';
 
             tbody.appendChild(tr);
           });
@@ -1941,6 +2049,9 @@
             (finalBalance < 0 ? "−" : "") + "₹" + fmt(Math.abs(finalBalance)) +
             '</td>' +
             '<td style="text-align:right;color:#94a3b8;font-size:11px;">Final balance</td>' +
+            '<td style="text-align:right;color:#94a3b8;">—</td>' +
+            '<td style="text-align:right;color:#94a3b8;">—</td>' +
+            '<td style="text-align:right;color:#94a3b8;">—</td>' +
             '</tr>';
 
           // Show table + totals
@@ -2072,42 +2183,36 @@
 
     // Applies pre-computed summary result to DOM — used by both full and fast paths
     function _applySummaryResult(r) {
-      function _trendHTML(cur, prev, invertColor) {
-        if (prev === 0 && cur === 0) return '<span style="color:#94a3b8;">— No data</span>';
-        if (prev === 0) return '<span style="color:#27ae60;">▲ New this month</span>';
-        const diff = cur - prev;
-        const pct = Math.abs(Math.round((diff / prev) * 100));
-        const up = diff >= 0;
-        const good = invertColor ? !up : up;
-        const color = diff === 0 ? "#94a3b8" : good ? "#27ae60" : "#e74c3c";
-        const arrow = diff === 0 ? "—" : (up ? "▲" : "▼");
-        return `<span style="color:${color};">${arrow} ${pct}% vs ${r.lastMonth}</span>`;
-      }
+      // Hide the entire summary-grid section (contains the 4 all-time cards that show ₹0)
+      // Year Balance section already shows selected-year totals correctly
+      var _hide = function(sel) {
+        var els = document.querySelectorAll(sel);
+        els.forEach(function(el) { el.style.setProperty("display","none","important"); });
+      };
 
-      _countUp(document.getElementById("totalUsers"), String(r.memberCount), "#6366f1");
-      _countUp(document.getElementById("totalContribution"), "₹" + fmt(r.totalC), "#27ae60");
-      _countUp(document.getElementById("totalExpense"), "₹" + fmt(r.totalE), "#e74c3c");
+      // Hide the grid container itself — catches all 4 cards in one shot
+      _hide(".summary-grid");
 
-      const tU = document.getElementById("trendUsers");
-      if (tU) tU.innerHTML = '<span style="color:#94a3b8;">Active members</span>';
-      const tC = document.getElementById("trendContrib");
-      if (tC) tC.innerHTML = _trendHTML(r.thisMonthC, r.lastMonthC, false);
-      const tE = document.getElementById("trendExpense");
-      if (tE) tE.innerHTML = _trendHTML(r.thisMonthE, r.lastMonthE, true);
-
-      const net = r.totalOpening + r.totalC - r.totalE;
-      const netEl = document.getElementById("netBalance");
-      _countUp(netEl, (net < 0 ? "−" : "") + "₹" + fmt(Math.abs(net)), net >= 0 ? "#27ae60" : "#e74c3c");
-
-      const breakdownEl = document.getElementById("netBalanceBreakdown");
-      if (breakdownEl) {
-        if (r.totalOpening > 0) {
-          breakdownEl.innerHTML =
-            `<span style="color:#64748b;font-size:10px;">Opening: <b style="color:#f7a01a;">₹${fmt(r.totalOpening)}</b> + Contributions − Expenses</span>`;
+      // Fallback: hide individual card-boxes by their known element IDs
+      // (in case summary-grid class name differs in their HTML)
+      ["totalContribution","totalExpense","totalUsers","netBalance"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        // Try closest with every possible card wrapper class
+        var card = typeof el.closest === "function"
+          ? (el.closest(".card-box") || el.closest(".card") || el.closest("[class*='box']"))
+          : null;
+        if (card) {
+          card.style.setProperty("display","none","important");
         } else {
-          breakdownEl.innerHTML = "";
+          // Last resort: hide the element's grandparent (label → value → card wrapper)
+          var gp = el.parentNode && el.parentNode.parentNode;
+          if (gp) gp.style.setProperty("display","none","important");
         }
-      }
+      });
+
+      // Store member count for downstream renders (pending donut ring etc.)
+      window._hmActiveMemberCount = r.memberCount;
     }
 
     /* ═══════════════════════════════════════════════════════════
@@ -2494,37 +2599,107 @@
     function _hmRenderBarChart(curYear, selMonth) {
       var el = document.getElementById("hm_bar_chart");
       if (!el) return;
+
       var mapC = {}, mapE = {};
       data.filter(function(c) { return String(c.Year) === String(curYear); }).forEach(function(c) {
-        var m = c.ForMonth||"";
-        if (m) mapC[m] = (mapC[m]||0) + Number(c.Amount||0);
+        var m = c.ForMonth || "";
+        if (m) mapC[m] = (mapC[m] || 0) + Number(c.Amount || 0);
       });
       expenses.filter(function(e) { return String(e.Year) === String(curYear); }).forEach(function(e) {
-        var m = e.ForMonth||"";
-        if (m) mapE[m] = (mapE[m]||0) + Number(e.Amount||0);
+        var m = e.ForMonth || "";
+        if (m) mapE[m] = (mapE[m] || 0) + Number(e.Amount || 0);
       });
+
       var active = MONTHS.filter(function(m) { return (mapC[m]||0) > 0 || (mapE[m]||0) > 0; });
       if (active.length === 0) {
-        el.innerHTML = '<div style="color:#aaa;font-size:11px;padding:10px;">No data for ' + curYear + '</div>';
+        el.innerHTML = '<div style="color:#94a3b8;font-size:12px;padding:16px;text-align:center;">No data for ' + curYear + '</div>';
         return;
       }
-      var maxVal = Math.max.apply(null, active.map(function(m) { return Math.max(mapC[m]||0, mapE[m]||0); }).concat([1]));
-      el.innerHTML = active.map(function(m) {
-        var cH = Math.round(((mapC[m]||0) / maxVal) * 75);
-        var eH = Math.round(((mapE[m]||0) / maxVal) * 75);
-        var isSel = m === selMonth;
-        var cBg = isSel ? "#16a34a" : "#22c55e";
-        var eBg = isSel ? "#ea580c" : "#f97316";
-        var lbl = isSel
-          ? '<div style="font-size:8px;color:#f7a01a;font-weight:700;">' + m.slice(0,3) + '</div>'
-          : '<div style="font-size:8px;color:#64748b;font-weight:600;">' + m.slice(0,3) + '</div>';
-        return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:18px;' + (isSel ? 'background:#fef9ee;border-radius:4px;' : '') + '">' +
-          '<div style="display:flex;align-items:flex-end;gap:2px;height:75px;">' +
-            '<div title="Income ₹' + fmt(mapC[m]||0) + '" style="width:8px;height:' + Math.max(cH,2) + 'px;background:' + cBg + ';border-radius:2px 2px 0 0;"></div>' +
-            '<div title="Expense ₹' + fmt(mapE[m]||0) + '" style="width:8px;height:' + Math.max(eH,2) + 'px;background:' + eBg + ';border-radius:2px 2px 0 0;"></div>' +
-          '</div>' + lbl +
+
+      var maxC = Math.max.apply(null, active.map(function(m) { return mapC[m]||0; }).concat([1]));
+      var maxE = Math.max.apply(null, active.map(function(m) { return mapE[m]||0; }).concat([1]));
+      var selIdx = active.indexOf(selMonth);
+      var prevM  = selIdx > 0 ? active[selIdx - 1] : null;
+      var selC   = mapC[selMonth] || 0, selE = mapE[selMonth] || 0;
+      var netSel = selC - selE;
+
+      // Legend once
+      var legId = "_hm_cmp_legend";
+      if (!document.getElementById(legId)) {
+        var leg = document.createElement("div");
+        leg.id  = legId;
+        leg.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;";
+        leg.innerHTML =
+          '<span style="font-size:12px;font-weight:600;color:#334155;">Monthly comparison · ' + curYear + '</span>' +
+          '<div style="display:flex;gap:10px;">' +
+            '<span style="font-size:10px;display:flex;align-items:center;gap:4px;color:#64748b;"><span style="width:10px;height:10px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Income</span>' +
+            '<span style="font-size:10px;display:flex;align-items:center;gap:4px;color:#64748b;"><span style="width:10px;height:10px;background:#f97316;border-radius:2px;display:inline-block;"></span>Expense</span>' +
+          '</div>';
+        el.parentNode && el.parentNode.insertBefore(leg, el);
+      } else {
+        var t = document.querySelector("#_hm_cmp_legend span");
+        if (t) t.textContent = "Monthly comparison · " + curYear;
+      }
+
+      var rows = active.map(function(m) {
+        var cV = mapC[m]||0, eV = mapE[m]||0;
+        var sel = m === selMonth;
+        var cW  = Math.round((cV / maxC) * 100);
+        var eW  = Math.round((eV / maxE) * 100);
+        return '<div onclick="_hmSelectMonth(\'' + m + '\')" ' +
+          'style="display:grid;grid-template-columns:32px 1fr 1fr;gap:6px;align-items:center;cursor:pointer;' +
+          (sel ? 'background:rgba(247,160,26,0.07);border-radius:7px;padding:4px;' : 'padding:3px 4px;') + '">' +
+          '<span style="font-size:10px;font-weight:' + (sel?'600':'400') + ';color:' + (sel?'#d97706':'#64748b') + ';">' + m.slice(0,3) + '</span>' +
+          '<div style="display:flex;align-items:center;gap:5px;">' +
+            '<div style="flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;">' +
+              '<div style="height:100%;width:' + cW + '%;background:' + (sel?'#16a34a':'#22c55e') + ';border-radius:4px;transition:width .3s;"></div>' +
+            '</div>' +
+            '<span style="font-size:10px;font-weight:' + (sel?'600':'400') + ';color:' + (sel?'#15803d':'#16a34a') + ';white-space:nowrap;min-width:38px;text-align:right;">₹' + _fmtK(cV) + '</span>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:5px;">' +
+            '<div style="flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;">' +
+              '<div style="height:100%;width:' + eW + '%;background:' + (sel?'#ea580c':'#f97316') + ';border-radius:4px;transition:width .3s;"></div>' +
+            '</div>' +
+            '<span style="font-size:10px;font-weight:' + (sel?'600':'400') + ';color:' + (sel?'#ea580c':'#f97316') + ';white-space:nowrap;min-width:38px;text-align:right;">₹' + _fmtK(eV) + '</span>' +
+          '</div>' +
         '</div>';
-      }).join("");
+      }).join('<div style="height:1px;background:#f1f5f9;margin:1px 4px;"></div>');
+
+      function _chip(label, delta, invert) {
+        var good  = invert ? delta <= 0 : delta >= 0;
+        var bg    = delta === 0 ? "#f8fafc" : good ? "#f0fdf4" : "#fef2f2";
+        var col   = delta === 0 ? "#94a3b8" : good ? "#16a34a" : "#dc2626";
+        var arrow = delta === 0 ? "—" : delta > 0 ? "▲" : "▼";
+        return '<div style="flex:1;background:' + bg + ';border-radius:8px;padding:7px 10px;text-align:center;min-width:0;">' +
+          '<div style="font-size:10px;color:#64748b;margin-bottom:2px;">' + label + '</div>' +
+          '<div style="font-size:12px;font-weight:600;color:' + col + ';white-space:nowrap;">' +
+            arrow + ' ₹' + _fmtK(Math.abs(delta)) + (prevM ? ' vs ' + prevM.slice(0,3) : '') +
+          '</div>' +
+        '</div>';
+      }
+
+      var chips = prevM
+        ? '<div style="display:flex;gap:6px;margin-top:10px;padding-top:8px;border-top:0.5px solid #f1f5f9;">' +
+            _chip("Income", selC - (mapC[prevM]||0), false) +
+            _chip("Expense", selE - (mapE[prevM]||0), true) +
+            '<div style="flex:1;background:#eff6ff;border-radius:8px;padding:7px 10px;text-align:center;min-width:0;">' +
+              '<div style="font-size:10px;color:#64748b;margin-bottom:2px;">Net · ' + selMonth.slice(0,3) + '</div>' +
+              '<div style="font-size:12px;font-weight:600;color:' + (netSel>=0?'#2563eb':'#dc2626') + ';white-space:nowrap;">' +
+                (netSel<0?'−':'') + '₹' + _fmtK(Math.abs(netSel)) +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        : '';
+
+      el.style.display = "block";
+      el.innerHTML = rows + chips;
+    }
+
+    function _fmtK(v) {
+      v = Math.round(v);
+      if (v >= 100000) return (v/100000).toFixed(1).replace(/\.0$/,"") + "L";
+      if (v >= 1000)   return (v/1000).toFixed(1).replace(/\.0$/,"") + "k";
+      return String(v);
     }
 
     function _hmRenderAlerts(pendingCount, monthE, activeMembers, curMonth, curYear) {
@@ -2640,11 +2815,7 @@
       var el = document.getElementById("hm_yr_label");
       if (el) el.textContent = curYear;
 
-      // Progress up to selected month in selected year
       var selMonthIdx = curMonth ? MONTHS.indexOf(curMonth) : new Date().getMonth();
-      var monthsDone = MONTHS.slice(0, selMonthIdx + 1).filter(function(m) {
-        return data.some(function(c) { return String(c.Year) === String(curYear) && c.ForMonth === m; });
-      }).length;
       var pct = Math.round((selMonthIdx + 1) / 12 * 100);
 
       el = document.getElementById("hm_yr_months_done");
@@ -2654,16 +2825,33 @@
       el = document.getElementById("hm_yr_progress_fill");
       if (el) {
         el.style.width = pct + "%";
+        el.style.transition = "width .4s ease";
         el.style.background = pct >= 75 ? "#27ae60" : pct >= 40 ? "#f7a01a" : "#e74c3c";
       }
+
+      // ── Year totals for selected year (the numbers that were ₹0 before) ──
+      var yearC = data.filter(function(c) {
+        return String(c.Year) === String(curYear);
+      }).reduce(function(s,c) { return s + Number(c.Amount||0); }, 0);
+
+      var yearE = expenses.filter(function(e) {
+        return String(e.Year) === String(curYear);
+      }).reduce(function(s,e) { return s + Number(e.Amount||0); }, 0);
+
+      // Opening balance from yearConfig for net calculation
+      var opening = 0;
+      if (Array.isArray(yearConfig)) {
+        var yRow = yearConfig.find(function(r) {
+          return String(r.Year || r.year || "") === String(curYear);
+        });
+        if (yRow) opening = Number(yRow.OpeningBalance || yRow.Opening_Balance || yRow.opening_balance || yRow.Balance || 0) || 0;
+      }
+      var net = opening + yearC - yearE;
+      var netCol = net >= 0 ? "#16a34a" : "#dc2626";
 
       // Status badge
       el = document.getElementById("hm_yr_status_badge");
       if (el) {
-        var yearC = data.filter(function(c) { return String(c.Year) === String(curYear); })
-          .reduce(function(s,c) { return s + Number(c.Amount||0); }, 0);
-        var yearE = expenses.filter(function(e) { return String(e.Year) === String(curYear); })
-          .reduce(function(s,e) { return s + Number(e.Amount||0); }, 0);
         if (yearC > yearE) {
           el.textContent = "On track";
           el.style.background = "#f0fdf4"; el.style.color = "#166534"; el.style.border = "1px solid #bbf7d0";
@@ -2671,9 +2859,40 @@
           el.textContent = "Deficit";
           el.style.background = "#fef2f2"; el.style.color = "#991b1b"; el.style.border = "1px solid #fca5a5";
         } else {
-          el.textContent = "Balanced"; el.style.background = "#f8fafc"; el.style.color = "#475569"; el.style.border = "1px solid #e2e8f0";
+          el.textContent = "Balanced";
+          el.style.background = "#f8fafc"; el.style.color = "#475569"; el.style.border = "1px solid #e2e8f0";
         }
       }
+
+      // ── Inject year stat cells below status badge (idempotent) ──────────
+      // Shows: collected · expenses · net · members for the SELECTED year
+      (function _renderYearStatCells() {
+        var cellsId = "_hm_yr_cells";
+        var wrap = document.getElementById(cellsId);
+        if (!wrap) {
+          wrap = document.createElement("div");
+          wrap.id = cellsId;
+          wrap.style.cssText = "display:flex;gap:6px;margin-top:10px;";
+          var badge = document.getElementById("hm_yr_status_badge");
+          if (badge && badge.parentNode) badge.parentNode.appendChild(wrap);
+        }
+        var memberCount = users.filter(function(u) {
+          return String(u.Status||"").toLowerCase() === "active";
+        }).length || (window._hmActiveMemberCount || 0);
+
+        function cell(label, val, col) {
+          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;' +
+            'padding:8px 4px;background:#f8fafc;border:0.5px solid #e2e8f0;border-radius:8px;">' +
+            '<div style="font-size:14px;font-weight:600;color:' + (col||"#334155") + ';line-height:1.2;">' + val + '</div>' +
+            '<div style="font-size:9px;color:#94a3b8;margin-top:3px;text-align:center;white-space:nowrap;">' + label + '</div>' +
+          '</div>';
+        }
+        wrap.innerHTML =
+          cell("Collected",   "₹" + fmt(yearC), "#16a34a") +
+          cell("Expenses",    "₹" + fmt(yearE), "#dc2626") +
+          cell("Net balance", (net < 0 ? "−" : "") + "₹" + fmt(Math.abs(net)), netCol) +
+          cell("Members",     String(memberCount), "#6366f1");
+      })();
     }
 
     /* Also call _hmRenderDashboard after _dashSyncFromAdmin so
@@ -3186,17 +3405,35 @@
       let cur = new Date().getFullYear();
       // Always include from 2023 (collection start year) to next year
       for (let y = 2023; y <= cur + 1; y++) years.add(y);
-      let opts = Array.from(years)
-        .sort((a, b) => b - a)
-        .map((y) => `<option value="${y}">${y}</option>`)
-        .join("");
-      ["contribYear", "expYear"].forEach((id) => {
-        let el = document.getElementById(id);
-        if (el) {
-          el.innerHTML = opts;
-          el.value = cur;
-        }
-      });
+
+      const sortedYears = Array.from(years).sort((a, b) => b - a);
+
+      // contribYear — shows label hint for past/future years so admin knows
+      // the receipt ID will use the selected year (MNR-YYYY-NNNNN)
+      const contribEl = document.getElementById("contribYear");
+      if (contribEl) {
+        contribEl.innerHTML = sortedYears.map((y) => {
+          let label = String(y);
+          if (y === cur)      label = y + " (Current)";
+          else if (y < cur)   label = y + " (Old Entry)";
+          else if (y > cur)   label = y + " (Advance)";
+          return `<option value="${y}">${label}</option>`;
+        }).join("");
+        contribEl.value = cur;
+      }
+
+      // expYear — expense year dropdown (same year range, plain labels)
+      // FIX: was never populated, leaving the dropdown empty on the Add Expense form
+      const expYearEl = document.getElementById("expYear");
+      if (expYearEl) {
+        expYearEl.innerHTML = sortedYears.map((y) =>
+          `<option value="${y}"${y === cur ? " selected" : ""}>${y}</option>`
+        ).join("");
+      }
+
+      // Initialize receipt year hint display
+      const hintEl = document.getElementById("contribYearHint");
+      if (hintEl) hintEl.textContent = "Receipt will be: MNR-" + cur + "-NNNNN";
     }
     function loadUsers() {
       const _luEl = document.getElementById("user");
@@ -3347,7 +3584,7 @@
             <button class="btn-sm btn-info" onclick="viewContrib_receipt('${_rid}')" title="View Receipt"><i class="fa-solid fa-receipt"></i></button>
             <button class="btn-sm" onclick="openEditContrib('${c.Id
             }')" title="Edit"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn-sm btn-danger" onclick="del('${c.Id
+            <button class="btn-sm btn-danger" onclick="deleteContribution('${c.Id
             }')" title="Delete"><i class="fa-solid fa-trash"></i></button>
           </div>
         </td>
@@ -3600,14 +3837,17 @@
               (t) => String(t.ExpenseTypeId) === String(e.ExpenseTypeId)
             )?.Name || "—";
           let mn = e.ForMonth || e.Note || "—";
+          var isCorr = String(e.Id).startsWith("CORR_") || String(e.Title||"").startsWith("↩ VOID:");
+          var corrStyle = isCorr ? "background:#f0fdf4;opacity:0.85;" : "";
+          var amtStyle  = isCorr ? "color:#16a34a;font-weight:600;" : "";
           return `<tr class="clickable-row" onclick="viewExpense('${e.Id
-            }')" title="Click to view details">
+            }')" title="Click to view details" style="${corrStyle}">
         <td>${n}</td>
-        <td><b>${escapeHtml(e.Title || "")}</b></td>
+        <td><b>${isCorr ? '<i class="fa-solid fa-rotate-left" style="color:#16a34a;margin-right:4px;font-size:10px;"></i>' : ''}${escapeHtml(e.Title || "")}</b></td>
         <td>${escapeHtml(tName)}</td>
         <td>${escapeHtml(mn)}</td>
         <td>${escapeHtml(String(e.Year || "—"))}</td>
-        <td class="amt-red">₹ ${fmt(e.Amount)}</td>
+        <td class="${isCorr ? '' : 'amt-red'}" style="${amtStyle}">₹ ${fmt(e.Amount)}</td>
         <td style="font-size:12px;color:#888;">${formatPaymentDate(e.PaymentDate)}</td>
             <td onclick="event.stopPropagation()">
       <div class="action-btns">
@@ -4444,20 +4684,24 @@
             `<option value="${t.TypeId}">${escapeHtml(t.TypeName)}</option>`
         )
         .join("");
-      let yearOpts = Array.from(
-        new Set([
-          ...data.map((d) => Number(d.Year)),
-          new Date().getFullYear(),
-          new Date().getFullYear() + 1,
-        ])
-      )
-        .filter((y) => y > 2000)
-        .sort((a, b) => b - a)
-        .map(
-          (y) =>
-            `<option value="${y}"${y === new Date().getFullYear() ? " selected" : ""
-            }>${y}</option>`
-        )
+      // [FIX-3] Show ALL years from 2020 to current+1 regardless of existing data.
+      // Previously only years found in contributions data were shown — if no entries
+      // existed for a year (e.g. new year or past year), it was missing from the list.
+      var _bkCurYear = new Date().getFullYear();
+      // Use the earliest year from yearConfig (same as contribution records), fallback to current year
+      var _bkStartYear = _bkCurYear;
+      if (typeof yearConfig !== "undefined" && yearConfig.length) {
+        var _ycYears = yearConfig.map(function(r){ return Number(r.Year); }).filter(function(y){ return y > 2000; });
+        if (_ycYears.length) _bkStartYear = Math.min.apply(null, _ycYears);
+      }
+      var _bkYearPool = new Set([...(data||[]).map(function(d){ return Number(d.Year); })]);
+      for (var _y = _bkStartYear; _y <= _bkCurYear + 1; _y++) _bkYearPool.add(_y);
+      let yearOpts = Array.from(_bkYearPool)
+        .filter(function(y){ return y > 2000; })
+        .sort(function(a,b){ return b - a; })
+        .map(function(y){
+          return '<option value="' + y + '"' + (y === _bkCurYear ? ' selected' : '') + '>' + y + '</option>';
+        })
         .join("");
 
       let html = `
@@ -4623,7 +4867,7 @@
       const results = await Promise.all(finalRows.map(function(r) {
         return postData({
           action: "addContribution",
-          Id: Date.now() + "_" + r.month,
+          // [ID] FIX: No Id passed — backend generates CONT-NNNNN for each entry
           UserId: userId, Amount: r.amount, ForMonth: r.month,
           Year: year, TypeId: typeId, OccasionId: "", Note: note,
           sessionToken: s.sessionToken || "", userId: s.userId || ""
@@ -4684,7 +4928,10 @@
       const monthOpts = MONTHS.map(m => `<option value="${m}"${m===forMonth?" selected":""}>${m}</option>`).join("");
       const curY = new Date().getFullYear();
       let yearOptsP = "";
-      for (let y = curY+1; y >= 2023; y--) yearOptsP += `<option value="${y}"${y===Number(year)?" selected":""}>${y}</option>`;
+      for (let y = curY+1; y >= 2023; y--) {
+        let yLbl = y === curY ? y + " (Current)" : y < curY ? y + " (Old Entry)" : y + " (Advance)";
+        yearOptsP += `<option value="${y}"${y===Number(year)?" selected":""}>${yLbl}</option>`;
+      }
       const typeOptsP = types.map(t => `<option value="${t.TypeId}"${String(t.TypeId)===typeId?" selected":""}>${escapeHtml(t.TypeName)}</option>`).join("");
       const occasionOptsP = `<option value="">— None —</option>` + occasions.map(o => `<option value="${o.OccasionId}"${String(o.OccasionId)===occasionId?" selected":""}>${escapeHtml(o.OccasionName)}</option>`).join("");
       const modeOpts = ["UPI","Cash","Cheque","Online Transfer"].map(m => `<option value="${m}"${m===paymentMode?" selected":""}>${m}</option>`).join("");
@@ -4781,11 +5028,11 @@
         const _ps = JSON.parse(localStorage.getItem("session") || "{}");
         const payload = {
           action: "addContribution",
-          Id: Date.now(),
+          // [ID] FIX: No Id passed — backend generates CONT-NNNNN sequentially
           UserId: userId,
           Amount: amount,
           ForMonth: document.getElementById("prev_month").value,
-          Year: year,
+          Year: year,   // ← passed to backend so receipt ID uses selected year (MNR-YYYY-NNNNN)
           TypeId: document.getElementById("prev_type").value,
           OccasionId: document.getElementById("prev_occasion").value,
           Note: document.getElementById("prev_note").value,
@@ -4840,13 +5087,26 @@
         if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
       }
     }
-    async function del(id) {
+    // Exposed as window.deleteContribution so _wrapFn can add spinner to the trash button
+    async function deleteContribution(id) {
       if (!checkSession()) return;
       // UNDO: capture contribution before confirm dialog
       const _undoC = (typeof data !== "undefined") ? data.find(c => String(c.Id) === String(id)) : null;
       const _undoLabel = _undoC ? ("₹" + Number(_undoC.Amount||0).toLocaleString("en-IN") + " — " + (_undoC.ForMonth||"") + " " + (_undoC.Year||"")) : "Contribution";
       const _undoSaved = _undoC ? JSON.parse(JSON.stringify(_undoC)) : null;
-      confirmModal("Delete this contribution?", async () => {
+      // Rich confirm: show exactly which contribution is being deleted
+      const _cMemberName = _undoC ? (typeof users !== "undefined" ? (users.find(function(u){ return String(u.UserId) === String(_undoC.UserId); }) || {}) : {}) : {};
+      const _cName = _cMemberName.Name ? escapeHtml(_cMemberName.Name) : "";
+      const _cDetailHtml = _undoC
+        ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin:0 0 4px;text-align:left;font-size:12.5px;color:#7f1d1d;">' +
+          (_cName ? '<span style="font-weight:700;color:#dc2626;">' + _cName + '</span> &nbsp;·&nbsp; ' : '') +
+          '<span style="color:#b91c1c;">₹' + Number(_undoC.Amount||0).toLocaleString("en-IN") + '</span>' +
+          (_undoC.ForMonth ? ' &nbsp;·&nbsp; <span style="color:#9b1b1b;">' + escapeHtml(_undoC.ForMonth) + ' ' + (_undoC.Year||"") + '</span>' : '') +
+          '</div>'
+        : '';
+      confirmModal(
+        "Delete this contribution?" + (_cDetailHtml ? '<br><br>' + _cDetailHtml : ''),
+        async () => {
         try {
           const _s = JSON.parse(localStorage.getItem("session") || "{}");
           let res = await postData({ action: "deleteContribution", Id: id, AdminName: _s.name || "Admin", sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
@@ -4889,7 +5149,7 @@
       try {
         let res = await postData({
           action: "addExpense",
-          Id: Date.now(),
+          // [ID] FIX: No Id passed — backend generates EXP-YYYY-NNNNN sequentially
           Title: title,
           Amount: amount,
           Year: year,
@@ -5165,54 +5425,55 @@
     }
 
     async function deleteExpense(id) {
-      // H11: Expense correction entry instead of hard delete
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
-      const html = `
-          <div class="_mhdr"><h3><i class="fa-solid fa-triangle-exclamation" style="color:#e67e22;"></i> Correct / Void Expense</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-          <div class="_mbdy">
-            <p style="font-size:13px;color:#64748b;margin-bottom:16px;">For financial accountability, expenses are not deleted — a correction (reversal) entry is recorded instead. This preserves the full audit trail.</p>
-            <label style="font-size:12px;font-weight:600;color:#334155;display:block;margin-bottom:6px;">Reason for correction *</label>
-            <textarea id="corrReason" placeholder="e.g. Entered wrong amount, duplicate entry, vendor refunded..." style="width:100%;min-height:80px;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
-          </div>
-          <div class="_mft">
-            <button class="_mbtn" style="background:#999;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Cancel</button>
-            <button class="_mbtn" style="background:#e67e22;" onclick="_confirmCorrectionEntry('${id}')"><i class="fa-solid fa-rotate-left"></i> Record Correction Entry</button>
-          </div>`;
-      openModal(html, "480px");
+      if (!checkSession()) return;
+      // Capture expense record before confirm so undo can restore it
+      const _undoE = (typeof expenses !== "undefined") ? expenses.find(function(e){ return String(e.Id) === String(id); }) : null;
+      const _expTitle  = _undoE ? escapeHtml(_undoE.Title || "Expense") : "Expense";
+      const _expAmt    = _undoE ? "₹" + Number(_undoE.Amount||0).toLocaleString("en-IN") : "";
+      const _expMonth  = _undoE ? ((_undoE.ForMonth ? _undoE.ForMonth + " " : "") + (_undoE.Year || "")) : "";
+      const _undoLabel = _expAmt ? (_expAmt + " — " + _expTitle) : _expTitle;
+      const _undoSaved = _undoE ? JSON.parse(JSON.stringify(_undoE)) : null;
+
+      // Rich confirm: show exactly what is being deleted
+      const _detailHtml = _undoE
+        ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin:0 0 4px;text-align:left;font-size:12.5px;color:#7f1d1d;">' +
+          '<span style="font-weight:700;color:#dc2626;">' + _expTitle + '</span>' +
+          (_expAmt    ? ' &nbsp;·&nbsp; <span style="color:#b91c1c;">' + _expAmt + '</span>' : '') +
+          (_expMonth  ? ' &nbsp;·&nbsp; <span style="color:#9b1b1b;">' + _expMonth + '</span>' : '') +
+          '</div>'
+        : '';
+
+      confirmModal(
+        "Delete this expense?" + (_detailHtml ? '<br><br>' + _detailHtml : ''),
+        async function() {
+          try {
+            const _s = JSON.parse(localStorage.getItem("session") || "{}");
+            const res = await postData({ action: "deleteExpense", Id: id, AdminName: _s.name || "Admin", sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
+            if (res.status === "deleted" || res.status === "success") {
+              smartRefresh("expenses");
+              if (_undoSaved && typeof _showUndoToast === "function") {
+                _showUndoToast(_undoLabel, function() {
+                  var payload = Object.assign({ action: "addExpense" }, _undoSaved);
+                  postData(payload).then(function() {
+                    smartRefresh("expenses");
+                    toast("↩ Expense restored.");
+                  });
+                });
+              } else {
+                toast("✅ Expense deleted.");
+              }
+            } else {
+              toast("❌ Delete failed: " + (res.message || ""), "error");
+            }
+          } catch (err) {
+            toast("❌ " + err.message, "error");
+          }
+        }
+      );
     }
 
-    async function _confirmCorrectionEntry(expId) {
-      const reason = (document.getElementById("corrReason") || {}).value || "";
-      if (!reason.trim()) { toast("Please enter a reason for the correction.", "warn"); return; }
-      const s = JSON.parse(localStorage.getItem("session") || "{}");
-      try {
-        closeModal();
-        // Fetch the expense to get its amount
-        const allExp = expenses || [];
-        const exp = allExp.find(e => String(e.Id) === String(expId));
-        if (!exp) { toast("Expense not found in local data.", "error"); return; }
-        // Create a negative correction entry
-        const corrId = "CORR_" + Date.now();
-        const res = await postData({
-          action: "addExpense",
-          Id: corrId,
-          Title: "CORRECTION: " + (exp.Title || "Expense") + " | Reason: " + reason,
-          Amount: -(Math.abs(Number(exp.Amount || 0))),
-          Year: exp.Year || new Date().getFullYear(),
-          ExpenseTypeId: exp.ExpenseTypeId || "",
-          ForMonth: exp.ForMonth || "",
-          AdminName: s.name || "Admin",
-          sessionToken: s.sessionToken || "",
-          userId: s.userId || ""
-        });
-        if (res.status === "success") {
-          toast("✅ Correction entry recorded. Original expense preserved in audit trail.");
-          smartRefresh("expenses");
-        } else {
-          toast("❌ Failed to record correction: " + (res.message || ""), "error");
-        }
-      } catch (err) { toast("❌ " + err.message, "error"); }
-    }
+    // _confirmCorrectionEntry kept as no-op stub so _wrapFn spinner list doesn't break
+    async function _confirmCorrectionEntry() {}
     async function addUser() {
       if (!checkSession()) return;
       let name = document.getElementById("u_name").value.trim(),
@@ -5230,7 +5491,8 @@
         let dob = (document.getElementById("u_dob")?.value || "").trim();
         let res = await postData({
           action: "addUser",
-          UserId: Date.now(),
+          // [ID] UserId is now generated server-side (USER-NNNNN / ADMIN-NNNNN)
+          // Do NOT send UserId from frontend — backend ignores it and generates its own
           Name: name,
           Mobile: mobile,
           Password: pass,
@@ -5676,7 +5938,7 @@
       try {
         const res = await postData({
           action: "addEvent",
-          EventId: "EVT_" + Date.now(),
+          // [ID] FIX: No EventId passed — backend generates EVT-NNNNN sequentially
           EventName: name,
           Category: cat,
           Status: status,
@@ -5724,9 +5986,9 @@
       <label class="_fl">Status</label>
       <select class="_fi" id="ee_status">${stOpts}</select>
       <label class="_fl">Start Date</label>
-      <input class="_fi" type="date" id="ee_start" value="${escapeHtml(ev.StartDate || '')}"/>
+      <input class="_fi" type="date" id="ee_start" value="${escapeHtml((ev.StartDate || '').slice(0, 10))}"/>
       <label class="_fl">End Date</label>
-      <input class="_fi" type="date" id="ee_end" value="${escapeHtml(ev.EndDate || '')}"/>
+      <input class="_fi" type="date" id="ee_end" value="${escapeHtml((ev.EndDate || '').slice(0, 10))}"/>
       <label class="_fl">Budget (₹)</label>
       <input class="_fi" type="number" id="ee_budget" value="${Number(ev.Budget || 0)}" min="0"/>
       <label class="_fl">Description</label>
@@ -5832,7 +6094,7 @@
       try {
         const res = await postData({
           action: "addEventExpense",
-          Id: "EEX_" + Date.now(),
+          // [ID] FIX: No Id passed — backend generates EEXP-NNNNN sequentially
           EventId: eventId,
           Title: title,
           Amount: Number(amt),
@@ -5937,12 +6199,10 @@
       let status = document.getElementById("g_status").value;
       if (!name || !target || Number(target) <= 0)
         return toast("Please enter goal name and target amount.", "error");
-      const newGoalId =
-        "G" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
       try {
         let res = await postData({
           action: "addGoal",
-          GoalId: newGoalId,
+          // [ID] FIX: No GoalId passed — backend generates GOAL-NNNNN sequentially
           GoalName: name,
           TargetAmount: target,
           CurrentAmount: current,
@@ -7036,9 +7296,10 @@
       const months = MONTHS; // PERF: reuse global
       const curY = new Date().getFullYear();
       let yearOpts = "";
-      for (let y = curY + 1; y >= 2023; y--)
-        yearOpts += `<option value="${y}"${y === curY ? " selected" : ""
-          }>${y}</option>`;
+      for (let y = curY + 1; y >= 2023; y--) {
+        let yLbl = y === curY ? y + " (Current)" : y < curY ? y + " (Old Entry)" : y + " (Advance)";
+        yearOpts += `<option value="${y}"${y === curY ? " selected" : ""}>${yLbl}</option>`;
+      }
       let monthOpts = months
         .map((m) => `<option value="${m}">${m}</option>`)
         .join("");
@@ -7120,7 +7381,7 @@
       const monthOptsWI = `<option value="">— All / General —</option>` + MOS2.map(m=>`<option value="${m}"${m===month?" selected":""}>${m}</option>`).join("");
       const curY2 = new Date().getFullYear();
       let yearOptsWI = "";
-      for (let y=curY2+1;y>=2023;y--) yearOptsWI+=`<option value="${y}"${y===Number(year)?" selected":""}>${y}</option>`;
+      for (let y=curY2+1;y>=2023;y--) { let yLbl2=y===curY2?y+" (Current)":y<curY2?y+" (Old Entry)":y+" (Advance)"; yearOptsWI+=`<option value="${y}"${y===Number(year)?" selected":""}>${yLbl2}</option>`; }
       const typeOptsWI = types.map(t=>`<option value="${t.TypeId}"${String(t.TypeId)===typeId?" selected":""}>${escapeHtml(t.TypeName)}</option>`).join("");
       const occasionOptsWI = `<option value="">— None —</option>`+occasions.map(o=>`<option value="${o.OccasionId}"${String(o.OccasionId)===occasionId?" selected":""}>${escapeHtml(o.OccasionName)}</option>`).join("");
       const typeNameWI = types.find(t=>String(t.TypeId)===typeId)?.TypeName || "Contribution";
@@ -7215,12 +7476,15 @@
       const note = (document.getElementById("wprev_note")?.value||"").trim();
       if (!name) { if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter donor name.", "error"); }
       if (!amount || Number(amount) <= 0) { if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter a valid amount.", "error"); }
-      const walkInUserId = "WALKIN_" + Date.now();
+      // [ID] Send "WALKIN" as signal — backend generates WALKIN_YYYY_NNNNN (year-wise sequential)
+      // [FIX-1] Also pass WalkInYear so backend uses the form's selected year (not server clock year)
+      const walkInUserId = "WALKIN";
       try {
         let payload = {
           action: "addContribution",
-          Id: "wi_" + Date.now(),
+          // [ID] FIX: No Id passed — backend generates CONT-NNNNN sequentially
           UserId: walkInUserId,
+          WalkInYear: year,   // [FIX-1] Backend uses this year for WALKIN_YYYY_NNNNN
           Amount: amount,
           ForMonth: month || "General",
           Year: year,
@@ -7239,6 +7503,7 @@
           toast(msg);
           const mockC = {
             ReceiptID: res.receiptId || "TRX-wi" + Date.now(),
+            UserId: res.walkInUserId || "WALKIN",   // [FIX-4] Use generated WALKIN_YYYY_NNNNN from server
             Amount: amount,
             ForMonth: month || "General",
             Year: year,
@@ -8267,24 +8532,44 @@
       openModal(html, "460px");
       setTimeout(function () {
         const btn = document.getElementById("_approveReqBtn");
-        if (btn) btn.addEventListener("click", function () {
+        if (btn) btn.addEventListener("click", async function () {
+          if (btn._inFlight) return; // double-submit guard
           const selTypeId = (document.getElementById("_approveTypeSelect") || {}).value || "";
           if (!selTypeId) { toast("Please select a contribution type.", "warn"); return; }
-          closeModal();
-          _doApproveContribRequest(r, selTypeId);
+          // Keep modal open — show spinner until processing finishes
+          btn._inFlight = true;
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Approving...';
+          var cancelBtn = btn.parentElement ? btn.parentElement.querySelector("button:not(#_approveReqBtn)") : null;
+          if (cancelBtn) cancelBtn.disabled = true;
+          await _doApproveContribRequest(r, selTypeId, btn, cancelBtn);
         });
       }, 150);
     }
 
-    async function _doApproveContribRequest(r, selTypeId) {
-      if (!checkSession()) return;
+    async function _doApproveContribRequest(r, selTypeId, _btn, _cancelBtn) {
+      if (!checkSession()) {
+        // Re-enable buttons if session check fails
+        if (_btn) { _btn._inFlight = false; _btn.disabled = false; _btn.innerHTML = '<i class="fa-solid fa-check"></i> Approve &amp; Record'; }
+        if (_cancelBtn) _cancelBtn.disabled = false;
+        return;
+      }
       if (window._approveReqInFlight) return; // double-submit guard
       window._approveReqInFlight = true;
       const s = JSON.parse(localStorage.getItem("session") || "{}");
+
+      function _resetApproveBtn() {
+        if (_btn) { _btn._inFlight = false; _btn.disabled = false; _btn.innerHTML = '<i class="fa-solid fa-check"></i> Approve &amp; Record'; }
+        if (_cancelBtn) _cancelBtn.disabled = false;
+        window._approveReqInFlight = false;
+      }
+
       try {
         const contribRes = await postData({
           action: "addContribution",
-          Id: "REQ_" + (r.ReqId || Date.now()),
+          // [ID] FIX: Do NOT pass Id — backend generates CONT-NNNNN sequentially.
+          // Previously "REQ_" + r.ReqId was passed, bypassing sequential ID generation
+          // and causing duplicate/malformed IDs like REQ_REQ-00001.
           UserId: r.UserId,
           Amount: r.Amount,
           ForMonth: r.ForMonth,
@@ -8296,7 +8581,7 @@
         });
         if (!contribRes || contribRes.status !== "success") {
           toast("Failed to record contribution.", "error");
-          window._approveReqInFlight = false;
+          _resetApproveBtn();
           return;
         }
         let resolveRes;
@@ -8312,28 +8597,32 @@
           // FIX: addContribution already succeeded — warn admin rather than silently failing.
           // The contribution is recorded but the request stays "Pending" until manually resolved.
           toast("⚠️ Contribution recorded but request status update failed. Please re-open this request and approve again to resolve it.", "warn");
+          closeModal();
           loadContributionRequests();
-          window._approveReqInFlight = false;
+          _resetApproveBtn();
           return;
         }
         if (resolveRes && resolveRes.status === "already_resolved") {
           toast("⚠️ This request was already approved by another admin.", "warn");
+          closeModal();
           loadContributionRequests();
-          window._approveReqInFlight = false;
+          _resetApproveBtn();
           return;
         }
         let msg = "Request approved! Receipt: " + (contribRes.receiptId || "");
         if (contribRes.emailSent) msg += " · Receipt email sent";
         if (contribRes.emailSkipped) msg += " · Email quota reached";
+        // Close modal only after full success
+        closeModal();
         toast(msg);
         // D7: removed manual mandirCacheBust("getAllData") — addContribution is in
         // _CACHE_BUST_ON_WRITE so postData() already busted it automatically.
         smartRefresh("contributions");
         loadContributionRequests();
-        window._approveReqInFlight = false;
+        _resetApproveBtn();
       } catch (err) {
-        window._approveReqInFlight = false;
         toast("Error: " + err.message, "error");
+        _resetApproveBtn();
       }
     }
 
@@ -8354,21 +8643,32 @@
       openModal(html, "460px");
       setTimeout(function () {
         const btn = document.getElementById("_rejectReqBtn");
-        if (btn) btn.addEventListener("click", function () {
+        if (btn) btn.addEventListener("click", async function () {
           if (btn._inFlight) return; // double-submit guard
           btn._inFlight = true;
           btn.disabled = true;
           btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Rejecting...';
+          var cancelBtn = btn.parentElement ? btn.parentElement.querySelector("button:not(#_rejectReqBtn)") : null;
+          if (cancelBtn) cancelBtn.disabled = true;
           const reason = (document.getElementById("_rejectReasonInput") || {}).value || "";
-          closeModal();
-          _doRejectContribRequest(r, reason);
+          await _doRejectContribRequest(r, reason, btn, cancelBtn);
         });
       }, 150);
     }
 
-    async function _doRejectContribRequest(r, reason) {
-      if (!checkSession()) return;
+    async function _doRejectContribRequest(r, reason, _btn, _cancelBtn) {
+      if (!checkSession()) {
+        if (_btn) { _btn._inFlight = false; _btn.disabled = false; _btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Reject Request'; }
+        if (_cancelBtn) _cancelBtn.disabled = false;
+        return;
+      }
       const s = JSON.parse(localStorage.getItem("session") || "{}");
+
+      function _resetRejectBtn() {
+        if (_btn) { _btn._inFlight = false; _btn.disabled = false; _btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Reject Request'; }
+        if (_cancelBtn) _cancelBtn.disabled = false;
+      }
+
       try {
         await postData({
           action: "resolveContributionRequest",
@@ -8377,11 +8677,15 @@
           AdminName: s.Name || "Admin",
           RejectionNote: reason
         });
+        // Close modal only after success
+        closeModal();
         toast("Request rejected" + (reason ? " with reason." : "."), "warn");
         loadContributionRequests();
         smartRefresh("requests"); // C3: update badge + contributions list (mirrors approve flow)
+        _resetRejectBtn();
       } catch (err) {
         toast("Error: " + err.message, "error");
+        _resetRejectBtn();
       }
     }
 
@@ -10294,6 +10598,7 @@
       'saveEditContrib','saveEditUser','saveEditEvent','saveEventExpense','saveEditGoal',
       'saveAnnouncement','clearAnnouncement','saveChatbotSettings',
       'saveWalkIn','saveAdminProfile','saveAdminNewPassword',
+      'deleteContribution','deleteUser','deleteType','deleteOccasion','deleteExpenseType',
       'deleteExpense','deleteEvent','deleteGoal','deleteGalleryPhoto',
       'uploadGalleryPhoto','uploadExpenseReceipt','openReceiptAttach',
       'exportContribCSV','exportExpenseCSV','exportAuditCSV','exportAnnualReportPDF',
@@ -10301,7 +10606,7 @@
       'sendBroadcast','scheduleBroadcast','previewBroadcast',
       'sendTrackerMsg','sendWhatsAppReport','sendWhatsAppPDFReport',
       'triggerManualMonthlyReport',
-      'runHealthCheck','runTracker',
+      'runHealthCheck','runTracker','loadTrafficStats',
       'runBulkInsert','_executeBulkInsert',
       'loadContributionRequests','loadFeedbackAdmin','loadAuditLog','loadYearSummary',
       'refreshDashboardData',
@@ -10321,6 +10626,9 @@
       saveEditEvent: 'Saving…', saveAnnouncement: 'Saving…', saveChatbotSettings: 'Saving…',
       saveWalkIn: 'Saving…', saveAdminProfile: 'Saving…',
       saveAdminNewPassword: 'Updating…',
+      deleteContribution: 'Deleting…',
+      deleteUser: 'Deleting…', deleteType: 'Deleting…',
+      deleteOccasion: 'Deleting…', deleteExpenseType: 'Deleting…',
       deleteExpense: 'Deleting…', deleteEvent: 'Deleting…', deleteGoal: 'Deleting…',
       deleteGalleryPhoto: 'Deleting…',
       uploadGalleryPhoto: 'Uploading…', uploadExpenseReceipt: 'Uploading…',
@@ -10330,7 +10638,7 @@
       sendBroadcast: 'Sending…', sendTrackerMsg: 'Sending…',
       sendWhatsAppReport: 'Preparing…', sendWhatsAppPDFReport: 'Preparing PDF…',
       triggerManualMonthlyReport: 'Sending…',
-      runHealthCheck: 'Checking…', runTracker: 'Loading…',
+      runHealthCheck: 'Checking…', runTracker: 'Loading…', loadTrafficStats: 'Loading…',
       runBulkInsert: 'Inserting…',
       loadContributionRequests: 'Loading…', loadFeedbackAdmin: 'Loading…',
       loadAuditLog: 'Loading…', loadYearSummary: 'Loading…',
@@ -10387,6 +10695,11 @@
         const btn = (window._lastClickedBtn && window._lastClickedBtn._fnName === fnName)
           ? window._lastClickedBtn.el : null;
 
+        // [FIX-4] Double-click prevention: if this button already has a request in-flight,
+        // silently ignore the second click. Resets automatically when the promise settles.
+        if (btn && btn._inFlight) return;
+        if (btn) btn._inFlight = true;
+
         const result = orig.apply(this, args);
 
         if (result && typeof result.then === 'function') {
@@ -10396,10 +10709,15 @@
           // Skipping _setBtnLoading for these prevents a double-spinner conflict.
           if (btn && !btn._noAutoLoad) _setBtnLoading(btn, fnName);
           result.then(() => {
+            if (btn) btn._inFlight = false;
             if (btn && !btn._noAutoLoad) { _resetBtn(btn); _flashSuccess(btn); }
           }).catch(() => {
+            if (btn) btn._inFlight = false;
             if (btn && !btn._noAutoLoad) _resetBtn(btn);
           });
+        } else {
+          // Sync function — clear flag immediately
+          if (btn) btn._inFlight = false;
         }
         return result;
       };
@@ -10695,55 +11013,103 @@
     function _showUndoToast(label, undoFn) {
       // Remove existing undo toast if any
       var ex = document.getElementById("_undoToast");
-      if (ex) ex.remove();
+      if (ex) { ex.style.animation = "_undoSlideOut 0.2s ease forwards"; setTimeout(function(){ if(ex.parentNode) ex.remove(); }, 200); }
       if (_undoQueue && _undoQueue.timer) clearTimeout(_undoQueue.timer);
+      if (_undoQueue && _undoQueue.rafId) cancelAnimationFrame(_undoQueue.rafId);
 
-      var toast = document.createElement("div");
-      toast.id = "_undoToast";
-      // FIX: Moved from bottom-center to top-right below the header.
-      // top:68px clears the fixed sidebar header on desktop and app header on mobile.
-      // max-width + right:16px keeps it safe on narrow mobile screens.
-      toast.style.cssText =
+      var DURATION = 30000; // 30 seconds
+      var _startTime = Date.now();
+
+      var toastEl = document.createElement("div");
+      toastEl.id = "_undoToast";
+      toastEl.style.cssText =
         "position:fixed;top:68px;right:16px;" +
-        "background:#1e293b;color:#fff;padding:12px 16px;border-radius:12px;" +
+        "background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);" +
+        "color:#fff;padding:14px 16px 14px 14px;border-radius:16px;" +
         "font-size:13px;font-family:Poppins,sans-serif;z-index:99999;" +
         "display:flex;align-items:center;gap:12px;" +
-        "box-shadow:0 8px 28px rgba(0,0,0,0.35);" +
+        "box-shadow:0 12px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(255,255,255,0.06);" +
         "max-width:calc(100vw - 32px);box-sizing:border-box;" +
-        "animation:_undoSlideIn 0.25s ease;";
-      toast.innerHTML =
-        '<span style="flex:1;min-width:0;">🗑️ <b>' + label + '</b> deleted</span>' +
-        '<button onclick="_doUndo()" style="background:#f7a01a;border:none;color:#fff;' +
-        'padding:5px 14px;border-radius:7px;cursor:pointer;font-weight:700;font-size:12px;' +
-        'font-family:Poppins,sans-serif;box-shadow:none;white-space:nowrap;flex-shrink:0;">↩ Undo</button>' +
-        '<div id="_undoProgress" style="position:absolute;bottom:0;left:0;height:3px;' +
-        'background:#f7a01a;border-radius:0 0 12px 12px;width:100%;' +
-        'transition:width 30s linear;"></div>';
-      document.body.appendChild(toast);
+        "animation:_undoSlideIn 0.3s cubic-bezier(.34,1.56,.64,1);";
 
-      // Animate progress bar
-      requestAnimationFrame(function() {
-        var bar = document.getElementById("_undoProgress");
-        if (bar) { bar.style.transition = "width 30s linear"; bar.style.width = "0%"; }
-      });
+      // SVG countdown ring (38px circle, 30s drain)
+      var R = 15, CIRC = 2 * Math.PI * R;
+      toastEl.innerHTML =
+        // Ring container
+        '<div style="position:relative;flex-shrink:0;width:38px;height:38px;">' +
+          '<svg width="38" height="38" viewBox="0 0 38 38" style="transform:rotate(-90deg);">' +
+            '<circle cx="19" cy="19" r="' + R + '" fill="none" stroke="rgba(247,160,26,0.18)" stroke-width="3"/>' +
+            '<circle id="_undoRing" cx="19" cy="19" r="' + R + '" fill="none" stroke="#f7a01a" stroke-width="3"' +
+            ' stroke-dasharray="' + CIRC + '" stroke-dashoffset="0" stroke-linecap="round"' +
+            ' style="transition:stroke-dashoffset 0.1s linear;"/>' +
+          '</svg>' +
+          '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#f7a01a;" id="_undoSec">30</span>' +
+        '</div>' +
+        // Text
+        '<div style="flex:1;min-width:0;line-height:1.4;">' +
+          '<div style="font-size:11px;font-weight:600;color:#f7a01a;letter-spacing:0.4px;text-transform:uppercase;margin-bottom:1px;">Deleted</div>' +
+          '<div style="font-size:12.5px;font-weight:600;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + label + '">' + label + '</div>' +
+        '</div>' +
+        // Undo button
+        '<button id="_undoBtn" onclick="_doUndo()" style="' +
+          'background:linear-gradient(135deg,#f7a01a,#f59e0b);border:none;color:#fff;' +
+          'padding:7px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-size:12px;' +
+          'font-family:Poppins,sans-serif;box-shadow:0 4px 12px rgba(247,160,26,0.4);' +
+          'white-space:nowrap;flex-shrink:0;transition:transform 0.1s,box-shadow 0.1s;' +
+          'display:flex;align-items:center;gap:6px;">' +
+          '<i class="fa-solid fa-rotate-left"></i> Undo' +
+        '</button>';
+
+      document.body.appendChild(toastEl);
+
+      // Hover effects on undo button
+      var btn = document.getElementById("_undoBtn");
+      if (btn) {
+        btn.onmouseenter = function(){ this.style.transform="scale(1.06)"; this.style.boxShadow="0 6px 18px rgba(247,160,26,0.55)"; };
+        btn.onmouseleave = function(){ this.style.transform=""; this.style.boxShadow="0 4px 12px rgba(247,160,26,0.4)"; };
+      }
+
+      // Animate ring drain frame-by-frame
+      function _animateRing() {
+        var elapsed = Date.now() - _startTime;
+        var progress = Math.min(elapsed / DURATION, 1);
+        var ring = document.getElementById("_undoRing");
+        var sec  = document.getElementById("_undoSec");
+        if (ring) ring.style.strokeDashoffset = String(CIRC * progress);
+        if (sec)  sec.textContent = String(Math.max(0, Math.ceil((DURATION - elapsed) / 1000)));
+        // Change ring color to red in last 5s
+        if (ring) ring.style.stroke = elapsed > DURATION * 0.83 ? "#ef4444" : "#f7a01a";
+        if (sec)  sec.style.color   = elapsed > DURATION * 0.83 ? "#ef4444" : "#f7a01a";
+        if (progress < 1 && document.getElementById("_undoToast")) {
+          _undoQueue.rafId = requestAnimationFrame(_animateRing);
+        }
+      }
 
       _undoQueue = {
         undoFn: undoFn,
+        rafId: requestAnimationFrame(_animateRing),
         timer: setTimeout(function() {
           var t = document.getElementById("_undoToast");
-          if (t) t.remove();
+          if (t) { t.style.animation = "_undoSlideOut 0.25s ease forwards"; setTimeout(function(){ if(t.parentNode) t.remove(); }, 250); }
           _undoQueue = null;
-        }, 30000)
+        }, DURATION)
       };
     }
 
     window._doUndo = function() {
       if (!_undoQueue) return;
       clearTimeout(_undoQueue.timer);
+      if (_undoQueue.rafId) cancelAnimationFrame(_undoQueue.rafId);
       var fn = _undoQueue.undoFn;
       _undoQueue = null;
       var t = document.getElementById("_undoToast");
-      if (t) t.remove();
+      if (t) {
+        // Flash green before dismissing
+        t.style.background = "linear-gradient(135deg,#14532d,#166534)";
+        t.style.boxShadow = "0 12px 40px rgba(34,197,94,0.35)";
+        t.style.transition = "background 0.2s,box-shadow 0.2s";
+        setTimeout(function(){ t.style.animation = "_undoSlideOut 0.25s ease forwards"; setTimeout(function(){ if(t.parentNode) t.remove(); }, 250); }, 200);
+      }
       if (typeof fn === "function") fn();
     };
 
@@ -10754,7 +11120,9 @@
 
     // Inject undo animation keyframes
     var undoStyle = document.createElement("style");
-    undoStyle.textContent = "@keyframes _undoSlideIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }";
+    undoStyle.textContent =
+      "@keyframes _undoSlideIn { from{opacity:0;transform:translateX(30px) scale(0.95)} to{opacity:1;transform:translateX(0) scale(1)} }" +
+      "@keyframes _undoSlideOut { from{opacity:1;transform:translateX(0) scale(1)} to{opacity:0;transform:translateX(30px) scale(0.92)} }";
     document.head.appendChild(undoStyle);
 
 
