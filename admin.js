@@ -2183,42 +2183,36 @@
 
     // Applies pre-computed summary result to DOM — used by both full and fast paths
     function _applySummaryResult(r) {
-      function _trendHTML(cur, prev, invertColor) {
-        if (prev === 0 && cur === 0) return '<span style="color:#94a3b8;">— No data</span>';
-        if (prev === 0) return '<span style="color:#27ae60;">▲ New this month</span>';
-        const diff = cur - prev;
-        const pct = Math.abs(Math.round((diff / prev) * 100));
-        const up = diff >= 0;
-        const good = invertColor ? !up : up;
-        const color = diff === 0 ? "#94a3b8" : good ? "#27ae60" : "#e74c3c";
-        const arrow = diff === 0 ? "—" : (up ? "▲" : "▼");
-        return `<span style="color:${color};">${arrow} ${pct}% vs ${r.lastMonth}</span>`;
-      }
+      // Hide the entire summary-grid section (contains the 4 all-time cards that show ₹0)
+      // Year Balance section already shows selected-year totals correctly
+      var _hide = function(sel) {
+        var els = document.querySelectorAll(sel);
+        els.forEach(function(el) { el.style.setProperty("display","none","important"); });
+      };
 
-      _countUp(document.getElementById("totalUsers"), String(r.memberCount), "#6366f1");
-      _countUp(document.getElementById("totalContribution"), "₹" + fmt(r.totalC), "#27ae60");
-      _countUp(document.getElementById("totalExpense"), "₹" + fmt(r.totalE), "#e74c3c");
+      // Hide the grid container itself — catches all 4 cards in one shot
+      _hide(".summary-grid");
 
-      const tU = document.getElementById("trendUsers");
-      if (tU) tU.innerHTML = '<span style="color:#94a3b8;">Active members</span>';
-      const tC = document.getElementById("trendContrib");
-      if (tC) tC.innerHTML = _trendHTML(r.thisMonthC, r.lastMonthC, false);
-      const tE = document.getElementById("trendExpense");
-      if (tE) tE.innerHTML = _trendHTML(r.thisMonthE, r.lastMonthE, true);
-
-      const net = r.totalOpening + r.totalC - r.totalE;
-      const netEl = document.getElementById("netBalance");
-      _countUp(netEl, (net < 0 ? "−" : "") + "₹" + fmt(Math.abs(net)), net >= 0 ? "#27ae60" : "#e74c3c");
-
-      const breakdownEl = document.getElementById("netBalanceBreakdown");
-      if (breakdownEl) {
-        if (r.totalOpening > 0) {
-          breakdownEl.innerHTML =
-            `<span style="color:#64748b;font-size:10px;">Opening: <b style="color:#f7a01a;">₹${fmt(r.totalOpening)}</b> + Contributions − Expenses</span>`;
+      // Fallback: hide individual card-boxes by their known element IDs
+      // (in case summary-grid class name differs in their HTML)
+      ["totalContribution","totalExpense","totalUsers","netBalance"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        // Try closest with every possible card wrapper class
+        var card = typeof el.closest === "function"
+          ? (el.closest(".card-box") || el.closest(".card") || el.closest("[class*='box']"))
+          : null;
+        if (card) {
+          card.style.setProperty("display","none","important");
         } else {
-          breakdownEl.innerHTML = "";
+          // Last resort: hide the element's grandparent (label → value → card wrapper)
+          var gp = el.parentNode && el.parentNode.parentNode;
+          if (gp) gp.style.setProperty("display","none","important");
         }
-      }
+      });
+
+      // Store member count for downstream renders (pending donut ring etc.)
+      window._hmActiveMemberCount = r.memberCount;
     }
 
     /* ═══════════════════════════════════════════════════════════
@@ -2481,33 +2475,11 @@
       if (el) _countUp(el, String(pendingCount), pendingCount > 0 ? "#e74c3c" : "#27ae60");
       el = document.getElementById("kpi_total_members");
       if (el) el.textContent = activeMembers.length;
-      // ── Enhanced: replace plain "X% paid" text with SVG donut ring inside the card ──
-      (function _renderPendingDonut() {
-        var subEl = document.getElementById("kpi_pending_sub");
-        if (!subEl) return;
+      el = document.getElementById("kpi_pending_sub");
+      if (el) {
         var paidPct = activeMembers.length > 0 ? Math.round((paidCount / activeMembers.length) * 100) : 0;
-        var ringColor = paidPct >= 80 ? "#22c55e" : paidPct >= 50 ? "#f59e0b" : "#ef4444";
-        var r = 21, cx = 27, cy = 27;
-        var circ = +(2 * Math.PI * r).toFixed(1);
-        var dash  = +((paidPct / 100) * circ).toFixed(1);
-        subEl.innerHTML =
-          '<div style="display:flex;align-items:center;gap:10px;margin-top:6px;">' +
-            '<svg width="54" height="54" viewBox="0 0 54 54" style="flex-shrink:0;">' +
-              '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="#e2e8f0" stroke-width="5.5"/>' +
-              '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + ringColor + '" stroke-width="5.5"' +
-                ' stroke-dasharray="' + dash + ' ' + circ + '" stroke-linecap="round"' +
-                ' transform="rotate(-90 ' + cx + ' ' + cy + ')"' +
-                ' style="transition:stroke-dasharray .5s ease;"/>' +
-              '<text x="' + cx + '" y="' + (cy + 1) + '" text-anchor="middle" dominant-baseline="middle"' +
-                ' style="font-size:10px;font-weight:600;fill:' + ringColor + ';">' + paidPct + '%</text>' +
-            '</svg>' +
-            '<div style="min-width:0;">' +
-              '<div style="font-size:12px;font-weight:600;color:#16a34a;">' + paidCount + ' paid</div>' +
-              '<div style="font-size:11px;color:#dc2626;">' + pendingCount + ' pending</div>' +
-              '<div style="font-size:10px;color:#94a3b8;margin-top:1px;">of ' + activeMembers.length + ' members</div>' +
-            '</div>' +
-          '</div>';
-      })();
+        el.innerHTML = 'of ' + activeMembers.length + ' members &nbsp;·&nbsp; <b style="color:#27ae60;">' + paidPct + '% paid</b>';
+      }
 
       // ── Member badge (show selected period)
       el = document.getElementById("hm_member_badge");
@@ -2536,9 +2508,6 @@
 
       // ── Year tracker
       _hmRenderYearTracker(curYear, curMonth);
-
-      // ── Upcoming Events widget
-      _hmRenderUpcomingEvents();
     }
 
     function _hmMemberTab(filter, btn) {
@@ -2593,48 +2562,6 @@
           '<span style="font-size:11px;font-weight:700;color:' + (paid ? "#27ae60" : "#e74c3c") + ';">' + (paid ? "₹" + fmt(myAmt) : "—") + '</span>' +
         '</div>';
       }).join("");
-
-      // ── Top Contributors — injected at bottom of member card (only on "all" tab) ──
-      (function _renderTopContribs() {
-        var tcId  = "_hm_top_contrib";
-        var exist = document.getElementById(tcId);
-        if (_hmMemberFilter !== "all") {
-          if (exist) exist.style.display = "none";
-          return;
-        }
-        if (!exist) {
-          exist = document.createElement("div");
-          exist.id = tcId;
-          if (el.parentNode) el.parentNode.appendChild(exist);
-        }
-        exist.style.display = "";
-        // Per-user totals for selected month
-        var totals = {};
-        d.monthMembers.forEach(function(c) {
-          var uid = String(c.UserId);
-          totals[uid] = (totals[uid] || 0) + Number(c.Amount || 0);
-        });
-        var ranked = Object.keys(totals).map(function(uid) {
-          var u = d.activeMembers.find(function(x) { return String(x.UserId) === uid; });
-          return { name: u ? u.Name : uid, amt: totals[uid] };
-        }).filter(function(x) { return x.amt > 0; })
-          .sort(function(a, b) { return b.amt - a.amt; })
-          .slice(0, 3);
-        if (ranked.length === 0) { exist.style.display = "none"; return; }
-        var medals = ["🥇","🥈","🥉"];
-        exist.innerHTML =
-          '<div style="border-top:1px solid #f1f5f9;margin-top:4px;padding-top:10px;">' +
-            '<div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Top contributors · ' + d.curMonth + '</div>' +
-            ranked.map(function(r, i) {
-              return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;' +
-                (i < ranked.length - 1 ? 'border-bottom:1px solid #fef3c7;' : '') + '">' +
-                '<span style="font-size:15px;">' + medals[i] + '</span>' +
-                '<span style="flex:1;font-size:12px;font-weight:600;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(r.name) + '</span>' +
-                '<span style="font-size:12px;font-weight:700;color:#d97706;">₹' + fmt(r.amt) + '</span>' +
-              '</div>';
-            }).join("") +
-          '</div>';
-      })();
     }
 
     function _hmRenderWalkinList(walkIns) {
@@ -2672,57 +2599,107 @@
     function _hmRenderBarChart(curYear, selMonth) {
       var el = document.getElementById("hm_bar_chart");
       if (!el) return;
+
       var mapC = {}, mapE = {};
       data.filter(function(c) { return String(c.Year) === String(curYear); }).forEach(function(c) {
-        var m = c.ForMonth||"";
-        if (m) mapC[m] = (mapC[m]||0) + Number(c.Amount||0);
+        var m = c.ForMonth || "";
+        if (m) mapC[m] = (mapC[m] || 0) + Number(c.Amount || 0);
       });
       expenses.filter(function(e) { return String(e.Year) === String(curYear); }).forEach(function(e) {
-        var m = e.ForMonth||"";
-        if (m) mapE[m] = (mapE[m]||0) + Number(e.Amount||0);
+        var m = e.ForMonth || "";
+        if (m) mapE[m] = (mapE[m] || 0) + Number(e.Amount || 0);
       });
+
       var active = MONTHS.filter(function(m) { return (mapC[m]||0) > 0 || (mapE[m]||0) > 0; });
       if (active.length === 0) {
-        el.innerHTML = '<div style="color:#aaa;font-size:11px;padding:10px;text-align:center;">No data for ' + curYear + '</div>';
+        el.innerHTML = '<div style="color:#94a3b8;font-size:12px;padding:16px;text-align:center;">No data for ' + curYear + '</div>';
         return;
       }
-      // Inject legend once above the chart (idempotent)
-      var legId = "_hm_bar_legend";
+
+      var maxC = Math.max.apply(null, active.map(function(m) { return mapC[m]||0; }).concat([1]));
+      var maxE = Math.max.apply(null, active.map(function(m) { return mapE[m]||0; }).concat([1]));
+      var selIdx = active.indexOf(selMonth);
+      var prevM  = selIdx > 0 ? active[selIdx - 1] : null;
+      var selC   = mapC[selMonth] || 0, selE = mapE[selMonth] || 0;
+      var netSel = selC - selE;
+
+      // Legend once
+      var legId = "_hm_cmp_legend";
       if (!document.getElementById(legId)) {
         var leg = document.createElement("div");
         leg.id  = legId;
-        leg.style.cssText = "display:flex;gap:12px;justify-content:flex-end;margin-bottom:6px;";
+        leg.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;";
         leg.innerHTML =
-          '<span style="font-size:10px;display:flex;align-items:center;gap:4px;color:#64748b;">' +
-            '<span style="width:8px;height:8px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Income</span>' +
-          '<span style="font-size:10px;display:flex;align-items:center;gap:4px;color:#64748b;">' +
-            '<span style="width:8px;height:8px;background:#f97316;border-radius:2px;display:inline-block;"></span>Expense</span>';
+          '<span style="font-size:12px;font-weight:600;color:#334155;">Monthly comparison · ' + curYear + '</span>' +
+          '<div style="display:flex;gap:10px;">' +
+            '<span style="font-size:10px;display:flex;align-items:center;gap:4px;color:#64748b;"><span style="width:10px;height:10px;background:#22c55e;border-radius:2px;display:inline-block;"></span>Income</span>' +
+            '<span style="font-size:10px;display:flex;align-items:center;gap:4px;color:#64748b;"><span style="width:10px;height:10px;background:#f97316;border-radius:2px;display:inline-block;"></span>Expense</span>' +
+          '</div>';
         el.parentNode && el.parentNode.insertBefore(leg, el);
+      } else {
+        var t = document.querySelector("#_hm_cmp_legend span");
+        if (t) t.textContent = "Monthly comparison · " + curYear;
       }
-      var BAR_H = 100;
-      var maxVal = Math.max.apply(null, active.map(function(m) { return Math.max(mapC[m]||0, mapE[m]||0); }).concat([1]));
-      el.innerHTML = active.map(function(m) {
-        var cV  = mapC[m]||0, eV = mapE[m]||0;
-        var cH  = Math.round((cV / maxVal) * BAR_H);
-        var eH  = Math.round((eV / maxVal) * BAR_H);
+
+      var rows = active.map(function(m) {
+        var cV = mapC[m]||0, eV = mapE[m]||0;
         var sel = m === selMonth;
-        var cBg = sel ? "#16a34a" : "#22c55e";
-        var eBg = sel ? "#ea580c" : "#f97316";
-        // Value label above selected bar pair
-        var valLabel = sel && cV > 0
-          ? '<div style="font-size:8px;color:#16a34a;font-weight:700;margin-bottom:2px;white-space:nowrap;">₹' + fmt(cV) + '</div>'
-          : '<div style="font-size:8px;color:transparent;margin-bottom:2px;">.</div>';
-        return '<div onclick="_hmSelectMonth(\'' + m + '\')" style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:18px;cursor:pointer;' +
-          (sel ? 'background:rgba(247,160,26,0.07);border-radius:6px;' : '') +
-          'padding:2px 1px;transition:background .15s;">' +
-          valLabel +
-          '<div style="display:flex;align-items:flex-end;gap:2px;height:' + BAR_H + 'px;">' +
-            '<div title="Income ₹' + fmt(cV) + '" style="width:9px;height:' + Math.max(cH,2) + 'px;background:' + cBg + ';border-radius:3px 3px 0 0;transition:height .3s;"></div>' +
-            '<div title="Expense ₹' + fmt(eV) + '" style="width:9px;height:' + Math.max(eH,2) + 'px;background:' + eBg + ';border-radius:3px 3px 0 0;transition:height .3s;"></div>' +
+        var cW  = Math.round((cV / maxC) * 100);
+        var eW  = Math.round((eV / maxE) * 100);
+        return '<div onclick="_hmSelectMonth(\'' + m + '\')" ' +
+          'style="display:grid;grid-template-columns:32px 1fr 1fr;gap:6px;align-items:center;cursor:pointer;' +
+          (sel ? 'background:rgba(247,160,26,0.07);border-radius:7px;padding:4px;' : 'padding:3px 4px;') + '">' +
+          '<span style="font-size:10px;font-weight:' + (sel?'600':'400') + ';color:' + (sel?'#d97706':'#64748b') + ';">' + m.slice(0,3) + '</span>' +
+          '<div style="display:flex;align-items:center;gap:5px;">' +
+            '<div style="flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;">' +
+              '<div style="height:100%;width:' + cW + '%;background:' + (sel?'#16a34a':'#22c55e') + ';border-radius:4px;transition:width .3s;"></div>' +
+            '</div>' +
+            '<span style="font-size:10px;font-weight:' + (sel?'600':'400') + ';color:' + (sel?'#15803d':'#16a34a') + ';white-space:nowrap;min-width:38px;text-align:right;">₹' + _fmtK(cV) + '</span>' +
           '</div>' +
-          '<div style="font-size:8px;font-weight:' + (sel?'700':'500') + ';color:' + (sel?'#d97706':'#64748b') + ';margin-top:3px;">' + m.slice(0,3) + '</div>' +
+          '<div style="display:flex;align-items:center;gap:5px;">' +
+            '<div style="flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;">' +
+              '<div style="height:100%;width:' + eW + '%;background:' + (sel?'#ea580c':'#f97316') + ';border-radius:4px;transition:width .3s;"></div>' +
+            '</div>' +
+            '<span style="font-size:10px;font-weight:' + (sel?'600':'400') + ';color:' + (sel?'#ea580c':'#f97316') + ';white-space:nowrap;min-width:38px;text-align:right;">₹' + _fmtK(eV) + '</span>' +
+          '</div>' +
         '</div>';
-      }).join("");
+      }).join('<div style="height:1px;background:#f1f5f9;margin:1px 4px;"></div>');
+
+      function _chip(label, delta, invert) {
+        var good  = invert ? delta <= 0 : delta >= 0;
+        var bg    = delta === 0 ? "#f8fafc" : good ? "#f0fdf4" : "#fef2f2";
+        var col   = delta === 0 ? "#94a3b8" : good ? "#16a34a" : "#dc2626";
+        var arrow = delta === 0 ? "—" : delta > 0 ? "▲" : "▼";
+        return '<div style="flex:1;background:' + bg + ';border-radius:8px;padding:7px 10px;text-align:center;min-width:0;">' +
+          '<div style="font-size:10px;color:#64748b;margin-bottom:2px;">' + label + '</div>' +
+          '<div style="font-size:12px;font-weight:600;color:' + col + ';white-space:nowrap;">' +
+            arrow + ' ₹' + _fmtK(Math.abs(delta)) + (prevM ? ' vs ' + prevM.slice(0,3) : '') +
+          '</div>' +
+        '</div>';
+      }
+
+      var chips = prevM
+        ? '<div style="display:flex;gap:6px;margin-top:10px;padding-top:8px;border-top:0.5px solid #f1f5f9;">' +
+            _chip("Income", selC - (mapC[prevM]||0), false) +
+            _chip("Expense", selE - (mapE[prevM]||0), true) +
+            '<div style="flex:1;background:#eff6ff;border-radius:8px;padding:7px 10px;text-align:center;min-width:0;">' +
+              '<div style="font-size:10px;color:#64748b;margin-bottom:2px;">Net · ' + selMonth.slice(0,3) + '</div>' +
+              '<div style="font-size:12px;font-weight:600;color:' + (netSel>=0?'#2563eb':'#dc2626') + ';white-space:nowrap;">' +
+                (netSel<0?'−':'') + '₹' + _fmtK(Math.abs(netSel)) +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        : '';
+
+      el.style.display = "block";
+      el.innerHTML = rows + chips;
+    }
+
+    function _fmtK(v) {
+      v = Math.round(v);
+      if (v >= 100000) return (v/100000).toFixed(1).replace(/\.0$/,"") + "L";
+      if (v >= 1000)   return (v/1000).toFixed(1).replace(/\.0$/,"") + "k";
+      return String(v);
     }
 
     function _hmRenderAlerts(pendingCount, monthE, activeMembers, curMonth, curYear) {
@@ -2820,25 +2797,14 @@
         var bc  = a.type === "warn" ? "#fde68a" : a.type === "info" ? "#bfdbfe" : a.type === "birthday" ? "#e9d5ff" : "#bbf7d0";
         var ic  = a.type === "warn" ? "fa-triangle-exclamation" : a.type === "info" ? "fa-circle-info" : a.type === "birthday" ? "fa-cake-candles" : "fa-circle-check";
         var ic2 = a.type === "warn" ? "#d97706" : a.type === "info" ? "#2563eb" : a.type === "birthday" ? "#9333ea" : "#16a34a";
-        var chipBg  = a.type === "warn" ? "#fef3c7" : "#dbeafe";
-        var chipCol = a.type === "warn" ? "#92400e"  : "#1d4ed8";
-        var chipBc  = a.type === "warn" ? "#fde68a"  : "#bfdbfe";
-        var chipLbl = a.type === "warn" ? "Fix now →" : "View →";
-        var cursor  = a.action ? "cursor:pointer;" : "";
+        var cursor = a.action ? "cursor:pointer;" : "";
         var onclick = a.action ? ' onclick="' + a.action + '"' : "";
-        var actionChip = a.action
-          ? '<div style="margin-top:5px;">' +
-              '<span style="display:inline-flex;align-items:center;background:' + chipBg + ';color:' + chipCol + ';' +
-              'border:0.5px solid ' + chipBc + ';border-radius:20px;padding:2px 10px;font-size:10px;font-weight:600;">' +
-              chipLbl + '</span></div>'
-          : '';
-        return '<div style="background:' + bg + ';border:0.5px solid ' + bc + ';border-radius:10px;padding:10px 12px;margin-bottom:7px;' + cursor + '"' + onclick + '>' +
+        return '<div style="background:' + bg + ';border:1px solid ' + bc + ';border-radius:8px;padding:9px 12px;margin-bottom:7px;' + cursor + '"' + onclick + '>' +
           '<div style="display:flex;align-items:flex-start;gap:8px;">' +
-            '<i class="fa-solid ' + ic + '" style="color:' + ic2 + ';font-size:13px;margin-top:2px;flex-shrink:0;"></i>' +
-            '<div style="flex:1;min-width:0;">' +
+            '<i class="fa-solid ' + ic + '" style="color:' + ic2 + ';font-size:13px;margin-top:1px;flex-shrink:0;"></i>' +
+            '<div>' +
               '<div style="font-size:12px;font-weight:600;color:#334155;">' + a.text + '</div>' +
               (a.sub ? '<div style="font-size:11px;color:#64748b;margin-top:2px;">' + a.sub + '</div>' : '') +
-              actionChip +
             '</div>' +
           '</div>' +
         '</div>';
@@ -2859,16 +2825,29 @@
       el = document.getElementById("hm_yr_progress_fill");
       if (el) {
         el.style.width = pct + "%";
-        el.style.background = pct >= 75 ? "#27ae60" : pct >= 40 ? "#f7a01a" : "#e74c3c";
         el.style.transition = "width .4s ease";
+        el.style.background = pct >= 75 ? "#27ae60" : pct >= 40 ? "#f7a01a" : "#e74c3c";
       }
 
-      // Year totals
-      var yearC = data.filter(function(c) { return String(c.Year) === String(curYear); })
-        .reduce(function(s,c) { return s + Number(c.Amount||0); }, 0);
-      var yearE = expenses.filter(function(e) { return String(e.Year) === String(curYear); })
-        .reduce(function(s,e) { return s + Number(e.Amount||0); }, 0);
-      var yearNet = yearC - yearE;
+      // ── Year totals for selected year (the numbers that were ₹0 before) ──
+      var yearC = data.filter(function(c) {
+        return String(c.Year) === String(curYear);
+      }).reduce(function(s,c) { return s + Number(c.Amount||0); }, 0);
+
+      var yearE = expenses.filter(function(e) {
+        return String(e.Year) === String(curYear);
+      }).reduce(function(s,e) { return s + Number(e.Amount||0); }, 0);
+
+      // Opening balance from yearConfig for net calculation
+      var opening = 0;
+      if (Array.isArray(yearConfig)) {
+        var yRow = yearConfig.find(function(r) {
+          return String(r.Year || r.year || "") === String(curYear);
+        });
+        if (yRow) opening = Number(yRow.OpeningBalance || yRow.Opening_Balance || yRow.opening_balance || yRow.Balance || 0) || 0;
+      }
+      var net = opening + yearC - yearE;
+      var netCol = net >= 0 ? "#16a34a" : "#dc2626";
 
       // Status badge
       el = document.getElementById("hm_yr_status_badge");
@@ -2885,107 +2864,35 @@
         }
       }
 
-      // ── Enhanced: 5-cell year stat row injected below status badge ──
-      (function _renderYearStats() {
-        var statsId = "_hm_yr_stats";
-        var wrap = document.getElementById(statsId);
+      // ── Inject year stat cells below status badge (idempotent) ──────────
+      // Shows: collected · expenses · net · members for the SELECTED year
+      (function _renderYearStatCells() {
+        var cellsId = "_hm_yr_cells";
+        var wrap = document.getElementById(cellsId);
         if (!wrap) {
           wrap = document.createElement("div");
-          wrap.id = statsId;
+          wrap.id = cellsId;
           wrap.style.cssText = "display:flex;gap:6px;margin-top:10px;";
-          var badgeEl = document.getElementById("hm_yr_status_badge");
-          if (badgeEl && badgeEl.parentNode) badgeEl.parentNode.appendChild(wrap);
+          var badge = document.getElementById("hm_yr_status_badge");
+          if (badge && badge.parentNode) badge.parentNode.appendChild(wrap);
         }
+        var memberCount = users.filter(function(u) {
+          return String(u.Status||"").toLowerCase() === "active";
+        }).length || (window._hmActiveMemberCount || 0);
+
         function cell(label, val, col) {
-          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;' +
-            'background:#f8fafc;border:0.5px solid #e2e8f0;border-radius:8px;">' +
-            '<div style="font-size:13px;font-weight:600;color:' + (col||"#334155") + ';line-height:1.2;">' + val + '</div>' +
+          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;' +
+            'padding:8px 4px;background:#f8fafc;border:0.5px solid #e2e8f0;border-radius:8px;">' +
+            '<div style="font-size:14px;font-weight:600;color:' + (col||"#334155") + ';line-height:1.2;">' + val + '</div>' +
             '<div style="font-size:9px;color:#94a3b8;margin-top:3px;text-align:center;white-space:nowrap;">' + label + '</div>' +
           '</div>';
         }
         wrap.innerHTML =
-          cell("Months done",  String(selMonthIdx + 1)) +
-          cell("Year %",       pct + "%") +
-          cell("Year income",  "₹" + fmt(yearC),  "#16a34a") +
-          cell("Year expense", "₹" + fmt(yearE),  "#dc2626") +
-          cell("Net balance",  (yearNet < 0 ? "−" : "") + "₹" + fmt(Math.abs(yearNet)), yearNet >= 0 ? "#16a34a" : "#dc2626");
+          cell("Collected",   "₹" + fmt(yearC), "#16a34a") +
+          cell("Expenses",    "₹" + fmt(yearE), "#dc2626") +
+          cell("Net balance", (net < 0 ? "−" : "") + "₹" + fmt(Math.abs(net)), netCol) +
+          cell("Members",     String(memberCount), "#6366f1");
       })();
-    }
-
-    /* ── Upcoming Events widget — injected after year tracker ─────────────
-       Reads window._events if loaded, else fetches via getCached silently.
-       Creates its own card container (#_hm_events_widget) once, updates on
-       every dashboard render. Zero touch to eventsPage logic.
-    ──────────────────────────────────────────────────────────────────── */
-    function _hmRenderUpcomingEvents() {
-      var dashPage = document.getElementById("dashboardPage");
-      if (!dashPage) return;
-
-      var widget = document.getElementById("_hm_events_widget");
-      if (!widget) {
-        widget = document.createElement("div");
-        widget.id = "_hm_events_widget";
-        widget.style.cssText =
-          "background:#fff;border:0.5px solid #e2e8f0;border-radius:12px;" +
-          "padding:14px 16px;margin-top:0;";
-        dashPage.appendChild(widget);
-      }
-
-      function _drawEvents(evList) {
-        var today = new Date(); today.setHours(0,0,0,0);
-        var upcoming = (evList || []).filter(function(ev) {
-          return ev.Status === "Active" || ev.Status === "Upcoming";
-        }).sort(function(a, b) {
-          var da = a.StartDate ? new Date(a.StartDate) : new Date("9999");
-          var db = b.StartDate ? new Date(b.StartDate) : new Date("9999");
-          return da - db;
-        }).slice(0, 4);
-
-        var hdr =
-          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
-            '<span style="font-size:13px;font-weight:600;color:#334155;">Upcoming Events' +
-              (upcoming.length ? ' <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;border-radius:20px;padding:1px 7px;font-weight:600;vertical-align:middle;">' + upcoming.length + '</span>' : '') +
-            '</span>' +
-            '<span style="font-size:11px;color:#2563eb;cursor:pointer;font-weight:600;" onclick="showPage(\'eventsPage\',null)">See all →</span>' +
-          '</div>';
-
-        if (upcoming.length === 0) {
-          widget.innerHTML = hdr + '<div style="font-size:12px;color:#94a3b8;text-align:center;padding:8px 0;">No upcoming events</div>';
-          return;
-        }
-
-        var rows = upcoming.map(function(ev) {
-          var isActive = ev.Status === "Active";
-          var dotCol  = isActive ? "#22c55e" : "#3b82f6";
-          var bgBadge = isActive ? "#dcfce7" : "#dbeafe";
-          var txBadge = isActive ? "#166534" : "#1e40af";
-          var dateStr = ev.StartDate || "—";
-          if (ev.EndDate && ev.EndDate !== ev.StartDate) dateStr += " – " + ev.EndDate;
-          return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid #f1f5f9;">' +
-            '<div style="width:7px;height:7px;border-radius:50%;background:' + dotCol + ';flex-shrink:0;"></div>' +
-            '<div style="flex:1;font-size:12px;font-weight:600;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(ev.EventName||"") + '">' + escapeHtml(ev.EventName||"Untitled") + '</div>' +
-            '<span style="font-size:10px;font-weight:600;background:' + bgBadge + ';color:' + txBadge + ';border-radius:20px;padding:2px 8px;white-space:nowrap;">' + ev.Status + '</span>' +
-            '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;margin-left:4px;">' + escapeHtml(dateStr) + '</span>' +
-          '</div>';
-        }).join("");
-
-        widget.innerHTML = hdr + rows;
-      }
-
-      // Use already-loaded events first (fastest path), else fetch silently
-      if (typeof _events !== "undefined" && Array.isArray(_events) && _events.length > 0) {
-        _drawEvents(_events);
-      } else if (typeof getCached === "function") {
-        getCached("getEventData").then(function(res) {
-          _drawEvents((res && res.events) || []);
-        }).catch(function() {
-          widget.innerHTML =
-            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
-              '<span style="font-size:13px;font-weight:600;color:#334155;">Upcoming Events</span>' +
-            '</div>' +
-            '<div style="font-size:11px;color:#94a3b8;">Unable to load events</div>';
-        });
-      }
     }
 
     /* Also call _hmRenderDashboard after _dashSyncFromAdmin so
@@ -9878,28 +9785,12 @@
 
     function dash_switchTab(tab) {
       _dash_activeTab = tab;
+      // Toggle tab button styles
       document.getElementById("dash_tab_contrib").classList.toggle("dash-tab-active", tab === "contrib");
       document.getElementById("dash_tab_expense").classList.toggle("dash-tab-active", tab === "expense");
+      // Show/hide panels
       document.getElementById("dash_panel_contrib").style.display = tab === "contrib" ? "" : "none";
       document.getElementById("dash_panel_expense").style.display = tab === "expense" ? "" : "none";
-      // ── Sync month + year between tabs so switching feels unified ──
-      try {
-        if (tab === "expense") {
-          var cY = document.getElementById("ct_filterYear");
-          var cM = document.getElementById("ct_filterMonth");
-          var eY = document.getElementById("et_filterYear");
-          var eM = document.getElementById("et_filterMonth");
-          if (eY && cY && cY.value) eY.value = cY.value;
-          if (eM && cM && cM.value) eM.value = cM.value;
-        } else {
-          var eY2 = document.getElementById("et_filterYear");
-          var eM2 = document.getElementById("et_filterMonth");
-          var cY2 = document.getElementById("ct_filterYear");
-          var cM2 = document.getElementById("ct_filterMonth");
-          if (cY2 && eY2 && eY2.value) cY2.value = eY2.value;
-          if (cM2 && eM2 && eM2.value) cM2.value = eM2.value;
-        }
-      } catch(e) {}
       // Re-render active tab
       if (tab === "contrib") ct_applyFilter();
       else                   _et_applyFilter();
