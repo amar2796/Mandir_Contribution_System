@@ -4271,6 +4271,24 @@ body.user-dark .ra-item.ra-tapped {
 ._modal ._row select {
   text-align: left !important;
 }
+/* Fix date input — browser native picker centers text; force left */
+._modal ._row input[type="date"] {
+  text-align: left !important;
+  direction: ltr !important;
+  display: block !important;
+  width: 100% !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+._modal ._row input[type="date"]::-webkit-datetime-edit,
+._modal ._row input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+._modal ._row input[type="date"]::-webkit-datetime-edit-text,
+._modal ._row input[type="date"]::-webkit-datetime-edit-day-field,
+._modal ._row input[type="date"]::-webkit-datetime-edit-month-field,
+._modal ._row input[type="date"]::-webkit-datetime-edit-year-field {
+  text-align: left !important;
+  padding-left: 0 !important;
+}
 /* Buttons in _mft: one line, equal width */
 ._mft {
   display: flex !important;
@@ -4695,47 +4713,51 @@ body.user-dark .ra-item.ra-tapped { background: transparent !important; }
 
 /* Override body dark */
 body.user-dark {
-  background: #070707 !important;
+  background: #050505 !important;
   color: #e2e8f0 !important;
 }
 
 /* Header dark */
 body.user-dark .header {
-  background: #0e0e0e !important;
-  border-bottom-color: rgba(247,160,26,0.6) !important;
-  box-shadow: 0 2px 20px rgba(0,0,0,0.6) !important;
+  background: #080808 !important;
+  border-bottom: 2px solid rgba(247,160,26,0.5) !important;
+  box-shadow: 0 2px 24px rgba(0,0,0,0.8), 0 1px 0 rgba(247,160,26,0.15) !important;
 }
+body.user-dark .hdr-welcome { color: #4b5563 !important; }
+body.user-dark .hdr-name { color: #f1f5f9 !important; }
 
 /* Cards dark */
 body.user-dark .card {
-  background: #111111 !important;
-  border: 1px solid rgba(247,160,26,0.1) !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+  background: #0f0f0f !important;
+  border: 1px solid rgba(247,160,26,0.12) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6) !important;
 }
 
 /* Menu items dark */
 body.user-dark .menu-item {
-  background: #111111 !important;
-  border: 1px solid rgba(247,160,26,0.08) !important;
+  background: #0f0f0f !important;
+  border: 1px solid rgba(247,160,26,0.1) !important;
 }
 body.user-dark .menu-item:active,
 body.user-dark .menu-item:hover {
-  background: #1a1a1a !important;
+  background: #181818 !important;
+  border-color: rgba(247,160,26,0.22) !important;
 }
 body.user-dark .menu-acc-wrap {
-  background: #111111 !important;
+  background: #0f0f0f !important;
 }
 
 /* ── Profile Modal: deep black ── */
 body.user-dark ._modal > div {
-  background: #0e0e0e !important;
-  border-color: rgba(247,160,26,0.25) !important;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.85), 0 0 0 1px rgba(247,160,26,0.12) !important;
+  background: #0a0a0a !important;
+  border-color: rgba(247,160,26,0.3) !important;
+  box-shadow: 0 32px 100px rgba(0,0,0,0.95), 0 0 0 1px rgba(247,160,26,0.15) !important;
 }
 /* Header strip stays dark brown */
 body.user-dark ._modal ._mhdr {
-  background: linear-gradient(135deg, #120500 0%, #1e0800 55%, #120500 100%) !important;
-  border-bottom: 2px solid rgba(247,160,26,0.35) !important;
+  background: linear-gradient(135deg, #0e0300 0%, #1a0600 55%, #0e0300 100%) !important;
+  border-bottom: 2px solid rgba(247,160,26,0.4) !important;
+  box-shadow: 0 1px 0 rgba(247,160,26,0.1) !important;
 }
 body.user-dark ._modal ._mhdr h3,
 body.user-dark ._modal ._mhdr * { color: #fff !important; }
@@ -4743,18 +4765,18 @@ body.user-dark ._modal ._mhdr i { color: #f7a01a !important; }
 
 /* Profile hero photo section */
 body.user-dark ._modal ._mbdy > div:first-child {
-  background: linear-gradient(180deg, #120500 0%, #1e0800 60%, #120500 100%) !important;
+  background: linear-gradient(180deg, #0e0300 0%, #1a0700 60%, #0e0300 100%) !important;
 }
 
-/* Body section — deep black, NO white, NO warm cream */
+/* Body section — deep black */
 body.user-dark ._modal ._mbdy {
-  background: #0e0e0e !important;
+  background: #0a0a0a !important;
   color: #e2e8f0 !important;
 }
-/* Any child div with white/var(--white) background inside modal body */
+/* Any child div inside modal body */
 body.user-dark ._modal ._mbdy > div,
 body.user-dark ._modal ._mbdy > div > div {
-  background: #0e0e0e !important;
+  background: #0a0a0a !important;
 }
 body.user-dark ._modal ._mbdy [style*="background:var(--white)"],
 body.user-dark ._modal ._mbdy [style*="background: var(--white)"],
@@ -4762,16 +4784,16 @@ body.user-dark ._modal ._mbdy [style*="background:#fff"],
 body.user-dark ._modal ._mbdy [style*="background: #fff"],
 body.user-dark ._modal ._mbdy [style*="background:white"],
 body.user-dark ._modal ._mbdy [style*="background: white"] {
-  background: #0e0e0e !important;
+  background: #0a0a0a !important;
 }
 /* Row separators */
 body.user-dark ._modal ._row {
-  border-bottom: 1px solid rgba(247,160,26,0.08) !important;
+  border-bottom: 1px solid rgba(247,160,26,0.1) !important;
 }
 /* Labels */
 body.user-dark ._modal ._rl,
 body.user-dark ._rl {
-  color: #4b5563 !important;
+  color: #374151 !important;
 }
 /* Values */
 body.user-dark ._modal ._rv,
@@ -4795,14 +4817,14 @@ body.user-dark ._modal ._row textarea {
 }
 body.user-dark ._modal ._row input::placeholder,
 body.user-dark ._modal ._row textarea::placeholder {
-  color: #374151 !important;
+  color: #2d3748 !important;
 }
 /* Icon badges */
 body.user-dark ._u-icon-sm {
-  background: rgba(247,160,26,0.12) !important;
+  background: rgba(247,160,26,0.14) !important;
 }
 body.user-dark ._u-icon-md {
-  background: rgba(247,160,26,0.14) !important;
+  background: rgba(247,160,26,0.16) !important;
 }
 /* Password dots */
 body.user-dark ._modal [style*="color:#aaa"] {
@@ -4814,8 +4836,8 @@ body.user-dark ._modal [style*="color:#3b82f6"] {
 }
 /* Footer strip */
 body.user-dark ._modal ._mft {
-  background: #0e0e0e !important;
-  border-top: 2px solid rgba(247,160,26,0.12) !important;
+  background: #090909 !important;
+  border-top: 1.5px solid rgba(247,160,26,0.15) !important;
 }
 
 /* ── Loading Overlay dark mode — pure black ── */
@@ -4856,21 +4878,25 @@ body.user-dark .ulo-progress-wrap {
 }
 
 /* ── Dark mode general text/bg fixes ── */
-body.user-dark .sec-lbl { color: #4b5563 !important; }
-body.user-dark .hero { background: linear-gradient(135deg, #120500 0%, #1e0900 50%, #0e0400 100%) !important; }
-body.user-dark .qa-btn.qa-ghost { background: #111 !important; color: #94a3b8 !important; border-color: rgba(247,160,26,0.15) !important; }
-body.user-dark .acc-body { background: #0a0a0a !important; }
+body.user-dark .sec-lbl { color: #374151 !important; }
+body.user-dark .hero { background: linear-gradient(135deg, #0e0300 0%, #180700 50%, #090200 100%) !important; }
+body.user-dark .qa-btn.qa-ghost { background: #0f0f0f !important; color: #94a3b8 !important; border-color: rgba(247,160,26,0.18) !important; }
+body.user-dark .acc-body { background: #070707 !important; }
 body.user-dark .f-grp input,
 body.user-dark .f-grp select {
-  background: #111 !important;
+  background: #0f0f0f !important;
   color: #e2e8f0 !important;
   border-color: #1f2937 !important;
 }
-body.user-dark .btn-ghost { background: #111 !important; color: #94a3b8 !important; }
-body.user-dark .pg-btn { background: #111 !important; color: #94a3b8 !important; }
-body.user-dark .hdr-dropdown { background: #0e0e0e !important; border-color: rgba(247,160,26,0.2) !important; }
-body.user-dark .hdr-drop-item { color: #cbd5e1 !important; }
-body.user-dark .hdr-drop-item:hover { background: #1a1a1a !important; }
+body.user-dark .btn-ghost { background: #0f0f0f !important; color: #94a3b8 !important; border-color: rgba(247,160,26,0.15) !important; }
+body.user-dark .pg-btn { background: #0f0f0f !important; color: #94a3b8 !important; }
+body.user-dark .hdr-dropdown {
+  background: #0a0a0a !important;
+  border-color: rgba(247,160,26,0.22) !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.9) !important;
+}
+body.user-dark .hdr-drop-item { color: #cbd5e1 !important; border-bottom-color: rgba(255,255,255,0.04) !important; }
+body.user-dark .hdr-drop-item:hover { background: #161616 !important; color: #f7a01a !important; }
 
 /* ── Desktop: center content ── */
 @media (min-width: 900px) {
