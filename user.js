@@ -439,7 +439,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Date of Birth
               </span>
               <input id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:left;font-family:var(--font-b);padding:0;cursor:pointer;min-width:0;"/>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;font-family:var(--font-b);padding:0;cursor:pointer;flex:1;min-width:0;display:block;width:100%;-webkit-appearance:none;appearance:none;"/>
             </div>
 
             <!-- Password -->
