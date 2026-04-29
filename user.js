@@ -380,7 +380,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Full Name
               </span>
               <input id="ep_name" value="${escapeHtml(dN)}" placeholder="Your name"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:left;width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
             </div>
 
             <!-- Email -->
@@ -391,7 +391,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Email
               </span>
               <input id="ep_email" type="email" value="${escapeHtml(dE)}" placeholder="your@email.com"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:left;width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
             </div>
 
             <!-- Mobile (read-only with update link) -->
@@ -401,7 +401,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                   <i class="fa-solid fa-mobile-screen" class="_u-gold-icon"></i>
                 </span> Mobile
               </span>
-              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-start;flex:1;min-width:0;">
                 <span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:.5px;">${escapeHtml(String(myProfile?.Mobile || "—"))}</span>
                 <span onclick="openUpdateMobileConfirm()" style="color:#3b82f6;font-size:11px;font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap;flex-shrink:0;">
                   <i class="fa-solid fa-pen-to-square" style="font-size:10px;margin-right:2px;"></i>Update
@@ -417,7 +417,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Village
               </span>
               <input id="ep_village" value="${escapeHtml(dV)}" placeholder="Village name"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:left;width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
             </div>
 
             <!-- Address -->
@@ -428,7 +428,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Address
               </span>
               <textarea id="ep_address" rows="2" placeholder="Full address"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);width:100%;min-width:0;font-family:var(--font-b);padding:0;resize:none;line-height:1.5;">${escapeHtml(dA)}</textarea>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:left;width:100%;min-width:0;font-family:var(--font-b);padding:0;resize:none;line-height:1.5;">${escapeHtml(dA)}</textarea>
             </div>
 
             <!-- Date of Birth -->
@@ -439,7 +439,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Date of Birth
               </span>
               <input id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);font-family:var(--font-b);padding:0;cursor:pointer;min-width:0;"/>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:left;font-family:var(--font-b);padding:0;cursor:pointer;min-width:0;"/>
             </div>
 
             <!-- Password -->
@@ -449,7 +449,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                   <i class="fa-solid fa-lock" class="_u-gold-icon"></i>
                 </span> Password
               </span>
-              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;justify-content:flex-start;flex:1;">
                 <span style="color:#aaa;letter-spacing:2px;font-size:13px;">••••••••</span>
                 <span onclick="closeModal();openChangePassword()" style="color:#3b82f6;font-size:11px;font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap;flex-shrink:0;">
                   <i class="fa-solid fa-key" style="font-size:10px;margin-right:2px;"></i>Change
