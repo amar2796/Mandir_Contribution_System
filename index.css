@@ -572,14 +572,7 @@ body {
   position: relative;
 }
 #about::before {
-  content: '🛕';
-  position: absolute;
-  top: 24px; right: 5%;
-  font-size: 5rem;
-  opacity: 0.05;
-  pointer-events: none;
-  user-select: none;
-  filter: grayscale(1);
+  display: none;
 }
 .about-stats-row {
   display: flex;
