@@ -86,6 +86,14 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
   window._getDeviceInfo = _getDeviceInfo;
 
   function logout() {
+    // Show immediate visual feedback
+    (function() {
+      var _lo = document.createElement('div');
+      _lo.id = '_logoutOverlay';
+      _lo.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(42,15,0,0.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+      _lo.innerHTML = '<div style="width:42px;height:42px;border:3px solid rgba(247,160,26,0.3);border-top-color:#f7a01a;border-radius:50%;animation:spin .7s linear infinite;"></div><div style="color:#f7a01a;font-family:sans-serif;font-size:14px;font-weight:600;letter-spacing:.5px;">Logging out…</div>';
+      document.body.appendChild(_lo);
+    })();
     // [FIX] postData is JSONP (async script tag). Must WAIT for clearSessionToken
     // to complete before wiping localStorage + redirecting — otherwise the page
     // unloads before JSONP fires and TokenExpiry is never cleared in the sheet.
@@ -112,8 +120,8 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
           sessionToken: s.sessionToken || "",
           reason:       "User clicked logout button"
         }).then(function() { _finish(); }).catch(function() { _finish(); });
-        // Safety net: redirect after 3s even if postData never resolves
-        setTimeout(_finish, 3000);
+        // Safety net: redirect after 1.5s even if postData never resolves (reduced from 3s)
+        setTimeout(_finish, 1500);
         return; // _doRedirect called by _finish above
       }
     } catch (e) { }
@@ -277,15 +285,15 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
             </div>
           </div>
           <div style="padding:10px 20px 16px;background:var(--white);">
-            <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-mobile-screen" class="_u-gold-icon"></i></span> Mobile</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(String(myProfile.Mobile || "—"))}</span></div>
-            <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-envelope" class="_u-gold-icon"></i></span> Email</span><span class="_rv" style="word-break:break-all;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Email || "—")}</span></div>
-            ${myProfile.Village ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-map-pin" class="_u-gold-icon"></i></span> Village</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Village)}</span></div>` : ""}
-            ${myProfile.Address ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-location-dot" class="_u-gold-icon"></i></span> Address</span><span class="_rv" style="white-space:pre-wrap;text-align:right;max-width:220px;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Address)}</span></div>` : ""}
-            ${myProfile.DOB ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-cake-candles" class="_u-gold-icon"></i></span> Date of Birth</span><span class="_rv" style="font-weight:600;color:#1e293b;">${(function(d){if(!d)return"—";if(d.indexOf("T")>=0||d.indexOf("Z")>=0){var x=new Date(d);if(!isNaN(x))return String(x.getUTCDate()).padStart(2,"0")+"-"+String(x.getUTCMonth()+1).padStart(2,"0")+"-"+x.getUTCFullYear();}if(/^\d{2}-\d{2}-\d{4}$/.test(d))return d;if(/^\d{4}-\d{2}-\d{2}$/.test(d)){var p=d.split("-");return p[2]+"-"+p[1]+"-"+p[0];}return d;})(myProfile.DOB)}</span></div>` : ""}
-            <div class="_row"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-id-card" class="_u-gold-icon"></i></span> Member ID</span><span class="_rv" style="font-family:monospace;font-size:12px;font-weight:700;color:#3c1a00;letter-spacing:.5px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
+            <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-mobile-screen" class="_u-gold-icon"></i></span> Mobile</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(String(myProfile.Mobile || "—"))}</span></div>
+            <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-envelope" class="_u-gold-icon"></i></span> Email</span><span class="_rv" style="word-break:break-all;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Email || "—")}</span></div>
+            ${myProfile.Village ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-map-pin" class="_u-gold-icon"></i></span> Village</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Village)}</span></div>` : ""}
+            ${myProfile.Address ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-location-dot" class="_u-gold-icon"></i></span> Address</span><span class="_rv" style="white-space:pre-wrap;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Address)}</span></div>` : ""}
+            ${myProfile.DOB ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-cake-candles" class="_u-gold-icon"></i></span> Date of Birth</span><span class="_rv" style="font-weight:600;color:#1e293b;">${(function(d){if(!d)return"—";if(d.indexOf("T")>=0||d.indexOf("Z")>=0){var x=new Date(d);if(!isNaN(x))return String(x.getUTCDate()).padStart(2,"0")+"-"+String(x.getUTCMonth()+1).padStart(2,"0")+"-"+x.getUTCFullYear();}if(/^\d{2}-\d{2}-\d{4}$/.test(d))return d;if(/^\d{4}-\d{2}-\d{2}$/.test(d)){var p=d.split("-");return p[2]+"-"+p[1]+"-"+p[0];}return d;})(myProfile.DOB)}</span></div>` : ""}
+            <div class="_row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-id-card" class="_u-gold-icon"></i></span> Member ID</span><span class="_rv" style="font-family:monospace;font-size:12px;font-weight:700;color:#3c1a00;letter-spacing:.5px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
           </div>
         </div>
-            <div class="_mft" style="flex-wrap:wrap;gap:8px;border-top:2px solid rgba(247,160,26,0.15);background:linear-gradient(90deg,rgba(247,160,26,0.04),transparent);">
+            <div class="_mft" style="gap:8px;border-top:2px solid rgba(247,160,26,0.15);background:linear-gradient(90deg,rgba(247,160,26,0.04),transparent);">
     <button class="_mbtn" style="background:#64748b;box-shadow:none;" onclick="closeModal()">
       <i class="fa-solid fa-xmark"></i> Close
     </button>
@@ -372,7 +380,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Full Name
               </span>
               <input id="ep_name" value="${escapeHtml(dN)}" placeholder="Your name"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
             </div>
 
             <!-- Email -->
@@ -383,7 +391,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Email
               </span>
               <input id="ep_email" type="email" value="${escapeHtml(dE)}" placeholder="your@email.com"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
             </div>
 
             <!-- Mobile (read-only with update link) -->
@@ -409,7 +417,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Village
               </span>
               <input id="ep_village" value="${escapeHtml(dV)}" placeholder="Village name"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);width:100%;min-width:0;font-family:var(--font-b);padding:0;"/>
             </div>
 
             <!-- Address -->
@@ -420,7 +428,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Address
               </span>
               <textarea id="ep_address" rows="2" placeholder="Full address"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;width:100%;min-width:0;font-family:var(--font-b);padding:0;resize:none;line-height:1.5;">${escapeHtml(dA)}</textarea>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);width:100%;min-width:0;font-family:var(--font-b);padding:0;resize:none;line-height:1.5;">${escapeHtml(dA)}</textarea>
             </div>
 
             <!-- Date of Birth -->
@@ -431,7 +439,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Date of Birth
               </span>
               <input id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;font-family:var(--font-b);padding:0;cursor:pointer;min-width:0;"/>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);font-family:var(--font-b);padding:0;cursor:pointer;min-width:0;"/>
             </div>
 
             <!-- Password -->
@@ -2186,7 +2194,7 @@ existing updateUser action. No new Apps Script action needed.
       var tipHtml = tipRows.map(function(r) {
         return '<div style="display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px solid rgba(247,160,26,0.08);">'
           + '<span style="color:var(--ink-faint);font-size:10px;white-space:nowrap;">' + r[0] + '</span>'
-          + '<span style="font-weight:600;font-size:11px;color:var(--ink);text-align:right;">' + r[1] + '</span>'
+          + '<span style="font-weight:600;font-size:11px;color:var(--ink);">' + r[1] + '</span>'
           + '</div>';
       }).join("");
       return '<div class="ra-item ra-item-noclk" style="cursor:default;position:relative;">'
@@ -2209,6 +2217,46 @@ existing updateUser action. No new Apps Script action needed.
     var mb = document.getElementById("menuBadgeRecords");
     if (mb && data.length > 0) { mb.textContent = data.length + " records"; mb.style.display = "inline"; }
   }
+  // FIX 3: Click-to-show details on recent activity — clean modal
+  function _raItemClick(el) {
+    // Read data from tooltip rows
+    var tooltip = el.querySelector('.ra-tooltip');
+    if (!tooltip) return;
+    var rows = tooltip.querySelectorAll('[style*="justify-content:space-between"]');
+    if (!rows.length) return;
+
+    var rowsHtml = Array.from(rows).map(function(r) {
+      var label = r.children[0] ? r.children[0].textContent : '';
+      var value = r.children[1] ? r.children[1].textContent : '';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(247,160,26,0.1);">'
+        + '<span style="font-size:12px;color:var(--ink-faint);font-weight:500;">' + label + '</span>'
+        + '<span style="font-size:13px;font-weight:700;color:var(--ink);max-width:60%;word-break:break-word;">' + value + '</span>'
+        + '</div>';
+    }).join('');
+
+    var isDark = document.body.classList.contains('user-dark');
+    var bgCard = isDark ? '#111827' : '#ffffff';
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);animation:fadeInBg .2s ease;';
+    overlay.innerHTML = '<div style="background:' + bgCard + ';width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:0 0 20px;box-shadow:0 -8px 40px rgba(0,0,0,0.3);animation:slideUpSheet .22s ease;">'
+      + '<div style="width:40px;height:4px;background:rgba(247,160,26,0.35);border-radius:2px;margin:10px auto 0;"></div>'
+      + '<div style="background:linear-gradient(135deg,#2a0f00,#3c1a00);padding:13px 16px 11px;margin:8px 0 0;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid rgba(247,160,26,0.3);">'
+      + '<div style="display:flex;align-items:center;gap:9px;">'
+      + '<div style="width:30px;height:30px;background:rgba(247,160,26,0.18);border-radius:8px;display:flex;align-items:center;justify-content:center;">'
+      + '<i class="fa-solid fa-receipt" style="color:#f7a01a;font-size:0.8rem;"></i></div>'
+      + '<span style="font-family:var(--font-h);font-weight:700;font-size:14px;color:#fff;">Transaction Details</span>'
+      + '</div>'
+      + '<button onclick="document.querySelector(\\"[data-ra-modal]\\").remove()" style="background:rgba(255,255,255,0.1);border:none;color:rgba(255,255,255,0.7);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&#x2715;</button>'
+      + '</div>'
+      + '<div style="padding:4px 16px 0;">' + rowsHtml + '</div>'
+      + '</div>';
+    overlay.setAttribute('data-ra-modal', '1');
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) overlay.remove();
+    });
+    document.body.appendChild(overlay);
+  }
+
   function _applyAllFilters() {
     let y = document.getElementById("filterYear").value, m = document.getElementById("filterMonth").value,
       t = document.getElementById("filterType").value, txt = document.getElementById("searchInput").value.toLowerCase();
@@ -2242,16 +2290,6 @@ existing updateUser action. No new Apps Script action needed.
 
   async function exportPDF() {
     await _loadJsPDF();
-    // Load QRCode lib if not already loaded
-    if (!window.QRCode) {
-      await new Promise(function(res, rej) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
-        s.onload = res; s.onerror = res; // silent fail
-        document.head.appendChild(s);
-      });
-    }
-
     const { jsPDF } = window.jspdf;
     let doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     let s = _sess(), w = doc.internal.pageSize.getWidth();
@@ -2276,9 +2314,7 @@ existing updateUser action. No new Apps Script action needed.
     doc.text("CONTRIBUTION STATEMENT — OFFICIAL DOCUMENT", w / 2, 21, { align: "center" });
 
     // Gold Om symbol right side
-    doc.setTextColor(247, 160, 26);
-    doc.setFontSize(18);
-    doc.text("ॐ", w - 10, 18, { align: "right" });
+    // OM removed per user request
 
     // ── Member info block
     let Y = 40;
@@ -2356,38 +2392,7 @@ existing updateUser action. No new Apps Script action needed.
       doc.text("No records found for selected filters.", 14, Y + 6);
     }
 
-    // ── QR code with user info embedded
-    try {
-      if (window.QRCode) {
-        const qrText = `Member: ${s.name} | Total: Rs.${tot.toLocaleString("en-IN")} | Records: ${filtered.length} | Date: ${new Date().toLocaleDateString("en-IN")} | Mandir: ${APP.name}, ${APP.location}`;
-        let qrDiv = document.getElementById("_qrOffscreen");
-        if (!qrDiv) {
-          qrDiv = document.createElement("div");
-          qrDiv.id = "_qrOffscreen";
-          qrDiv.style.cssText = "position:fixed;left:-9999px;top:0;visibility:hidden;pointer-events:none;";
-          document.body.appendChild(qrDiv);
-        }
-        qrDiv.innerHTML = "";
-        new window.QRCode(qrDiv, { text: qrText, width: 80, height: 80, colorDark: "#2a0f00", colorLight: "#ffffff" });
-        await new Promise(r => setTimeout(r, 300));
-        const qrCanvas = qrDiv.querySelector("canvas");
-        if (qrCanvas) {
-          const qrData = qrCanvas.toDataURL("image/png");
-          const ph = doc.internal.pageSize.getHeight();
-          const lastY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : Y + 20;
-          // QR box
-          doc.setFillColor(253, 248, 240);
-          doc.rect(w - 36, lastY, 32, 32, "F");
-          doc.setDrawColor(247, 160, 26);
-          doc.setLineWidth(0.4);
-          doc.rect(w - 36, lastY, 32, 32);
-          doc.addImage(qrData, "PNG", w - 35, lastY + 1, 30, 30);
-          doc.setFontSize(6); doc.setTextColor(100, 116, 139);
-          doc.text("Scan to verify", w - 20, lastY + 34, { align: "center" });
-        }
-        // _qrOffscreen element is reused — no removal needed
-      }
-    } catch(e) { /* QR optional */ }
+    // QR code removed per user request
 
     // ── Footer on every page
     let pc = doc.internal.getNumberOfPages();
@@ -2462,12 +2467,11 @@ Uses jsPDF already loaded. No server call needed.
       const LIGHT = [248, 250, 252];
       const MUTED = [100, 116, 139];
 
-      // ✅ Load logo
+      // ✅ Load logo — try multiple path/case variants
       let LOGO = null;
-      try {
-        LOGO = await loadImageAsBase64("image/logo.png");
-      } catch (e) {
-        // Logo load failed — receipt will render without logo image
+      const _logoPaths = ["Image/logo.PNG", "image/logo.png", "Image/logo.png", "image/logo.PNG"];
+      for (const _lp of _logoPaths) {
+        try { LOGO = await loadImageAsBase64(_lp); if (LOGO) break; } catch (e) { /* try next */ }
       }
 
       // ✅ Load profile photo via Apps Script proxy (solves CORS block on Drive URLs)
@@ -2486,12 +2490,15 @@ Uses jsPDF already loaded. No server call needed.
       doc.setFillColor(...INK);
       doc.rect(0, 0, W, 14, "F");
 
-      // ✅ LOGO (perfect aligned box area)
+      // Logo — aligned with photo column (x=4), vertically centered in header
       if (LOGO) {
-        const logoSize = 10;      // fits within 14mm header
-        const logoX = 2;
-        const logoY = 2;          // vertically centered: (14 - 10) / 2
-
+        const logoSize = 10;
+        const logoX = 4;          // aligned with photoX below
+        const logoY = 2;          // (14 - 10) / 2 = 2
+        // Gold ring around logo
+        doc.setDrawColor(...GOLD);
+        doc.setLineWidth(0.6);
+        doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 0.7, "S");
         doc.addImage(LOGO, "PNG", logoX, logoY, logoSize, logoSize);
       }
 
@@ -2499,19 +2506,17 @@ Uses jsPDF already loaded. No server call needed.
       doc.setFillColor(...GOLD);
       doc.rect(0, 14, W, 1.2, "F");
 
-      // ✅ Title aligned after logo
-      const textStartX = 15; // adjusted for smaller logo
-
+      // Temple name — centered across full card width
       doc.setTextColor(...GOLD);
-      doc.setFontSize(10);
+      doc.setFontSize(9.5);
       doc.setFont(undefined, "bold");
-      doc.text(APP.name.toUpperCase(), textStartX, 6);
+      doc.text(APP.name.toUpperCase(), W / 2, 6.5, { align: "center" });
 
-      // Address
+      // Address — centered across full card width
       doc.setTextColor(...WHITE);
-      doc.setFontSize(6);
+      doc.setFontSize(5.5);
       doc.setFont(undefined, "normal");
-      doc.text(APP.address, textStartX, 11);
+      doc.text(APP.address, W / 2, 11.5, { align: "center" });
 
       // 🔲 Square Photo area
       const photoSize = 20;
@@ -2961,15 +2966,6 @@ Uses jsPDF already loaded. No server call needed.
 
   async function exportYearStatementPDF() {
     await _loadJsPDF();
-    if (!window.QRCode) {
-      await new Promise(function(res) {
-        const s = document.createElement("script");
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
-        s.onload = res; s.onerror = res;
-        document.head.appendChild(s);
-      });
-    }
-
     const { jsPDF } = window.jspdf;
     let s = _sess();
     if (!s) { toast("Not logged in.", "error"); return; }
@@ -3001,7 +2997,7 @@ Uses jsPDF already loaded. No server call needed.
 
       doc.setTextColor(247, 160, 26);
       doc.setFontSize(18);
-      doc.text("ॐ", w - 10, 18, { align: "right" });
+      // OM symbol removed per user request
 
       // ── EXACT SAME member info block as exportPDF ──
       let Y = 40;
@@ -3058,35 +3054,7 @@ Uses jsPDF already loaded. No server call needed.
         });
       }
 
-      // ── EXACT SAME QR code block as exportPDF ──
-      try {
-        if (window.QRCode) {
-          const qrText = `Member: ${s.name} | Year: ${yr} | Total: Rs.${tot.toLocaleString("en-IN")} | Records: ${filtered.length} | Date: ${new Date().toLocaleDateString("en-IN")} | Mandir: ${APP.name}, ${APP.location}`;
-          let qrDiv = document.getElementById("_qrOffscreen");
-          if (!qrDiv) {
-            qrDiv = document.createElement("div");
-            qrDiv.id = "_qrOffscreen";
-            qrDiv.style.cssText = "position:fixed;left:-9999px;top:0;visibility:hidden;pointer-events:none;";
-            document.body.appendChild(qrDiv);
-          }
-          qrDiv.innerHTML = "";
-          new window.QRCode(qrDiv, { text: qrText, width: 80, height: 80, colorDark: "#2a0f00", colorLight: "#ffffff" });
-          await new Promise(r => setTimeout(r, 300));
-          const qrCanvas = qrDiv.querySelector("canvas");
-          if (qrCanvas) {
-            const qrData = qrCanvas.toDataURL("image/png");
-            const lastY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : Y + 20;
-            doc.setFillColor(253, 248, 240);
-            doc.rect(w - 36, lastY, 32, 32, "F");
-            doc.setDrawColor(247, 160, 26);
-            doc.setLineWidth(0.4);
-            doc.rect(w - 36, lastY, 32, 32);
-            doc.addImage(qrData, "PNG", w - 35, lastY + 1, 30, 30);
-            doc.setFontSize(6); doc.setTextColor(100, 116, 139);
-            doc.text("Scan to verify", w - 20, lastY + 34, { align: "center" });
-          }
-        }
-      } catch(e) { /* QR optional */ }
+      // QR code removed per user request
 
       // ── EXACT SAME footer as exportPDF ──
       let pc = doc.internal.getNumberOfPages();
@@ -3667,7 +3635,7 @@ if (isDark) {
                   <div style="font-size:11px;color:var(--ink-faint);margin-top:2px;">${escapeHtml(r.PaymentMode || "")} · ${dateStr}</div>
                   ${r.UtrRef ? `<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Ref: ${escapeHtml(r.UtrRef)}</div>` : ""}
                 </div>
-                <div style="text-align:right;display:flex;flex-direction:row;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
+                <div style="display:flex;flex-direction:row;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
                 ${!isPending ? `<span id="del-wrap-${reqId}" style="display:inline-flex;align-items:center;gap:4px;">
                   <button onclick="_confirmDelete('${reqId}')" class="req-del-btn" style="background:rgba(239,68,68,0.09);border:none;color:#ef4444;font-size:11px;padding:4px 12px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-weight:700;box-shadow:none;transition:background 0.18s,color 0.18s,transform 0.15s;"><i class="fa-solid fa-trash"></i> Delete</button>
                 </span>` : ""}
