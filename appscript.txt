@@ -501,11 +501,13 @@ function getSheetData(name) {
   const result = data.map(r => {
     let o = {};
     headers.forEach((h, i) => {
-      // PaymentDate/CreatedAt/RegisteredAt: Sheets may return a Date object when the
-      // column is date-formatted. Always coerce to dd-MM-yyyy HH:mm:ss IST string.
-      // This prevents "11-04-2026" being stored as Nov 4 (MM-DD auto-parse by Sheets).
+      // PaymentDate/CreatedAt/RegisteredAt/DOB: Sheets may return a Date object when the
+      // column is date-formatted. Always coerce to dd-MM-yyyy IST string.
+      // This prevents "01-05-1998" being misread as a JS Date and losing IST timezone.
       if ((h === "PaymentDate" || h === "CreatedAt" || h === "RegisteredAt") && r[i] instanceof Date) {
         o[h] = Utilities.formatDate(r[i], "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+      } else if (h === "DOB" && r[i] instanceof Date) {
+        o[h] = Utilities.formatDate(r[i], "GMT+5:30", "dd-MM-yyyy");
       } else {
         o[h] = r[i];
       }
@@ -3627,7 +3629,7 @@ function doPost(e) {
         } catch(ex){}
       }
       const photoUrl = uploadProfilePhoto(data.base64, sanitize(data.fileName,100));
-      const userUpdateRes = updateUser({ UserId:data.UserId, Name:data.Name, Mobile:data.Mobile||"", Role:data.Role, Password:"", Email:data.Email||"", Status:data.Status||"Active", PhotoURL:photoUrl, AdminName:data.AdminName||"User", Village:data.Village||"", Address:data.Address||"", DOB:data.DOB||"" });
+      const userUpdateRes = updateUser({ UserId:data.UserId, Name:data.Name, Mobile:data.Mobile||"", Role:data.Role, Password:"", Email:data.Email||"", Status:data.Status||"Active", PhotoURL:photoUrl, AdminName:data.AdminName||"User", Village:data.Village||"", Address:data.Address||"" });
       logAction(data.AdminName||"User","Upload Photo","UserId: "+data.UserId);
       result = { status:"success", photoUrl:photoUrl };
     } else if (data.action === "uploadPaymentSlip") {
