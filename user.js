@@ -289,7 +289,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
             <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-envelope" class="_u-gold-icon"></i></span> Email</span><span class="_rv" style="word-break:break-all;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Email || "—")}</span></div>
             ${myProfile.Village ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-map-pin" class="_u-gold-icon"></i></span> Village</span><span class="_rv" style="font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Village)}</span></div>` : ""}
             ${myProfile.Address ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-location-dot" class="_u-gold-icon"></i></span> Address</span><span class="_rv" style="white-space:pre-wrap;font-weight:600;color:#1e293b;">${escapeHtml(myProfile.Address)}</span></div>` : ""}
-            ${myProfile.DOB ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-cake-candles" class="_u-gold-icon"></i></span> Date of Birth</span><span class="_rv" style="font-weight:600;color:#1e293b;white-space:nowrap;">${(function(d){if(!d)return"—";var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];if(d.indexOf("T")>=0||d.indexOf("Z")>=0){var x=new Date(d);if(!isNaN(x))return String(x.getUTCDate()).padStart(2,"0")+" "+M[x.getUTCMonth()]+" "+x.getUTCFullYear();}if(/^\d{2}-\d{2}-\d{4}$/.test(d)){var p=d.split("-");return p[0]+" "+M[parseInt(p[1],10)-1]+" "+p[2];}if(/^\d{4}-\d{2}-\d{2}$/.test(d)){var p=d.split("-");return p[2]+" "+M[parseInt(p[1],10)-1]+" "+p[0];}return d;})(myProfile.DOB)}</span></div>` : ""}
+            ${myProfile.DOB ? `<div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-cake-candles" class="_u-gold-icon"></i></span> Date of Birth</span><span class="_rv" style="font-weight:600;color:#1e293b;white-space:nowrap;">${(function(d){if(!d)return"—";var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];if(/^\d{2}-\d{2}-\d{4}$/.test(d)){var p=d.split("-");return p[0]+" "+M[parseInt(p[1],10)-1]+" "+p[2];}if(/^\d{4}-\d{2}-\d{2}$/.test(d)){var p=d.split("-");return p[2]+" "+M[parseInt(p[1],10)-1]+" "+p[0];}if(d.indexOf("T")>=0||d.indexOf("Z")>=0){var p=d.split("T")[0].split("-");if(p.length===3)return p[2]+" "+M[parseInt(p[1],10)-1]+" "+p[0];}return d;})(myProfile.DOB)}</span></div>` : ""}
             <div class="_row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span class="_rl" class="_u-meta-ns"><span class="_u-icon-sm"><i class="fa-solid fa-id-card" class="_u-gold-icon"></i></span> Member ID</span><span class="_rv" style="font-family:monospace;font-size:12px;font-weight:700;color:#3c1a00;letter-spacing:.5px;">${escapeHtml(String(myProfile.UserId || "—"))}</span></div>
           </div>
         </div>
@@ -304,7 +304,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
       <i class="fa-solid fa-user-pen"></i> Edit Profile
     </button>
   </div>`;
-    openModal(html, "min(460px, 96vw)");
+    openModal(html, "460px");
     // Load real photo via proxy after modal is in DOM
     if (myProfile.PhotoURL) {
       _fetchPhotoBase64(myProfile.PhotoURL).then(function(b64) {
@@ -338,12 +338,14 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
     let dDob = "";
     if (rawDob) {
       if (/^\d{2}-\d{2}-\d{4}$/.test(rawDob)) {
-        const p = rawDob.split("-"); dDob = p[2] + "-" + p[1] + "-" + p[0]; // DD-MM-YYYY → YYYY-MM-DD
+        // DD-MM-YYYY (sheet format) → YYYY-MM-DD for date input
+        const p = rawDob.split("-"); dDob = p[2] + "-" + p[1] + "-" + p[0];
       } else if (/^\d{4}-\d{2}-\d{2}$/.test(rawDob)) {
         dDob = rawDob; // already YYYY-MM-DD
       } else if (rawDob.includes("T") || rawDob.includes("Z")) {
-        // ISO 8601 — use UTC date parts to avoid timezone shift
-        const _d = new Date(rawDob); if (!isNaN(_d)) { const _y=_d.getUTCFullYear(),_m=String(_d.getUTCMonth()+1).padStart(2,"0"),_dy=String(_d.getUTCDate()).padStart(2,"0"); dDob=_y+"-"+_m+"-"+_dy; }
+        // ISO 8601 — split the date part manually, never use new Date() (timezone issues)
+        const datePart = rawDob.split("T")[0]; // "1998-02-05"
+        if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) dDob = datePart;
       }
     }
     // Use initials as placeholder; load real photo via proxy (same as header)
@@ -432,19 +434,14 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
             </div>
 
             <!-- Date of Birth -->
-            <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);align-items:center;position:relative;overflow:hidden;">
+            <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);align-items:center;">
               <span class="_rl" class="_u-meta">
                 <span class="_u-icon-sm">
                   <i class="fa-solid fa-cake-candles" class="_u-gold-icon"></i>
                 </span> Date of Birth
               </span>
-              <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;flex:1;pointer-events:none;">
-                <span id="ep_dob_display" style="font-size:13px;font-weight:600;color:var(--ink);font-family:var(--font-b);white-space:nowrap;">${dDob ? (function(v){var p=v.split('-');var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return p[2]+' '+m[parseInt(p[1],10)-1]+' '+p[0];})(dDob) : 'Select date'}</span>
-                <i class="fa-solid fa-calendar-days" style="color:var(--gold,#f7a01a);font-size:13px;flex-shrink:0;"></i>
-              </div>
               <input id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}"
-                style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:10;font-size:16px;"
-                onchange="(function(v){if(!v)return;var p=v.split('-');var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];document.getElementById('ep_dob_display').textContent=p[2]+' '+m[parseInt(p[1],10)-1]+' '+p[0];})(this.value)"/>
+                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:left;font-family:var(--font-b);padding:0;cursor:pointer;min-width:0;"/>
             </div>
 
             <!-- Password -->
@@ -468,7 +465,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
           <button class="_mbtn" style="background:#64748b;box-shadow:none;" onclick="closeModal();_pendingCroppedB64='';">Cancel</button>
           <button class="_mbtn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);box-shadow:0 3px 10px rgba(247,160,26,0.35);" onclick="saveProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
         </div>`;
-    openModal(html, "min(460px, 96vw)");
+    openModal(html, "460px");
     // Load real photo via proxy after modal opens (avoids CORS block)
     if (!previewB64 && myProfile?.PhotoURL) {
       _fetchPhotoBase64(myProfile.PhotoURL).then(function(b64) {
@@ -847,13 +844,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
       if (uIdx !== -1) {
         users[uIdx].Name  = s.name  || users[uIdx].Name;
         users[uIdx].Email = s.email || users[uIdx].Email;
-        // Patch all edited fields immediately so every panel shows fresh data
-        var _fv = function(id){ var el=document.getElementById(id); return el?el.value.trim():""; };
-        var _epVillage = _fv("ep_village"), _epAddress = _fv("ep_address"), _epDobRaw = _fv("ep_dob");
-        if (_epVillage) users[uIdx].Village = _epVillage;
-        if (_epAddress) users[uIdx].Address = _epAddress;
-        if (_epDobRaw)  users[uIdx].DOB     = _epDobRaw.split("-").reverse().join("-"); // YYYY-MM-DD → DD-MM-YYYY
-        if (s.photoURL) users[uIdx].PhotoURL = s.photoURL;
+        // PhotoURL already updated in saveProfile before session save
       } else {
         // Record not found locally — full re-fetch as fallback
         if (typeof mandirCacheBust === "function") mandirCacheBust("getAllData");
