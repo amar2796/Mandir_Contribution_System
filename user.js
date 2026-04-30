@@ -304,7 +304,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
       <i class="fa-solid fa-user-pen"></i> Edit Profile
     </button>
   </div>`;
-    openModal(html, "460px");
+    openModal(html, "min(460px, 96vw)");
     // Load real photo via proxy after modal is in DOM
     if (myProfile.PhotoURL) {
       _fetchPhotoBase64(myProfile.PhotoURL).then(function(b64) {
@@ -439,13 +439,12 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                 </span> Date of Birth
               </span>
               <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;flex:1;pointer-events:none;">
-                <span id="ep_dob_display" style="font-size:13px;font-weight:600;color:var(--ink);font-family:var(--font-b);">${dDob ? (function(v){var p=v.split('-');var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return p[2]+' '+m[parseInt(p[1],10)-1]+' '+p[0];})(dDob) : 'Select date'}</span>
-                <i class="fa-solid fa-calendar-days" style="color:var(--gold,#f7a01a);font-size:13px;"></i>
+                <span id="ep_dob_display" style="font-size:13px;font-weight:600;color:var(--ink);font-family:var(--font-b);white-space:nowrap;">${dDob ? (function(v){var p=v.split('-');var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return p[2]+' '+m[parseInt(p[1],10)-1]+' '+p[0];})(dDob) : 'Select date'}</span>
+                <i class="fa-solid fa-calendar-days" style="color:var(--gold,#f7a01a);font-size:13px;flex-shrink:0;"></i>
               </div>
               <input id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}"
                 style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:10;font-size:16px;"
                 onchange="(function(v){if(!v)return;var p=v.split('-');var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];document.getElementById('ep_dob_display').textContent=p[2]+' '+m[parseInt(p[1],10)-1]+' '+p[0];})(this.value)"/>
-            </div>
             </div>
 
             <!-- Password -->
@@ -469,7 +468,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
           <button class="_mbtn" style="background:#64748b;box-shadow:none;" onclick="closeModal();_pendingCroppedB64='';">Cancel</button>
           <button class="_mbtn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);box-shadow:0 3px 10px rgba(247,160,26,0.35);" onclick="saveProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
         </div>`;
-    openModal(html, "460px");
+    openModal(html, "min(460px, 96vw)");
     // Load real photo via proxy after modal opens (avoids CORS block)
     if (!previewB64 && myProfile?.PhotoURL) {
       _fetchPhotoBase64(myProfile.PhotoURL).then(function(b64) {
