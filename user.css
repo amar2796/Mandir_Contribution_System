@@ -2980,7 +2980,8 @@ body.user-dark .bs-body { background: #1e293b !important; }
   top: auto;
   bottom: calc(100% + 6px);
 }
-.ra-item-noclk:hover .ra-tooltip { display: block; }
+/* FIX 4: tooltip now shown by JS click, not hover */
+.ra-tooltip { pointer-events: auto; }
 body.user-dark .ra-tooltip {
   background: #1e293b !important;
   border-color: rgba(247,160,26,0.3) !important;
@@ -4150,4 +4151,817 @@ body.user-dark #ep_address::placeholder {
 /* _row icon badge warm background in dark */
 body.user-dark ._row span[style*="background:#fff7ed"] {
   background: rgba(247,160,26,0.12) !important;
+}
+/* ═══════════════════════════════════════════════
+   TARGETED FIXES — do not touch other styles
+═══════════════════════════════════════════════ */
+
+/* FIX 2 & 3: My Profile / Edit Profile — 3 action buttons on one line on mobile */
+._mft {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 7px !important;
+  padding: 10px 14px !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+}
+._mft ._mbtn {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  padding: 9px 6px !important;
+  font-size: 12px !important;
+  text-align: center !important;
+  justify-content: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  border-radius: 9px !important;
+  font-family: var(--font-b) !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+/* Allow icon+text to shrink gracefully on very small screens */
+@media (max-width: 360px) {
+  ._mft ._mbtn { font-size: 11px !important; padding: 8px 4px !important; gap: 3px !important; }
+}
+
+/* FIX 4: Recent Activity — remove hover, add click/tap zoom effect */
+.ra-item:hover { background: transparent !important; }
+body.user-dark .ra-item:hover { background: transparent !important; }
+.ra-item:active,
+.ra-item.ra-tapped {
+  transform: scale(0.97);
+  background: rgba(247,160,26,0.08) !important;
+  transition: transform 0.12s ease, background 0.12s ease !important;
+}
+body.user-dark .ra-item:active,
+body.user-dark .ra-item.ra-tapped {
+  background: rgba(247,160,26,0.1) !important;
+}
+.ra-item { transition: transform 0.12s ease !important; }
+
+/* FIX 5: PDF buttons — compact text, use full width of their grid cell */
+#btnAnnualReceipt,
+#btnFullPDF {
+  font-size: 11px !important;
+  padding: 9px 10px !important;
+  letter-spacing: 0 !important;
+}
+@media (max-width: 600px) {
+  #btnAnnualReceipt,
+  #btnFullPDF {
+    font-size: 10.5px !important;
+    padding: 10px 8px !important;
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+/* ── Recent activity modal animations ── */
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes fadeInBg {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── ra-tooltip is now a hidden data container, never shown visually ── */
+.ra-tooltip {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* ── Fix: My Profile & Edit Profile — both chambers left-aligned ──
+   Left column (_rl) = labels, start from left
+   Right column (_rv) = values, also start from left (not right-aligned) */
+._modal ._row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+}
+._modal ._rl {
+  flex: 0 0 110px !important;
+  min-width: 110px !important;
+  text-align: left !important;
+}
+._modal ._rv {
+  flex: 1 1 auto !important;
+  text-align: left !important;
+  word-break: break-word !important;
+  max-width: unset !important;
+  white-space: normal !important;
+}
+/* Override inline text-align:right on _rv elements */
+._modal ._rv[style*="text-align:right"],
+._modal ._rv[style*="text-align: right"] {
+  text-align: left !important;
+}
+/* Edit profile inputs also left-aligned */
+._modal ._row input,
+._modal ._row textarea,
+._modal ._row select {
+  text-align: left !important;
+}
+/* DOB date input — right-align to match other _rv fields */
+#ep_dob {
+  text-align: right !important;
+  flex: 1 !important;
+  width: 100% !important;
+  display: block !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+#ep_dob::-webkit-datetime-edit              { text-align: right !important; width: 100% !important; }
+#ep_dob::-webkit-datetime-edit-fields-wrapper { text-align: right !important; float: right !important; }
+#ep_dob::-webkit-datetime-edit-day-field,
+#ep_dob::-webkit-datetime-edit-month-field,
+#ep_dob::-webkit-datetime-edit-year-field,
+#ep_dob::-webkit-datetime-edit-text         { text-align: right !important; }
+#ep_dob::-webkit-calendar-picker-indicator  { margin-left: 4px; }
+/* Buttons in _mft: one line, equal width */
+._mft {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 7px !important;
+  padding: 10px 14px !important;
+}
+._mft ._mbtn {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  font-size: 11.5px !important;
+  padding: 9px 4px !important;
+  justify-content: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  border-radius: 9px !important;
+  text-align: center !important;
+  overflow: hidden !important;
+}
+@media (max-width: 360px) {
+  ._mft ._mbtn { font-size: 10.5px !important; padding: 8px 3px !important; }
+}
+
+/* ── Remove all ra-item click/hover animations ── */
+.ra-item { transition: none !important; }
+.ra-item:active,
+.ra-item.ra-tapped { transform: none !important; background: transparent !important; }
+body.user-dark .ra-item:active,
+body.user-dark .ra-item.ra-tapped { background: transparent !important; }
+
+/* ── Recent Activity: non-clickable ── */
+.ra-item.ra-item-noclk {
+  cursor: default !important;
+  pointer-events: none !important;
+}
+.ra-tooltip { display: none !important; }
+
+/* ── Profile rows: label LEFT, value RIGHT ── */
+._row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 9px 0 !important;
+}
+._rl {
+  flex-shrink: 0 !important;
+  text-align: left !important;
+  font-size: 12.5px !important;
+  color: #64748b !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+}
+._rv {
+  flex: 1 1 auto !important;
+  text-align: right !important;
+  word-break: break-word !important;
+  min-width: 0 !important;
+}
+/* inputs/textarea in Edit Profile also right-aligned */
+._row input,
+._row textarea {
+  text-align: right !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+/* ── Buttons: side buttons small, center button wider ── */
+._mft {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  padding: 10px 12px !important;
+  align-items: stretch !important;
+}
+/* All buttons base */
+._mft ._mbtn {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  font-size: 11px !important;
+  padding: 0 6px !important;
+  height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+}
+/* Close & Edit Profile (side): fixed 110px */
+._mft ._mbtn:first-child,
+._mft ._mbtn:last-child {
+  flex: 0 0 110px !important;
+  min-width: 0 !important;
+  font-size: 11px !important;
+}
+/* Change Password (center): fills remaining space */
+._mft ._mbtn:not(:first-child):not(:last-child) {
+  flex: 1 1 auto !important;
+  font-size: 11.5px !important;
+}
+/* Edit Profile modal — 2 buttons: equal size */
+._mft ._mbtn:first-child:nth-last-child(2),
+._mft ._mbtn:nth-child(2):last-child {
+  flex: 1 1 0 !important;
+  font-size: 11.5px !important;
+}
+@media (max-width: 420px) {
+  ._mft { gap: 5px !important; padding: 8px 10px !important; }
+  ._mft ._mbtn:first-child,
+  ._mft ._mbtn:last-child { flex: 0 0 95px !important; }
+  ._mft ._mbtn { height: 36px !important; font-size: 10.5px !important; }
+}
+
+
+/* ══ Loading Overlay — Premium Enhancement ══ */
+
+/* Full-screen background: rich warm gradient with temple vibe */
+#userLoadingOverlay {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 35%, rgba(247,160,26,0.18) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 40% at 15% 85%, rgba(120,53,14,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 85% 10%, rgba(247,190,80,0.10) 0%, transparent 50%),
+    linear-gradient(160deg, #fdf6e8 0%, #f7edd6 30%, #f0e2c4 65%, #e6d4b0 100%) !important;
+}
+
+/* Card: bigger, more premium feel */
+#userLoadingOverlay > .ulo-inner {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(88vw, 360px) !important;
+  border-radius: 32px !important;
+  border: 1.5px solid rgba(247,160,26,0.5) !important;
+  box-shadow:
+    0 3px 0 rgba(255,255,255,0.95) inset,
+    0 -1px 0 rgba(247,160,26,0.2) inset,
+    0 32px 80px rgba(120,53,14,0.22),
+    0 8px 30px rgba(120,53,14,0.14),
+    0 2px 8px rgba(120,53,14,0.10) !important;
+  background: rgba(255,252,246,0.96) !important;
+}
+
+/* Card body: more breathing room */
+.ulo-card-body {
+  padding: 34px 28px 28px !important;
+}
+
+/* Spinner: larger and more vivid */
+.ulo-arc-wrap {
+  width: 90px !important;
+  height: 90px !important;
+  margin-bottom: 8px !important;
+}
+
+/* Namaskar emoji: bigger, floating animation */
+.ulo-namaskar {
+  font-size: 2rem !important;
+  animation: _ulo_float 2.4s ease-in-out infinite !important;
+  filter: drop-shadow(0 4px 8px rgba(247,160,26,0.4)) !important;
+}
+@keyframes _ulo_float {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
+  50%       { transform: translate(-50%, -50%) translateY(-5px); }
+}
+
+/* Loading label: bigger, bolder */
+.ulo-loading-label {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #3c1a00 !important;
+  letter-spacing: 0.2px !important;
+  margin-bottom: 14px !important;
+}
+
+/* Progress bar: taller, glowing */
+.ulo-progress-wrap {
+  height: 8px !important;
+  border-radius: 8px !important;
+  background: rgba(247,160,26,0.12) !important;
+  border: 1px solid rgba(247,160,26,0.2) !important;
+  margin: 4px 0 10px !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+.ulo-progress-bar {
+  height: 100% !important;
+  border-radius: 8px !important;
+  background: linear-gradient(90deg, #e8920a, #f7a01a, #ffc55a) !important;
+  box-shadow: 0 0 10px rgba(247,160,26,0.6) !important;
+}
+
+/* Step dots: slightly bigger */
+.ulo-sdot {
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 50% !important;
+}
+.ulo-sdot.active {
+  width: 20px !important;
+  border-radius: 4px !important;
+}
+
+/* Step row text */
+.ulo-step-done, .ulo-step-remain {
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+}
+.ulo-pct-badge {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, #f7a01a, #e8920a) !important;
+  color: #fff !important;
+  padding: 2px 10px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 2px 8px rgba(247,160,26,0.4) !important;
+}
+
+/* ══ Scroll & Performance Improvements ══ */
+
+/* Modal body: smooth momentum scroll + GPU layer */
+._mbdy,
+.bs-body {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  scroll-behavior: smooth !important;
+  will-change: scroll-position !important;
+}
+
+/* Thin styled scrollbar inside modals */
+._mbdy::-webkit-scrollbar,
+.bs-body::-webkit-scrollbar { width: 3px !important; }
+._mbdy::-webkit-scrollbar-track,
+.bs-body::-webkit-scrollbar-track { background: transparent !important; }
+._mbdy::-webkit-scrollbar-thumb,
+.bs-body::-webkit-scrollbar-thumb {
+  background: rgba(247,160,26,0.35) !important;
+  border-radius: 4px !important;
+}
+._mbdy::-webkit-scrollbar-thumb:hover,
+.bs-body::-webkit-scrollbar-thumb:hover { background: #f7a01a !important; }
+
+/* Promote animated elements to GPU compositor layer */
+.ulo-arc-fill-outer,
+.ulo-arc-fill-inner,
+.ulo-namaskar,
+.ulo-progress-bar {
+  will-change: transform, opacity !important;
+  transform: translateZ(0) !important;
+}
+
+/* Reduce paint during card hover/tap transitions */
+._mbtn, .bs-close, .ra-item {
+  will-change: transform !important;
+  transform: translateZ(0) !important;
+}
+
+/* Contain layout/paint for profile row list */
+._mbdy ._row {
+  contain: layout style !important;
+}
+
+/* Prevent layout thrash on image load in profile header */
+._mhdr img, ._mhdr .ulo-arc-wrap {
+  content-visibility: auto !important;
+}
+
+/* Section panels: reduce repaint scope */
+.sec-panel {
+  contain: layout style paint !important;
+}
+
+/* ── Edit Profile: _rl fixed shrink, inputs fill left-aligned ── */
+._row ._rl {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+._row input,
+._row textarea {
+  flex: 1 1 auto !important;
+  text-align: left !important;
+  min-width: 0 !important;
+}
+._row > div {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  text-align: left !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   PATCH v2 — Edit Profile RTL · Loading Overlay Fix · Dark Mode Black
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   1. EDIT PROFILE + MY PROFILE — Label LEFT, Value RIGHT
+   ──────────────────────────────────────────────────────────────── */
+._row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 10px 0 !important;
+}
+._rl {
+  flex: 0 0 auto !important;
+  min-width: 90px !important;
+  text-align: left !important;
+  font-size: 12px !important;
+  color: #64748b !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+._rv {
+  flex: 1 1 auto !important;
+  text-align: right !important;
+  word-break: break-word !important;
+  min-width: 0 !important;
+}
+/* Inputs & textareas right-aligned */
+._row input,
+._row textarea {
+  text-align: right !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+/* Value-side flex divs (mobile, password) right-aligned */
+._row > div {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  text-align: right !important;
+  justify-content: flex-end !important;
+}
+/* Override the ._modal conflict that was forcing left-align */
+._modal ._row {
+  justify-content: space-between !important;
+}
+._modal ._rl {
+  text-align: left !important;
+}
+._modal ._rv {
+  text-align: right !important;
+}
+._modal ._rv[style*="text-align:left"],
+._modal ._rv[style*="text-align: left"] {
+  text-align: right !important;
+}
+._modal ._row input,
+._modal ._row textarea {
+  text-align: right !important;
+}
+._modal ._row > div {
+  text-align: right !important;
+  justify-content: flex-end !important;
+}
+
+
+/* ────────────────────────────────────────────────────────────────
+   2. LOADING OVERLAY — Keep display:block + absolute centering
+      The card stays position:absolute top:50% left:50% translate
+      Problem was overflow:hidden on parent clipping the card.
+      Fix: ensure overlay is full viewport and inner is unclipped.
+   ──────────────────────────────────────────────────────────────── */
+#userLoadingOverlay {
+  display: none;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  touch-action: none !important;
+  overflow: visible !important; /* was: hidden — was clipping card */
+}
+#userLoadingOverlay.show {
+  display: block !important;
+}
+#userLoadingOverlay > .ulo-inner {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(88vw, 360px) !important;
+  /* Ensure card is never clipped */
+  overflow: hidden !important;
+  border-radius: 28px !important;
+  background: rgba(255, 252, 246, 0.97) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(247, 160, 26, 0.5) !important;
+  box-shadow:
+    0 3px 0 rgba(255,255,255,0.95) inset,
+    0 -1px 0 rgba(247,160,26,0.2) inset,
+    0 32px 80px rgba(120,53,14,0.22),
+    0 8px 30px rgba(120,53,14,0.14),
+    0 2px 8px rgba(120,53,14,0.10) !important;
+  animation: _ulo_cardIn 0.5s cubic-bezier(.22,1,.36,1) both !important;
+}
+/* Card body breathing room */
+.ulo-card-body {
+  width: 100% !important;
+  padding: 30px 28px 26px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+
+/* ────────────────────────────────────────────────────────────────
+   3. DARK MODE — Deep Black "black patti" theme
+      Pure dark background, full contrast, no warm amber bg leaking
+   ──────────────────────────────────────────────────────────────── */
+
+/* Override body dark */
+body.user-dark {
+  background: #070707 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Header dark */
+body.user-dark .header {
+  background: #0e0e0e !important;
+  border-bottom-color: rgba(247,160,26,0.6) !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.6) !important;
+}
+
+/* Cards dark */
+body.user-dark .card {
+  background: #111111 !important;
+  border: 1px solid rgba(247,160,26,0.1) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+}
+
+/* Menu items dark */
+body.user-dark .menu-item {
+  background: #111111 !important;
+  border: 1px solid rgba(247,160,26,0.08) !important;
+}
+body.user-dark .menu-item:active,
+body.user-dark .menu-item:hover {
+  background: #1a1a1a !important;
+}
+body.user-dark .menu-acc-wrap {
+  background: #111111 !important;
+}
+
+/* ── Profile Modal: deep black ── */
+body.user-dark ._modal > div {
+  background: #0e0e0e !important;
+  border-color: rgba(247,160,26,0.25) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.85), 0 0 0 1px rgba(247,160,26,0.12) !important;
+}
+/* Header strip stays dark brown */
+body.user-dark ._modal ._mhdr {
+  background: linear-gradient(135deg, #120500 0%, #1e0800 55%, #120500 100%) !important;
+  border-bottom: 2px solid rgba(247,160,26,0.35) !important;
+}
+body.user-dark ._modal ._mhdr h3,
+body.user-dark ._modal ._mhdr * { color: #fff !important; }
+body.user-dark ._modal ._mhdr i { color: #f7a01a !important; }
+
+/* Profile hero photo section */
+body.user-dark ._modal ._mbdy > div:first-child {
+  background: linear-gradient(180deg, #120500 0%, #1e0800 60%, #120500 100%) !important;
+}
+
+/* Body section — deep black, NO white, NO warm cream */
+body.user-dark ._modal ._mbdy {
+  background: #0e0e0e !important;
+  color: #e2e8f0 !important;
+}
+/* Any child div with white/var(--white) background inside modal body */
+body.user-dark ._modal ._mbdy > div,
+body.user-dark ._modal ._mbdy > div > div {
+  background: #0e0e0e !important;
+}
+body.user-dark ._modal ._mbdy [style*="background:var(--white)"],
+body.user-dark ._modal ._mbdy [style*="background: var(--white)"],
+body.user-dark ._modal ._mbdy [style*="background:#fff"],
+body.user-dark ._modal ._mbdy [style*="background: #fff"],
+body.user-dark ._modal ._mbdy [style*="background:white"],
+body.user-dark ._modal ._mbdy [style*="background: white"] {
+  background: #0e0e0e !important;
+}
+/* Row separators */
+body.user-dark ._modal ._row {
+  border-bottom: 1px solid rgba(247,160,26,0.08) !important;
+}
+/* Labels */
+body.user-dark ._modal ._rl,
+body.user-dark ._rl {
+  color: #4b5563 !important;
+}
+/* Values */
+body.user-dark ._modal ._rv,
+body.user-dark ._rv {
+  color: #f1f5f9 !important;
+}
+body.user-dark ._modal ._rv[style*="color:#1e293b"],
+body.user-dark ._modal ._rv[style*="color: #1e293b"] {
+  color: #f1f5f9 !important;
+}
+body.user-dark ._modal ._rv[style*="color:#3c1a00"],
+body.user-dark ._modal ._rv[style*="color: #3c1a00"] {
+  color: #f7a01a !important;
+}
+/* Inputs in edit profile */
+body.user-dark ._modal ._row input,
+body.user-dark ._modal ._row textarea {
+  color: #f1f5f9 !important;
+  background: transparent !important;
+  caret-color: #f7a01a !important;
+}
+body.user-dark ._modal ._row input::placeholder,
+body.user-dark ._modal ._row textarea::placeholder {
+  color: #374151 !important;
+}
+/* Icon badges */
+body.user-dark ._u-icon-sm {
+  background: rgba(247,160,26,0.12) !important;
+}
+body.user-dark ._u-icon-md {
+  background: rgba(247,160,26,0.14) !important;
+}
+/* Password dots */
+body.user-dark ._modal [style*="color:#aaa"] {
+  color: #2d3748 !important;
+}
+/* Update/Change blue links */
+body.user-dark ._modal [style*="color:#3b82f6"] {
+  color: #60a5fa !important;
+}
+/* Footer strip */
+body.user-dark ._modal ._mft {
+  background: #0e0e0e !important;
+  border-top: 2px solid rgba(247,160,26,0.12) !important;
+}
+
+/* ── Loading Overlay dark mode — pure black ── */
+body.user-dark #userLoadingOverlay.show {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 38%, rgba(247,160,26,0.05) 0%, transparent 65%),
+    #050505 !important;
+}
+body.user-dark #userLoadingOverlay > .ulo-inner {
+  background: rgba(10, 10, 10, 0.99) !important;
+  border: 1.5px solid rgba(247,160,26,0.3) !important;
+  box-shadow:
+    0 0 0 1px rgba(247,160,26,0.08) inset,
+    0 24px 80px rgba(0,0,0,0.9),
+    0 8px 32px rgba(0,0,0,0.7) !important;
+}
+body.user-dark .ulo-loading-label { color: #fbbf24 !important; }
+body.user-dark .ulo-step-done     { color: #f7a01a !important; }
+body.user-dark .ulo-step-remain   { color: #374151 !important; }
+body.user-dark .ulo-pct-badge {
+  background: linear-gradient(135deg, #f7a01a, #e8920a) !important;
+  color: #0e0e0e !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 10px rgba(247,160,26,0.45) !important;
+}
+body.user-dark .ulo-sdot {
+  background: rgba(247,160,26,0.12) !important;
+}
+body.user-dark .ulo-sdot.done {
+  background: #f7a01a !important;
+}
+body.user-dark .ulo-sdot.active {
+  background: linear-gradient(90deg, #92400e, #c97a00) !important;
+}
+body.user-dark .ulo-progress-wrap {
+  background: rgba(247,160,26,0.08) !important;
+  border-color: rgba(247,160,26,0.15) !important;
+}
+
+/* ── Dark mode general text/bg fixes ── */
+body.user-dark .sec-lbl { color: #4b5563 !important; }
+body.user-dark .hero { background: linear-gradient(135deg, #120500 0%, #1e0900 50%, #0e0400 100%) !important; }
+body.user-dark .qa-btn.qa-ghost { background: #111 !important; color: #94a3b8 !important; border-color: rgba(247,160,26,0.15) !important; }
+body.user-dark .acc-body { background: #0a0a0a !important; }
+body.user-dark .f-grp input,
+body.user-dark .f-grp select {
+  background: #111 !important;
+  color: #e2e8f0 !important;
+  border-color: #1f2937 !important;
+}
+body.user-dark .btn-ghost { background: #111 !important; color: #94a3b8 !important; }
+body.user-dark .pg-btn { background: #111 !important; color: #94a3b8 !important; }
+body.user-dark .hdr-dropdown { background: #0e0e0e !important; border-color: rgba(247,160,26,0.2) !important; }
+body.user-dark .hdr-drop-item { color: #cbd5e1 !important; }
+body.user-dark .hdr-drop-item:hover { background: #1a1a1a !important; }
+
+/* ── Desktop: center content ── */
+@media (min-width: 900px) {
+  .main { max-width: 720px !important; margin: 0 auto !important; }
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   PATCH v3 — Fix namaskar off-center + dark mode input black boxes
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── FIX 1: Namaskar emoji centered — neutralise the translateZ(0) override ──
+   Line ~4531 sets transform:translateZ(0) on .ulo-namaskar which wipes
+   out the absolute-centering translate(-50%,-50%). Fix: reset it here. */
+.ulo-namaskar {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  /* translateZ(0) was killing the center — use translate3d to keep both */
+  transform: translate(-50%, -50%) translateZ(0) !important;
+  will-change: transform !important;
+}
+/* Float animation must also carry the centering offset */
+@keyframes _ulo_float {
+  0%, 100% { transform: translate(-50%, -50%) translateZ(0) translateY(0px); }
+  50%       { transform: translate(-50%, -50%) translateZ(0) translateY(-5px); }
+}
+
+/* ── FIX 2: Dark mode — remove the blanket div background that creates
+   black boxes behind each input row in edit profile ── */
+body.user-dark ._modal ._mbdy > div,
+body.user-dark ._modal ._mbdy > div > div {
+  background: transparent !important;
+}
+/* Then set background ONLY on the main wrapper divs we actually want dark */
+body.user-dark ._modal ._mbdy {
+  background: #0e0e0e !important;
+}
+/* The hero photo section (first direct child of _mbdy) stays dark brown */
+body.user-dark ._modal ._mbdy > div:first-child {
+  background: linear-gradient(180deg, #120500 0%, #1e0800 60%, #120500 100%) !important;
+}
+/* The field list wrapper (second direct child — padding:6px 20px 14px) */
+body.user-dark ._modal ._mbdy > div:nth-child(2),
+body.user-dark ._modal ._mbdy > div:last-child {
+  background: #0e0e0e !important;
+}
+/* Inputs must have transparent bg — no dark box behind them */
+body.user-dark ._modal ._row input,
+body.user-dark ._modal ._row textarea {
+  background: transparent !important;
+  color: #f1f5f9 !important;
+  caret-color: #f7a01a !important;
+  /* Remove any border that was added */
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+/* Also target the inline style background on the fields container */
+body.user-dark ._modal ._mbdy [style*="padding:6px 20px"],
+body.user-dark ._modal ._mbdy [style*="padding: 6px 20px"] {
+  background: #0e0e0e !important;
+}
+
+/* ── FIX 3: Loading overlay background — ensure it always covers properly ── */
+#userLoadingOverlay {
+  overflow: hidden !important;
+}
+/* The ::before/::after decorations were being clipped — keep them inside */
+#userLoadingOverlay::before,
+#userLoadingOverlay::after {
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+#userLoadingOverlay > .ulo-inner {
+  z-index: 1 !important;
 }

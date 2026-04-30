@@ -506,6 +506,8 @@ function getSheetData(name) {
       // This prevents "11-04-2026" being stored as Nov 4 (MM-DD auto-parse by Sheets).
       if ((h === "PaymentDate" || h === "CreatedAt" || h === "RegisteredAt") && r[i] instanceof Date) {
         o[h] = Utilities.formatDate(r[i], "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+      } else if (h === "DOB" && r[i] instanceof Date) {
+        o[h] = Utilities.formatDate(r[i], "GMT+5:30", "dd-MM-yyyy");
       } else {
         o[h] = r[i];
       }
@@ -3225,6 +3227,9 @@ function updateUser(p) {
       if (p.DOB           !== undefined) _setCol("DOB",           sanitize(p.DOB || "", 12));
       // Single batched write — 1 API call instead of ~10
       sheet.getRange(i + 1, 1, 1, newRow.length).setValues([newRow]);
+      // Force DOB cell to plain text — prevents Sheets auto-converting "03-02-1998" to a Date object
+      const _dobCol = headers.indexOf("DOB");
+      if (_dobCol !== -1) sheet.getRange(i + 1, _dobCol + 1).setNumberFormat("@");
       SpreadsheetApp.flush();
       found = true; break;
     }
