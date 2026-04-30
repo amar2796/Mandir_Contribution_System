@@ -501,9 +501,9 @@ function getSheetData(name) {
   const result = data.map(r => {
     let o = {};
     headers.forEach((h, i) => {
-      // PaymentDate/CreatedAt/RegisteredAt/DOB: Sheets may return a Date object when the
-      // column is date-formatted. Always coerce to dd-MM-yyyy IST string.
-      // This prevents "01-05-1998" being misread as a JS Date and losing IST timezone.
+      // PaymentDate/CreatedAt/RegisteredAt: Sheets may return a Date object when the
+      // column is date-formatted. Always coerce to dd-MM-yyyy HH:mm:ss IST string.
+      // This prevents "11-04-2026" being stored as Nov 4 (MM-DD auto-parse by Sheets).
       if ((h === "PaymentDate" || h === "CreatedAt" || h === "RegisteredAt") && r[i] instanceof Date) {
         o[h] = Utilities.formatDate(r[i], "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
       } else if (h === "DOB" && r[i] instanceof Date) {
@@ -3227,6 +3227,9 @@ function updateUser(p) {
       if (p.DOB           !== undefined) _setCol("DOB",           sanitize(p.DOB || "", 12));
       // Single batched write — 1 API call instead of ~10
       sheet.getRange(i + 1, 1, 1, newRow.length).setValues([newRow]);
+      // Force DOB cell to plain text — prevents Sheets auto-converting "03-02-1998" to a Date object
+      const _dobCol = headers.indexOf("DOB");
+      if (_dobCol !== -1) sheet.getRange(i + 1, _dobCol + 1).setNumberFormat("@");
       SpreadsheetApp.flush();
       found = true; break;
     }
