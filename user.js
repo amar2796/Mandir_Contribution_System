@@ -438,8 +438,17 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
                   <i class="fa-solid fa-cake-candles" class="_u-gold-icon"></i>
                 </span> Date of Birth
               </span>
-              <input id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}"
-                style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;font-family:var(--font-b);padding:0;cursor:pointer;flex:1;min-width:0;display:block;width:100%;-webkit-appearance:none;appearance:none;"/>
+              <div style="display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end;position:relative;">
+                <input id="ep_dob_display" type="text" readonly
+                  value="${dDob ? (function(v){var p=v.split('-');var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return p[2]+' '+months[parseInt(p[1],10)-1]+' '+p[0];})(dDob) : ''}"
+                  placeholder="Select date"
+                  onclick="document.getElementById('ep_dob').showPicker?document.getElementById('ep_dob').showPicker():document.getElementById('ep_dob').click()"
+                  style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;font-family:var(--font-b);padding:0;cursor:pointer;min-width:0;flex:1;"/>
+                <i class="fa-solid fa-calendar-days" onclick="document.getElementById('ep_dob').showPicker?document.getElementById('ep_dob').showPicker():document.getElementById('ep_dob').click()" style="color:var(--gold,#f7a01a);font-size:13px;cursor:pointer;flex-shrink:0;"></i>
+                <input id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}"
+                  style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;"
+                  onchange="(function(v){var p=v.split('-');var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];document.getElementById('ep_dob_display').value=p[2]+' '+months[parseInt(p[1],10)-1]+' '+p[0];})(this.value)"/>
+              </div>
             </div>
 
             <!-- Password -->
