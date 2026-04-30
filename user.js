@@ -432,23 +432,20 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
             </div>
 
             <!-- Date of Birth -->
-            <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);align-items:center;">
+            <div class="_row" style="border-bottom:1px solid rgba(247,160,26,0.12);align-items:center;position:relative;overflow:hidden;">
               <span class="_rl" class="_u-meta">
                 <span class="_u-icon-sm">
                   <i class="fa-solid fa-cake-candles" class="_u-gold-icon"></i>
                 </span> Date of Birth
               </span>
-              <div style="display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end;position:relative;">
-                <input id="ep_dob_display" type="text" readonly
-                  value="${dDob ? (function(v){var p=v.split('-');var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return p[2]+' '+months[parseInt(p[1],10)-1]+' '+p[0];})(dDob) : ''}"
-                  placeholder="Select date"
-                  onclick="document.getElementById('ep_dob').showPicker?document.getElementById('ep_dob').showPicker():document.getElementById('ep_dob').click()"
-                  style="border:none;outline:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);text-align:right;font-family:var(--font-b);padding:0;cursor:pointer;min-width:0;flex:1;"/>
-                <i class="fa-solid fa-calendar-days" onclick="document.getElementById('ep_dob').showPicker?document.getElementById('ep_dob').showPicker():document.getElementById('ep_dob').click()" style="color:var(--gold,#f7a01a);font-size:13px;cursor:pointer;flex-shrink:0;"></i>
-                <input id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}"
-                  style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;"
-                  onchange="(function(v){var p=v.split('-');var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];document.getElementById('ep_dob_display').value=p[2]+' '+months[parseInt(p[1],10)-1]+' '+p[0];})(this.value)"/>
+              <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;flex:1;pointer-events:none;">
+                <span id="ep_dob_display" style="font-size:13px;font-weight:600;color:var(--ink);font-family:var(--font-b);">${dDob ? (function(v){var p=v.split('-');var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return p[2]+' '+m[parseInt(p[1],10)-1]+' '+p[0];})(dDob) : 'Select date'}</span>
+                <i class="fa-solid fa-calendar-days" style="color:var(--gold,#f7a01a);font-size:13px;"></i>
               </div>
+              <input id="ep_dob" type="date" value="${escapeHtml(dDob)}" max="${new Date().toISOString().slice(0,10)}"
+                style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:10;font-size:16px;"
+                onchange="(function(v){if(!v)return;var p=v.split('-');var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];document.getElementById('ep_dob_display').textContent=p[2]+' '+m[parseInt(p[1],10)-1]+' '+p[0];})(this.value)"/>
+            </div>
             </div>
 
             <!-- Password -->
