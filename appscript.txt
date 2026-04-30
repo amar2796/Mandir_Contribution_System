@@ -3627,7 +3627,7 @@ function doPost(e) {
         } catch(ex){}
       }
       const photoUrl = uploadProfilePhoto(data.base64, sanitize(data.fileName,100));
-      const userUpdateRes = updateUser({ UserId:data.UserId, Name:data.Name, Mobile:data.Mobile||"", Role:data.Role, Password:"", Email:data.Email||"", Status:data.Status||"Active", PhotoURL:photoUrl, AdminName:data.AdminName||"User", Village:data.Village||"", Address:data.Address||"" });
+      const userUpdateRes = updateUser({ UserId:data.UserId, Name:data.Name, Mobile:data.Mobile||"", Role:data.Role, Password:"", Email:data.Email||"", Status:data.Status||"Active", PhotoURL:photoUrl, AdminName:data.AdminName||"User", Village:data.Village||"", Address:data.Address||"", DOB:data.DOB||"" });
       logAction(data.AdminName||"User","Upload Photo","UserId: "+data.UserId);
       result = { status:"success", photoUrl:photoUrl };
     } else if (data.action === "uploadPaymentSlip") {
