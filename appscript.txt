@@ -102,8 +102,26 @@ function _verifySession(params, actionName) {
     return false;
   }
   try {
-    const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
-    const allData = sheet.getDataRange().getValues();
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+
+    // [PERF] Cache the raw USERS sheet for 30 s to avoid a full sheet read on every
+    // authenticated API request. TTL is short so token/expiry changes propagate quickly.
+    // The expiry-slide write still goes direct to the sheet; cache is then busted so
+    // the next _verifySession call reads the updated expiry row from scratch.
+    const _VS_CACHE_KEY = "c_users_verify";
+    const _VS_CACHE_TTL = 30; // seconds
+    let allData;
+    try {
+      const _vc = CacheService.getScriptCache().get(_VS_CACHE_KEY);
+      allData = _vc ? JSON.parse(_vc) : null;
+    } catch(ce) { allData = null; }
+    if (!allData) {
+      allData = sheet.getDataRange().getValues();
+      try {
+        CacheService.getScriptCache().put(_VS_CACHE_KEY, JSON.stringify(allData), _VS_CACHE_TTL);
+      } catch(ce) { /* silent — never fail verify on cache write error */ }
+    }
+
     const headers = allData[0];
     const tokenCol  = headers.indexOf("SessionToken");
     const expiryCol = headers.indexOf("TokenExpiry");
@@ -126,10 +144,12 @@ function _verifySession(params, actionName) {
               logAction(userId, "SESSION_EXPIRED", "Action: " + actionName + " — session expired (server-side)", "", "", { severity:"WARN", result:"BLOCKED" });
               return false;
             }
-            // Slide expiry forward by 30 min on every valid action (keep user active)
+            // Slide expiry forward by 30 min on every valid action (keep user active).
+            // Bust the cache so the next verify reads the updated expiry from the sheet.
             try {
               const newExpiry = new Date(Date.now() + 30 * 60 * 1000);
               sheet.getRange(i + 1, expiryCol + 1).setValue(Utilities.formatDate(newExpiry, "GMT+5:30", "dd-MM-yyyy HH:mm:ss"));
+              _bustSheetCache(_VS_CACHE_KEY);
             } catch(slErr) { /* non-fatal — don't block the action */ }
           }
         }
@@ -140,7 +160,7 @@ function _verifySession(params, actionName) {
     logAction(userId || "Unknown", "VERIFY_SESSION_ERROR", "Action: " + actionName + " — " + e.message);
     return true;
   }
-  return true; // user not found — allow (will fail at action level)
+  return false; // user not found — reject (unknown userId should never pass session check)
 }
 // ── Hash password (SHA-256, matches client-side sha256())
 function hashPassword(pwd) {
@@ -1331,6 +1351,8 @@ function doGet(e) {
       } else {
         logAction(userId, "SESSION_TOKEN_SET_FAILED", "UserId: " + userId + " — user not found", "", "", { severity:"WARN", result:"FAILURE" });
       }
+      // Bust verify cache so the new token is visible to _verifySession immediately
+      if (found) _bustSheetCache("c_users_verify");
       result = found ? { status: "ok" } : { status: "error", message: "User not found" };
     }
   }
@@ -1413,6 +1435,7 @@ function doGet(e) {
           if ((rowUserId && rowUserId === userId) || (rowName && rowName === userId)) {
             if (tokenCol  !== -1) sheet.getRange(i + 1, tokenCol  + 1).setValue("");
             if (expiryCol !== -1) sheet.getRange(i + 1, expiryCol + 1).setValue("");
+            _bustSheetCache("c_users_verify"); // token cleared — invalidate verify cache
             SpreadsheetApp.flush(); break;
           }
         }

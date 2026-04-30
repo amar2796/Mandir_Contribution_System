@@ -2768,9 +2768,9 @@
           var bday = new Date(today.getFullYear(), mm-1, dd);
           if (bday < today) bday = new Date(today.getFullYear()+1, mm-1, dd);
           var diff = Math.round((bday - today) / 86400000);
-          if (diff === 0)      bdayAlerts.push({ type:"birthday", diff:0, text:"🎂 Today is " + u.Name + "'s birthday!", sub:"Birthday email will be sent automatically if enabled" });
-          else if (diff === 1) bdayAlerts.push({ type:"birthday", diff:1, text:"🎂 " + u.Name + "'s birthday is tomorrow!", sub:"" });
-          else if (diff <= 7)  bdayAlerts.push({ type:"birthday", diff:diff, text:"🎂 " + u.Name + "'s birthday in " + diff + " days", sub:"" });
+          if (diff === 0)      bdayAlerts.push({ type:"birthday", diff:0, text:"🎂 Today is " + escapeHtml(u.Name) + "'s birthday!", sub:"Birthday email will be sent automatically if enabled" });
+          else if (diff === 1) bdayAlerts.push({ type:"birthday", diff:1, text:"🎂 " + escapeHtml(u.Name) + "'s birthday is tomorrow!", sub:"" });
+          else if (diff <= 7)  bdayAlerts.push({ type:"birthday", diff:diff, text:"🎂 " + escapeHtml(u.Name) + "'s birthday in " + diff + " days", sub:"" });
         });
         // Sort by diff ascending, then prepend to alerts so birthdays show first
         bdayAlerts.sort(function(a,b){ return a.diff - b.diff; });
@@ -11263,9 +11263,9 @@
         daysUntil = Math.round((thisBday - today) / 86400000);
 
         if (daysUntil === 0) {
-          alerts.push({ type: "birthday", days: 0, name: u.Name, text: "🎂 Today is " + u.Name + "'s birthday! Consider sending a greeting." });
+          alerts.push({ type: "birthday", days: 0, name: u.Name, text: "🎂 Today is " + escapeHtml(u.Name) + "'s birthday! Consider sending a greeting." });
         } else if (daysUntil <= 7) {
-          alerts.push({ type: "birthday", days: daysUntil, name: u.Name, text: "🎂 " + u.Name + "'s birthday in " + daysUntil + " day" + (daysUntil > 1 ? "s" : "") + "." });
+          alerts.push({ type: "birthday", days: daysUntil, name: u.Name, text: "🎂 " + escapeHtml(u.Name) + "'s birthday in " + daysUntil + " day" + (daysUntil > 1 ? "s" : "") + "." });
         }
       });
 

@@ -137,6 +137,17 @@ const _LR={
 };
 
 function _loginGuard(){
+  // Check server-side rate lock (persists across tab close/reopen via sessionStorage)
+  try{
+    const _srl=parseInt(sessionStorage.getItem("_server_rl_lock")||"0",10);
+    if(_srl&&Date.now()<_srl){
+      const mins=Math.ceil((_srl-Date.now())/60000);
+      setMsg("loginMsg","🔒 Too many failed attempts. Wait "+mins+" min"+(mins>1?"s":"")+" before retrying.","error");
+      const btn=document.getElementById("loginBtn");if(btn)btn.disabled=true;
+      setTimeout(()=>{sessionStorage.removeItem("_server_rl_lock");const b=document.getElementById("loginBtn");if(b)b.disabled=false;setMsg("loginMsg","","");},_srl-Date.now()+500);
+      return false;
+    }else if(_srl){sessionStorage.removeItem("_server_rl_lock");}
+  }catch(e){}
   const mobile=(document.getElementById("mobile")?.value||"").trim();
   if(mobile&&!/^[6-9]\d{9}$/.test(mobile)){
     setMsg("loginMsg","❌ Please enter a valid 10-digit Indian mobile number.","error");return false;
@@ -186,7 +197,7 @@ async function doLogin(){
     });
     if(res.status==="success"){
       const user=res.user;delete user.Password;
-      const sessionToken=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)+Date.now();
+      const sessionToken=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,"0")).join("");
       const sessionData={userId:user.UserId,name:user.Name,role:user.Role,email:user.Email||"",photoURL:user.PhotoURL||"",expiry:Date.now()+30*60*1000,sessionToken};
       localStorage.setItem("session",JSON.stringify(sessionData));
       if(document.getElementById("rememberMe").checked){
@@ -217,8 +228,17 @@ async function doLogin(){
         document.getElementById("password").classList.add("field-err");
       }else if(code==="rate_limited"){
         setMsg("loginMsg","🔒 "+msg,"error");
+        // Lock the client button for the full 15-min server window so no further
+        // requests fire. This complements the server-side CacheService block.
+        const _serverLockMs=15*60*1000;
+        const _lockEnd=Date.now()+_serverLockMs;
+        try{sessionStorage.setItem("_server_rl_lock",String(_lockEnd));}catch(e){}
         const btn=document.getElementById("loginBtn");if(btn)btn.disabled=true;
-        setTimeout(()=>{const b=document.getElementById("loginBtn");if(b)b.disabled=false;setMsg("loginMsg","","");},15*60*1000);
+        setTimeout(()=>{
+          try{sessionStorage.removeItem("_server_rl_lock");}catch(e){}
+          const b=document.getElementById("loginBtn");if(b)b.disabled=false;
+          setMsg("loginMsg","","");
+        },_serverLockMs);
       }else{
         // account_rejected, account_inactive, account_invalid — no field highlight
         setMsg("loginMsg","❌ "+msg,"error");
