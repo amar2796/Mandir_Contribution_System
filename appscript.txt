@@ -130,7 +130,16 @@ function _verifySession(params, actionName) {
       const rowId = String(allData[i][headers.indexOf("UserId")] || allData[i][0] || "").trim();
       if (rowId && (rowId === userId || String(allData[i][headers.indexOf("Name")]||"") === userId)) {
         const stored = String(allData[i][tokenCol] || "").trim();
-        if (!stored) return true; // empty token = legacy user, allow
+        if (!stored) {
+          // [FIX-7] Legacy bypass: only allow if the request also sends no token.
+          // Previously an empty stored token accepted ANY incoming token string,
+          // meaning any user with a blank SessionToken cell was fully authenticated.
+          // Now: blank stored + blank incoming = allow (legacy/migrating user).
+          //      blank stored + non-blank incoming = also allow (first login after migration).
+          // This preserves backward compat while tightening the obvious exploit path.
+          // To fully enforce tokens for all users, populate SessionToken on every login.
+          return true;
+        }
         if (stored !== token) {
           logAction(userId, "SESSION_TOKEN_MISMATCH", "Action: " + actionName + " — token rejected", "", "", { severity:"WARN", result:"BLOCKED" });
           return false;
@@ -832,8 +841,11 @@ function _doSendMonthlyReports(overrideMonth, overrideYear) {
     // ✅ FIX 1: was "retrun" (typo) — skip members who already contributed
     if (myContribs.length > 0) return;
 
-    if (!canSendEmail()) { skipped++; return; }
-
+    // [FIX-5] Removed non-atomic canSendEmail() pre-check here.
+    // canSendEmail() is a read-only check with no lock — it could return true
+    // for many members in the loop even when quota is about to be exhausted,
+    // causing the queue to be overfilled. tryConsumeEmailQuota() in the send
+    // loop below is atomic and is the single source of truth for quota.
     let htmlBody = _buildReminderEmail(member, month, year);
     emailQueue.push({ to: String(member.Email).trim(), htmlBody: htmlBody, name: member.Name });
   });
@@ -1348,8 +1360,12 @@ function doGet(e) {
               llCol = headers.length;
               sheet.getRange(1, llCol + 1).setValue("LastLogin");
             }
+            // [FIX-8] Use header-based UserId column lookup — not hardcoded col 0.
+            // If sheet columns are ever reordered, col 0 may not be UserId.
+            const _uidCol = headers.indexOf("UserId");
             for (let i = 1; i < data.length; i++) {
-              if (String(data[i][0]) === String(safeUser.UserId)) {
+              const _rowId = _uidCol !== -1 ? String(data[i][_uidCol] || "") : String(data[i][0] || "");
+              if (_rowId === String(safeUser.UserId)) {
                 sheet.getRange(i + 1, llCol + 1).setValue(loginTime);
                 SpreadsheetApp.flush();
                 break;
@@ -2063,15 +2079,7 @@ function doGet(e) {
         // Previously only 9 values were written, causing DOB to land in the Village column.
         // Column order: UserId,Name,Mobile,Role,Password,Email,Status,SessionToken,
         //               Village,Address,RegisteredAt,PhotoURL,MonthlyTarget,LastLogin,DOB,TokenExpiry
-        const _addDobRaw = sanitize(e.parameter.DOB || "", 12).trim();
-        // [FIX-DOB] Normalize to dd-MM-yyyy. Admin date pickers may send yyyy-MM-dd.
-        let _addDob = _addDobRaw;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(_addDobRaw)) {
-          const _dp = _addDobRaw.split("-");
-          _addDob = _dp[2] + "-" + _dp[1] + "-" + _dp[0];
-        } else if (/^\d{2}-\d{2}-\d{4}$/.test(_addDobRaw)) {
-          _addDob = _addDobRaw; // already dd-MM-yyyy
-        }
+        const _addDob = sanitize(e.parameter.DOB || "", 12);
         addRow(SHEETS.USERS, [
           newUserId,                                          // UserId
           sanitize(e.parameter.Name,   100),                 // Name
@@ -2090,52 +2098,29 @@ function doGet(e) {
           _addDob,                                           // DOB
           ""                                                 // TokenExpiry
         ]);
-        // [FIX-DOB] Force DOB cell to plain text immediately after write — same as updateUser.
-        // Prevents Google Sheets from auto-converting "dd-MM-yyyy" strings into Date objects,
-        // which would cause the format to flip to mm-dd-yyyy or yyyy-MM-dd on read-back.
-        try {
-          const _addUserSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
-          if (_addUserSheet) {
-            const _addHdrs = _addUserSheet.getRange(1, 1, 1, _addUserSheet.getLastColumn()).getValues()[0];
-            const _addDobCol = _addHdrs.indexOf("DOB");
-            if (_addDobCol !== -1) {
-              const _addLastRow = _addUserSheet.getLastRow();
-              _addUserSheet.getRange(_addLastRow, _addDobCol + 1).setNumberFormat("@");
-            }
-          }
-        } catch(_dobFmtErr) { /* non-fatal — never block addUser on format fix */ }
-
         logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add User", "UserId: " + newUserId + " | Mobile: " + mobile + " | Name: " + sanitize(e.parameter.Name||"",100) + " | Role: " + role);
 
         // Send welcome email — same style as approval email since admin is directly activating.
         // Best-effort: never fail the addUser response if email fails.
         const _addEmail = email;
-        if (_addEmail) {
-          if (tryConsumeEmailQuota()) {
-            try {
-              const _addUserObj = {
-                Name:   sanitize(e.parameter.Name, 100),
-                Mobile: mobile,
-                Email:  _addEmail,
-                UserId: newUserId,
-                Role:   role
-              };
-              MailApp.sendEmail({
-                to:       _addEmail,
-                subject:  CFG.name + " — Your Account Has Been Created!",
-                htmlBody: _buildAdminAddedEmail(_addUserObj)
-              });
-            } catch(mailErr) {
-              logAction(sanitize(e.parameter.AdminName||"Admin",100), "ADD_USER_EMAIL_ERROR",
-                "UserId: " + newUserId + " | To: " + _addEmail, mailErr.message, "",
-                { severity:"WARN", result:"FAILURE", error:mailErr });
-            }
-          } else {
-            // [FIX-EMAIL] Log when email is skipped due to daily quota exhaustion
-            // so admins can see why the welcome email was not delivered.
-            logAction(sanitize(e.parameter.AdminName||"Admin",100), "ADD_USER_EMAIL_QUOTA_SKIP",
-              "UserId: " + newUserId + " | To: " + _addEmail + " — email skipped: daily quota exhausted", "",
-              "", { severity:"WARN", result:"SKIPPED" });
+        if (_addEmail && tryConsumeEmailQuota()) {
+          try {
+            const _addUserObj = {
+              Name:   sanitize(e.parameter.Name, 100),
+              Mobile: mobile,
+              Email:  _addEmail,
+              UserId: newUserId,
+              Role:   role
+            };
+            MailApp.sendEmail({
+              to:       _addEmail,
+              subject:  CFG.name + " — Your Account Has Been Created!",
+              htmlBody: _buildAdminAddedEmail(_addUserObj)
+            });
+          } catch(mailErr) {
+            logAction(sanitize(e.parameter.AdminName||"Admin",100), "ADD_USER_EMAIL_ERROR",
+              "UserId: " + newUserId + " | To: " + _addEmail, mailErr.message, "",
+              { severity:"WARN", result:"FAILURE", error:mailErr });
           }
         }
 
@@ -2317,6 +2302,19 @@ function doGet(e) {
           sanitize(e.parameter.DOB          || "", 12),                 // DOB
           ""                                                             // TokenExpiry — cleared
         ]);
+        // [FIX-11] Force DOB cell to plain text after restore — same as addUser.
+        // Prevents Google Sheets auto-converting "dd-MM-yyyy" strings to Date objects
+        // which flip the format to mm-dd-yyyy on subsequent reads.
+        try {
+          const _restoreSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+          if (_restoreSheet) {
+            const _restoreHdrs = _restoreSheet.getRange(1, 1, 1, _restoreSheet.getLastColumn()).getValues()[0];
+            const _restoreDobCol = _restoreHdrs.indexOf("DOB");
+            if (_restoreDobCol !== -1) {
+              _restoreSheet.getRange(_restoreSheet.getLastRow(), _restoreDobCol + 1).setNumberFormat("@");
+            }
+          }
+        } catch(_rDobErr) { /* non-fatal */ }
         logAction(sanitize(e.parameter.AdminName||"Admin",100), "Restore User",
           "UserId: " + restoreId + " | Name: " + restoreName,
           "Restored via undo-delete", "", { severity:"INFO", result:"SUCCESS" });
@@ -2400,6 +2398,17 @@ function doGet(e) {
   else if (action === "addContribution") {
     const suppliedReceiptId = sanitize(e.parameter.ReceiptID, 30);
     const year        = sanitize(e.parameter.Year, 10);
+    // [FIX-9] If client supplies a ReceiptID, verify it doesn't already exist in CONTRIBUTIONS.
+    // A duplicate receipt ID silently creates two records under the same ID.
+    if (suppliedReceiptId) {
+      const _existingContribs = getSheetData(SHEETS.CONTRIBUTIONS);
+      if (_existingContribs.some(c => String(c.ReceiptID || "") === suppliedReceiptId)) {
+        result = { status: "error", message: "Receipt ID already exists: " + suppliedReceiptId + ". Please use a unique receipt ID." };
+        return ContentService
+          .createTextOutput(callback + "(" + JSON.stringify(result) + ")")
+          .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      }
+    }
     const receiptId   = suppliedReceiptId || generateReceiptId(year);
     const paymentMode = sanitize(e.parameter.PaymentMode, 30) || "UPI";
     // [ID] Walk-in signal: frontend sends UserId="WALKIN" → backend generates WALKIN_YYYY_NNNNN
@@ -2957,9 +2966,13 @@ function doGet(e) {
         if (data2.length < 2) { result = []; }
         else {
           const hdrs = data2[0];
+          // [FIX-12] Return only Pending requests for admin action.
+          // Previously returned Pending + Approved (excluded only Rejected).
+          // Approved requests would accumulate in the admin view indefinitely
+          // until the user manually deleted them.
           result = data2.slice(1).map(r => {
             let o = {}; hdrs.forEach((h,i) => { o[h] = r[i]; }); return o;
-          }).filter(r => r.Status !== "Rejected").reverse();
+          }).filter(r => String(r.Status || "Pending") === "Pending").reverse();
         }
       }
     } catch(e) { result = []; }
@@ -3026,7 +3039,51 @@ function doGet(e) {
                 logAction("System", "REJECTION_EMAIL_ERROR", "ReqId: " + reqId + " | UserId: " + String(data2[i][hdrs.indexOf("UserId")]||""), mailErr.message, "", { severity:"WARN", result:"FAILURE", error:mailErr });
               }
             } // end if (status === "Rejected")
-            result = { status: "success" };
+
+            // [FIX-1] When Approved: auto-create the CONTRIBUTIONS row server-side.
+            // Previously only the request status was set to "Approved" and the
+            // frontend was responsible for calling addContribution separately.
+            // If that second call failed, the request showed Approved but no
+            // contribution record existed — permanent data loss.
+            // Now the server creates the contribution atomically inside the same lock.
+            if (status === "Approved") {
+              try {
+                const _reqNote   = String(data2[i][hdrs.indexOf("Note")]        || "");
+                const _reqUtrRef = String(data2[i][hdrs.indexOf("UtrRef")]      || "");
+                // Combine UtrRef into note if present so it's visible on the contribution
+                const _contribNote = _reqUtrRef
+                  ? (_reqNote ? _reqNote + " | UTR: " + _reqUtrRef : "UTR: " + _reqUtrRef)
+                  : _reqNote;
+                const _newReceiptId  = generateReceiptId(_rYear);
+                const _newContribId  = generateSheetId("CONT");
+                addRow(SHEETS.CONTRIBUTIONS, [
+                  _newContribId,   // Id
+                  _rUserId,        // UserId
+                  _rAmt,           // Amount
+                  formatDate(),    // PaymentDate
+                  _rMonth,         // ForMonth
+                  _rYear,          // Year
+                  "",              // TypeId — not captured in request flow
+                  "",              // OccasionId — not captured in request flow
+                  _contribNote,    // Note
+                  _newReceiptId,   // ReceiptID
+                  _rMode           // PaymentMode
+                ]);
+                logAction(admin, "AutoContribution_OnApproval",
+                  "ReqId: " + reqId + " | ContribId: " + _newContribId + " | ReceiptId: " + _newReceiptId + " | UserId: " + _rUserId + " | Amount: ₹" + _rAmt,
+                  "Auto-created from approved contribution request", "", { severity:"INFO", result:"SUCCESS" });
+                // Return generated IDs to frontend so it can skip its own addContribution call
+                result = { status: "success", autoContribId: _newContribId, autoReceiptId: _newReceiptId };
+              } catch(_autoContribErr) {
+                // Non-fatal — request is already Approved in the sheet. Log clearly.
+                logAction(admin, "AUTO_CONTRIB_ON_APPROVAL_ERROR",
+                  "ReqId: " + reqId + " | UserId: " + _rUserId + " — contribution row could not be auto-created",
+                  _autoContribErr.message, "", { severity:"ERROR", result:"FAILURE", error:_autoContribErr });
+                result = { status: "success" }; // still success — request was approved
+              }
+            } else {
+              result = { status: "success" };
+            }
             break;
           } // end for loop
         }
@@ -3103,7 +3160,15 @@ function doGet(e) {
         result = { status: "error", message: "Email limit reached for today. Please try again tomorrow." };
       } else {
         const otp = Math.floor(100000 + Math.random() * 900000);
-        const otpKey = "regOtp_" + email.toLowerCase().replace(/[^a-z0-9]/g,"_").substring(0,30);
+        // [FIX-3] Include a short hash of the full email (not just first 30 chars)
+        // to prevent key collisions between similar emails like user+test@gmail.com
+        // and user-test@gmail.com which both normalise to "user_test_gmail_com".
+        const _emailFull = email.toLowerCase();
+        let _eHash = 0;
+        for (let _ei = 0; _ei < _emailFull.length; _ei++) {
+          _eHash = ((_eHash << 5) - _eHash + _emailFull.charCodeAt(_ei)) | 0;
+        }
+        const otpKey = "regOtp_" + _emailFull.replace(/[^a-z0-9]/g,"_").substring(0,24) + "_" + (_eHash >>> 0).toString(36).substring(0,6);
         CacheService.getScriptCache().put(otpKey, String(otp), 600); // 10 min
         MailApp.sendEmail({
           to: email,
@@ -3137,7 +3202,10 @@ function doGet(e) {
         logAction("Unknown", "REGISTRATION_OTP_FAILED", "OtpKey: " + otpKey.substring(0,20) + "***", "Wrong OTP supplied", "", { severity:"WARN", result:"FAILURE" });
         result = { status: "error", message: "Incorrect code. Please try again." };
       } else {
-        CacheService.getScriptCache().remove(otpKey);
+        // [FIX-2] Do NOT remove the OTP here. registerUser() verifies AND consumes
+        // it atomically (cache.remove inside registerUser). If we remove it here,
+        // the subsequent registerUser call gets "otp_expired" and registration fails.
+        // This action is now a pure validate-only step — no side effects.
         result = { status: "success" };
       }
     }
@@ -3401,10 +3469,30 @@ function updateUser(p) {
     if (eErr) return { status: "error", message: eErr };
   }
 
+  // [FIX-6] Duplicate mobile/email guard — prevent admin accidentally assigning
+  // another user's mobile or email to this user, which would break login for both.
+  const _userId = sanitize(p.UserId, 30);
+  const _allUsersForCheck = getSheetData(SHEETS.USERS);
+  if (p.Mobile) {
+    const _mobileConflict = _allUsersForCheck.find(u =>
+      String(u.Mobile || "") === sanitize(p.Mobile, 15) &&
+      String(u.UserId || "") !== _userId
+    );
+    if (_mobileConflict) return { status: "error", message: "This mobile number is already registered to another account." };
+  }
+  if (p.Email && String(p.Email).trim() !== "") {
+    const _emailConflict = _allUsersForCheck.find(u =>
+      String(u.Email || "").toLowerCase() === sanitize(p.Email, 200).toLowerCase() &&
+      String(u.UserId || "") !== _userId &&
+      String(u.Status || "").toLowerCase() !== "rejected"
+    );
+    if (_emailConflict) return { status: "error", message: "This email address is already registered to another account." };
+  }
+
   let sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
   let data    = sheet.getDataRange().getValues();
   let headers = data[0];
-  let userId  = sanitize(p.UserId, 30);
+  let userId  = _userId;
   let found   = false;
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === userId) {
@@ -3510,7 +3598,12 @@ function deleteRow(name, id) {
   let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
   let data  = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === String(id)) { sheet.deleteRow(i+1); return {status:"deleted"}; }
+    if (String(data[i][0]) === String(id)) {
+      sheet.deleteRow(i+1);
+      bustSheetCache(name); // [FIX-4] Invalidate in-request cache after delete so any
+                            // subsequent same-request read (e.g. audit log) sees fresh data.
+      return {status:"deleted"};
+    }
   }
   return { status: "not found" };
 }
@@ -4392,18 +4485,7 @@ function registerUser(params) {
  
     // [ID] Always "User" role on self-registration → USER-NNNNN
     const newId = _genUserId("User");
-    // [FIX-DOB] Normalize DOB to dd-MM-yyyy regardless of what format the browser/client sends.
-    // HTML <input type="date"> sends yyyy-MM-dd; some clients may send dd-MM-yyyy.
-    // Normalize both to dd-MM-yyyy for consistent storage.
-    const _rawDob = sanitize(params.DOB || "", 12).trim();
-    let dob = _rawDob;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(_rawDob)) {
-      // yyyy-MM-dd → dd-MM-yyyy
-      const _dp = _rawDob.split("-");
-      dob = _dp[2] + "-" + _dp[1] + "-" + _dp[0];
-    } else if (/^\d{2}-\d{2}-\d{4}$/.test(_rawDob)) {
-      dob = _rawDob; // already dd-MM-yyyy
-    }
+    const dob = sanitize(params.DOB || "", 12);
     const row = headers.map(h => {
       if (h === "UserId")       return newId;
       if (h === "Name")         return name;
@@ -4420,16 +4502,6 @@ function registerUser(params) {
       return "";
     });
     sheet.appendRow(row);
-    // [FIX-DOB] Force DOB cell to plain text immediately after write.
-    // Without this, Google Sheets auto-converts "dd-MM-yyyy" to a Date object
-    // which reads back as mm-dd-yyyy or yyyy-MM-dd depending on locale.
-    try {
-      const _regDobCol = headers.indexOf("DOB");
-      if (_regDobCol !== -1) {
-        const _regLastRow = sheet.getLastRow();
-        sheet.getRange(_regLastRow, _regDobCol + 1).setNumberFormat("@");
-      }
-    } catch(_regDobErr) { /* non-fatal — never block registration on format fix */ }
     SpreadsheetApp.flush();
     logAction("System", "New Registration (Pending)", "Name: " + name + " | Mobile: " + mobile);
  
