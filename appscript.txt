@@ -136,9 +136,8 @@ function _verifySession(params, actionName) {
           return false;
         }
         // [SEC] Check server-side expiry (30-min sliding window)
-        // [FIX] TokenExpiry is stored as a Unix ms timestamp (plain number).
-        // Using Number() avoids the timezone corruption caused by Google Sheets
-        // auto-converting stored date strings into Date objects on read-back.
+        // [FIX] TokenExpiry stored as Unix ms number — Number() avoids timezone
+        // corruption where Sheets auto-converts date strings to UTC Date objects.
         if (expiryCol !== -1) {
           const expiryVal = allData[i][expiryCol];
           if (expiryVal) {
@@ -147,10 +146,9 @@ function _verifySession(params, actionName) {
               logAction(userId, "SESSION_EXPIRED", "Action: " + actionName + " — session expired (server-side)", "", "", { severity:"WARN", result:"BLOCKED" });
               return false;
             }
-            // Slide expiry forward by 30 min on every valid action (keep user active).
-            // Bust the cache so the next verify reads the updated expiry from the sheet.
+            // Slide expiry forward 30 min — store as Unix ms number (never a string).
             try {
-              const newExpiry = Date.now() + 30 * 60 * 1000; // Unix ms — no timezone issues
+              const newExpiry = Date.now() + 30 * 60 * 1000;
               sheet.getRange(i + 1, expiryCol + 1).setValue(newExpiry);
               _bustSheetCache(_VS_CACHE_KEY);
             } catch(slErr) { /* non-fatal — don't block the action */ }
@@ -210,11 +208,34 @@ function generateSheetId(prefix, yearReset) {
     const key   = yearReset
       ? "ID_CNT_" + prefix + "_" + year
       : "ID_CNT_" + prefix;
+
+    // [ID-FIX] Sync counter with actual sheet before generating — prevents
+    // duplicates caused by manual edits, imports, or PropertiesService resets.
+    const _syncMap = {
+      "USER":  { sheet: SHEETS.USERS,         col: "UserId",     pat: /^USER-(\d+)$/  },
+      "ADMIN": { sheet: SHEETS.USERS,         col: "UserId",     pat: /^ADMIN-(\d+)$/ },
+      "CONT":  { sheet: SHEETS.CONTRIBUTIONS, col: "Id",         pat: /^CONT-(\d+)$/  },
+      "EXP":   { sheet: SHEETS.EXPENSES,      col: "Id",         pat: new RegExp("^EXP-" + year + "-(\\d+)$") },
+      "GOAL":  { sheet: SHEETS.GOALS,         col: "GoalId",     pat: /^GOAL-(\d+)$/  },
+      "TYPE":  { sheet: SHEETS.TYPES,         col: "TypeId",     pat: /^TYPE-(\d+)$/  },
+      "OCC":   { sheet: SHEETS.OCCASIONS,     col: "OccasionId", pat: /^OCC-(\d+)$/   },
+      "EXPT":  { sheet: SHEETS.EXPENSE_TYPES, col: "Id",         pat: /^EXPT-(\d+)$/  },
+      "REQ":   { sheet: SHEETS.CONTRIBUTION_REQUESTS, col: "Id", pat: /^REQ-(\d+)$/   },
+      "ANN":   { sheet: SHEETS.ANNOUNCEMENT,  col: "Id",         pat: /^ANN-(\d+)$/   },
+      "BCAST": { sheet: SHEETS.BROADCAST,     col: "Id",         pat: /^BCAST-(\d+)$/ },
+      "GAL":   { sheet: SHEETS.GALLERY,       col: "Id",         pat: /^GAL-(\d+)$/   },
+      "EVT":   { sheet: SHEETS.EVENTS,        col: "EventId",    pat: /^EVT-(\d+)$/   },
+      "EEXP":  { sheet: SHEETS.EVENT_EXPENSES,col: "Id",         pat: /^EEXP-(\d+)$/  },
+    };
+    if (_syncMap[prefix]) {
+      const sm = _syncMap[prefix];
+      _syncCounterWithSheet(sm.sheet, sm.col, key, sm.pat, props);
+    }
+
     let counter = parseInt(props.getProperty(key) || "0", 10);
     counter++;
     props.setProperty(key, String(counter));
     const padded = String(counter).padStart(5, "0");
-    // Walk-in uses underscore separator; all others use hyphen
     if (prefix === "WALKIN") return "WALKIN_" + year + "_" + padded;
     return yearReset
       ? prefix + "-" + year + "-" + padded
@@ -249,6 +270,33 @@ function generateSheetIdForYear(prefix, year) {
 function _genUserId(role) {
   const prefix = (String(role || "").toLowerCase() === "admin") ? "ADMIN" : "USER";
   return generateSheetId(prefix);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  [ID-FIX] COUNTER SYNC HELPER
+//  Scans the actual sheet, finds the max numeric ID suffix, and
+//  bumps the PropertiesService counter if the sheet is ahead.
+//  Called inside generateSheetId() before every increment so that
+//  manual edits / imports / counter resets never cause duplicates.
+// ════════════════════════════════════════════════════════════════
+function _syncCounterWithSheet(sheetName, colName, key, pattern, props) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+    if (!sheet) return;
+    const data = sheet.getDataRange().getValues();
+    if (data.length < 2) return;
+    const headers = data[0].map(String);
+    const col = headers.indexOf(colName);
+    if (col === -1) return;
+    let maxNum = 0;
+    for (let i = 1; i < data.length; i++) {
+      const val = String(data[i][col] || "").trim();
+      const m = val.match(pattern);
+      if (m) { const n = parseInt(m[1], 10); if (n > maxNum) maxNum = n; }
+    }
+    const stored = parseInt(props.getProperty(key) || "0", 10);
+    if (maxNum > stored) props.setProperty(key, String(maxNum));
+  } catch(e) { /* non-fatal — never crash the caller */ }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1340,16 +1388,15 @@ function doGet(e) {
       let expiryCol = headers.indexOf("TokenExpiry");
       if (expiryCol === -1) { expiryCol = headers.length + (tokenCol === headers.length ? 1 : 0); sheet.getRange(1, expiryCol + 1).setValue("TokenExpiry"); }
       let found = false;
-      // [FIX] Store expiry as Unix millisecond timestamp (plain number).
-      // Storing as a formatted date string caused Google Sheets to auto-convert it
-      // to a Date serial, which Apps Script reads back in UTC — making the expiry
-      // appear 5.5 hours in the past (IST offset), instantly expiring every session.
+      // [FIX] Store TokenExpiry as Unix ms number — NOT a formatted date string.
+      // Sheets auto-converts date strings to UTC Date objects on read-back,
+      // making IST tokens appear 5.5h expired instantly.
       const expiryTime = Date.now() + 30 * 60 * 1000;
-      const expiryDisplay = Utilities.formatDate(new Date(expiryTime), "GMT+5:30", "dd-MM-yyyy HH:mm:ss"); // for log only
+      const expiryDisplay = Utilities.formatDate(new Date(expiryTime), "GMT+5:30", "dd-MM-yyyy HH:mm:ss"); // audit log only
       for (let i = 1; i < data.length; i++) {
         if (String(data[i][0]) === userId) {
           sheet.getRange(i + 1, tokenCol + 1).setValue(token);
-          sheet.getRange(i + 1, expiryCol + 1).setValue(expiryTime); // store as number
+          sheet.getRange(i + 1, expiryCol + 1).setValue(expiryTime); // plain number
           SpreadsheetApp.flush();
           found = true; break;
         }
@@ -1396,7 +1443,7 @@ function doGet(e) {
             if (expiryCol !== -1) {
               const expiryVal = allData[i][expiryCol];
               if (expiryVal) {
-                // [FIX] TokenExpiry is stored as Unix ms number — use Number(), not new Date()
+                // [FIX] Unix ms number — use Number(), not new Date()
                 const expiryTime = expiryVal instanceof Date ? expiryVal.getTime() : Number(expiryVal);
                 if (!isNaN(expiryTime) && expiryTime > 0 && Date.now() > expiryTime) {
                   isValid = false; expiredReason = "expired";
@@ -2012,18 +2059,86 @@ function doGet(e) {
         let hashedPwd = pwd.length === 64 ? pwd : hashPassword(pwd);
         // [ID] Generate role-aware sequential UserId — never trust frontend-supplied ID
         const newUserId = _genUserId(role);
+        // [FIX] Write ALL 16 columns in exact sheet order to prevent field misalignment.
+        // Previously only 9 values were written, causing DOB to land in the Village column.
+        // Column order: UserId,Name,Mobile,Role,Password,Email,Status,SessionToken,
+        //               Village,Address,RegisteredAt,PhotoURL,MonthlyTarget,LastLogin,DOB,TokenExpiry
+        const _addDobRaw = sanitize(e.parameter.DOB || "", 12).trim();
+        // [FIX-DOB] Normalize to dd-MM-yyyy. Admin date pickers may send yyyy-MM-dd.
+        let _addDob = _addDobRaw;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(_addDobRaw)) {
+          const _dp = _addDobRaw.split("-");
+          _addDob = _dp[2] + "-" + _dp[1] + "-" + _dp[0];
+        } else if (/^\d{2}-\d{2}-\d{4}$/.test(_addDobRaw)) {
+          _addDob = _addDobRaw; // already dd-MM-yyyy
+        }
         addRow(SHEETS.USERS, [
-          newUserId,
-          sanitize(e.parameter.Name,   100),
-          mobile,
-          role,
-          hashedPwd,
-          email,
-          "Active",
-          "",
-          sanitize(e.parameter.DOB || "", 12)   // DOB: DD-MM-YYYY or blank
+          newUserId,                                          // UserId
+          sanitize(e.parameter.Name,   100),                 // Name
+          mobile,                                            // Mobile
+          role,                                              // Role
+          hashedPwd,                                         // Password
+          email,                                             // Email
+          "Active",                                          // Status — admin adds directly as Active
+          "",                                                // SessionToken
+          "",                                                // Village
+          "",                                                // Address
+          formatDate(),                                      // RegisteredAt — stamped at creation
+          "",                                                // PhotoURL
+          0,                                                 // MonthlyTarget
+          "",                                                // LastLogin
+          _addDob,                                           // DOB
+          ""                                                 // TokenExpiry
         ]);
+        // [FIX-DOB] Force DOB cell to plain text immediately after write — same as updateUser.
+        // Prevents Google Sheets from auto-converting "dd-MM-yyyy" strings into Date objects,
+        // which would cause the format to flip to mm-dd-yyyy or yyyy-MM-dd on read-back.
+        try {
+          const _addUserSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.USERS);
+          if (_addUserSheet) {
+            const _addHdrs = _addUserSheet.getRange(1, 1, 1, _addUserSheet.getLastColumn()).getValues()[0];
+            const _addDobCol = _addHdrs.indexOf("DOB");
+            if (_addDobCol !== -1) {
+              const _addLastRow = _addUserSheet.getLastRow();
+              _addUserSheet.getRange(_addLastRow, _addDobCol + 1).setNumberFormat("@");
+            }
+          }
+        } catch(_dobFmtErr) { /* non-fatal — never block addUser on format fix */ }
+
         logAction(sanitize(e.parameter.AdminName||"Admin",100), "Add User", "UserId: " + newUserId + " | Mobile: " + mobile + " | Name: " + sanitize(e.parameter.Name||"",100) + " | Role: " + role);
+
+        // Send welcome email — same style as approval email since admin is directly activating.
+        // Best-effort: never fail the addUser response if email fails.
+        const _addEmail = email;
+        if (_addEmail) {
+          if (tryConsumeEmailQuota()) {
+            try {
+              const _addUserObj = {
+                Name:   sanitize(e.parameter.Name, 100),
+                Mobile: mobile,
+                Email:  _addEmail,
+                UserId: newUserId,
+                Role:   role
+              };
+              MailApp.sendEmail({
+                to:       _addEmail,
+                subject:  CFG.name + " — Your Account Has Been Created!",
+                htmlBody: _buildAdminAddedEmail(_addUserObj)
+              });
+            } catch(mailErr) {
+              logAction(sanitize(e.parameter.AdminName||"Admin",100), "ADD_USER_EMAIL_ERROR",
+                "UserId: " + newUserId + " | To: " + _addEmail, mailErr.message, "",
+                { severity:"WARN", result:"FAILURE", error:mailErr });
+            }
+          } else {
+            // [FIX-EMAIL] Log when email is skipped due to daily quota exhaustion
+            // so admins can see why the welcome email was not delivered.
+            logAction(sanitize(e.parameter.AdminName||"Admin",100), "ADD_USER_EMAIL_QUOTA_SKIP",
+              "UserId: " + newUserId + " | To: " + _addEmail + " — email skipped: daily quota exhausted", "",
+              "", { severity:"WARN", result:"SKIPPED" });
+          }
+        }
+
         result = { status: "success", userId: newUserId };
       }
     }
@@ -2143,9 +2258,71 @@ function doGet(e) {
 
   else if (action === "deleteUser") {
     let id = sanitize(e.parameter.UserId, 30);
-    const _delUser = getSheetData(SHEETS.USERS).find(u => String(u.UserId) === id);
+    // [UNDO-FIX] Read the full user row BEFORE deleting so we can return the
+    // password hash to the frontend. getAllData strips Password for security,
+    // so the undo snapshot never has it — we attach it here to the delete
+    // response and the frontend stores it in _undoSaved for the restore call.
+    const _allUsersRaw = getSheetData(SHEETS.USERS); // has Password (not stripped here)
+    const _delUser = _allUsersRaw.find(u => String(u.UserId) === id);
     result = deleteRow(SHEETS.USERS, id);
-    if (result.status === "deleted") logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete User", "UserId: " + id + (_delUser ? " | Name: " + (_delUser.Name||"") + " | Mobile: " + (_delUser.Mobile||"") + " | Role: " + (_delUser.Role||"") : ""), "", "", { severity:"WARN", result:"SUCCESS" });
+    if (result.status === "deleted") {
+      // Return password hash so undo can restore it exactly
+      if (_delUser && _delUser.Password) result.passwordHash = _delUser.Password;
+      logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete User",
+        "UserId: " + id + (_delUser ? " | Name: " + (_delUser.Name||"") + " | Mobile: " + (_delUser.Mobile||"") + " | Role: " + (_delUser.Role||"") : ""),
+        "", "", { severity:"WARN", result:"SUCCESS" });
+    }
+  }
+
+  // ── RESTORE USER (undo-delete) ────────────────────────────────────────────
+  // Re-inserts a deleted user with their ORIGINAL UserId and ALL original data.
+  // _genUserId() is NOT called. Only triggered by admin undo-delete flow.
+  // Password: getAllData strips it for security, so deleteUser now returns the
+  // hash in its response and the frontend passes it back here via e.parameter.Password.
+  // All 16 USERS columns written in exact sheet order — no data lost.
+  else if (action === "restoreUser") {
+    const restoreId = sanitize(e.parameter.UserId, 30);
+    const restoreName = sanitize(e.parameter.Name, 100);
+    if (!restoreId || !restoreName) {
+      result = { status: "error", message: "Missing UserId or Name for restore." };
+    } else {
+      const existingUsers = getSheetData(SHEETS.USERS);
+      if (existingUsers.some(u => String(u.UserId) === restoreId)) {
+        result = { status: "error", message: "User already exists — restore aborted." };
+      } else {
+        // Password: use whatever was sent (should be the hash returned by deleteUser)
+        // If somehow empty, write empty string — user can reset via forgot password.
+        const pwd = sanitize(e.parameter.Password || "", 200);
+        // Sheet column order must exactly match canonical header order (line 2495):
+        // UserId,Name,Mobile,Role,Password,Email,Status,SessionToken,
+        // Village,Address,RegisteredAt,PhotoURL,MonthlyTarget,LastLogin,DOB,TokenExpiry
+        addRow(SHEETS.USERS, [
+          restoreId,                                                     // UserId
+          restoreName,                                                   // Name
+          sanitize(e.parameter.Mobile       || "", 15),                 // Mobile
+          sanitize(e.parameter.Role         || "User", 20),             // Role
+          pwd,                                                           // Password (hash)
+          sanitize(e.parameter.Email        || "", 200).toLowerCase(),  // Email
+          sanitize(e.parameter.Status       || "Active", 20),           // Status
+          "",                                                            // SessionToken — cleared
+          sanitize(e.parameter.Village      || "", 100),                // Village
+          sanitize(e.parameter.Address      || "", 300),                // Address
+          sanitize(e.parameter.RegisteredAt || "", 30),                 // RegisteredAt
+          sanitize(e.parameter.PhotoURL     || "", 500),                // PhotoURL
+          // [FIX] Never use (val || 0) — "0" is falsy so a real 0 becomes 0 correctly
+          // but an absent param (undefined) also needs 0. Use explicit check instead.
+          (e.parameter.MonthlyTarget !== undefined && e.parameter.MonthlyTarget !== "")
+            ? Number(e.parameter.MonthlyTarget) : 0,                    // MonthlyTarget
+          sanitize(e.parameter.LastLogin    || "", 30),                 // LastLogin
+          sanitize(e.parameter.DOB          || "", 12),                 // DOB
+          ""                                                             // TokenExpiry — cleared
+        ]);
+        logAction(sanitize(e.parameter.AdminName||"Admin",100), "Restore User",
+          "UserId: " + restoreId + " | Name: " + restoreName,
+          "Restored via undo-delete", "", { severity:"INFO", result:"SUCCESS" });
+        result = { status: "success", userId: restoreId };
+      }
+    }
   }
   else if (action === "updateUser")      { result = updateUser(e.parameter); }
   // ── CONTRIBUTION TYPES (with permanent SortOrder) ──────────────
@@ -4215,7 +4392,18 @@ function registerUser(params) {
  
     // [ID] Always "User" role on self-registration → USER-NNNNN
     const newId = _genUserId("User");
-    const dob = sanitize(params.DOB || "", 12);
+    // [FIX-DOB] Normalize DOB to dd-MM-yyyy regardless of what format the browser/client sends.
+    // HTML <input type="date"> sends yyyy-MM-dd; some clients may send dd-MM-yyyy.
+    // Normalize both to dd-MM-yyyy for consistent storage.
+    const _rawDob = sanitize(params.DOB || "", 12).trim();
+    let dob = _rawDob;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(_rawDob)) {
+      // yyyy-MM-dd → dd-MM-yyyy
+      const _dp = _rawDob.split("-");
+      dob = _dp[2] + "-" + _dp[1] + "-" + _dp[0];
+    } else if (/^\d{2}-\d{2}-\d{4}$/.test(_rawDob)) {
+      dob = _rawDob; // already dd-MM-yyyy
+    }
     const row = headers.map(h => {
       if (h === "UserId")       return newId;
       if (h === "Name")         return name;
@@ -4232,6 +4420,16 @@ function registerUser(params) {
       return "";
     });
     sheet.appendRow(row);
+    // [FIX-DOB] Force DOB cell to plain text immediately after write.
+    // Without this, Google Sheets auto-converts "dd-MM-yyyy" to a Date object
+    // which reads back as mm-dd-yyyy or yyyy-MM-dd depending on locale.
+    try {
+      const _regDobCol = headers.indexOf("DOB");
+      if (_regDobCol !== -1) {
+        const _regLastRow = sheet.getLastRow();
+        sheet.getRange(_regLastRow, _regDobCol + 1).setNumberFormat("@");
+      }
+    } catch(_regDobErr) { /* non-fatal — never block registration on format fix */ }
     SpreadsheetApp.flush();
     logAction("System", "New Registration (Pending)", "Name: " + name + " | Mobile: " + mobile);
  
@@ -4458,6 +4656,48 @@ function _buildApprovalEmail(user) {
 </table></td></tr></table></body></html>`;
 }
  
+// Welcome email sent when an admin manually adds a user (account Active from day one).
+// Same design language as _buildApprovalEmail — green badge, login details box.
+function _buildAdminAddedEmail(user) {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);max-width:560px;width:100%;">
+  <tr><td style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);padding:28px 32px;text-align:center;border-top:4px solid #f7a01a;">
+    ${_logoHtml()}
+    <div style="color:#f7a01a;font-size:20px;font-weight:700;letter-spacing:1px;">${CFG.name.toUpperCase()}</div>
+    <div style="color:#94a3b8;font-size:12px;margin-top:4px;">${CFG.location}</div>
+    <div style="margin-top:12px;"><span style="background:#22c55e;color:#fff;padding:5px 18px;border-radius:20px;font-size:11px;font-weight:700;">ACCOUNT CREATED</span></div>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    <p style="color:#334155;font-size:16px;font-weight:700;margin:0 0 8px;">Jai Shree Ram, <span style="color:#f7a01a;">${user.Name}</span>!</p>
+    <p style="color:#475569;font-size:13px;line-height:1.8;margin:0 0 20px;">
+      Welcome to <strong>${CFG.name}</strong>! Your account has been created by the admin
+      and is <strong style="color:#16a34a;">active immediately</strong>.
+      You can login right away using the details below.
+    </p>
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:18px 22px;margin:0 0 20px;">
+      <div style="color:#15803d;font-size:13px;font-weight:700;margin-bottom:12px;border-bottom:1px solid #bbf7d0;padding-bottom:8px;">Your Login Details</div>
+      <div style="color:#166534;font-size:13px;margin-bottom:6px;"><strong>Login ID (Mobile):</strong> ${user.Mobile}</div>
+      <div style="color:#166534;font-size:13px;margin-bottom:6px;"><strong>Member ID:</strong> ${user.UserId}</div>
+      <div style="color:#166534;font-size:13px;"><strong>Password:</strong> The password set by the admin — please change it after your first login.</div>
+    </div>
+    <p style="color:#64748b;font-size:13px;line-height:1.7;margin:0;">
+      You can view your donation history, download receipts, and more.
+      Welcome to the ${CFG.name} family!
+    </p>
+  </td></tr>
+  <tr><td style="background:#fef9ee;padding:18px 32px;text-align:center;border-top:2px solid #fde68a;">
+    <div style="color:#92400e;font-size:14px;font-weight:700;">Jai Shree Ram</div>
+    <div style="color:#a16207;font-size:12px;margin-top:4px;">${CFG.tagline}</div>
+  </td></tr>
+  <tr><td style="background:#f8fafc;padding:12px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+    <div style="color:#94a3b8;font-size:10px;">${CFG.name} | ${CFG.address}</div>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+}
+
 function _buildRejectionEmail(user, reason) {
   const reasonBlock = reason
     ? `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:14px 18px;margin:16px 0;">

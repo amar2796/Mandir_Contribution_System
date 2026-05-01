@@ -271,6 +271,7 @@ const _CACHE_BUST_ON_WRITE = {
   deleteExpense:      ["getAllData", "getYearlySummary"],
   addUser:            ["getAllData"],
   deleteUser:         ["getAllData"],
+  restoreUser:        ["getAllData"],  // [FIX] undo-delete must also bust cache
   updateUser:         ["getAllData"],
   addType:            ["getAllData", "getTypes"],
   deleteType:         ["getAllData", "getTypes"],

@@ -5488,7 +5488,9 @@
       if (!/^\d{10}$/.test(mobile))
         return toast("Mobile must be exactly 10 digits.", "error");
       try {
-        let dob = (document.getElementById("u_dob")?.value || "").trim();
+        // [FIX-DOB] <input type="date"> always gives yyyy-MM-dd.
+        // Convert to dd-MM-yyyy before sending — same as saveEditUser uses _inputValToDob.
+        let dob = _inputValToDob((document.getElementById("u_dob")?.value || "").trim());
         let res = await postData({
           action: "addUser",
           // [ID] UserId is now generated server-side (USER-NNNNN / ADMIN-NNNNN)
@@ -5525,13 +5527,40 @@
           const _s = JSON.parse(localStorage.getItem("session") || "{}");
           let res = await postData({ action: "deleteUser", UserId: id, sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
           if (res.status === "deleted") {
+            // [UNDO-FIX] deleteUser now returns passwordHash so restoreUser can
+            // write the exact original hash back. getAllData strips Password for
+            // security so _undoSaved never has it without this step.
+            if (res.passwordHash && _undoSaved) {
+              _undoSaved.Password = res.passwordHash;
+            }
             smartRefresh("users");
             if (_undoSaved && typeof _showUndoToast === "function") {
               _showUndoToast(_uName.replace(/"/g, ""), function() {
-                var payload = Object.assign({ action: "addUser" }, _undoSaved);
-                postData(payload).then(function() {
-                  smartRefresh("users");
-                  toast("↩ User restored.");
+                // [UNDO-FIX 1] Use restoreUser — addUser always generates a new
+                // UserId server-side and ignores whatever UserId is in the payload.
+                // [UNDO-FIX 2] Session creds auto-injected by postData() from
+                // localStorage — no need to manually add them here.
+                // [UNDO-FIX 3] Password is stripped from getAllData response for
+                // security (server deletes it before sending). Pass a sentinel so
+                // the backend knows to look up and preserve the existing hash
+                // from the backup rather than writing an empty password.
+                var payload = Object.assign({}, _undoSaved, { action: "restoreUser" });
+                postData(payload).then(function(r) {
+                  if (r && r.status === "success") {
+                    // [FIX] restoreUser is now in _CACHE_BUST_ON_WRITE so postData()
+                    // auto-clears the getAllData cache. Bust manually too as a safety
+                    // net, then smartRefresh fetches fresh from server.
+                    if (typeof mandirCacheBust === "function") mandirCacheBust("getAllData");
+                    smartRefresh("users");
+                    setTimeout(function() {
+                      if (typeof renderUsers === "function") renderUsers();
+                    }, 400);
+                    toast("↩ User restored.");
+                  } else {
+                    toast("❌ Restore failed: " + ((r && r.message) || "unknown error"), "error");
+                  }
+                }).catch(function(err) {
+                  toast("❌ " + err.message, "error");
                 });
               });
             } else {
