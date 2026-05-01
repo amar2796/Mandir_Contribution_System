@@ -204,8 +204,23 @@ async function doLogin(){
         saveRememberToken(user.UserId,user.Name,user.Role,user.Email||"",sessionToken);
       }
       try{const bc=new BroadcastChannel("mandir_session");bc.postMessage({type:"SESSION_REVOKED",userId:String(user.UserId)});setTimeout(()=>bc.close(),500);}catch(e){}
-      // Show last-login info if available
-      const lastLoginStr = res.lastLogin ? " · Last login: "+res.lastLogin : "";
+      // Show last-login info — convert ISO UTC string to IST dd-MM-yyyy HH:mm:ss
+      function _fmtLastLogin(raw) {
+        if (!raw) return "";
+        try {
+          if (/^\d{2}-\d{2}-\d{4}/.test(String(raw))) return String(raw); // already formatted
+          const d = new Date(raw);
+          if (isNaN(d.getTime())) return String(raw);
+          const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+          const dd  = String(ist.getUTCDate()).padStart(2,"0");
+          const mm  = String(ist.getUTCMonth()+1).padStart(2,"0");
+          const hh  = String(ist.getUTCHours()).padStart(2,"0");
+          const mi  = String(ist.getUTCMinutes()).padStart(2,"0");
+          const ss  = String(ist.getUTCSeconds()).padStart(2,"0");
+          return dd+"-"+mm+"-"+ist.getUTCFullYear()+" "+hh+":"+mi+":"+ss;
+        } catch(e) { return String(raw); }
+      }
+      const lastLoginStr = res.lastLogin ? " · Last login: "+_fmtLastLogin(res.lastLogin) : "";
       setMsg("loginMsg","✓ Login successful! Redirecting..."+lastLoginStr,"success");
       _loginSuccess();
       // FIX: Await token write BEFORE redirecting. This prevents SESSION_TOKEN_MISMATCH

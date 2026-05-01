@@ -136,19 +136,22 @@ function _verifySession(params, actionName) {
           return false;
         }
         // [SEC] Check server-side expiry (30-min sliding window)
+        // [FIX] TokenExpiry is stored as a Unix ms timestamp (plain number).
+        // Using Number() avoids the timezone corruption caused by Google Sheets
+        // auto-converting stored date strings into Date objects on read-back.
         if (expiryCol !== -1) {
           const expiryVal = allData[i][expiryCol];
           if (expiryVal) {
-            const expiryTime = expiryVal instanceof Date ? expiryVal.getTime() : new Date(expiryVal).getTime();
-            if (!isNaN(expiryTime) && Date.now() > expiryTime) {
+            const expiryTime = expiryVal instanceof Date ? expiryVal.getTime() : Number(expiryVal);
+            if (!isNaN(expiryTime) && expiryTime > 0 && Date.now() > expiryTime) {
               logAction(userId, "SESSION_EXPIRED", "Action: " + actionName + " — session expired (server-side)", "", "", { severity:"WARN", result:"BLOCKED" });
               return false;
             }
             // Slide expiry forward by 30 min on every valid action (keep user active).
             // Bust the cache so the next verify reads the updated expiry from the sheet.
             try {
-              const newExpiry = new Date(Date.now() + 30 * 60 * 1000);
-              sheet.getRange(i + 1, expiryCol + 1).setValue(Utilities.formatDate(newExpiry, "GMT+5:30", "dd-MM-yyyy HH:mm:ss"));
+              const newExpiry = Date.now() + 30 * 60 * 1000; // Unix ms — no timezone issues
+              sheet.getRange(i + 1, expiryCol + 1).setValue(newExpiry);
               _bustSheetCache(_VS_CACHE_KEY);
             } catch(slErr) { /* non-fatal — don't block the action */ }
           }
@@ -1337,17 +1340,22 @@ function doGet(e) {
       let expiryCol = headers.indexOf("TokenExpiry");
       if (expiryCol === -1) { expiryCol = headers.length + (tokenCol === headers.length ? 1 : 0); sheet.getRange(1, expiryCol + 1).setValue("TokenExpiry"); }
       let found = false;
-      const expiryTime = Utilities.formatDate(new Date(Date.now() + 30 * 60 * 1000), "GMT+5:30", "dd-MM-yyyy HH:mm:ss");
+      // [FIX] Store expiry as Unix millisecond timestamp (plain number).
+      // Storing as a formatted date string caused Google Sheets to auto-convert it
+      // to a Date serial, which Apps Script reads back in UTC — making the expiry
+      // appear 5.5 hours in the past (IST offset), instantly expiring every session.
+      const expiryTime = Date.now() + 30 * 60 * 1000;
+      const expiryDisplay = Utilities.formatDate(new Date(expiryTime), "GMT+5:30", "dd-MM-yyyy HH:mm:ss"); // for log only
       for (let i = 1; i < data.length; i++) {
         if (String(data[i][0]) === userId) {
           sheet.getRange(i + 1, tokenCol + 1).setValue(token);
-          sheet.getRange(i + 1, expiryCol + 1).setValue(expiryTime);
+          sheet.getRange(i + 1, expiryCol + 1).setValue(expiryTime); // store as number
           SpreadsheetApp.flush();
           found = true; break;
         }
       }
       if (found) {
-        logAction(userId, "SESSION_TOKEN_SET", "UserId: " + userId + " | Expiry: " + expiryTime, "Session token + expiry stored after login", sanitize(e.parameter.deviceInfo||"",200), { severity:"INFO", result:"SUCCESS" });
+        logAction(userId, "SESSION_TOKEN_SET", "UserId: " + userId + " | Expiry: " + expiryDisplay, "Session token + expiry stored after login", sanitize(e.parameter.deviceInfo||"",200), { severity:"INFO", result:"SUCCESS" });
       } else {
         logAction(userId, "SESSION_TOKEN_SET_FAILED", "UserId: " + userId + " — user not found", "", "", { severity:"WARN", result:"FAILURE" });
       }
@@ -1388,8 +1396,9 @@ function doGet(e) {
             if (expiryCol !== -1) {
               const expiryVal = allData[i][expiryCol];
               if (expiryVal) {
-                const expiryTime = expiryVal instanceof Date ? expiryVal.getTime() : new Date(expiryVal).getTime();
-                if (!isNaN(expiryTime) && Date.now() > expiryTime) {
+                // [FIX] TokenExpiry is stored as Unix ms number — use Number(), not new Date()
+                const expiryTime = expiryVal instanceof Date ? expiryVal.getTime() : Number(expiryVal);
+                if (!isNaN(expiryTime) && expiryTime > 0 && Date.now() > expiryTime) {
                   isValid = false; expiredReason = "expired";
                   // [FIX-C] Auto-clear stale token + expiry so sheet stays clean
                   // Previously checkSession only returned { valid:false } but never
