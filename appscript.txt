@@ -1815,7 +1815,21 @@ function doGet(e) {
       yearConfig:    getSheetData("YEAR_CONFIG"),
       goals:         getSheetData(SHEETS.GOALS)
     };
-    result.users = result.users.map(u => { let s = Object.assign({}, u); delete s.Password; return s; });
+    // [DEFAULT-PWD] Strip password hashes for security, but flag whether the
+    // requesting user still has the default "JaiShreeRam" password — the client
+    // uses this flag to force a password change on first login without exposing hashes.
+    const _defaultHash = hashPassword("JaiShreeRam");
+    const _requesterIdStr = sanitize(e.parameter.userId || "", 30);
+    result.users = result.users.map(u => {
+      let s = Object.assign({}, u);
+      if (String(u.UserId) === _requesterIdStr) {
+        s.IsDefaultPwd = (String(u.Password || "").toLowerCase().trim() === _defaultHash);
+      } else {
+        s.IsDefaultPwd = false;
+      }
+      delete s.Password;
+      return s;
+    });
   }
 
   // ── AUDIT LOG — returns latest 1000 rows, newest first, with Reason column
@@ -2071,8 +2085,11 @@ function doGet(e) {
       if (emailErr) {
         result = { status: "error", message: emailErr };
       } else {
-        let pwd = sanitize(e.parameter.Password, 200);
-        let hashedPwd = pwd.length === 64 ? pwd : hashPassword(pwd);
+        // [DEFAULT-PWD] Admin-added users always get the default password "JaiShreeRam".
+        // The password is set server-side only — the frontend never sends a password for addUser.
+        // The user is forced to change it on first login (detected client-side by hash comparison).
+        const DEFAULT_PASSWORD = "JaiShreeRam";
+        let hashedPwd = hashPassword(DEFAULT_PASSWORD);
         // [ID] Generate role-aware sequential UserId — never trust frontend-supplied ID
         const newUserId = _genUserId(role);
         // [FIX] Write ALL 16 columns in exact sheet order to prevent field misalignment.
@@ -4753,7 +4770,11 @@ function _buildAdminAddedEmail(user) {
       <div style="color:#15803d;font-size:13px;font-weight:700;margin-bottom:12px;border-bottom:1px solid #bbf7d0;padding-bottom:8px;">Your Login Details</div>
       <div style="color:#166534;font-size:13px;margin-bottom:6px;"><strong>Login ID (Mobile):</strong> ${user.Mobile}</div>
       <div style="color:#166534;font-size:13px;margin-bottom:6px;"><strong>Member ID:</strong> ${user.UserId}</div>
-      <div style="color:#166534;font-size:13px;"><strong>Password:</strong> The password set by the admin — please change it after your first login.</div>
+      <div style="color:#166534;font-size:13px;margin-bottom:6px;"><strong>Password:</strong> <span style="background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:2px 10px;font-family:monospace;font-size:14px;font-weight:700;letter-spacing:1px;color:#15803d;">JaiShreeRam</span></div>
+      <div style="background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:10px 14px;margin-top:10px;">
+        <div style="color:#854d0e;font-size:12px;font-weight:700;margin-bottom:4px;">⚠️ Important — First Login Instruction</div>
+        <div style="color:#713f12;font-size:12px;line-height:1.7;">This is a <strong>temporary password</strong> set by the admin. For your account's security, you will be asked to <strong>set a new password immediately after your first login</strong>. Please keep your new password safe and do not share it with anyone.</div>
+      </div>
     </div>
     <p style="color:#64748b;font-size:13px;line-height:1.7;margin:0;">
       You can view your donation history, download receipts, and more.

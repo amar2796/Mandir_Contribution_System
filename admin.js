@@ -5476,15 +5476,14 @@
     async function _confirmCorrectionEntry() {}
     async function addUser() {
       if (!checkSession()) return;
-      let name = document.getElementById("u_name").value.trim(),
-        mobile = document.getElementById("u_mobile").value.trim(),
-        pass = document.getElementById("u_password").value,
-        email = document.getElementById("u_email").value.trim(),
-        role = document.getElementById("u_role").value;
-      if (!name || !mobile || !pass || !email)
-        return toast("All fields including Email are required.", "error");
-      if (pass.length < 6)
-        return toast("Password must be at least 6 characters.", "error");
+      let name   = document.getElementById("u_name").value.trim(),
+          mobile = document.getElementById("u_mobile").value.trim(),
+          email  = document.getElementById("u_email").value.trim(),
+          role   = document.getElementById("u_role").value;
+      // [DEFAULT-PWD] Password is no longer entered by admin — it is hardcoded
+      // server-side as "JaiShreeRam". User is forced to change on first login.
+      if (!name || !mobile || !email)
+        return toast("Name, Mobile, and Email are required.", "error");
       if (!/^\d{10}$/.test(mobile))
         return toast("Mobile must be exactly 10 digits.", "error");
       try {
@@ -5495,19 +5494,18 @@
           action: "addUser",
           // [ID] UserId is now generated server-side (USER-NNNNN / ADMIN-NNNNN)
           // Do NOT send UserId from frontend — backend ignores it and generates its own
-          Name: name,
+          // [DEFAULT-PWD] Password not sent — backend sets "JaiShreeRam" automatically
+          Name:   name,
           Mobile: mobile,
-          Password: pass,
-          Email: email,
-          Role: role,
-          DOB: dob,
+          Email:  email,
+          Role:   role,
+          DOB:    dob,
         });
         if (res.status === "error") toast("❌ " + res.message, "error");
         else {
-          toast("✅ User added.");
+          toast("✅ User added. Default password: JaiShreeRam");
           document.getElementById("u_name").value = "";
           document.getElementById("u_mobile").value = "";
-          document.getElementById("u_password").value = "";
           document.getElementById("u_email").value = "";
           const _dobEl = document.getElementById("u_dob");
           if (_dobEl) _dobEl.value = "";
