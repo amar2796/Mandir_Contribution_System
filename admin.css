@@ -2827,6 +2827,13 @@ body.dark-mode #_uniModal ._mbdy p + p {
 .sp-header-red    { background: linear-gradient(135deg, #b91c1c, #e74c3c); }
 .sp-header-orange { background: linear-gradient(135deg, #ea580c, #fb923c); }
 .sp-header-indigo { background: linear-gradient(135deg, #4338ca, #6366f1); }
+.sp-header-dark   { background: linear-gradient(135deg, #1e293b, #334155); }
+.sp-header-brown  { background: linear-gradient(135deg, #78350f, #b45309); }
+
+/* Wide panel variant for bulk/walk-in (more content) */
+.sp-panel-wide {
+  width: 560px;
+}
 
 .sp-panel-title {
   font-size: 16px;
@@ -3296,6 +3303,115 @@ body.dark-mode [style*="background:#f0fdf4"][style*="border:1px solid #86efac"] 
   border-color: #14532d !important;
 }
 
+/* ── Bulk / Walk-in panel body — field styles matching _fi / _fl ── */
+.sp-panel-body ._fl {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 4px;
+  margin-top: 12px;
+  letter-spacing: 0.2px;
+}
+.sp-panel-body ._fl:first-child { margin-top: 0; }
+
+.sp-panel-body ._fi {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  font-size: 13px;
+  font-family: Poppins, sans-serif;
+  color: #1e293b;
+  outline: none;
+  background: #f8fafc;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  box-sizing: border-box;
+  margin-bottom: 0;
+}
+.sp-panel-body ._fi:focus {
+  border-color: #f7a01a;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(247,160,26,0.12);
+}
+
+/* Bulk row styles */
+.bk-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 6px;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+}
+.bk-row-grid select, .bk-row-grid input {
+  padding: 7px 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  font-size: 12px;
+  font-family: Poppins, sans-serif;
+  background: #fff;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.bk-row-grid select:focus, .bk-row-grid input:focus { border-color: #f7a01a; }
+.bk-del-btn {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #e74c3c;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  box-shadow: none;
+  transition: background 0.15s;
+}
+.bk-del-btn:hover { background: #fee2e2; }
+
+/* Panel footer actions row */
+.sp-panel-footer {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #fff;
+  flex-shrink: 0;
+}
+.sp-panel-footer .sp-save-btn { flex: 1; }
+.sp-panel-footer .sp-cancel-btn { min-width: 90px; }
+
+/* dark mode for new styles */
+body.dark-mode .sp-panel-body ._fl { color: #94a3b8 !important; }
+body.dark-mode .sp-panel-body ._fi {
+  background: #0d1525 !important;
+  border-color: #2d3f58 !important;
+  color: #e2e8f0 !important;
+}
+body.dark-mode .sp-panel-body ._fi:focus {
+  border-color: #f7a01a !important;
+  background: #111827 !important;
+  box-shadow: 0 0 0 3px rgba(247,160,26,0.12) !important;
+}
+body.dark-mode .bk-row-grid {
+  background: #0d1525 !important;
+  border-color: #1e2d45 !important;
+}
+body.dark-mode .bk-row-grid select, body.dark-mode .bk-row-grid input {
+  background: #111827 !important;
+  border-color: #2d3f58 !important;
+  color: #e2e8f0 !important;
+}
+body.dark-mode .sp-panel-footer {
+  background: #111827 !important;
+  border-top-color: #1e2d45 !important;
+}
+
 
 /* ────────────────────────────────────────────────────────────
    4. LOGOUT ANIMATION OVERLAY
@@ -3369,338 +3485,113 @@ body.dark-mode [style*="background:#f0fdf4"][style*="border:1px solid #86efac"] 
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 
-/* ═══════════════════════════════════════════════════════════════════
-   BENTO UI PREMIUM ENHANCEMENT LAYER
-   ─────────────────────────────────────────────────────────────────
-   Appended at bottom — overrides only visual/aesthetic properties.
-   Zero impact on layout IDs, JS hooks, or functional logic.
-   Brand color #f7a01a preserved throughout.
-   Dark mode compatible.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════
+   UI FIXES v3 — Logout animation · Undo dismiss · Success card
+   ═══════════════════════════════════════════════════════════════════════ */
 
-/* ── 1. PAGE BACKGROUND — subtle grain texture feel ── */
-body {
-  background: #eef0f5;
-  background-image:
-    radial-gradient(ellipse at 20% 0%, rgba(247,160,26,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 100%, rgba(99,102,241,0.03) 0%, transparent 60%);
+/* ─── FIX 3: LOGOUT ANIMATION ─────────────────────────────────────────── */
+@keyframes _loSlideOut {
+  0%   { opacity:1; transform:translateX(0)    scale(1);    filter:blur(0);   }
+  25%  { opacity:1; transform:translateX(-3%)  scale(0.99); filter:blur(0);   }
+  100% { opacity:0; transform:translateX(100%) scale(0.96); filter:blur(3px); }
+}
+@keyframes _loFadeIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+@keyframes _loSpinnerSpin {
+  to { transform:rotate(360deg); }
+}
+@keyframes _loPopIn {
+  0%   { opacity:0; transform:scale(0.7);  }
+  70%  { transform:scale(1.08); }
+  100% { opacity:1; transform:scale(1); }
 }
 
-/* ── 2. SIDEBAR — glass-depth premium finish ── */
-.sidebar {
-  background: linear-gradient(180deg, #0f172a 0%, #1a2236 55%, #1e2d42 100%);
-  border-right: 1px solid rgba(247,160,26,0.10);
-  box-shadow: 4px 0 24px rgba(0,0,0,0.22), inset -1px 0 0 rgba(255,255,255,0.04);
+body.logging-out .layout,
+body.logging-out .header {
+  animation: _loSlideOut 0.55s cubic-bezier(0.4,0,1,1) forwards;
+  pointer-events: none;
 }
 
-/* ── 3. SIDEBAR BRAND — refined logo area ── */
-.sidebar-brand {
-  padding: 18px 16px 14px;
-  border-bottom: 1px solid rgba(247,160,26,0.12);
-  background: linear-gradient(135deg, rgba(247,160,26,0.06) 0%, transparent 100%);
-  position: relative;
+#_logoutOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  background: linear-gradient(135deg, #0c1422 0%, #1a2540 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  animation: _loFadeIn 0.35s ease both;
+  pointer-events: all;
 }
-.sidebar-brand::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 16px; right: 16px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(247,160,26,0.3), transparent);
+#_logoutOverlay .lo-icon {
+  width: 68px; height: 68px;
+  border-radius: 50%;
+  background: rgba(247,160,26,0.1);
+  border: 2px solid rgba(247,160,26,0.28);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  animation: _loPopIn 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;
 }
-.sidebar-brand-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #f7a01a;
+#_logoutOverlay .lo-spinner {
+  width: 26px; height: 26px;
+  border: 3px solid rgba(247,160,26,0.18);
+  border-top-color: #f7a01a;
+  border-radius: 50%;
+  animation: _loSpinnerSpin 0.75s linear infinite;
+}
+#_logoutOverlay .lo-text {
+  font-family: Poppins, sans-serif;
+  font-size: 14px; font-weight: 600;
+  color: rgba(255,255,255,0.65);
   letter-spacing: 0.02em;
+  animation: _loPopIn 0.4s ease 0.2s both;
 }
-.sidebar-brand-sub {
-  font-size: 0.64rem;
-  color: rgba(255,255,255,0.35);
-  letter-spacing: 0.04em;
+#_logoutOverlay .lo-sub {
+  font-family: Poppins, sans-serif;
+  font-size: 11px;
+  color: rgba(247,160,26,0.5);
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-}
-.header-logo {
-  width: 38px;
-  height: 38px;
-  border: 2px solid rgba(247,160,26,0.5);
-  box-shadow: 0 0 12px rgba(247,160,26,0.25), 0 0 0 3px rgba(247,160,26,0.06);
+  animation: _loPopIn 0.4s ease 0.32s both;
 }
 
-/* ── 4. NAV ITEMS — refined spacing & transitions ── */
-.sidebar li {
-  padding: 9px 18px;
-  font-size: 12.5px;
-  letter-spacing: 0.01em;
-  border-bottom: none;
-  border-radius: 0;
-  transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
-  position: relative;
+/* ─── FIX 4: UNDO TOAST DISMISS BUTTON ────────────────────────────────── */
+#_undoCloseBtn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  box-shadow: none;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  font-family: Poppins, sans-serif;
+  line-height: 1;
+  margin-left: 2px;
 }
-.sidebar li:not(.nav-section-label)::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 20%; bottom: 20%;
-  width: 0;
-  border-radius: 0 3px 3px 0;
-  background: #f7a01a;
-  transition: width 0.18s ease;
+#_undoCloseBtn:hover {
+  background: rgba(239,68,68,0.28);
+  border-color: rgba(239,68,68,0.45);
+  color: #f87171;
+  transform: scale(1.15);
 }
-.sidebar li.active-nav::before {
-  width: 3px;
-}
-.sidebar li:hover:not(.active-nav):not(.nav-section-label)::before {
-  width: 2px;
-  background: rgba(247,160,26,0.5);
-}
-.sidebar li.active-nav {
-  background: linear-gradient(90deg, rgba(247,160,26,0.18) 0%, rgba(247,160,26,0.06) 100%);
-  border-left: none;
-  padding-left: 22px;
-  color: #fef3c7 !important;
-  font-weight: 600;
-}
-.sidebar li:hover:not(.active-nav):not(.nav-section-label) {
-  background: rgba(255,255,255,0.05);
-  padding-left: 24px;
-}
-.nav-section-label {
-  padding: 16px 18px 5px !important;
-  font-size: 9px !important;
-  letter-spacing: 1.8px !important;
-  color: rgba(255,255,255,0.22) !important;
-}
+#_undoCloseBtn:active { transform: scale(0.92); }
 
-/* ── 5. HEADER — frosted premium bar ── */
-.header {
-  background: rgba(255,255,255,0.97);
-  border-bottom: 1px solid rgba(247,160,26,0.15);
-  box-shadow: 0 1px 0 rgba(247,160,26,0.08), 0 4px 20px rgba(0,0,0,0.06);
-  backdrop-filter: blur(8px);
-  padding: 9px 20px;
+/* ─── FIX 2: CONTRIB SUCCESS/ERROR CARD dark mode ─────────────────────── */
+body.dark-mode #_contribSuccessCard {
+  background: #111827 !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: #e2e8f0 !important;
 }
+body.dark-mode #_contribSuccessCard div[style*="color:#1e293b"] { color: #f1f5f9 !important; }
+body.dark-mode #_contribSuccessCard div[style*="color:#64748b"] { color: #94a3b8 !important; }
 
-/* ── 6. BENTO CARD — premium glass card ── */
-.card {
-  background: #ffffff;
-  border-top: none;
-  border-radius: 16px;
-  border: 1px solid rgba(0,0,0,0.06);
-  box-shadow:
-    0 1px 3px rgba(0,0,0,0.04),
-    0 6px 24px rgba(0,0,0,0.05);
-  position: relative;
-  overflow: hidden;
-  transition: box-shadow 0.22s ease, transform 0.22s ease;
-}
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #f7a01a, #fbbf24, #f7a01a);
-  border-radius: 16px 16px 0 0;
-}
-.card:hover {
-  box-shadow:
-    0 2px 6px rgba(0,0,0,0.05),
-    0 12px 36px rgba(0,0,0,0.09);
-  transform: translateY(-1px);
-}
-.card h3 {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1e293b;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 10px;
-  margin-bottom: 14px;
-  letter-spacing: 0.01em;
-}
-.card h3 i {
-  color: #f7a01a;
-  font-size: 13px;
-}
-
-/* ── 7. CARD-BOX (KPI stat cards) — Bento tile style ── */
-.card-box {
-  background: #ffffff;
-  border-radius: 14px;
-  border: 1px solid rgba(0,0,0,0.06);
-  border-left: none;
-  border-top: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04);
-  padding: 16px 18px;
-  position: relative;
-  overflow: hidden;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-.card-box::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 3px;
-  background: inherit;
-  border-radius: 14px 14px 0 0;
-}
-/* Re-apply left border color from inline styles via box-shadow trick */
-.card-box[style*="border-left-color:#27ae60"] { box-shadow: 0 2px 8px rgba(39,174,96,0.08), inset 3px 0 0 #27ae60; }
-.card-box[style*="border-left-color:#f59e0b"] { box-shadow: 0 2px 8px rgba(245,158,11,0.08), inset 3px 0 0 #f59e0b; }
-.card-box[style*="border-left-color:#e74c3c"] { box-shadow: 0 2px 8px rgba(231,76,60,0.08),  inset 3px 0 0 #e74c3c;  }
-.card-box[style*="border-left-color:#6366f1"] { box-shadow: 0 2px 8px rgba(99,102,241,0.08), inset 3px 0 0 #6366f1; }
-.card-box:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.10), inset 3px 0 0 #f7a01a;
-}
-.card-box::after {
-  background: rgba(247,160,26,0.05);
-  width: 80px;
-  height: 80px;
-  top: -20px;
-  right: -20px;
-}
-
-/* ── 8. HOME PAGE — viewing period bar ── */
-#home > div:first-child {
-  border-radius: 16px;
-  border: 1px solid rgba(247,160,26,0.12);
-}
-
-/* ── 9. YEAR BALANCE TRACKER inner stat tiles ── */
-#home .card > div > div[style*="background:#f8fafc"] {
-  background: #f8fafc !important;
-  border-radius: 10px !important;
-  border: 1px solid rgba(0,0,0,0.05) !important;
-  transition: box-shadow 0.15s;
-}
-#home .card > div > div[style*="background:#f8fafc"]:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.07);
-}
-#home .card > div > div[style*="background:linear-gradient(135deg,#1e293b"] {
-  border-radius: 10px !important;
-  border: 1px solid rgba(247,160,26,0.15) !important;
-}
-
-/* ── 10. SECTION LABEL ── */
-#home > div[style*="font-size:11px"][style*="letter-spacing"] {
-  font-size: 10px !important;
-  letter-spacing: 1.5px !important;
-  font-weight: 700 !important;
-  color: #94a3b8 !important;
-  text-transform: uppercase !important;
-}
-
-/* ── 11. DASHBOARD TOPBAR ── */
-#dash-topbar {
-  border-radius: 14px !important;
-  border: 1px solid rgba(0,0,0,0.06) !important;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
-  background: #fff !important;
-}
-
-/* ── 12. TABLE ENHANCEMENTS ── */
-thead {
-  background: linear-gradient(90deg, #1e293b, #334155);
-}
-thead th {
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-  padding: 12px 14px;
-}
-tbody tr:hover {
-  background: #fffbf0 !important;
-  box-shadow: inset 3px 0 0 #f7a01a, 0 2px 8px rgba(247,160,26,0.05) !important;
-}
-table {
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-}
-
-/* ── 13. NAV BADGE ── */
-.nav-badge {
-  background: linear-gradient(135deg, #f7a01a, #f59e0b);
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 7px;
-  color: #fff;
-  box-shadow: 0 2px 6px rgba(247,160,26,0.35);
-  margin-left: auto;
-}
-
-/* ── 14. BUTTONS — subtle polish ── */
-button:not(.btn-sm):not([style*="background:#25d366"]):not([style*="background:#128c7e"]):not([style*="background:#e74c3c"]):not([style*="background:#2980b9"]):not([style*="background:#334155"]):not([style*="background:#27ae60"]):not([style*="background:#6366f1"]):not([style*="background:#f59e0b"]) {
-  border-radius: 10px;
-}
-button {
-  font-size: 13px;
-  letter-spacing: 0.01em;
-}
-
-/* ── 15. SCROLLBAR — amber branded ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-::-webkit-scrollbar-thumb { background: rgba(247,160,26,0.45); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #f7a01a; }
-
-/* ── 16. DARK MODE BENTO OVERRIDES ── */
-body.dark-mode {
-  background: #0c1220;
-  background-image:
-    radial-gradient(ellipse at 20% 0%, rgba(247,160,26,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 100%, rgba(99,102,241,0.04) 0%, transparent 60%);
-}
-body.dark-mode .card {
-  background: #131d2e;
-  border-color: rgba(255,255,255,0.07);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 6px 24px rgba(0,0,0,0.25);
-}
-body.dark-mode .card::before {
-  background: linear-gradient(90deg, rgba(247,160,26,0.5), rgba(251,191,36,0.5), rgba(247,160,26,0.5));
-}
-body.dark-mode .card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 12px 36px rgba(0,0,0,0.3);
-}
-body.dark-mode .card h3 {
-  color: #e2e8f0;
-  border-bottom-color: rgba(255,255,255,0.08);
-}
-body.dark-mode .card-box {
-  background: #131d2e;
-  border-color: rgba(255,255,255,0.07);
-}
-body.dark-mode .card-box:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4), inset 3px 0 0 #f7a01a;
-}
-body.dark-mode .header {
-  background: rgba(13,18,32,0.97);
-  border-bottom-color: rgba(247,160,26,0.12);
-  box-shadow: 0 1px 0 rgba(247,160,26,0.06), 0 4px 20px rgba(0,0,0,0.3);
-}
-body.dark-mode table {
-  background: #131d2e;
-  border-color: rgba(255,255,255,0.07);
-}
-body.dark-mode thead {
-  background: linear-gradient(90deg, #0d1525, #1a2236);
-}
-body.dark-mode tbody tr:hover {
-  background: rgba(247,160,26,0.06) !important;
-}
-body.dark-mode #dash-topbar {
-  background: #131d2e !important;
-  border-color: rgba(255,255,255,0.07) !important;
-}
-body.dark-mode ::-webkit-scrollbar-track { background: #0c1220; }
-
-/* ── 17. MOBILE BENTO — keep cards full-width clean ── */
-@media (max-width: 768px) {
-  .card { border-radius: 12px; }
-  .card-box { border-radius: 10px; }
-  .sidebar {
-    box-shadow: 6px 0 32px rgba(0,0,0,0.4);
-  }
-}
-
-/* ── END BENTO UI LAYER ── */
+/* ─── END UI FIXES v3 ──────────────────────────────────────────────────── */

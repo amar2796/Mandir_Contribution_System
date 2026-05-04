@@ -461,7 +461,7 @@
               <div class="adm-drop-item" onclick="closeAdminDropdown();openAdminChangePassword()">
                 <i class="fa-solid fa-key"></i> Change Password
               </div>
-              <div class="adm-drop-item danger" onclick="logout()">
+              <div class="adm-drop-item danger" onclick="_uiLogoutWithAnim()">
                 <i class="fa-solid fa-power-off"></i> Logout
               </div>
             </div>
@@ -3286,6 +3286,36 @@
       </div>
     </div>
   </div>
+  <!-- ── Bulk Insert Panel ── -->
+  <div class="sp-panel sp-panel-wide" id="sp-bulk">
+    <div class="sp-panel-header sp-header-dark">
+      <div class="sp-panel-title">
+        <i class="fa-solid fa-layer-group"></i> Bulk Insert Contributions
+      </div>
+      <button class="sp-close-btn" onclick="spClose()" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="sp-panel-body" id="sp-bulk-body">
+      <!-- Populated dynamically by openBulkInsert() -->
+    </div>
+  </div>
+
+  <!-- ── Walk-in Panel ── -->
+  <div class="sp-panel sp-panel-wide" id="sp-walkin">
+    <div class="sp-panel-header sp-header-brown">
+      <div class="sp-panel-title">
+        <i class="fa-solid fa-person-walking-arrow-right"></i> Walk-in / Manual Entry
+      </div>
+      <button class="sp-close-btn" onclick="spClose()" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="sp-panel-body" id="sp-walkin-body">
+      <!-- Populated dynamically by openWalkInContribution() -->
+    </div>
+  </div>
+
   <!-- ═══ END SLIDE PANELS ═══ -->
 
   <script>
@@ -3364,11 +3394,30 @@
       var panel = document.getElementById('sp-' + type);
       var overlay = document.getElementById('spOverlay');
       if (!panel) return;
-      // Reset to form view
+
+      // Reset to form view (for static panels with sp-X-form / sp-X-preview sub-divs)
+      // For contrib: show the form div, hide preview div, clear transient fields
       var form = document.getElementById('sp-' + type + '-form');
       var preview = document.getElementById('sp-' + type + '-preview');
       if (form) form.style.display = '';
       if (preview) preview.style.display = 'none';
+
+      // For contrib: if body was replaced by success/error state, restore the form
+      if (type === 'contrib') {
+        if (typeof window._contribReset === 'function') {
+          window._contribReset();
+          // _contribReset handles preselect and field clearing — skip below
+          overlay.classList.add('sp-overlay-active');
+          panel.classList.add('sp-panel-open');
+          document.body.style.overflow = 'hidden';
+          setTimeout(function() {
+            var first = panel.querySelector('input:not([type=hidden]), select');
+            if (first) first.focus();
+          }, 320);
+          return;
+        }
+      }
+
       // Pre-select current month/year for contrib and expense
       _spPreselectMonthYear(type);
       // Show
@@ -3408,10 +3457,13 @@
       if (spinEl) spinEl.style.display = '';
       btn.style.opacity = '0.8';
 
-      // contrib has its own full preview+confirm modal — close panel and let it run
+      // contrib manages the panel itself (preview → success/error all in panel)
       if (type === 'contrib') {
-        spClose();
         try { _saveFnMap[type](); } catch(e) { console.warn(e); }
+        // Reset button after a tick (addContribution will repopulate body)
+        setTimeout(function() {
+          if (btn) { btn.disabled=false; if(textEl) textEl.style.display=''; if(spinEl) spinEl.style.display='none'; btn.style.opacity=''; }
+        }, 200);
         return;
       }
 
@@ -3498,10 +3550,162 @@
       }
     }
 
+    // Expose for use by _contribReset (defined in outer script block)
+    window._spPreselectMonthYear = _spPreselectMonthYear;
+
     // ESC key closes panel
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') spClose();
     });
+  })();
+  </script>
+
+  <!-- ═══ UI ENHANCEMENT PATCHES ═══ -->
+  <script>
+  (function() {
+
+    /* ═══════════════════════════════════════════════════════════
+       FIX 1 — Save button guaranteed reset on re-open
+       Root cause: spOpen() shows form but never resets button state.
+       Fix: wrap spOpen to always reset all save buttons on open.
+       ═══════════════════════════════════════════════════════════ */
+    var _origSpOpen = window.spOpen;
+    window.spOpen = function(type) {
+      // Reset ALL panel save buttons before opening any panel
+      var allBtns = ['spContribSaveBtn','spExpenseSaveBtn','spEventSaveBtn','spUserSaveBtn'];
+      allBtns.forEach(function(id) {
+        var btn = document.getElementById(id);
+        if (!btn) return;
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.animation = '';
+        var txt = btn.querySelector('.sp-btn-text');
+        var spn = btn.querySelector('.sp-btn-spinner');
+        if (txt) { txt.style.display = ''; }
+        if (spn) { spn.style.display = 'none'; }
+      });
+      if (_origSpOpen) _origSpOpen(type);
+    };
+
+    /* Also reset on spAddAnother */
+    var _origSpAddAnother = window.spAddAnother;
+    window.spAddAnother = function(type) {
+      var btnIds = { contrib:'spContribSaveBtn', expense:'spExpenseSaveBtn', event:'spEventSaveBtn', user:'spUserSaveBtn' };
+      var btn = document.getElementById(btnIds[type]);
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.animation = '';
+        var txt = btn.querySelector('.sp-btn-text');
+        var spn = btn.querySelector('.sp-btn-spinner');
+        if (txt) txt.style.display = '';
+        if (spn) spn.style.display = 'none';
+      }
+      if (_origSpAddAnother) _origSpAddAnother(type);
+    };
+
+    /* ── contrib panel reset: called by success/error Add Another & Retry buttons ──
+       The body was replaced by a success/error div. We restore the original
+       sp-contrib-form by re-inserting it (it was never destroyed from sp-contrib-body,
+       we just set innerHTML which wiped it). So we use a stored reference. */
+    window._spContribFormEl  = document.getElementById('sp-contrib-form');
+    window._spContribPrevEl  = document.getElementById('sp-contrib-preview');
+    window._spContribBodyEl  = document.getElementById('sp-contrib-body');
+
+    window._contribReset = function() {
+      var body = document.getElementById('sp-contrib-body');
+      if (!body) return;
+      // If form element is detached (body.innerHTML was replaced), re-attach it
+      if (!document.getElementById('sp-contrib-form') && window._spContribFormEl) {
+        body.innerHTML = '';
+        body.appendChild(window._spContribFormEl);
+        if (window._spContribPrevEl) body.appendChild(window._spContribPrevEl);
+      }
+      // Show form, hide preview
+      var form = document.getElementById('sp-contrib-form');
+      var prev = document.getElementById('sp-contrib-preview');
+      if (form) form.style.display = '';
+      if (prev)  prev.style.display = 'none';
+      // Clear transient values
+      var _g = function(id) { return document.getElementById(id); };
+      if (_g('amount'))  _g('amount').value = '';
+      if (_g('note'))    _g('note').value = '';
+      // Re-populate dropdowns (may have been wiped)
+      if (typeof _rebuildContribFormDropdowns === 'function') _rebuildContribFormDropdowns();
+      _spPreselectMonthYear('contrib');
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       FIX 3 — Logout rolling animation
+       Root cause: location.replace() can't be monkey-patched.
+       Fix: wrap the logout button's onclick directly so animation
+       plays BEFORE logout() is called. logout() still runs normally.
+       ═══════════════════════════════════════════════════════════ */
+    function _buildLogoutOverlay() {
+      var ov = document.getElementById('_logoutOverlay');
+      if (ov) return; // already shown
+      ov = document.createElement('div');
+      ov.id = '_logoutOverlay';
+      ov.innerHTML =
+        '<div class="lo-icon"><i class="fa-solid fa-right-from-bracket" style="color:#f7a01a;font-size:1.6rem;"></i></div>' +
+        '<div class="lo-spinner"></div>' +
+        '<div class="lo-text">Logging out…</div>' +
+        '<div class="lo-sub">See you soon 🙏</div>';
+      document.body.appendChild(ov);
+      document.body.classList.add('logging-out');
+    }
+
+    // Exposed so the logout button onclick can call it
+    window._uiLogoutWithAnim = function() {
+      _buildLogoutOverlay();
+      // Let animation play for 900ms so the overlay fully renders before logout() navigates away
+      setTimeout(function() {
+        if (typeof logout === 'function') logout();
+      }, 900);
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       FIX 4 — Undo toast dismiss (×) button
+       MutationObserver injects close button whenever toast appears.
+       ═══════════════════════════════════════════════════════════ */
+    var _undoObserver = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        m.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1 && node.id === '_undoToast') {
+            // Already has close btn? skip
+            if (document.getElementById('_undoCloseBtn')) return;
+            var closeBtn = document.createElement('button');
+            closeBtn.id = '_undoCloseBtn';
+            closeBtn.title = 'Dismiss';
+            closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            closeBtn.onclick = function(e) {
+              e.stopPropagation();
+              if (window._undoQueue) {
+                if (window._undoQueue.timer)  clearTimeout(window._undoQueue.timer);
+                if (window._undoQueue.rafId)  cancelAnimationFrame(window._undoQueue.rafId);
+                window._undoQueue = null;
+              }
+              var t = document.getElementById('_undoToast');
+              if (t) {
+                t.style.animation = '_undoSlideOut 0.22s ease forwards';
+                setTimeout(function() { if (t.parentNode) t.remove(); }, 220);
+              }
+            };
+            node.appendChild(closeBtn);
+          }
+        });
+      });
+    });
+    _undoObserver.observe(document.body, { childList: true });
+
+    /* Inject keyframe animations for success/error states in slide panels */
+    var st = document.createElement('style');
+    st.textContent =
+      '@keyframes _csBounce{0%{transform:scale(0) rotate(-15deg);opacity:0}' +
+        '65%{transform:scale(1.15) rotate(5deg)}' +
+        '100%{transform:scale(1) rotate(0);opacity:1}}';
+    document.head.appendChild(st);
+
   })();
   </script>
 

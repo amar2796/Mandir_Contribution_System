@@ -3689,6 +3689,14 @@
       openModal(html, "460px");
     }
     async function saveEditContrib(id) {
+      // [DUP-FIX-1] Prevent double-submit: disable button for the full async lifetime
+      var _ecBtn = document.querySelector("button[onclick*=\"saveEditContrib\"]");
+      if (_ecBtn) {
+        if (_ecBtn._inFlight) return;
+        _ecBtn._inFlight = true;
+        _ecBtn.disabled = true;
+        _ecBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+      }
       let amt = document.getElementById("ec_amt").value;
       let mon = document.getElementById("ec_mon").value;
       let yr = document.getElementById("ec_yr").value;
@@ -3698,6 +3706,7 @@
       let mode = (document.getElementById("ec_mode") || {}).value || "UPI";
       if (!amt || amt <= 0) {
         toast("Please enter a valid amount.", "error");
+        if (_ecBtn) { _ecBtn._inFlight = false; _ecBtn.disabled = false; _ecBtn.innerHTML = '<i class="fa-solid fa-check"></i> Save Changes'; }
         return;
       }
       try {
@@ -3719,9 +3728,13 @@
           // patched data[] and called render/loadSummary). smartRefresh fetches
           // authoritative server data and re-renders completely; no local patch needed.
           smartRefresh("contributions");
-        } else toast("❌ Update failed.", "error");
+        } else {
+          toast("❌ Update failed.", "error");
+          if (_ecBtn) { _ecBtn._inFlight = false; _ecBtn.disabled = false; _ecBtn.innerHTML = '<i class="fa-solid fa-check"></i> Save Changes'; }
+        }
       } catch (err) {
         toast("❌ " + err.message, "error");
+        if (_ecBtn) { _ecBtn._inFlight = false; _ecBtn.disabled = false; _ecBtn.innerHTML = '<i class="fa-solid fa-check"></i> Save Changes'; }
       }
     }
 
@@ -4704,43 +4717,46 @@
         })
         .join("");
 
-      let html = `
-          <div class="_mhdr"><h3><i class="fa-solid fa-layer-group"></i> Bulk Insert Contributions</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-          <div class="_mbdy">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-              <div><label class="_fl">User</label><select class="_fi" id="bk_user" style="margin-bottom:0;">${userOpts}</select></div>
-              <div><label class="_fl">Year</label><select class="_fi" id="bk_year" style="margin-bottom:0;">${yearOpts}</select></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-              <div><label class="_fl">Contribution Type</label><select class="_fi" id="bk_type" style="margin-bottom:0;">${typeOpts}</select></div>
-              <div><label class="_fl">Note (optional)</label><input class="_fi" id="bk_note" placeholder="e.g. Annual" style="margin-bottom:0;"/></div>
-            </div>
-            <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:10px;background:#fdf8ee;border-radius:8px;padding:10px;">
-              <div style="flex:1;">
-                <label class="_fl">Default Amount (₹) <span style="font-size:10px;color:#aaa;font-weight:400;">— fill all 12 months at once</span></label>
-                <input class="_fi" id="bk_default_amt" type="number" min="1" placeholder="e.g. 500" style="margin-bottom:0;" oninput="_bkRenderRows()"/>
-              </div>
-              <button type="button" onclick="bkFillAllMonths()" style="background:#334155;box-shadow:none;padding:10px 14px;white-space:nowrap;flex-shrink:0;">
-                <i class="fa-solid fa-calendar-check"></i> Fill All 12 Months
-              </button>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <span style="font-size:12px;font-weight:700;color:#334155;"><i class="fa-solid fa-list-ul" style="color:#f7a01a;margin-right:5px;"></i> Month Entries</span>
-              <div style="display:flex;gap:6px;align-items:center;">
-                <span id="bk_total" style="font-size:12px;font-weight:700;color:#27ae60;"></span>
-                <button type="button" onclick="bkAddRow('','')" style="background:#f7a01a;box-shadow:none;padding:5px 12px;font-size:12px;">
-                  <i class="fa-solid fa-plus"></i> Add Row
-                </button>
-              </div>
-            </div>
-            <div id="bk_rows" style="max-height:320px;overflow-y:auto;padding-right:2px;"></div>
-            <div id="bk_status" style="font-size:12px;color:#27ae60;font-weight:600;min-height:18px;margin-top:8px;"></div>
+      // Populate the slide panel body
+      const panelBody = document.getElementById("sp-bulk-body");
+      if (!panelBody) return;
+      panelBody.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div><label class="_fl">Member <span style="color:#e74c3c">*</span></label><select class="_fi" id="bk_user">${userOpts}</select></div>
+          <div><label class="_fl">Year <span style="color:#e74c3c">*</span></label><select class="_fi" id="bk_year">${yearOpts}</select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div><label class="_fl">Contribution Type <span style="color:#e74c3c">*</span></label><select class="_fi" id="bk_type">${typeOpts}</select></div>
+          <div><label class="_fl">Note <span style="font-size:10px;color:#94a3b8;font-weight:400;">(optional)</span></label><input class="_fi" id="bk_note" placeholder="e.g. Annual"/></div>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:16px;background:#fdf8ee;border-radius:10px;padding:12px 14px;border:1px solid #fde68a;">
+          <div style="flex:1;">
+            <label class="_fl" style="margin-top:0;">Default Amount (₹) <span style="font-size:10px;color:#94a3b8;font-weight:400;">— fill all 12 months at once</span></label>
+            <input class="_fi" id="bk_default_amt" type="number" min="1" placeholder="e.g. 500" oninput="_bkRenderRows()"/>
           </div>
-          <div class="_mft">
-            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
-            <button class="_mbtn" style="background:#f7a01a;" onclick="runBulkInsert()"><i class="fa-solid fa-check"></i> Insert All</button>
-          </div>`;
-      openModal(html, "560px");
+          <button type="button" onclick="bkFillAllMonths()" style="background:#334155;box-shadow:none;padding:10px 14px;white-space:nowrap;flex-shrink:0;border-radius:9px;font-size:12px;color:#fff;border:none;cursor:pointer;font-family:Poppins,sans-serif;font-weight:600;">
+            <i class="fa-solid fa-calendar-check"></i> Fill All 12
+          </button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:12px;font-weight:700;color:#334155;"><i class="fa-solid fa-list-ul" style="color:#f7a01a;margin-right:5px;"></i> Month Entries</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span id="bk_total" style="font-size:12px;font-weight:700;color:#27ae60;"></span>
+            <button type="button" onclick="bkAddRow('','')" style="background:#f7a01a;box-shadow:none;padding:6px 13px;font-size:12px;border-radius:8px;color:#fff;border:none;cursor:pointer;font-family:Poppins,sans-serif;font-weight:600;">
+              <i class="fa-solid fa-plus"></i> Add Row
+            </button>
+          </div>
+        </div>
+        <div id="bk_rows" style="flex:1;overflow-y:auto;padding-right:2px;"></div>
+        <div id="bk_status" style="font-size:12px;color:#27ae60;font-weight:600;min-height:18px;margin-top:8px;"></div>
+        <div class="sp-actions" style="margin-top:16px;">
+          <button class="sp-save-btn" style="background:#334155;color:#fff;" onclick="runBulkInsert()">
+            <i class="fa-solid fa-check"></i> Insert All
+          </button>
+          <button class="sp-cancel-btn" onclick="spClose()">Cancel</button>
+        </div>`;
+
+      spOpen("bulk");
       // Add one empty row to start
       bkAddRow("", "");
     }
@@ -4814,7 +4830,48 @@
             <button class="_mbtn" id="bkprev_confirmBtn" style="background:#22c55e;" onclick="_executeBulkInsert()"><i class="fa-solid fa-check"></i> Confirm &amp; Insert All</button>
           </div>`;
       window._pendingBulkRows = { rows, userId, year, typeId, note };
-      openModal(previewHtml, "520px");
+
+      // Show preview in the same slide panel (replace body content)
+      const bkPanelBody = document.getElementById("sp-bulk-body");
+      if (!bkPanelBody) { openModal(previewHtml, "520px"); return; }
+      bkPanelBody.innerHTML = `
+        <div style="background:linear-gradient(135deg,#fef9ee,#fff8e1);border:1.5px solid #f7a01a55;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:12.5px;color:#946c44;">
+          <i class="fa-solid fa-circle-info"></i> Review details below. <b>Edit amounts inline</b> or remove a row before confirming.
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12.5px;">
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 16px;">
+            <span style="color:#64748b;font-size:12px;">Member</span><strong style="color:#15803d;">${memberName}</strong>
+            <span style="color:#64748b;font-size:12px;">Type</span><strong style="font-size:13px;">${typeName}</strong>
+            <span style="color:#64748b;font-size:12px;">Year</span><strong style="font-size:13px;">${escapeHtml(year)}</strong>
+            ${note ? `<span style="color:#64748b;font-size:12px;">Note</span><strong style="font-size:13px;">${escapeHtml(note)}</strong>` : ""}
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:12px;font-weight:700;color:#334155;"><i class="fa-solid fa-list-ul" style="color:#f7a01a;margin-right:5px;"></i> Month Entries</span>
+          <span id="bkprev_countLabel" style="font-size:12px;color:#78350f;font-weight:600;">Total (${rows.length} entr${rows.length === 1 ? "y" : "ies"})</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;" id="bkprev_table">
+          <thead><tr style="background:#f1f5f9;">
+            <th style="padding:8px 10px;font-size:11px;text-align:left;color:#64748b;font-weight:600;">#</th>
+            <th style="padding:8px 10px;font-size:11px;text-align:left;color:#64748b;font-weight:600;">Month</th>
+            <th style="padding:8px 10px;font-size:11px;text-align:left;color:#64748b;font-weight:600;">Amount (editable)</th>
+          </tr></thead>
+          <tbody>${previewRows}</tbody>
+          <tfoot><tr style="background:#fef9ee;border-top:2px solid #fde68a;">
+            <td colspan="2" style="padding:9px 10px;font-size:13px;font-weight:700;color:#78350f;" id="bkprev_countLabel2">Total (${rows.length} entr${rows.length === 1 ? "y" : "ies"})</td>
+            <td style="padding:9px 10px;font-size:14px;font-weight:700;color:#15803d;" id="bkprev_total">&#8377;${totalAmt.toLocaleString("en-IN")}</td>
+          </tr></tfoot>
+        </table>
+        <p style="font-size:11.5px;color:#94a3b8;margin:10px 0 0;"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;margin-right:4px;"></i> Each entry generates a separate receipt. This cannot be undone.</p>
+        <div class="sp-actions" style="margin-top:16px;">
+          <button class="sp-save-btn" style="background:#22c55e;color:#fff;" id="bkprev_confirmBtn" onclick="_executeBulkInsert()">
+            <i class="fa-solid fa-check"></i> Confirm &amp; Insert All
+          </button>
+          <button class="sp-cancel-btn" onclick="openBulkInsert()">
+            <i class="fa-solid fa-arrow-left"></i> Back
+          </button>
+        </div>`;
+      spOpen("bulk");
     }
     function _bkPrevUpdateTotal() {
       const inputs = document.querySelectorAll(".bkprev-amt");
@@ -4827,7 +4884,12 @@
       if (lblEl) lblEl.textContent = `Total (${rows.length} entr${rows.length===1?"y":"ies"})`;
     }
 
+    var _bulkInFlight = false; // [DUP-FIX-4] guard: prevents double-submit on bulk insert
     async function _executeBulkInsert() {
+      // [DUP-FIX-4] Reject if already in flight — modal close removes the button so
+      // btn.disabled alone cannot guard a second click fired before closeModal() runs
+      if (_bulkInFlight) return;
+      _bulkInFlight = true;
       const btn = document.getElementById("bkprev_confirmBtn");
       if (btn) { btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Inserting...'; }
 
@@ -4853,21 +4915,32 @@
       }
 
       if (!finalRows || !userId) {
+        _bulkInFlight = false;
         if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm &amp; Insert All';}
         return toast("No pending bulk data.", "error");
       }
       if (finalRows.length === 0) {
+        _bulkInFlight = false;
         if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm &amp; Insert All';}
         return toast("No valid entries to insert.", "error");
       }
-      closeModal();
+      // [DUP-FIX-4b] Deduplicate by month — last-one-wins if month appears twice in table
+      finalRows = Array.from(new Map(finalRows.map(function(r) { return [r.month, r]; })).values());
+      // Show inserting spinner in panel
+      const bkBodySpin = document.getElementById("sp-bulk-body");
+      if (bkBodySpin) {
+        bkBodySpin.innerHTML =
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+            '<i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:#334155;margin-bottom:18px;"></i>' +
+            '<div style="font-size:16px;font-weight:600;color:#1e293b;">Inserting ' + finalRows.length + ' entries…</div>' +
+            '<div style="font-size:12px;color:#64748b;margin-top:6px;">Please wait, do not close.</div>' +
+          '</div>';
+      }
       const s = JSON.parse(localStorage.getItem("session") || "{}");
-      toast("Inserting " + finalRows.length + " entries...", "warn");
-      // Send all entries in parallel instead of sequentially — reduces ~18s to ~2s for a full year
+      // Send all entries in parallel — reduces ~18s to ~2s for a full year
       const results = await Promise.all(finalRows.map(function(r) {
         return postData({
           action: "addContribution",
-          // [ID] FIX: No Id passed — backend generates CONT-NNNNN for each entry
           UserId: userId, Amount: r.amount, ForMonth: r.month,
           Year: year, TypeId: typeId, OccasionId: "", Note: note,
           sessionToken: s.sessionToken || "", userId: s.userId || ""
@@ -4875,9 +4948,151 @@
       }));
       const done   = results.filter(function(r) { return r && r.status === "success"; }).length;
       const failed = results.length - done;
-      toast(done > 0 ? "✅ Bulk insert: " + done + " added" + (failed > 0 ? ", " + failed + " failed" : ".") : "❌ All inserts failed.", done > 0 ? "" : "error");
+      // Track exactly which rows failed for targeted retry
+      const failedRows = finalRows.filter(function(r, i) { return !results[i] || results[i].status !== "success"; });
+      if (failedRows.length > 0) {
+        window._bulkFailedRows = { rows: failedRows, userId: userId, year: year, typeId: typeId, note: note };
+      } else {
+        window._bulkFailedRows = null;
+      }
+      _bulkInFlight = false;
       smartRefresh("contributions");
+      // Show success or error in panel body
+      const bkBodyResult = document.getElementById("sp-bulk-body");
+      if (done > 0 && bkBodyResult) {
+        const failedMonthsHtml = failedRows.length > 0
+          ? '<div style="margin:8px auto 0;max-width:300px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;">' +
+              '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Failed Entries</div>' +
+              failedRows.map(function(r) {
+                return '<div style="font-size:12px;color:#7f1d1d;display:flex;justify-content:space-between;padding:2px 0;">' +
+                  '<span>' + escapeHtml(r.month) + '</span><span style="font-weight:600;">Rs.' + Number(r.amount).toLocaleString("en-IN") + '</span></div>';
+              }).join("") +
+            '</div>'
+          : '';
+        bkBodyResult.innerHTML =
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px;text-align:center;padding:20px;">' +
+            '<div style="width:72px;height:72px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #6ee7b7;animation:_csBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">' +
+              '<i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:2rem;"></i>' +
+            '</div>' +
+            '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Bulk Insert Complete!</div>' +
+            '<div style="font-size:13px;font-weight:600;color:#15803d;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:7px 16px;margin-bottom:6px;">' + done + ' of ' + finalRows.length + ' entries added</div>' +
+            (failed > 0 ? '<div style="font-size:12px;color:#dc2626;margin-bottom:4px;">' + failed + ' entr' + (failed > 1 ? 'ies' : 'y') + ' failed</div>' + failedMonthsHtml : '') +
+          '</div>' +
+          '<div class="sp-actions" style="margin-top:auto;">' +
+            (failedRows.length > 0
+              ? '<button class="sp-save-btn" style="background:#e74c3c;color:#fff;" onclick="_retryBulkFailed()">' +
+                  '<i class="fa-solid fa-rotate-right"></i> Retry Failed (' + failedRows.length + ')' +
+                '</button>'
+              : '<button class="sp-save-btn" style="background:#334155;color:#fff;" onclick="openBulkInsert()">' +
+                  '<i class="fa-solid fa-plus"></i> Insert More' +
+                '</button>') +
+            '<button class="sp-cancel-btn" onclick="spClose()">' +
+              '<i class="fa-solid fa-xmark"></i> Close' +
+            '</button>' +
+          '</div>';
+      } else if (bkBodyResult) {
+        // All failed — store all rows for retry
+        window._bulkFailedRows = { rows: finalRows, userId: userId, year: year, typeId: typeId, note: note };
+        const allFailedMonthsHtml =
+          '<div style="margin:8px auto 0;max-width:300px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;">' +
+            '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Failed Entries</div>' +
+            finalRows.map(function(r) {
+              return '<div style="font-size:12px;color:#7f1d1d;display:flex;justify-content:space-between;padding:2px 0;">' +
+                '<span>' + escapeHtml(r.month) + '</span><span style="font-weight:600;">Rs.' + Number(r.amount).toLocaleString("en-IN") + '</span></div>';
+            }).join("") +
+          '</div>';
+        bkBodyResult.innerHTML =
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+            '<div style="width:72px;height:72px;background:linear-gradient(135deg,#fef2f2,#fecaca);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #fca5a5;">' +
+              '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;font-size:2rem;"></i>' +
+            '</div>' +
+            '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">All Inserts Failed</div>' +
+            '<div style="font-size:12.5px;color:#64748b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;margin-bottom:4px;">Check your connection and try again.</div>' +
+            allFailedMonthsHtml +
+          '</div>' +
+          '<div class="sp-actions" style="margin-top:auto;">' +
+            '<button class="sp-save-btn" style="background:#e74c3c;color:#fff;" onclick="_retryBulkFailed()">' +
+              '<i class="fa-solid fa-rotate-right"></i> Retry All (' + finalRows.length + ')' +
+            '</button>' +
+            '<button class="sp-cancel-btn" onclick="spClose()">' +
+              '<i class="fa-solid fa-xmark"></i> Close' +
+            '</button>' +
+          '</div>';
+      }
     }
+
+    /* ── Retry only the failed bulk entries ── */
+    async function _retryBulkFailed() {
+      const stored = window._bulkFailedRows;
+      if (!stored || !stored.rows || stored.rows.length === 0) return toast("No failed entries to retry.", "error");
+      if (_bulkInFlight) return;
+      _bulkInFlight = true;
+
+      const bkBody = document.getElementById("sp-bulk-body");
+      if (bkBody) {
+        bkBody.innerHTML =
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+            '<i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:#334155;margin-bottom:18px;"></i>' +
+            '<div style="font-size:16px;font-weight:600;color:#1e293b;">Retrying ' + stored.rows.length + ' failed entr' + (stored.rows.length > 1 ? 'ies' : 'y') + '…</div>' +
+            '<div style="font-size:12px;color:#64748b;margin-top:6px;">Please wait, do not close.</div>' +
+          '</div>';
+      }
+
+      const s = JSON.parse(localStorage.getItem("session") || "{}");
+      const retryResults = await Promise.all(stored.rows.map(function(r) {
+        return postData({
+          action: "addContribution",
+          UserId: stored.userId, Amount: r.amount, ForMonth: r.month,
+          Year: stored.year, TypeId: stored.typeId, OccasionId: "", Note: stored.note,
+          sessionToken: s.sessionToken || "", userId: s.userId || ""
+        }).catch(function() { return { status: "error" }; });
+      }));
+
+      const retryDone   = retryResults.filter(function(r) { return r && r.status === "success"; }).length;
+      const retryFailed = retryResults.length - retryDone;
+      const stillFailed = stored.rows.filter(function(r, i) { return !retryResults[i] || retryResults[i].status !== "success"; });
+
+      window._bulkFailedRows = stillFailed.length > 0
+        ? { rows: stillFailed, userId: stored.userId, year: stored.year, typeId: stored.typeId, note: stored.note }
+        : null;
+
+      _bulkInFlight = false;
+      if (retryDone > 0) smartRefresh("contributions");
+
+      if (!bkBody) return;
+      const stillFailedHtml = stillFailed.length > 0
+        ? '<div style="margin:8px auto 0;max-width:300px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;">' +
+            '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Still Failed</div>' +
+            stillFailed.map(function(r) {
+              return '<div style="font-size:12px;color:#7f1d1d;display:flex;justify-content:space-between;padding:2px 0;">' +
+                '<span>' + escapeHtml(r.month) + '</span><span style="font-weight:600;">Rs.' + Number(r.amount).toLocaleString("en-IN") + '</span></div>';
+            }).join("") +
+          '</div>'
+        : '';
+
+      bkBody.innerHTML =
+        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+          '<div style="width:72px;height:72px;background:linear-gradient(135deg,' + (retryDone > 0 ? '#ecfdf5,#d1fae5' : '#fef2f2,#fecaca') + ');border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid ' + (retryDone > 0 ? '#6ee7b7' : '#fca5a5') + ';animation:_csBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">' +
+            '<i class="fa-solid ' + (retryDone > 0 ? 'fa-circle-check" style="color:#16a34a' : 'fa-circle-xmark" style="color:#dc2626') + ';font-size:2rem;"></i>' +
+          '</div>' +
+          '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">' + (retryDone > 0 ? 'Retry Complete!' : 'Retry Failed') + '</div>' +
+          (retryDone > 0 ? '<div style="font-size:13px;font-weight:600;color:#15803d;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:7px 16px;margin-bottom:6px;">' + retryDone + ' of ' + stored.rows.length + ' entries added</div>' : '') +
+          (retryFailed > 0 ? '<div style="font-size:12px;color:#dc2626;margin-bottom:4px;">' + retryFailed + ' still failed</div>' + stillFailedHtml : '') +
+        '</div>' +
+        '<div class="sp-actions" style="margin-top:auto;">' +
+          (stillFailed.length > 0
+            ? '<button class="sp-save-btn" style="background:#e74c3c;color:#fff;" onclick="_retryBulkFailed()">' +
+                '<i class="fa-solid fa-rotate-right"></i> Retry Again (' + stillFailed.length + ')' +
+              '</button>'
+            : '<button class="sp-save-btn" style="background:#334155;color:#fff;" onclick="openBulkInsert()">' +
+                '<i class="fa-solid fa-plus"></i> Insert More' +
+              '</button>') +
+          '<button class="sp-cancel-btn" onclick="spClose()">' +
+            '<i class="fa-solid fa-xmark"></i> Close' +
+          '</button>' +
+        '</div>';
+    }
+    window._retryBulkFailed = _retryBulkFailed;
 
     // #17 — Auto-suggest last contribution amount when member is selected
     function _suggestLastAmount(userId) {
@@ -4989,9 +5204,105 @@
           <button class="_mbtn" id="prev_submitBtn" style="background:#22c55e;" onclick="_submitContributionFromPreview()"><i class="fa-solid fa-check"></i> Confirm & Submit</button>
         </div>`;
 
-      openModal(previewHtml, "560px");
+      // Show preview in the contrib slide panel (replace body content)
+      const contribPanelBody = document.getElementById("sp-contrib-body");
+      if (contribPanelBody) {
+        contribPanelBody.innerHTML = `
+          <div style="background:linear-gradient(135deg,#fef9ee,#fff8e1);border:1.5px solid #f7a01a55;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#946c44;">
+            <i class="fa-solid fa-circle-info"></i> Review the details below. <b>Edit any field inline</b> before submitting.
+          </div>
+          <div class="sp-row2">
+            <div class="sp-field-group">
+              <label class="sp-label">Member</label>
+              <select class="sp-input" id="prev_user">${userOptsP}</select>
+            </div>
+            <div class="sp-field-group">
+              <label class="sp-label">Amount (₹)</label>
+              <input class="sp-input" id="prev_amount" type="number" min="1" value="${escapeHtml(amount)}" />
+            </div>
+            <div class="sp-field-group">
+              <label class="sp-label">Month</label>
+              <select class="sp-input" id="prev_month"><option value="">— General —</option>${monthOpts}</select>
+            </div>
+            <div class="sp-field-group">
+              <label class="sp-label">Year</label>
+              <select class="sp-input" id="prev_year">${yearOptsP}</select>
+            </div>
+            <div class="sp-field-group">
+              <label class="sp-label">Contribution Type</label>
+              <select class="sp-input" id="prev_type">${typeOptsP}</select>
+            </div>
+            <div class="sp-field-group">
+              <label class="sp-label">Payment Mode</label>
+              <select class="sp-input" id="prev_mode">${modeOpts}</select>
+            </div>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Occasion</label>
+            <select class="sp-input" id="prev_occasion">${occasionOptsP}</select>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Note</label>
+            <input class="sp-input" id="prev_note" value="${escapeHtml(note)}" placeholder="Optional note" />
+          </div>
+          <div id="_dupWarnBannerSP" style="display:none;background:linear-gradient(90deg,#fff7ed,#ffedd5);border:1.5px solid #fb923c;border-radius:10px;padding:10px 14px;font-size:12px;color:#9a3412;display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;">
+            <i class="fa-solid fa-triangle-exclamation" style="margin-top:1px;flex-shrink:0;color:#ea580c;"></i>
+            <span id="_dupWarnTextSP"></span>
+          </div>
+          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;font-size:12px;color:#15803d;">
+            <i class="fa-solid fa-circle-check"></i> <b>Summary:</b>
+            <span id="prev_summary">${memberName} · ₹${Number(amount).toLocaleString("en-IN")} · ${forMonth||"General"} ${year}</span>
+          </div>
+          <div class="sp-actions" style="margin-top:16px;">
+            <button class="sp-save-btn sp-save-green" id="prev_submitBtn" onclick="_submitContributionFromPreview()">
+              <i class="fa-solid fa-check"></i> Confirm &amp; Submit
+            </button>
+            <button class="sp-cancel-btn" onclick="_contribReset()">
+              <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+          </div>`;
+        // Panel is already open — do NOT call spOpen() here, it would trigger _contribReset() and wipe the preview
+      } else {
+        openModal(previewHtml, "560px");
+      }
 
-      // Live summary update
+      // [DUP-FIX-5] Check if a contribution for this user+month+year+type already exists
+      // and warn the admin — purely advisory, does not block submission
+      (function _checkDuplicateContrib() {
+        if (!Array.isArray(data) || !userId || !forMonth || !year) return;
+        var existing = data.find(function(c) {
+          return String(c.UserId) === String(userId) &&
+                 (c.ForMonth || "") === forMonth &&
+                 String(c.Year) === String(year) &&
+                 String(c.TypeId) === String(typeId);
+        });
+        if (!existing) return;
+        // Show in slide panel banner
+        var spWarn = document.getElementById("_dupWarnBannerSP");
+        var spWarnTxt = document.getElementById("_dupWarnTextSP");
+        if (spWarn && spWarnTxt) {
+          spWarnTxt.innerHTML = '<b>Possible duplicate:</b> A contribution for <b>' + forMonth + ' ' + year + '</b> already exists for this member (Receipt: ' + escapeHtml(existing.ReceiptID || "—") + '). Submit only if intentional.';
+          spWarn.style.display = 'flex';
+          return;
+        }
+        // Fallback: modal footer (if panel not available)
+        var footer = document.querySelector("._mft");
+        if (!footer || document.getElementById("_dupWarnBanner")) return;
+        var warn = document.createElement("div");
+        warn.id = "_dupWarnBanner";
+        warn.style.cssText =
+          "background:linear-gradient(90deg,#fff7ed,#ffedd5);border:1.5px solid #fb923c;" +
+          "border-radius:10px;padding:10px 14px;margin:0 16px 14px;font-size:12px;color:#9a3412;" +
+          "display:flex;align-items:flex-start;gap:8px;";
+        warn.innerHTML =
+          '<i class="fa-solid fa-triangle-exclamation" style="margin-top:1px;flex-shrink:0;color:#ea580c;"></i>' +
+          '<span><b>Possible duplicate:</b> A contribution for <b>' + forMonth + ' ' + year + '</b> ' +
+          'already exists for this member (Receipt: ' + escapeHtml(existing.ReceiptID || "—") + '). ' +
+          'Submit only if this is intentional.</span>';
+        footer.parentNode.insertBefore(warn, footer);
+      })();
+
+
       function _updatePrevSummary() {
         const u = users.find(x=>String(x.UserId)===document.getElementById("prev_user")?.value);
         const nm = u ? u.Name : document.getElementById("prev_user")?.value || "";
@@ -5010,83 +5321,248 @@
 
     var _contribSubmitInFlight = false; // guard: prevents double-submit
     async function _submitContributionFromPreview() {
-      if (_contribSubmitInFlight) {
-        return;
-      }
+      if (_contribSubmitInFlight) return;
       _contribSubmitInFlight = true;
+
+      // CRITICAL: Snapshot all DOM values NOW before any panel/async call.
+      // spOpen() re-renders sp-contrib-body, destroying all prev_* elements.
+      const _userId     = (document.getElementById("prev_user")     || {}).value || "";
+      const _amount     = (document.getElementById("prev_amount")   || {}).value || "";
+      const _year       = (document.getElementById("prev_year")     || {}).value || "";
+      const _forMonth   = (document.getElementById("prev_month")    || {}).value || "";
+      const _typeId     = (document.getElementById("prev_type")     || {}).value || "";
+      const _occasionId = (document.getElementById("prev_occasion") || {}).value || "";
+      const _note       = (document.getElementById("prev_note")     || {}).value || "";
+      const _payMode    = (document.getElementById("prev_mode")     || {}).value || "UPI";
+
       const btn = document.getElementById("prev_submitBtn");
-      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; btn._noAutoLoad = true; }
-      const userId = document.getElementById("prev_user").value;
-      const amount = document.getElementById("prev_amount").value;
-      const year = document.getElementById("prev_year").value;
-      if (!userId || !amount || Number(amount) <= 0) {
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; }
+
+      if (!_userId || !_amount || Number(_amount) <= 0) {
         _contribSubmitInFlight = false;
-        if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
+        if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm &amp; Submit'; }
         return toast("Please select a user and enter a valid amount.", "error");
       }
       try {
         const _ps = JSON.parse(localStorage.getItem("session") || "{}");
         const payload = {
-          action: "addContribution",
-          // [ID] FIX: No Id passed — backend generates CONT-NNNNN sequentially
-          UserId: userId,
-          Amount: amount,
-          ForMonth: document.getElementById("prev_month").value,
-          Year: year,   // ← passed to backend so receipt ID uses selected year (MNR-YYYY-NNNNN)
-          TypeId: document.getElementById("prev_type").value,
-          OccasionId: document.getElementById("prev_occasion").value,
-          Note: document.getElementById("prev_note").value,
-          PaymentMode: document.getElementById("prev_mode").value,
+          action:       "addContribution",
+          UserId:       _userId,
+          Amount:       _amount,
+          ForMonth:     _forMonth,
+          Year:         _year,
+          TypeId:       _typeId,
+          OccasionId:   _occasionId,
+          Note:         _note,
+          PaymentMode:  _payMode,
           sessionToken: _ps.sessionToken || "",
-          userId: _ps.userId || "",
-          AdminName: _ps.name || "Admin",
+          userId:       _ps.userId || "",
+          AdminName:    _ps.name || "Admin",
         };
+        window._contribFailedPayload = payload; // store for retry
         let res = await postData(payload);
         if (res.status === "success") {
           _contribSubmitInFlight = false;
-          closeModal();
-          const rid = res.receiptId;
-          let msg = "✅ Contribution saved! Receipt: " + rid;
-          if (res.emailSent) msg += " · 📧 Receipt email sent";
-          if (res.emailSkipped) msg += " · ⚠️ Email quota reached";
-          toast(msg);
-          document.getElementById("amount").value = "";
-          document.getElementById("note").value = "";
-          // UX FIX: Reset all form fields to defaults after save
-          const _now2 = new Date();
-          const _curMonth = MONTHS[_now2.getMonth()];
-          const _mEl = document.getElementById("month");
-          if (_mEl) _mEl.value = _curMonth;
-          const _pmEl = document.getElementById("paymentMode");
-          if (_pmEl) _pmEl.value = "UPI";
-          const _occEl = document.getElementById("occasion");
-          if (_occEl) _occEl.selectedIndex = 0;
-          const _yrEl = document.getElementById("contribYear");
-          if (_yrEl) _yrEl.value = String(_now2.getFullYear());
-          const _typeEl = document.getElementById("type");
-          if (_typeEl) _typeEl.selectedIndex = 0;
-          // clear draft
-          try { localStorage.removeItem("_contrib_draft"); } catch(e){}
-          smartRefresh("contributions");
-          // updateSidebarSummary no longer reads email quota (async race removed).
-          // _refreshEmailQuotaUI is the sole updater: bust cache → fresh server fetch.
-          // Only call it when server confirmed an email was actually sent.
-          if (res.emailSent) {
-            setTimeout(_refreshEmailQuotaUI, 800);
-          } else {
+          const rid = res.receiptId || "";
+          const emailNote = res.emailSent
+            ? "\u{1F4E7} Receipt email sent to member."
+            : (res.emailSkipped ? "\u26A0\uFE0F Email quota reached \u2014 email not sent." : "");
+
+          // Reset original form fields before switching state
+          try {
+            const _now2 = new Date();
+            const _g = (id) => document.getElementById(id);
+            if (_g("amount"))      _g("amount").value = "";
+            if (_g("note"))        _g("note").value = "";
+            if (_g("month"))       _g("month").value = MONTHS[_now2.getMonth()];
+            if (_g("paymentMode")) _g("paymentMode").value = "UPI";
+            if (_g("occasion"))    _g("occasion").selectedIndex = 0;
+            if (_g("contribYear")) _g("contribYear").value = String(_now2.getFullYear());
+            if (_g("type"))        _g("type").selectedIndex = 0;
+            try { localStorage.removeItem("_contrib_draft"); } catch(e) {}
+          } catch(e) {}
+
+          // Show success state in panel body (panel stays open)
+          const cpBody = document.getElementById("sp-contrib-body");
+          if (cpBody) {
+            cpBody.innerHTML =
+              '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px;text-align:center;padding:20px;">' +
+                '<div style="width:72px;height:72px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #6ee7b7;animation:_csBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">' +
+                  '<i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:2rem;"></i>' +
+                '</div>' +
+                '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px;">Contribution Saved!</div>' +
+                (rid ? '<div style="font-size:13px;font-weight:600;color:#15803d;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:7px 16px;margin-bottom:10px;">Receipt: ' + escapeHtml(rid) + '</div>' : '') +
+                (emailNote ? '<div style="font-size:12px;color:#64748b;margin-bottom:14px;">' + emailNote + '</div>' : '<div style="margin-bottom:14px;"></div>') +
+              '</div>' +
+              '<div class="sp-actions" style="margin-top:auto;">' +
+                '<button class="sp-save-btn sp-save-green" onclick="spOpen(\'contrib\')">' +
+                  '<i class="fa-solid fa-plus"></i> Add Another' +
+                '</button>' +
+                '<button class="sp-cancel-btn" onclick="spClose()">' +
+                  '<i class="fa-solid fa-xmark"></i> Close' +
+                '</button>' +
+              '</div>';
           }
-          // _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
+          smartRefresh("contributions");
+          if (res.emailSent) setTimeout(_refreshEmailQuotaUI, 800);
         } else {
-          toast("❌ Failed to add.", "error");
           _contribSubmitInFlight = false;
-          if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
+          const errMsg = res.message || res.error || "Something went wrong. Please try again.";
+          const cpBodyErr = document.getElementById("sp-contrib-body");
+          if (cpBodyErr) {
+            cpBodyErr.innerHTML =
+              '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+                '<div style="width:72px;height:72px;background:linear-gradient(135deg,#fef2f2,#fecaca);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #fca5a5;">' +
+                  '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;font-size:2rem;"></i>' +
+                '</div>' +
+                '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Save Failed</div>' +
+                '<div style="font-size:12.5px;color:#64748b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;">' + escapeHtml(errMsg) + '</div>' +
+              '</div>' +
+              '<div class="sp-actions" style="margin-top:auto;">' +
+                '<button class="sp-save-btn" style="background:#e74c3c;color:#fff;" onclick="_retryContribFailed()">' +
+                  '<i class="fa-solid fa-rotate-right"></i> Retry' +
+                '</button>' +
+                '<button class="sp-cancel-btn" onclick="spClose()">' +
+                  '<i class="fa-solid fa-xmark"></i> Close' +
+                '</button>' +
+              '</div>';
+          } else {
+            toast("\u274C " + errMsg, "error");
+            if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm &amp; Submit'; }
+          }
         }
       } catch (err) {
-        toast("❌ " + err.message, "error");
         _contribSubmitInFlight = false;
-        if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Submit'; }
+        const errMsg = err.message || "Network error. Please try again.";
+        const cpBodyCatch = document.getElementById("sp-contrib-body");
+        if (cpBodyCatch) {
+          cpBodyCatch.innerHTML =
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+              '<div style="width:72px;height:72px;background:linear-gradient(135deg,#fef2f2,#fecaca);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #fca5a5;">' +
+                '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;font-size:2rem;"></i>' +
+              '</div>' +
+              '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Save Failed</div>' +
+              '<div style="font-size:12.5px;color:#64748b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;">' + escapeHtml(errMsg) + '</div>' +
+            '</div>' +
+            '<div class="sp-actions" style="margin-top:auto;">' +
+              '<button class="sp-save-btn" style="background:#e74c3c;color:#fff;" onclick="_retryContribFailed()">' +
+                '<i class="fa-solid fa-rotate-right"></i> Retry' +
+              '</button>' +
+              '<button class="sp-cancel-btn" onclick="spClose()">' +
+                '<i class="fa-solid fa-xmark"></i> Close' +
+              '</button>' +
+            '</div>';
+        } else {
+          toast("\u274C " + errMsg, "error");
+          if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm &amp; Submit'; }
+        }
       }
     }
+
+    /* ── Retry failed contribution using the exact same payload ── */
+    async function _retryContribFailed() {
+      const payload = window._contribFailedPayload;
+      if (!payload) return toast("No failed contribution to retry.", "error");
+      if (_contribSubmitInFlight) return;
+      _contribSubmitInFlight = true;
+
+      const cpBody = document.getElementById("sp-contrib-body");
+      if (cpBody) {
+        cpBody.innerHTML =
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+            '<i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:#334155;margin-bottom:18px;"></i>' +
+            '<div style="font-size:16px;font-weight:600;color:#1e293b;">Retrying…</div>' +
+            '<div style="font-size:12px;color:#64748b;margin-top:6px;">Please wait, do not close.</div>' +
+          '</div>';
+      }
+
+      try {
+        const res = await postData(payload);
+        _contribSubmitInFlight = false;
+        if (res.status === "success") {
+          window._contribFailedPayload = null;
+          const rid = res.receiptId || "";
+          const emailNote = res.emailSent
+            ? "\u{1F4E7} Receipt email sent to member."
+            : (res.emailSkipped ? "\u26A0\uFE0F Email quota reached \u2014 email not sent." : "");
+          try {
+            const _now2 = new Date();
+            const _g = (id) => document.getElementById(id);
+            if (_g("amount"))      _g("amount").value = "";
+            if (_g("note"))        _g("note").value = "";
+            if (_g("month"))       _g("month").value = MONTHS[_now2.getMonth()];
+            if (_g("paymentMode")) _g("paymentMode").value = "UPI";
+            if (_g("occasion"))    _g("occasion").selectedIndex = 0;
+            if (_g("contribYear")) _g("contribYear").value = String(_now2.getFullYear());
+            if (_g("type"))        _g("type").selectedIndex = 0;
+            try { localStorage.removeItem("_contrib_draft"); } catch(e) {}
+          } catch(e) {}
+          if (cpBody) {
+            cpBody.innerHTML =
+              '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px;text-align:center;padding:20px;">' +
+                '<div style="width:72px;height:72px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #6ee7b7;animation:_csBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">' +
+                  '<i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:2rem;"></i>' +
+                '</div>' +
+                '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px;">Contribution Saved!</div>' +
+                (rid ? '<div style="font-size:13px;font-weight:600;color:#15803d;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:7px 16px;margin-bottom:10px;">Receipt: ' + escapeHtml(rid) + '</div>' : '') +
+                (emailNote ? '<div style="font-size:12px;color:#64748b;margin-bottom:14px;">' + emailNote + '</div>' : '<div style="margin-bottom:14px;"></div>') +
+              '</div>' +
+              '<div class="sp-actions" style="margin-top:auto;">' +
+                '<button class="sp-save-btn sp-save-green" onclick="spOpen(\'contrib\')">' +
+                  '<i class="fa-solid fa-plus"></i> Add Another' +
+                '</button>' +
+                '<button class="sp-cancel-btn" onclick="spClose()">' +
+                  '<i class="fa-solid fa-xmark"></i> Close' +
+                '</button>' +
+              '</div>';
+          }
+          smartRefresh("contributions");
+          if (res.emailSent) setTimeout(_refreshEmailQuotaUI, 800);
+        } else {
+          const errMsg = res.message || res.error || "Something went wrong. Please try again.";
+          if (cpBody) {
+            cpBody.innerHTML =
+              '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+                '<div style="width:72px;height:72px;background:linear-gradient(135deg,#fef2f2,#fecaca);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #fca5a5;">' +
+                  '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;font-size:2rem;"></i>' +
+                '</div>' +
+                '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Save Failed</div>' +
+                '<div style="font-size:12.5px;color:#64748b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;">' + escapeHtml(errMsg) + '</div>' +
+              '</div>' +
+              '<div class="sp-actions" style="margin-top:auto;">' +
+                '<button class="sp-save-btn" style="background:#e74c3c;color:#fff;" onclick="_retryContribFailed()">' +
+                  '<i class="fa-solid fa-rotate-right"></i> Retry' +
+                '</button>' +
+                '<button class="sp-cancel-btn" onclick="spClose()">' +
+                  '<i class="fa-solid fa-xmark"></i> Close' +
+                '</button>' +
+              '</div>';
+          }
+        }
+      } catch(err) {
+        _contribSubmitInFlight = false;
+        const errMsg = err.message || "Network error. Please try again.";
+        if (cpBody) {
+          cpBody.innerHTML =
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+              '<div style="width:72px;height:72px;background:linear-gradient(135deg,#fef2f2,#fecaca);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #fca5a5;">' +
+                '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;font-size:2rem;"></i>' +
+              '</div>' +
+              '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Save Failed</div>' +
+              '<div style="font-size:12.5px;color:#64748b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;">' + escapeHtml(errMsg) + '</div>' +
+            '</div>' +
+            '<div class="sp-actions" style="margin-top:auto;">' +
+              '<button class="sp-save-btn" style="background:#e74c3c;color:#fff;" onclick="_retryContribFailed()">' +
+                '<i class="fa-solid fa-rotate-right"></i> Retry' +
+              '</button>' +
+              '<button class="sp-cancel-btn" onclick="spClose()">' +
+                '<i class="fa-solid fa-xmark"></i> Close' +
+              '</button>' +
+            '</div>';
+        }
+      }
+    }
+    window._retryContribFailed = _retryContribFailed;
     // Exposed as window.deleteContribution so _wrapFn can add spinner to the trash button
     async function deleteContribution(id) {
       if (!checkSession()) return;
@@ -5141,11 +5617,22 @@
     }
     async function addExpense() {
       if (!checkSession()) return;
+      // [DUP-FIX-2] Prevent double-submit on expense form
+      var _expBtn = document.querySelector("#expensePage button[onclick*='addExpense']");
+      if (_expBtn) {
+        if (_expBtn._inFlight) return;
+        _expBtn._inFlight = true;
+        _expBtn.disabled = true;
+        _expBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
+      }
       let title = document.getElementById("title").value,
         amount = document.getElementById("expAmount").value,
         year = document.getElementById("expYear").value;
-      if (!title || !amount || amount <= 0)
-        return toast("Please enter a title and amount.", "error");
+      if (!title || !amount || amount <= 0) {
+        toast("Please enter a title and amount.", "error");
+        if (_expBtn) { _expBtn._inFlight = false; _expBtn.disabled = false; _expBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense'; }
+        return;
+      }
       try {
         let res = await postData({
           action: "addExpense",
@@ -5165,6 +5652,8 @@
         smartRefresh("expenses");
       } catch (err) {
         toast("❌ " + err.message, "error");
+      } finally {
+        if (_expBtn) { _expBtn._inFlight = false; _expBtn.disabled = false; _expBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense'; }
       }
     }
 
@@ -7346,48 +7835,62 @@
               )}</option>`
           )
           .join("");
-      let html = `
-          <div class="_mhdr"><h3><i class="fa-solid fa-person-walking-arrow-right"></i> Walk-in / Manual Entry</h3><button class="_mcls" onclick="closeModal()">×</button></div>
-          <div class="_mbdy">
-            <div style="background:#fff8e8;border:1px solid #f7a01a44;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#946c44;">
-              <i class="fa-solid fa-circle-info"></i> Use this for donors who visit in person and do <b>not</b> have a registered account.
-            </div>
-            <label class="_fl">Donor Full Name <span style="color:#e74c3c">*</span></label>
-            <input class="_fi" id="wi_name" placeholder="e.g. Ramesh Kumar" />
-            <label class="_fl">Mobile Number (optional)</label>
-            <input class="_fi" id="wi_mobile" placeholder="e.g. 9876543210" maxlength="15" />
-            <label class="_fl">Email <span style="color:#888;font-weight:400;font-size:10px;">(optional — receipt will be sent if provided)</span></label>
-            <input class="_fi" id="wi_email" type="email" placeholder="e.g. donor@email.com" />
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div>
-                <label class="_fl">Amount (₹) <span style="color:#e74c3c">*</span></label>
-                <input class="_fi" id="wi_amount" type="number" min="1" placeholder="Enter amount" />
-              </div>
-              <div>
-                <label class="_fl">Year <span style="color:#e74c3c">*</span></label>
-                <select class="_fi" id="wi_year">${yearOpts}</select>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div>
-                <label class="_fl">Month</label>
-                <select class="_fi" id="wi_month"><option value="">— All / General —</option>${monthOpts}</select>
-              </div>
-              <div>
-                <label class="_fl">Type</label>
-                <select class="_fi" id="wi_type">${typeOpts}</select>
-              </div>
-            </div>
-            <label class="_fl">Occasion</label>
-            <select class="_fi" id="wi_occasion">${occasionOpts}</select>
-            <label class="_fl">Note / Purpose</label>
-            <input class="_fi" id="wi_note" placeholder="e.g. Prasad, Pooja, Birthday" />
+      const wiPanelBody = document.getElementById("sp-walkin-body");
+      if (!wiPanelBody) return;
+      wiPanelBody.innerHTML = `
+        <div style="background:#fff8e8;border:1px solid #f7a01a44;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#946c44;">
+          <i class="fa-solid fa-circle-info"></i> Use this for donors who visit in person and do <b>not</b> have a registered account.
+        </div>
+        <div class="sp-field-group">
+          <label class="sp-label">Donor Full Name <span class="sp-required">*</span></label>
+          <input class="sp-input" id="wi_name" placeholder="e.g. Ramesh Kumar" />
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Mobile <span class="sp-optional">(optional)</span></label>
+            <input class="sp-input" id="wi_mobile" placeholder="e.g. 9876543210" maxlength="15" />
           </div>
-          <div class="_mft">
-            <button class="_mbtn" style="background:#999;" onclick="closeModal()">Cancel</button>
-            <button class="_mbtn" style="background:#f7a01a;" onclick="saveWalkIn()"><i class="fa-solid fa-check"></i> Save & Get Receipt</button>
-          </div>`;
-      openModal(html, "500px");
+          <div class="sp-field-group">
+            <label class="sp-label">Email <span class="sp-optional">(receipt if provided)</span></label>
+            <input class="sp-input" id="wi_email" type="email" placeholder="donor@email.com" />
+          </div>
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Amount (₹) <span class="sp-required">*</span></label>
+            <input class="sp-input" id="wi_amount" type="number" min="1" placeholder="Enter amount" />
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Year <span class="sp-required">*</span></label>
+            <select class="sp-input" id="wi_year">${yearOpts}</select>
+          </div>
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Month</label>
+            <select class="sp-input" id="wi_month"><option value="">— All / General —</option>${monthOpts}</select>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Type</label>
+            <select class="sp-input" id="wi_type">${typeOpts}</select>
+          </div>
+        </div>
+        <div class="sp-field-group">
+          <label class="sp-label">Occasion</label>
+          <select class="sp-input" id="wi_occasion">${occasionOpts}</select>
+        </div>
+        <div class="sp-field-group">
+          <label class="sp-label">Note / Purpose <span class="sp-optional">(optional)</span></label>
+          <input class="sp-input" id="wi_note" placeholder="e.g. Prasad, Pooja, Birthday" />
+        </div>
+        <div class="sp-actions">
+          <button class="sp-save-btn" style="background:#b45309;color:#fff;" onclick="saveWalkIn()">
+            <i class="fa-solid fa-check"></i> Save &amp; Get Receipt
+          </button>
+          <button class="sp-cancel-btn" onclick="spClose()">Cancel</button>
+        </div>`;
+
+      spOpen("walkin");
     }
 
     async function saveWalkIn() {
@@ -7469,9 +7972,66 @@
           <button class="_mbtn" style="background:#94a3b8;" onclick="closeModal();openWalkInContribution()"><i class="fa-solid fa-arrow-left"></i> Back & Edit</button>
           <button class="_mbtn" id="wprev_submitBtn" style="background:#946c44;" onclick="_submitWalkInFromPreview()"><i class="fa-solid fa-check"></i> Confirm & Save</button>
         </div>`;
-      openModal(previewHtml, "560px");
+      // Show preview in the same slide panel (replace body content)
+      const wiPrevBody = document.getElementById("sp-walkin-body");
+      if (!wiPrevBody) { openModal(previewHtml, "560px"); return; }
+      wiPrevBody.innerHTML = `
+        <div style="background:linear-gradient(135deg,#fff8e8,#fef3cd);border:1.5px solid #f7a01a44;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#946c44;">
+          <i class="fa-solid fa-circle-info"></i> Review all details. <b>Edit any field inline</b> before confirming.
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Donor Full Name <span class="sp-required">*</span></label>
+            <input class="sp-input" id="wprev_name" value="${escapeHtml(name)}" placeholder="Donor name" />
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Mobile</label>
+            <input class="sp-input" id="wprev_mobile" value="${escapeHtml(mobile)}" placeholder="Mobile number" />
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Email <span class="sp-optional">(optional)</span></label>
+            <input class="sp-input" id="wprev_email" type="email" value="${escapeHtml(email)}" placeholder="donor@email.com" />
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Amount (₹) <span class="sp-required">*</span></label>
+            <input class="sp-input" id="wprev_amount" type="number" min="1" value="${escapeHtml(amount)}" />
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Month</label>
+            <select class="sp-input" id="wprev_month">${monthOptsWI}</select>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Year</label>
+            <select class="sp-input" id="wprev_year">${yearOptsWI}</select>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Type</label>
+            <select class="sp-input" id="wprev_type">${typeOptsWI}</select>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Occasion</label>
+            <select class="sp-input" id="wprev_occasion">${occasionOptsWI}</select>
+          </div>
+        </div>
+        <div class="sp-field-group">
+          <label class="sp-label">Note / Purpose</label>
+          <input class="sp-input" id="wprev_note" value="${escapeHtml(note)}" placeholder="e.g. Prasad, Pooja, Birthday" />
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-top:4px;font-size:12px;color:#15803d;">
+          <i class="fa-solid fa-circle-check"></i> <b>Summary:</b>
+          <span id="wprev_summary">${escapeHtml(name)} · ₹${Number(amount).toLocaleString("en-IN")} · ${month||"General"} ${year} · ${typeNameWI}</span>
+        </div>
+        <div class="sp-actions" style="margin-top:16px;">
+          <button class="sp-save-btn" style="background:#b45309;color:#fff;" id="wprev_submitBtn" onclick="_submitWalkInFromPreview()">
+            <i class="fa-solid fa-check"></i> Confirm &amp; Save
+          </button>
+          <button class="sp-cancel-btn" onclick="openWalkInContribution()">
+            <i class="fa-solid fa-arrow-left"></i> Back
+          </button>
+        </div>`;
+      spOpen("walkin");
 
-      // Live summary updater
+      // Live summary updater — wire up after DOM is populated
       function _updateWISummary() {
         const nm = document.getElementById("wprev_name")?.value||"";
         const amt = document.getElementById("wprev_amount")?.value||"0";
@@ -7489,7 +8049,11 @@
       });
     }
 
+    var _walkInInFlight = false; // [DUP-FIX-3] guard: prevents double-submit on walk-in form
     async function _submitWalkInFromPreview() {
+      // [DUP-FIX-3] Reject if already in flight — btn.disabled alone isn't enough on mobile fast-tap
+      if (_walkInInFlight) return;
+      _walkInInFlight = true;
       const btn = document.getElementById("wprev_submitBtn");
       if (btn) { btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Saving...'; btn._noAutoLoad = true; }
       const name = (document.getElementById("wprev_name")?.value||"").trim();
@@ -7501,8 +8065,8 @@
       const typeId = document.getElementById("wprev_type")?.value;
       const occasionId = document.getElementById("wprev_occasion")?.value;
       const note = (document.getElementById("wprev_note")?.value||"").trim();
-      if (!name) { if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter donor name.", "error"); }
-      if (!amount || Number(amount) <= 0) { if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter a valid amount.", "error"); }
+      if (!name) { _walkInInFlight=false; if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter donor name.", "error"); }
+      if (!amount || Number(amount) <= 0) { _walkInInFlight=false; if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save';} return toast("Please enter a valid amount.", "error"); }
       // [ID] Send "WALKIN" as signal — backend generates WALKIN_YYYY_NNNNN (year-wise sequential)
       // [FIX-1] Also pass WalkInYear so backend uses the form's selected year (not server clock year)
       const walkInUserId = "WALKIN";
@@ -7520,44 +8084,238 @@
           Note: (note ? note + " | " : "") + "Walk-in: " + name + (mobile ? " | " + mobile : ""),
         };
         if (email) payload.WalkInEmail = email;
+        window._walkInFailedPayload = { payload, name, mobile, email, amount, month, year, typeId };
         let res = await postData(payload);
         if (res.status === "success") {
-          let msg = "✅ Walk-in entry saved!";
-          if (email) {
-            if (res.emailSent) msg += " · 📧 Receipt emailed to " + email;
-            else if (res.emailSkipped) msg += " · ⚠️ Email quota reached";
-          }
-          toast(msg);
-          const mockC = {
-            ReceiptID: res.receiptId || "TRX-wi" + Date.now(),
-            UserId: res.walkInUserId || "WALKIN",   // [FIX-4] Use generated WALKIN_YYYY_NNNNN from server
-            Amount: amount,
-            ForMonth: month || "General",
-            Year: year,
-            Note: note || "",
-            PaymentDate: (function(){ var n=new Date(); return String(n.getDate()).padStart(2,"0")+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+n.getFullYear()+" "+String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0")+":"+String(n.getSeconds()).padStart(2,"0"); })(),
-          };
+          _walkInInFlight = false;
+          const rid = res.receiptId || ("TRX-wi" + Date.now());
           const tName = types.find(t => String(t.TypeId) === String(typeId));
-          const oName = occasions.find(o => String(o.OccasionId) === String(occasionId));
-          closeModal();
+          const typeLbl  = tName ? tName.TypeName : "Contribution";
+          const monthLbl = month || "General";
+          const emailNote = email
+            ? (res.emailSent
+                ? "Receipt emailed to " + escapeHtml(email) + "."
+                : (res.emailSkipped ? "Email quota reached - email not sent." : ""))
+            : "";
+
+          // Show receipt card inside the walk-in slide panel
+          const wiBody = document.getElementById("sp-walkin-body");
+          if (wiBody) {
+            wiBody.innerHTML =
+              '<div style="display:flex;flex-direction:column;align-items:center;' +
+              'justify-content:center;min-height:300px;text-align:center;padding:20px 16px 10px;">' +
+                '<div style="width:72px;height:72px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);' +
+                'border-radius:50%;display:flex;align-items:center;justify-content:center;' +
+                'margin-bottom:16px;border:2px solid #6ee7b7;' +
+                'animation:_csBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">' +
+                  '<i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:2rem;"></i>' +
+                '</div>' +
+                '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:4px;">Walk-in Entry Saved!</div>' +
+                '<div style="font-size:12px;color:#64748b;margin-bottom:14px;">Entry recorded successfully</div>' +
+              '</div>' +
+              '<div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;' +
+              'padding:14px 16px;margin:0 4px 14px;font-size:12.5px;">' +
+                '<div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;text-align:left;">' +
+                  '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Receipt</span>' +
+                  '<strong style="color:#15803d;font-size:13px;">' + escapeHtml(rid) + '</strong>' +
+                  '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Donor</span>' +
+                  '<strong style="color:#1e293b;">' + escapeHtml(name) + '</strong>' +
+                  '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Amount</span>' +
+                  '<strong style="color:#1e293b;">Rs.' + Number(amount).toLocaleString("en-IN") + '</strong>' +
+                  '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Period</span>' +
+                  '<strong style="color:#1e293b;">' + escapeHtml(monthLbl) + ' ' + escapeHtml(year || "") + '</strong>' +
+                  '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Type</span>' +
+                  '<strong style="color:#1e293b;">' + escapeHtml(typeLbl) + '</strong>' +
+                  (mobile ? '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Mobile</span>' +
+                            '<strong style="color:#1e293b;">' + escapeHtml(mobile) + '</strong>' : '') +
+                '</div>' +
+                (emailNote ? '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0;' +
+                             'font-size:11.5px;color:#64748b;">' + emailNote + '</div>' : '') +
+              '</div>' +
+              '<div class="sp-actions">' +
+                '<button class="sp-save-btn" style="background:#b45309;color:#fff;" onclick="openWalkInContribution()">' +
+                  '<i class="fa-solid fa-plus"></i> Add Another' +
+                '</button>' +
+                '<button class="sp-cancel-btn" onclick="spClose()">' +
+                  '<i class="fa-solid fa-xmark"></i> Close' +
+                '</button>' +
+              '</div>';
+          }
           smartRefresh("contributions");
-          // Refresh quota ONLY when server confirmed email was actually sent.
-          // showReceipt() below opens a receipt modal for display only — it must
-          // NOT cause any quota refresh. The MutationObserver will attach a click
-          // handler to the receipt's "Send Email" button; that click path is the
-          // only other legitimate quota refresh trigger.
           if (res.emailSent) setTimeout(_refreshEmailQuotaUI, 800);
-          // _dashSyncFromAdmin() already called by app.js at end of smartRefresh.
-          setTimeout(() => showReceipt(mockC, name, tName?.TypeName || "Contribution", oName?.OccasionName || "—", true), 400);
         } else {
-          toast("❌ Failed: " + (res.message || ""), "error");
-          if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save'; }
+          _walkInInFlight = false;
+          const errMsg = res.message || "Something went wrong.";
+          const wiBodyErr = document.getElementById("sp-walkin-body");
+          if (wiBodyErr) {
+            wiBodyErr.innerHTML =
+              '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+                '<div style="width:72px;height:72px;background:linear-gradient(135deg,#fef2f2,#fecaca);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #fca5a5;">' +
+                  '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;font-size:2rem;"></i>' +
+                '</div>' +
+                '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Save Failed</div>' +
+                '<div style="font-size:12.5px;color:#64748b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;">' + escapeHtml(errMsg) + '</div>' +
+              '</div>' +
+              '<div class="sp-actions" style="margin-top:auto;">' +
+                '<button class="sp-save-btn" style="background:#b45309;color:#fff;" onclick="_retryWalkInFailed()">' +
+                  '<i class="fa-solid fa-rotate-right"></i> Retry' +
+                '</button>' +
+                '<button class="sp-cancel-btn" onclick="spClose()">' +
+                  '<i class="fa-solid fa-xmark"></i> Close' +
+                '</button>' +
+              '</div>';
+          } else {
+            toast("Failed: " + errMsg, "error");
+            if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save'; }
+          }
         }
       } catch (e) {
-        toast("❌ " + e.message, "error");
-        if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save'; }
+        _walkInInFlight = false;
+        const errMsg = e.message || "Network error.";
+        const wiBodyCatch = document.getElementById("sp-walkin-body");
+        if (wiBodyCatch) {
+          wiBodyCatch.innerHTML =
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+              '<div style="width:72px;height:72px;background:linear-gradient(135deg,#fef2f2,#fecaca);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #fca5a5;">' +
+                '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;font-size:2rem;"></i>' +
+              '</div>' +
+              '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Save Failed</div>' +
+              '<div style="font-size:12.5px;color:#64748b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;">' + escapeHtml(errMsg) + '</div>' +
+            '</div>' +
+            '<div class="sp-actions" style="margin-top:auto;">' +
+              '<button class="sp-save-btn" style="background:#b45309;color:#fff;" onclick="_retryWalkInFailed()">' +
+                '<i class="fa-solid fa-rotate-right"></i> Retry' +
+              '</button>' +
+              '<button class="sp-cancel-btn" onclick="spClose()">' +
+                '<i class="fa-solid fa-xmark"></i> Close' +
+              '</button>' +
+            '</div>';
+        } else {
+          toast(errMsg, "error");
+          if (btn) { btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-check"></i> Confirm & Save'; }
+        }
       }
     }
+
+    /* ── Retry failed walk-in using the exact same payload ── */
+    async function _retryWalkInFailed() {
+      const stored = window._walkInFailedPayload;
+      if (!stored) return toast("No failed walk-in entry to retry.", "error");
+      if (_walkInInFlight) return;
+      _walkInInFlight = true;
+
+      const wiBody = document.getElementById("sp-walkin-body");
+      if (wiBody) {
+        wiBody.innerHTML =
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+            '<i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:#334155;margin-bottom:18px;"></i>' +
+            '<div style="font-size:16px;font-weight:600;color:#1e293b;">Retrying…</div>' +
+            '<div style="font-size:12px;color:#64748b;margin-top:6px;">Please wait, do not close.</div>' +
+          '</div>';
+      }
+
+      try {
+        const res = await postData(stored.payload);
+        _walkInInFlight = false;
+        if (res.status === "success") {
+          window._walkInFailedPayload = null;
+          const rid = res.receiptId || ("TRX-wi" + Date.now());
+          const tName = types.find(t => String(t.TypeId) === String(stored.typeId));
+          const typeLbl  = tName ? tName.TypeName : "Contribution";
+          const monthLbl = stored.month || "General";
+          const emailNote = stored.email
+            ? (res.emailSent
+                ? "Receipt emailed to " + escapeHtml(stored.email) + "."
+                : (res.emailSkipped ? "Email quota reached - email not sent." : ""))
+            : "";
+          if (wiBody) {
+            wiBody.innerHTML =
+              '<div style="display:flex;flex-direction:column;align-items:center;' +
+              'justify-content:center;min-height:300px;text-align:center;padding:20px 16px 10px;">' +
+                '<div style="width:72px;height:72px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);' +
+                'border-radius:50%;display:flex;align-items:center;justify-content:center;' +
+                'margin-bottom:16px;border:2px solid #6ee7b7;' +
+                'animation:_csBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">' +
+                  '<i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:2rem;"></i>' +
+                '</div>' +
+                '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:4px;">Walk-in Entry Saved!</div>' +
+                '<div style="font-size:12px;color:#64748b;margin-bottom:14px;">Entry recorded successfully</div>' +
+              '</div>' +
+              '<div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;' +
+              'padding:14px 16px;margin:0 4px 14px;font-size:12.5px;">' +
+                '<div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;text-align:left;">' +
+                  '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Receipt</span>' +
+                  '<strong style="color:#15803d;font-size:13px;">' + escapeHtml(rid) + '</strong>' +
+                  '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Donor</span>' +
+                  '<strong style="color:#1e293b;">' + escapeHtml(stored.name) + '</strong>' +
+                  '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Amount</span>' +
+                  '<strong style="color:#1e293b;">Rs.' + Number(stored.amount).toLocaleString("en-IN") + '</strong>' +
+                  '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Period</span>' +
+                  '<strong style="color:#1e293b;">' + escapeHtml(monthLbl) + ' ' + escapeHtml(stored.year || "") + '</strong>' +
+                  '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Type</span>' +
+                  '<strong style="color:#1e293b;">' + escapeHtml(typeLbl) + '</strong>' +
+                  (stored.mobile ? '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Mobile</span>' +
+                                   '<strong style="color:#1e293b;">' + escapeHtml(stored.mobile) + '</strong>' : '') +
+                '</div>' +
+                (emailNote ? '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0;' +
+                             'font-size:11.5px;color:#64748b;">' + emailNote + '</div>' : '') +
+              '</div>' +
+              '<div class="sp-actions">' +
+                '<button class="sp-save-btn" style="background:#b45309;color:#fff;" onclick="openWalkInContribution()">' +
+                  '<i class="fa-solid fa-plus"></i> Add Another' +
+                '</button>' +
+                '<button class="sp-cancel-btn" onclick="spClose()">' +
+                  '<i class="fa-solid fa-xmark"></i> Close' +
+                '</button>' +
+              '</div>';
+          }
+          smartRefresh("contributions");
+          if (res.emailSent) setTimeout(_refreshEmailQuotaUI, 800);
+        } else {
+          const errMsg = res.message || "Something went wrong.";
+          if (wiBody) {
+            wiBody.innerHTML =
+              '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+                '<div style="width:72px;height:72px;background:linear-gradient(135deg,#fef2f2,#fecaca);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #fca5a5;">' +
+                  '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;font-size:2rem;"></i>' +
+                '</div>' +
+                '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Save Failed</div>' +
+                '<div style="font-size:12.5px;color:#64748b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;">' + escapeHtml(errMsg) + '</div>' +
+              '</div>' +
+              '<div class="sp-actions" style="margin-top:auto;">' +
+                '<button class="sp-save-btn" style="background:#b45309;color:#fff;" onclick="_retryWalkInFailed()">' +
+                  '<i class="fa-solid fa-rotate-right"></i> Retry' +
+                '</button>' +
+                '<button class="sp-cancel-btn" onclick="spClose()">' +
+                  '<i class="fa-solid fa-xmark"></i> Close' +
+                '</button>' +
+              '</div>';
+          }
+        }
+      } catch(e) {
+        _walkInInFlight = false;
+        const errMsg = e.message || "Network error.";
+        if (wiBody) {
+          wiBody.innerHTML =
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+              '<div style="width:72px;height:72px;background:linear-gradient(135deg,#fef2f2,#fecaca);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #fca5a5;">' +
+                '<i class="fa-solid fa-circle-xmark" style="color:#dc2626;font-size:2rem;"></i>' +
+              '</div>' +
+              '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Save Failed</div>' +
+              '<div style="font-size:12.5px;color:#64748b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;">' + escapeHtml(errMsg) + '</div>' +
+            '</div>' +
+            '<div class="sp-actions" style="margin-top:auto;">' +
+              '<button class="sp-save-btn" style="background:#b45309;color:#fff;" onclick="_retryWalkInFailed()">' +
+                '<i class="fa-solid fa-rotate-right"></i> Retry' +
+              '</button>' +
+              '<button class="sp-cancel-btn" onclick="spClose()">' +
+                '<i class="fa-solid fa-xmark"></i> Close' +
+              '</button>' +
+            '</div>';
+        }
+      }
+    }
+    window._retryWalkInFailed = _retryWalkInFailed;
 
     /* ═══════════════════════════════════════════════════════
        IMPROVEMENT #6 — CONTRIBUTION TRACKER
@@ -10625,8 +11383,9 @@
       'saveEditContrib','saveEditUser','saveEditEvent','saveEventExpense','saveEditGoal',
       'saveAnnouncement','clearAnnouncement','saveChatbotSettings',
       'saveWalkIn','saveAdminProfile','saveAdminNewPassword',
-      'deleteContribution','deleteUser','deleteType','deleteOccasion','deleteExpenseType',
-      'deleteExpense','deleteEvent','deleteGoal','deleteGalleryPhoto',
+      // delete* functions are intentionally excluded from ASYNC_FNS:
+      // they call confirmModal() which has its own "Processing…" spinner on the confirm button.
+      // Adding _wrapFn spinner on the trash button too causes a double-spinner (see bug fix).
       'uploadGalleryPhoto','uploadExpenseReceipt','openReceiptAttach',
       'exportContribCSV','exportExpenseCSV','exportAuditCSV','exportAnnualReportPDF',
       'dash_exportPDF',
@@ -10634,7 +11393,7 @@
       'sendTrackerMsg','sendWhatsAppReport','sendWhatsAppPDFReport',
       'triggerManualMonthlyReport',
       'runHealthCheck','runTracker','loadTrafficStats',
-      'runBulkInsert','_executeBulkInsert',
+      'runBulkInsert','_executeBulkInsert','_retryBulkFailed',
       'loadContributionRequests','loadFeedbackAdmin','loadAuditLog','loadYearSummary',
       'refreshDashboardData',
       'fbMarkResolved','fbDeleteRow',
@@ -10643,6 +11402,7 @@
       'loadChatbotSettings',
       'downloadLocalBackup',
       '_submitContributionFromPreview','_submitWalkInFromPreview',
+      '_retryContribFailed','_retryWalkInFailed',
       '_confirmCorrectionEntry'
     ];
 
@@ -10653,10 +11413,6 @@
       saveEditEvent: 'Saving…', saveAnnouncement: 'Saving…', saveChatbotSettings: 'Saving…',
       saveWalkIn: 'Saving…', saveAdminProfile: 'Saving…',
       saveAdminNewPassword: 'Updating…',
-      deleteContribution: 'Deleting…',
-      deleteUser: 'Deleting…', deleteType: 'Deleting…',
-      deleteOccasion: 'Deleting…', deleteExpenseType: 'Deleting…',
-      deleteExpense: 'Deleting…', deleteEvent: 'Deleting…', deleteGoal: 'Deleting…',
       deleteGalleryPhoto: 'Deleting…',
       uploadGalleryPhoto: 'Uploading…', uploadExpenseReceipt: 'Uploading…',
       exportContribCSV: 'Exporting…', exportExpenseCSV: 'Exporting…',
