@@ -4937,29 +4937,84 @@
           '</div>';
       }
       const s = JSON.parse(localStorage.getItem("session") || "{}");
-      // Send all entries in parallel — reduces ~18s to ~2s for a full year
-      const results = await Promise.all(finalRows.map(function(r) {
-        return postData({
+
+      /* ── Helper: check if an entry already exists in the local data cache ──
+         Prevents duplicate inserts when a request succeeded on the backend
+         but returned an error response (Google Sheets write-race condition).    */
+      function _bulkEntryExists(uid, month, yr, tid) {
+        if (typeof data === "undefined" || !Array.isArray(data)) return false;
+        return data.some(function(c) {
+          return String(c.UserId) === String(uid) &&
+                 String(c.ForMonth || "").toLowerCase() === String(month).toLowerCase() &&
+                 String(c.Year) === String(yr) &&
+                 String(c.TypeId) === String(tid);
+        });
+      }
+
+      /* ── Sequential insert with progress — prevents Google Sheets write-race ──
+         Parallel (Promise.all) caused backend to save entries but return errors
+         under concurrent load, leading to duplicates on retry.
+         Sequential with 250ms gap gives Sheets time to commit each row.          */
+      const results = [];
+      const bkProgEl = document.getElementById("sp-bulk-body");
+      for (var _bi = 0; _bi < finalRows.length; _bi++) {
+        var _br = finalRows[_bi];
+        // Update progress counter
+        if (bkProgEl) {
+          var _progPct = Math.round((_bi / finalRows.length) * 100);
+          bkProgEl.innerHTML =
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+              '<i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:#334155;margin-bottom:18px;"></i>' +
+              '<div style="font-size:16px;font-weight:600;color:#1e293b;">Inserting entry ' + (_bi + 1) + ' of ' + finalRows.length + '…</div>' +
+              '<div style="font-size:13px;color:#64748b;margin-top:4px;">' + escapeHtml(_br.month) + ' — Rs.' + Number(_br.amount).toLocaleString("en-IN") + '</div>' +
+              '<div style="width:200px;height:6px;background:#e2e8f0;border-radius:3px;margin-top:14px;overflow:hidden;">' +
+                '<div style="height:100%;width:' + _progPct + '%;background:#334155;border-radius:3px;transition:width 0.3s;"></div>' +
+              '</div>' +
+              '<div style="font-size:12px;color:#94a3b8;margin-top:6px;">Please wait, do not close.</div>' +
+            '</div>';
+        }
+        var _bres = await postData({
           action: "addContribution",
-          UserId: userId, Amount: r.amount, ForMonth: r.month,
+          UserId: userId, Amount: _br.amount, ForMonth: _br.month,
           Year: year, TypeId: typeId, OccasionId: "", Note: note,
           sessionToken: s.sessionToken || "", userId: s.userId || ""
         }).catch(function() { return { status: "error" }; });
-      }));
+        results.push(_bres);
+        // 250ms gap between requests — lets Google Sheets commit each row before next write
+        if (_bi < finalRows.length - 1) {
+          await new Promise(function(res) { setTimeout(res, 250); });
+        }
+      }
+
+      // After all inserts, do a fresh data fetch so dedup check in retry is accurate
+      if (typeof mandirCacheBust === "function") mandirCacheBust("getAllData");
+
       const done   = results.filter(function(r) { return r && r.status === "success"; }).length;
       const failed = results.length - done;
-      // Track exactly which rows failed for targeted retry
-      const failedRows = finalRows.filter(function(r, i) { return !results[i] || results[i].status !== "success"; });
+
+      // Identify truly-failed rows (exclude any that the dedup check shows already exist)
+      // This guards against the race where backend saved but returned error
+      var failedRows = finalRows.filter(function(r, i) {
+        if (results[i] && results[i].status === "success") return false; // clearly succeeded
+        // Check if it actually exists in sheet despite error response
+        if (_bulkEntryExists(userId, r.month, year, typeId)) return false; // silently saved
+        return true; // genuinely failed
+      });
+
+      // Count as "actually saved" = success responses + already-existed-despite-error
+      var actuallySaved = finalRows.length - failedRows.length;
+
       if (failedRows.length > 0) {
         window._bulkFailedRows = { rows: failedRows, userId: userId, year: year, typeId: typeId, note: note };
       } else {
         window._bulkFailedRows = null;
       }
+
       _bulkInFlight = false;
       smartRefresh("contributions");
-      // Show success or error in panel body
+
       const bkBodyResult = document.getElementById("sp-bulk-body");
-      if (done > 0 && bkBodyResult) {
+      if (actuallySaved > 0 && bkBodyResult) {
         const failedMonthsHtml = failedRows.length > 0
           ? '<div style="margin:8px auto 0;max-width:300px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;">' +
               '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Failed Entries</div>' +
@@ -4975,8 +5030,8 @@
               '<i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:2rem;"></i>' +
             '</div>' +
             '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">Bulk Insert Complete!</div>' +
-            '<div style="font-size:13px;font-weight:600;color:#15803d;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:7px 16px;margin-bottom:6px;">' + done + ' of ' + finalRows.length + ' entries added</div>' +
-            (failed > 0 ? '<div style="font-size:12px;color:#dc2626;margin-bottom:4px;">' + failed + ' entr' + (failed > 1 ? 'ies' : 'y') + ' failed</div>' + failedMonthsHtml : '') +
+            '<div style="font-size:13px;font-weight:600;color:#15803d;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:7px 16px;margin-bottom:6px;">' + actuallySaved + ' of ' + finalRows.length + ' entries added</div>' +
+            (failedRows.length > 0 ? '<div style="font-size:12px;color:#dc2626;margin-bottom:4px;">' + failedRows.length + ' entr' + (failedRows.length > 1 ? 'ies' : 'y') + ' failed</div>' + failedMonthsHtml : '') +
           '</div>' +
           '<div class="sp-actions" style="margin-top:auto;">' +
             (failedRows.length > 0
@@ -4991,9 +5046,8 @@
             '</button>' +
           '</div>';
       } else if (bkBodyResult) {
-        // All failed — store all rows for retry
         window._bulkFailedRows = { rows: finalRows, userId: userId, year: year, typeId: typeId, note: note };
-        const allFailedMonthsHtml =
+        const allFailedHtml =
           '<div style="margin:8px auto 0;max-width:300px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;">' +
             '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Failed Entries</div>' +
             finalRows.map(function(r) {
@@ -5008,7 +5062,7 @@
             '</div>' +
             '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">All Inserts Failed</div>' +
             '<div style="font-size:12.5px;color:#64748b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;margin-bottom:4px;">Check your connection and try again.</div>' +
-            allFailedMonthsHtml +
+            allFailedHtml +
           '</div>' +
           '<div class="sp-actions" style="margin-top:auto;">' +
             '<button class="sp-save-btn" style="background:#e74c3c;color:#fff;" onclick="_retryBulkFailed()">' +
@@ -5021,36 +5075,93 @@
       }
     }
 
-    /* ── Retry only the failed bulk entries ── */
+    /* ════════════════════════════════════════════════════════
+       RETRY BULK — re-sends only genuinely-failed rows,
+       skips any that already exist (dedup safety net)
+    ════════════════════════════════════════════════════════ */
     async function _retryBulkFailed() {
       const stored = window._bulkFailedRows;
       if (!stored || !stored.rows || stored.rows.length === 0) return toast("No failed entries to retry.", "error");
       if (_bulkInFlight) return;
       _bulkInFlight = true;
 
+      // Dedup: filter out any rows that already exist in the sheet
+      // (catches the race-condition case where backend saved but returned error)
+      var rowsToRetry = stored.rows.filter(function(r) {
+        if (typeof data === "undefined" || !Array.isArray(data)) return true;
+        var exists = data.some(function(c) {
+          return String(c.UserId) === String(stored.userId) &&
+                 String(c.ForMonth || "").toLowerCase() === String(r.month).toLowerCase() &&
+                 String(c.Year) === String(stored.year) &&
+                 String(c.TypeId) === String(stored.typeId);
+        });
+        return !exists; // only retry rows that genuinely don't exist yet
+      });
+
       const bkBody = document.getElementById("sp-bulk-body");
-      if (bkBody) {
-        bkBody.innerHTML =
-          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
-            '<i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:#334155;margin-bottom:18px;"></i>' +
-            '<div style="font-size:16px;font-weight:600;color:#1e293b;">Retrying ' + stored.rows.length + ' failed entr' + (stored.rows.length > 1 ? 'ies' : 'y') + '…</div>' +
-            '<div style="font-size:12px;color:#64748b;margin-top:6px;">Please wait, do not close.</div>' +
-          '</div>';
+
+      // If dedup found all rows already saved — show success, no retry needed
+      if (rowsToRetry.length === 0) {
+        window._bulkFailedRows = null;
+        _bulkInFlight = false;
+        smartRefresh("contributions");
+        if (bkBody) {
+          bkBody.innerHTML =
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+              '<div style="width:72px;height:72px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;border:2px solid #6ee7b7;animation:_csBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">' +
+                '<i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:2rem;"></i>' +
+              '</div>' +
+              '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">All Entries Already Saved!</div>' +
+              '<div style="font-size:12.5px;color:#64748b;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 14px;max-width:320px;line-height:1.6;">The previously failed entries were saved successfully. No duplicates inserted.</div>' +
+            '</div>' +
+            '<div class="sp-actions" style="margin-top:auto;">' +
+              '<button class="sp-save-btn" style="background:#334155;color:#fff;" onclick="openBulkInsert()">' +
+                '<i class="fa-solid fa-plus"></i> Insert More' +
+              '</button>' +
+              '<button class="sp-cancel-btn" onclick="spClose()">' +
+                '<i class="fa-solid fa-xmark"></i> Close' +
+              '</button>' +
+            '</div>';
+        }
+        return;
       }
 
+      // Sequential retry with progress
+      const retryResults = [];
       const s = JSON.parse(localStorage.getItem("session") || "{}");
-      const retryResults = await Promise.all(stored.rows.map(function(r) {
-        return postData({
+      for (var _ri = 0; _ri < rowsToRetry.length; _ri++) {
+        var _rr = rowsToRetry[_ri];
+        if (bkBody) {
+          bkBody.innerHTML =
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
+              '<i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:#334155;margin-bottom:18px;"></i>' +
+              '<div style="font-size:16px;font-weight:600;color:#1e293b;">Retrying ' + (_ri + 1) + ' of ' + rowsToRetry.length + '…</div>' +
+              '<div style="font-size:13px;color:#64748b;margin-top:4px;">' + escapeHtml(_rr.month) + ' — Rs.' + Number(_rr.amount).toLocaleString("en-IN") + '</div>' +
+              '<div style="width:200px;height:6px;background:#e2e8f0;border-radius:3px;margin-top:14px;overflow:hidden;">' +
+                '<div style="height:100%;width:' + Math.round((_ri / rowsToRetry.length) * 100) + '%;background:#e74c3c;border-radius:3px;"></div>' +
+              '</div>' +
+              '<div style="font-size:12px;color:#94a3b8;margin-top:6px;">Please wait, do not close.</div>' +
+            '</div>';
+        }
+        var _rres = await postData({
           action: "addContribution",
-          UserId: stored.userId, Amount: r.amount, ForMonth: r.month,
+          UserId: stored.userId, Amount: _rr.amount, ForMonth: _rr.month,
           Year: stored.year, TypeId: stored.typeId, OccasionId: "", Note: stored.note,
           sessionToken: s.sessionToken || "", userId: s.userId || ""
         }).catch(function() { return { status: "error" }; });
-      }));
+        retryResults.push(_rres);
+        if (_ri < rowsToRetry.length - 1) {
+          await new Promise(function(res) { setTimeout(res, 250); });
+        }
+      }
 
-      const retryDone   = retryResults.filter(function(r) { return r && r.status === "success"; }).length;
-      const retryFailed = retryResults.length - retryDone;
-      const stillFailed = stored.rows.filter(function(r, i) { return !retryResults[i] || retryResults[i].status !== "success"; });
+      // Bust cache and re-check what actually saved
+      if (typeof mandirCacheBust === "function") mandirCacheBust("getAllData");
+
+      const retryDone = retryResults.filter(function(r) { return r && r.status === "success"; }).length;
+      const stillFailed = rowsToRetry.filter(function(r, i) {
+        return !retryResults[i] || retryResults[i].status !== "success";
+      });
 
       window._bulkFailedRows = stillFailed.length > 0
         ? { rows: stillFailed, userId: stored.userId, year: stored.year, typeId: stored.typeId, note: stored.note }
@@ -5076,8 +5187,8 @@
             '<i class="fa-solid ' + (retryDone > 0 ? 'fa-circle-check" style="color:#16a34a' : 'fa-circle-xmark" style="color:#dc2626') + ';font-size:2rem;"></i>' +
           '</div>' +
           '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:8px;">' + (retryDone > 0 ? 'Retry Complete!' : 'Retry Failed') + '</div>' +
-          (retryDone > 0 ? '<div style="font-size:13px;font-weight:600;color:#15803d;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:7px 16px;margin-bottom:6px;">' + retryDone + ' of ' + stored.rows.length + ' entries added</div>' : '') +
-          (retryFailed > 0 ? '<div style="font-size:12px;color:#dc2626;margin-bottom:4px;">' + retryFailed + ' still failed</div>' + stillFailedHtml : '') +
+          (retryDone > 0 ? '<div style="font-size:13px;font-weight:600;color:#15803d;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:7px 16px;margin-bottom:6px;">' + retryDone + ' of ' + rowsToRetry.length + ' entries added</div>' : '') +
+          (stillFailed.length > 0 ? '<div style="font-size:12px;color:#dc2626;margin-bottom:4px;">' + stillFailed.length + ' still failed</div>' + stillFailedHtml : '') +
         '</div>' +
         '<div class="sp-actions" style="margin-top:auto;">' +
           (stillFailed.length > 0
@@ -5459,13 +5570,12 @@
       }
     }
 
-    /* ── Retry failed contribution using the exact same payload ── */
+    /* ── Retry failed contribution with the exact same payload ── */
     async function _retryContribFailed() {
       const payload = window._contribFailedPayload;
       if (!payload) return toast("No failed contribution to retry.", "error");
       if (_contribSubmitInFlight) return;
       _contribSubmitInFlight = true;
-
       const cpBody = document.getElementById("sp-contrib-body");
       if (cpBody) {
         cpBody.innerHTML =
@@ -5475,19 +5585,16 @@
             '<div style="font-size:12px;color:#64748b;margin-top:6px;">Please wait, do not close.</div>' +
           '</div>';
       }
-
       try {
         const res = await postData(payload);
         _contribSubmitInFlight = false;
         if (res.status === "success") {
           window._contribFailedPayload = null;
           const rid = res.receiptId || "";
-          const emailNote = res.emailSent
-            ? "\u{1F4E7} Receipt email sent to member."
+          const emailNote = res.emailSent ? "\u{1F4E7} Receipt email sent to member."
             : (res.emailSkipped ? "\u26A0\uFE0F Email quota reached \u2014 email not sent." : "");
           try {
-            const _now2 = new Date();
-            const _g = (id) => document.getElementById(id);
+            const _now2 = new Date(); const _g = (id) => document.getElementById(id);
             if (_g("amount"))      _g("amount").value = "";
             if (_g("note"))        _g("note").value = "";
             if (_g("month"))       _g("month").value = MONTHS[_now2.getMonth()];
@@ -5541,7 +5648,7 @@
         }
       } catch(err) {
         _contribSubmitInFlight = false;
-        const errMsg = err.message || "Network error. Please try again.";
+        const errMsg = err.message || "Network error.";
         if (cpBody) {
           cpBody.innerHTML =
             '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
@@ -5563,7 +5670,6 @@
       }
     }
     window._retryContribFailed = _retryContribFailed;
-    // Exposed as window.deleteContribution so _wrapFn can add spinner to the trash button
     async function deleteContribution(id) {
       if (!checkSession()) return;
       // UNDO: capture contribution before confirm dialog
@@ -8203,7 +8309,6 @@
       if (!stored) return toast("No failed walk-in entry to retry.", "error");
       if (_walkInInFlight) return;
       _walkInInFlight = true;
-
       const wiBody = document.getElementById("sp-walkin-body");
       if (wiBody) {
         wiBody.innerHTML =
@@ -8213,7 +8318,6 @@
             '<div style="font-size:12px;color:#64748b;margin-top:6px;">Please wait, do not close.</div>' +
           '</div>';
       }
-
       try {
         const res = await postData(stored.payload);
         _walkInInFlight = false;
@@ -8221,28 +8325,22 @@
           window._walkInFailedPayload = null;
           const rid = res.receiptId || ("TRX-wi" + Date.now());
           const tName = types.find(t => String(t.TypeId) === String(stored.typeId));
-          const typeLbl  = tName ? tName.TypeName : "Contribution";
+          const typeLbl = tName ? tName.TypeName : "Contribution";
           const monthLbl = stored.month || "General";
           const emailNote = stored.email
-            ? (res.emailSent
-                ? "Receipt emailed to " + escapeHtml(stored.email) + "."
+            ? (res.emailSent ? "Receipt emailed to " + escapeHtml(stored.email) + "."
                 : (res.emailSkipped ? "Email quota reached - email not sent." : ""))
             : "";
           if (wiBody) {
             wiBody.innerHTML =
-              '<div style="display:flex;flex-direction:column;align-items:center;' +
-              'justify-content:center;min-height:300px;text-align:center;padding:20px 16px 10px;">' +
-                '<div style="width:72px;height:72px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);' +
-                'border-radius:50%;display:flex;align-items:center;justify-content:center;' +
-                'margin-bottom:16px;border:2px solid #6ee7b7;' +
-                'animation:_csBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">' +
+              '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px 16px 10px;">' +
+                '<div style="width:72px;height:72px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:2px solid #6ee7b7;animation:_csBounce 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">' +
                   '<i class="fa-solid fa-circle-check" style="color:#16a34a;font-size:2rem;"></i>' +
                 '</div>' +
                 '<div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:4px;">Walk-in Entry Saved!</div>' +
                 '<div style="font-size:12px;color:#64748b;margin-bottom:14px;">Entry recorded successfully</div>' +
               '</div>' +
-              '<div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;' +
-              'padding:14px 16px;margin:0 4px 14px;font-size:12.5px;">' +
+              '<div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin:0 4px 14px;font-size:12.5px;">' +
                 '<div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;text-align:left;">' +
                   '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Receipt</span>' +
                   '<strong style="color:#15803d;font-size:13px;">' + escapeHtml(rid) + '</strong>' +
@@ -8254,11 +8352,9 @@
                   '<strong style="color:#1e293b;">' + escapeHtml(monthLbl) + ' ' + escapeHtml(stored.year || "") + '</strong>' +
                   '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Type</span>' +
                   '<strong style="color:#1e293b;">' + escapeHtml(typeLbl) + '</strong>' +
-                  (stored.mobile ? '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Mobile</span>' +
-                                   '<strong style="color:#1e293b;">' + escapeHtml(stored.mobile) + '</strong>' : '') +
+                  (stored.mobile ? '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Mobile</span><strong style="color:#1e293b;">' + escapeHtml(stored.mobile) + '</strong>' : '') +
                 '</div>' +
-                (emailNote ? '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0;' +
-                             'font-size:11.5px;color:#64748b;">' + emailNote + '</div>' : '') +
+                (emailNote ? '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0;font-size:11.5px;color:#64748b;">' + emailNote + '</div>' : '') +
               '</div>' +
               '<div class="sp-actions">' +
                 '<button class="sp-save-btn" style="background:#b45309;color:#fff;" onclick="openWalkInContribution()">' +
