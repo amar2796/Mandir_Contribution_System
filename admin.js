@@ -3689,52 +3689,36 @@
       openModal(html, "460px");
     }
     async function saveEditContrib(id) {
-      // [DUP-FIX-1] Prevent double-submit: disable button for the full async lifetime
-      var _ecBtn = document.querySelector("button[onclick*=\"saveEditContrib\"]");
-      if (_ecBtn) {
-        if (_ecBtn._inFlight) return;
-        _ecBtn._inFlight = true;
-        _ecBtn.disabled = true;
-        _ecBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-      }
-      let amt = document.getElementById("ec_amt").value;
-      let mon = document.getElementById("ec_mon").value;
-      let yr = document.getElementById("ec_yr").value;
-      let typ = document.getElementById("ec_typ").value;
-      let occ = (document.getElementById("ec_occ") || {}).value || "";
+      let amt  = document.getElementById("ec_amt").value;
+      let mon  = document.getElementById("ec_mon").value;
+      let yr   = document.getElementById("ec_yr").value;
+      let typ  = document.getElementById("ec_typ").value;
+      let occ  = (document.getElementById("ec_occ")  || {}).value || "";
       let note = (document.getElementById("ec_note") || {}).value || "";
       let mode = (document.getElementById("ec_mode") || {}).value || "UPI";
       if (!amt || amt <= 0) {
         toast("Please enter a valid amount.", "error");
-        if (_ecBtn) { _ecBtn._inFlight = false; _ecBtn.disabled = false; _ecBtn.innerHTML = '<i class="fa-solid fa-check"></i> Save Changes'; }
         return;
       }
-      try {
-        let res = await postData({
-          action: "updateContribution",
-          Id: id,
-          Amount: amt,
-          ForMonth: mon,
-          Year: yr,
-          TypeId: typ,
-          OccasionId: occ,
-          Note: note,
-          PaymentMode: mode,
-        });
-        if (res.status === "updated") {
-          toast("✅ Contribution updated.");
-          closeModal();
-          // N2: removed updateLocalData() call — it raced with smartRefresh (both
-          // patched data[] and called render/loadSummary). smartRefresh fetches
-          // authoritative server data and re-renders completely; no local patch needed.
-          smartRefresh("contributions");
-        } else {
-          toast("❌ Update failed.", "error");
-          if (_ecBtn) { _ecBtn._inFlight = false; _ecBtn.disabled = false; _ecBtn.innerHTML = '<i class="fa-solid fa-check"></i> Save Changes'; }
-        }
-      } catch (err) {
-        toast("❌ " + err.message, "error");
-        if (_ecBtn) { _ecBtn._inFlight = false; _ecBtn.disabled = false; _ecBtn.innerHTML = '<i class="fa-solid fa-check"></i> Save Changes'; }
+      let res = await postData({
+        action: "updateContribution",
+        Id: id,
+        Amount: amt,
+        ForMonth: mon,
+        Year: yr,
+        TypeId: typ,
+        OccasionId: occ,
+        Note: note,
+        PaymentMode: mode,
+      });
+      if (res.status === "updated") {
+        toast("✅ Contribution updated.");
+        closeModal();
+        // smartRefresh fetches authoritative server data and re-renders completely.
+        smartRefresh("contributions");
+      } else {
+        toast("❌ Update failed.", "error");
+        throw new Error("Update failed");
       }
     }
 
