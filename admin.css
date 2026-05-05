@@ -3484,79 +3484,171 @@ body.dark-mode .sp-panel-footer {
   border-top-color: #f7a01a;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    UI FIXES v3 — Logout animation · Undo dismiss · Success card
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ─── FIX 3: LOGOUT ANIMATION ─────────────────────────────────────────── */
-@keyframes _loSlideOut {
-  0%   { opacity:1; transform:translateX(0)    scale(1);    filter:blur(0);   }
-  25%  { opacity:1; transform:translateX(-3%)  scale(0.99); filter:blur(0);   }
-  100% { opacity:0; transform:translateX(100%) scale(0.96); filter:blur(3px); }
+/* ─── FIX 3: LOGOUT — PAGE-LOADING STYLE ANIMATION ────────────────────── */
+
+/* Keyframes */
+@keyframes _loPageSlide {
+  0%   { opacity:1; transform:translateY(0);    filter:blur(0);   }
+  60%  { opacity:0.3; transform:translateY(12px); filter:blur(2px); }
+  100% { opacity:0; transform:translateY(20px);  filter:blur(4px); }
 }
 @keyframes _loFadeIn {
   from { opacity:0; }
   to   { opacity:1; }
 }
 @keyframes _loSpinnerSpin {
-  to { transform:rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 @keyframes _loPopIn {
-  0%   { opacity:0; transform:scale(0.7);  }
-  70%  { transform:scale(1.08); }
-  100% { opacity:1; transform:scale(1); }
+  0%   { opacity:0; transform:scale(0.75) translateY(6px); }
+  70%  { transform:scale(1.04) translateY(-1px); }
+  100% { opacity:1; transform:scale(1) translateY(0); }
+}
+@keyframes _loProgressBar {
+  0%   { width: 0%; opacity:1; }
+  15%  { width: 35%; }
+  40%  { width: 58%; }
+  65%  { width: 78%; }
+  85%  { width: 91%; }
+  95%  { width: 97%; opacity:1; }
+  100% { width: 100%; opacity:0; }
+}
+@keyframes _loProgressShimmer {
+  0%   { left: -60%; }
+  100% { left: 120%; }
+}
+@keyframes _loDotsAnim {
+  0%, 80%, 100% { transform: scale(0.6); opacity:0.3; }
+  40%            { transform: scale(1);   opacity:1;   }
+}
+@keyframes _loCardIn {
+  0%   { opacity:0; transform:translateY(22px) scale(0.97); }
+  100% { opacity:1; transform:translateY(0)    scale(1);    }
+}
+@keyframes _loIconSpin {
+  0%   { transform: rotate(0deg)   scale(1);    }
+  50%  { transform: rotate(180deg) scale(1.08); }
+  100% { transform: rotate(360deg) scale(1);    }
 }
 
+/* Slide page content away */
 body.logging-out .layout,
 body.logging-out .header {
-  animation: _loSlideOut 0.55s cubic-bezier(0.4,0,1,1) forwards;
+  animation: _loPageSlide 0.45s cubic-bezier(0.4, 0, 1, 1) forwards;
   pointer-events: none;
 }
 
+/* ── Overlay root ── */
 #_logoutOverlay {
   position: fixed;
   inset: 0;
   z-index: 9999999;
-  background: linear-gradient(135deg, #0c1422 0%, #1a2540 100%);
+  background: linear-gradient(160deg, #0c1422 0%, #18243c 55%, #0c1422 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 14px;
-  animation: _loFadeIn 0.35s ease both;
+  animation: _loFadeIn 0.3s ease both;
   pointer-events: all;
 }
+
+/* ── Top page-loading progress bar ── */
+#_logoutOverlay .lo-progress-bar {
+  position: absolute;
+  top: 0; left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, #f7a01a, #fbbf24, #f7a01a);
+  border-radius: 0 2px 2px 0;
+  animation: _loProgressBar 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  overflow: hidden;
+}
+#_logoutOverlay .lo-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: -60%;
+  width: 60%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  animation: _loProgressShimmer 0.9s linear infinite;
+}
+
+/* ── Centered card ── */
+#_logoutOverlay .lo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: _loCardIn 0.45s cubic-bezier(0.34, 1.3, 0.64, 1) 0.12s both;
+}
+
+/* ── Icon circle ── */
 #_logoutOverlay .lo-icon {
-  width: 68px; height: 68px;
+  width: 72px; height: 72px;
   border-radius: 50%;
-  background: rgba(247,160,26,0.1);
-  border: 2px solid rgba(247,160,26,0.28);
+  background: rgba(247, 160, 26, 0.08);
+  border: 2px solid rgba(247, 160, 26, 0.25);
   display: flex; align-items: center; justify-content: center;
-  font-size: 2rem;
-  animation: _loPopIn 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;
+  font-size: 1.9rem;
+  color: #f7a01a;
+  box-shadow: 0 0 0 0 rgba(247,160,26,0.2);
+  animation: _loIconSpin 1.4s ease-in-out infinite;
 }
-#_logoutOverlay .lo-spinner {
-  width: 26px; height: 26px;
-  border: 3px solid rgba(247,160,26,0.18);
-  border-top-color: #f7a01a;
-  border-radius: 50%;
-  animation: _loSpinnerSpin 0.75s linear infinite;
-}
+
+/* ── "Logging out" text ── */
 #_logoutOverlay .lo-text {
   font-family: Poppins, sans-serif;
-  font-size: 14px; font-weight: 600;
-  color: rgba(255,255,255,0.65);
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.82);
   letter-spacing: 0.02em;
-  animation: _loPopIn 0.4s ease 0.2s both;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
+#_logoutOverlay .lo-text .lo-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #f7a01a;
+  display: inline-block;
+  margin-left: 3px;
+}
+#_logoutOverlay .lo-text .lo-dot:nth-child(1) { animation: _loDotsAnim 1.2s ease 0.0s infinite; }
+#_logoutOverlay .lo-text .lo-dot:nth-child(2) { animation: _loDotsAnim 1.2s ease 0.2s infinite; }
+#_logoutOverlay .lo-text .lo-dot:nth-child(3) { animation: _loDotsAnim 1.2s ease 0.4s infinite; }
+
+/* ── Subtitle ── */
 #_logoutOverlay .lo-sub {
   font-family: Poppins, sans-serif;
-  font-size: 11px;
-  color: rgba(247,160,26,0.5);
-  letter-spacing: 0.07em;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: rgba(247, 160, 26, 0.45);
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  animation: _loPopIn 0.4s ease 0.32s both;
+}
+
+/* ── Mini bar loader below card ── */
+#_logoutOverlay .lo-mini-bar {
+  width: 120px;
+  height: 3px;
+  background: rgba(247, 160, 26, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+#_logoutOverlay .lo-mini-bar-fill {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, #f7a01a, #fbbf24);
+  border-radius: 99px;
+  animation: _loProgressShimmer 1s linear infinite;
+  position: relative;
+  left: -60%;
 }
 
 /* ─── FIX 4: UNDO TOAST DISMISS BUTTON ────────────────────────────────── */

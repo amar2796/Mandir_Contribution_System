@@ -3647,10 +3647,19 @@
       ov = document.createElement('div');
       ov.id = '_logoutOverlay';
       ov.innerHTML =
-        '<div class="lo-icon"><i class="fa-solid fa-right-from-bracket" style="color:#f7a01a;font-size:1.6rem;"></i></div>' +
-        '<div class="lo-spinner"></div>' +
-        '<div class="lo-text">Logging out…</div>' +
-        '<div class="lo-sub">See you soon 🙏</div>';
+        /* Top page-loading progress bar */
+        '<div class="lo-progress-bar"></div>' +
+        /* Centered card */
+        '<div class="lo-card">' +
+          '<div class="lo-icon"><i class="fa-solid fa-place-of-worship"></i></div>' +
+          '<div class="lo-text">Logging out' +
+            '<span class="lo-dot"></span>' +
+            '<span class="lo-dot"></span>' +
+            '<span class="lo-dot"></span>' +
+          '</div>' +
+          '<div class="lo-mini-bar"><div class="lo-mini-bar-fill"></div></div>' +
+          '<div class="lo-sub">See you soon 🙏</div>' +
+        '</div>';
       document.body.appendChild(ov);
       document.body.classList.add('logging-out');
     }
@@ -3658,10 +3667,10 @@
     // Exposed so the logout button onclick can call it
     window._uiLogoutWithAnim = function() {
       _buildLogoutOverlay();
-      // Let animation play for 900ms so the overlay fully renders before logout() navigates away
+      // Let animation play for 1100ms so progress bar renders fully before redirect
       setTimeout(function() {
         if (typeof logout === 'function') logout();
-      }, 900);
+      }, 1100);
     };
 
     /* ═══════════════════════════════════════════════════════════
