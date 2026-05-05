@@ -4142,14 +4142,23 @@
               <i class="fa-solid fa-xmark"></i> Reject
             </button>` : `
             <button class="btn-sm" onclick="event.stopPropagation();openEditUser('${u.UserId}')"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn-sm btn-danger" onclick="event.stopPropagation();deleteUser('${u.UserId}')"><i class="fa-solid fa-trash"></i></button>`;
-        const _fbSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23f7a01a'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='white' font-size='14' font-family='Arial'%3E%26%23128100%3B%3C/text%3E%3C/svg%3E";
+            ` + (function(){
+              var ct = (typeof data !== "undefined" ? data : [])
+                .filter(function(c){ return String(c.UserId) === String(u.UserId); })
+                .reduce(function(s,c){ return s + Number(c.Amount||0); }, 0);
+              return ct === 0
+                ? '<button class="btn-sm btn-danger" onclick="event.stopPropagation();deleteUser(\'' + u.UserId + '\')" title="Delete User"><i class="fa-solid fa-trash"></i></button>'
+                : '<button class="btn-sm btn-danger" style="background:#cbd5e1;cursor:not-allowed;opacity:0.55;" disabled title="Cannot delete: user has \u20b9' + fmt(ct) + ' in contributions. Set status to Inactive instead."><i class="fa-solid fa-trash"></i></button>';
+            })() + `
+            `;
+        const _fbSvg = "Image/logo.PNG";
+        const _fbSvgFallback = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23f7a01a'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='white' font-size='14' font-family='Arial'%3E%26%23128100%3B%3C/text%3E%3C/svg%3E";
         return `
       <tr class="${rowClass}" onclick="viewUser('${u.UserId}')" title="Click to view details">
         <td onclick="event.stopPropagation();openEditUser('${u.UserId}')" title="Click to edit user" style="cursor:pointer;">
           <img src="${u.PhotoURL ? '' : _fbSvg}"
                data-userid="${escapeHtml(String(u.UserId))}"
-               onerror="this.onerror=null;this.src='${_fbSvg}'"
+               onerror="this.onerror=null;this.src='${_fbSvgFallback}'"
                width="32" height="32" style="border-radius:50%;object-fit:cover;background:#eee;border:2px solid #f7a01a;display:block;"/>
         </td>
         <td><b>${escapeHtml(u.Name || "")}</b></td>
@@ -4179,7 +4188,7 @@
       let u = users.find((x) => String(x.UserId) === String(id));
       if (!u) return;
       let contribTotal = data
-        .filter((c) => String(c.UserId) === id)
+        .filter((c) => String(c.UserId) === String(id))
         .reduce((s, c) => s + Number(c.Amount || 0), 0);
       // FIX: Use openModal directly instead of showDetailPopup.
       // showDetailPopup (app.js) escapes values as plain text, so HTML strings for
@@ -4201,12 +4210,23 @@
           + '</tr>';
       }).join("");
       const _safeId = String(id).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+      const _canDelete = contribTotal === 0;
+      const _deleteBtnStyle = _canDelete
+        ? 'background:#e74c3c;cursor:pointer;'
+        : 'background:#cbd5e1;cursor:not-allowed;opacity:0.55;';
+      const _deleteBtnTitle = _canDelete
+        ? 'Delete User'
+        : 'Cannot delete: user has contributions. Set status to Inactive instead.';
+      const _deleteBtnOnclick = _canDelete
+        ? 'onclick="closeModal();deleteUser(\'' + _safeId + '\')"'
+        : '';
       const html = '<div class="_mhdr"><h3><i class="fa-solid fa-eye" style="color:#f7a01a;margin-right:6px;"></i> Member Details</h3><button class="_mcls" onclick="closeModal()">×</button></div>'
         + '<div class="_mbdy" style="padding:10px 16px;">'
         + '<table style="width:100%;border-collapse:collapse;">' + tableRows + '</table>'
         + '</div>'
         + '<div class="_mft">'
         + '<button class="_mbtn" style="background:#94a3b8;" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Close</button>'
+        + '<button class="_mbtn" style="' + _deleteBtnStyle + '" ' + _deleteBtnOnclick + ' title="' + _deleteBtnTitle + '" ' + (_canDelete ? '' : 'disabled') + '><i class="fa-solid fa-trash"></i> Delete</button>'
         + '<button class="_mbtn" style="background:linear-gradient(135deg,#f7a01a,#e8920a);" onclick="closeModal();openEditUser(\'' + _safeId + '\')"><i class="fa-solid fa-pen"></i> Edit</button>'
         + '</div>';
       openModal(html, "460px");
