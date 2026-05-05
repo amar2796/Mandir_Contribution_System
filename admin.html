@@ -461,7 +461,7 @@
               <div class="adm-drop-item" onclick="closeAdminDropdown();openAdminChangePassword()">
                 <i class="fa-solid fa-key"></i> Change Password
               </div>
-              <div class="adm-drop-item danger" onclick="logout()">
+              <div class="adm-drop-item danger" onclick="_uiLogoutWithAnim()">
                 <i class="fa-solid fa-power-off"></i> Logout
               </div>
             </div>
@@ -1110,63 +1110,20 @@
 
       <!-- CONTRIBUTIONS -->
       <div id="contributionPage" class="page">
-        <div class="card">
-          <h3><i class="fa-solid fa-plus-circle"></i> Add Contribution</h3>
-          <div class="form-row">
-            <div>
-              <label>User</label><select id="user" onchange="_suggestLastAmount(this.value)"></select>
-            </div>
-            <div>
-              <label>Amount (₹)</label><input id="amount" placeholder="Enter Amount" type="number" min="1" />
-            </div>
-            <div>
-              <label>Month</label><select id="month"></select>
-            </div>
+        <!-- Action Bar -->
+        <div class="sp-action-bar">
+          <div class="sp-action-bar-title">
+            <i class="fa-solid fa-hand-holding-dollar"></i> Contributions
           </div>
-          <div class="form-row">
-            <div>
-              <label>Year</label><select id="contribYear" onchange="(function(){var y=document.getElementById('contribYear').value;var h=document.getElementById('contribYearHint');if(h)h.textContent='Receipt will be: MNR-'+y+'-NNNNN';})()"></select>
-              <div id="contribYearHint" style="font-size:11px;color:#f7a01a;margin-top:3px;font-style:italic;">Receipt will be: MNR-...-NNNNN</div>
-            </div>
-            <div>
-              <label>Type</label><select id="type"></select>
-            </div>
-            <div>
-              <label>Occasion</label><select id="occasion"></select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div style="grid-column: 1/-1">
-              <label>Note</label><input id="note" placeholder="Optional note" />
-            </div>
-          </div>
-          <div class="form-row">
-            <div>
-              <label>Payment Mode</label>
-              <select id="paymentMode">
-                <option value="UPI">UPI</option>
-                <option value="Cash">Cash</option>
-                <option value="Cheque">Cheque</option>
-                <option value="Online Transfer">Online Transfer</option>
-              </select>
-            </div>
-          </div>
-          <div style="
-                display: flex;
-                gap: 10px;
-                flex-wrap: wrap;
-                align-items: center;
-                margin-top: 4px;
-              ">
-            <button onclick="addContribution()">
-              <i class="fa-solid fa-check"></i> Save Contribution
+          <div class="sp-action-btns">
+            <button class="sp-action-btn sp-btn-primary" onclick="spOpen('contrib')">
+              <i class="fa-solid fa-plus"></i> Add Contribution
             </button>
-            <button onclick="openBulkInsert()" style="background: #334155; box-shadow: none">
+            <button class="sp-action-btn sp-btn-dark" onclick="openBulkInsert()">
               <i class="fa-solid fa-layer-group"></i> Bulk Insert
             </button>
-            <button onclick="openWalkInContribution()" style="background: #946c44; box-shadow: none">
-              <i class="fa-solid fa-person-walking-arrow-right"></i> Walk-in
-              Entry
+            <button class="sp-action-btn sp-btn-brown" onclick="openWalkInContribution()">
+              <i class="fa-solid fa-person-walking-arrow-right"></i> Walk-in Entry
             </button>
           </div>
         </div>
@@ -1272,32 +1229,16 @@
 
       <!-- EXPENSES -->
       <div id="expensePage" class="page">
-        <div class="card">
-          <h3><i class="fa-solid fa-file-invoice-dollar"></i> Add Expense</h3>
-          <div class="form-row">
-            <div>
-              <label>Title</label><input id="title" placeholder="e.g. Electricity Bill" />
-            </div>
-            <div>
-              <label>Amount (₹)</label><input id="expAmount" placeholder="Enter Amount" type="number" min="1" />
-            </div>
-            <div>
-              <label>Expense Type</label><select id="expenseType"></select>
-            </div>
+        <!-- Action Bar -->
+        <div class="sp-action-bar">
+          <div class="sp-action-bar-title">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Expenses
           </div>
-          <div class="form-row">
-            <div>
-              <label>Year</label><select id="expYear"></select>
-            </div>
-            <div>
-              <label>Month</label><select id="expMonth">
-                <option value="">None</option>
-              </select>
-            </div>
+          <div class="sp-action-btns">
+            <button class="sp-action-btn sp-btn-red" onclick="spOpen('expense')">
+              <i class="fa-solid fa-plus"></i> Add Expense
+            </button>
           </div>
-          <button onclick="addExpense()">
-            <i class="fa-solid fa-check"></i> Save Expense
-          </button>
         </div>
         <div class="card">
           <h3 style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -1383,59 +1324,26 @@
 
       <!-- USERS -->
       <div id="usersPage" class="page">
-        <div class="card">
-          <h3><i class="fa-solid fa-users"></i> Manage Users
-            <div class="status-tabs" id="userStatusTabs">
-              <button class="status-tab active" onclick="filterUsers('all',this)">
-                <i class="fa-solid fa-list"></i> All <span class="tab-ct" id="ct_all">0</span>
-              </button>
-              <button class="status-tab tab-pending" onclick="filterUsers('pending',this)">
-                <i class="fa-solid fa-clock"></i> Pending <span class="tab-ct" id="ct_pending">0</span>
-              </button>
-              <button class="status-tab tab-approved" onclick="filterUsers('active',this)">
-                <i class="fa-solid fa-circle-check"></i> Approved <span class="tab-ct" id="ct_approved">0</span>
-              </button>
-              <button class="status-tab tab-rejected" onclick="filterUsers('rejected',this)">
-                <i class="fa-solid fa-circle-xmark"></i> Rejected <span class="tab-ct" id="ct_rejected">0</span>
-              </button>
-            </div>
-          </h3>
-          <div class="form-row">
-            <div>
-              <label>Full Name</label><input id="u_name" placeholder="Name" />
-            </div>
-            <div>
-              <label>Mobile</label><input id="u_mobile" type="tel" maxlength="10" />
-            </div>
+        <!-- Action Bar -->
+        <div class="sp-action-bar">
+          <div class="sp-action-bar-title">
+            <i class="fa-solid fa-users"></i> Users
           </div>
-          <div class="form-row">
-            <div>
-              <label>Email</label><input id="u_email" placeholder="email@example.com" type="email" />
-            </div>
-            <div>
-              <label>Password</label><input id="u_password" type="password" placeholder="Min 6 chars" />
-            </div>
+          <div class="sp-action-btns">
+            <button class="sp-action-btn sp-btn-indigo" onclick="spOpen('user')">
+              <i class="fa-solid fa-user-plus"></i> Add User
+            </button>
           </div>
-          <div class="form-row">
-            <div>
-              <label>Role</label><select id="u_role">
-                <option>User</option>
-                <option>Admin</option>
-              </select>
-            </div>
-            <div>
-              <label>Date of Birth <span style="font-size:10px;color:#aaa;font-weight:400;">(optional — for birthday alerts)</span></label>
-              <input id="u_dob" type="date" style="margin-bottom:0;" />
-            </div>
-          </div>
-          <button onclick="addUser()">
-            <i class="fa-solid fa-user-check"></i> Add User
-          </button>
         </div>
         <div class="card">
           <h3>
-            <i class="fa-solid fa-users-gear"></i> Manage Users
-            <span style="font-size: 11px; font-weight: 400; color: #999">(click row to view · edit via button)</span>
+            <span><i class="fa-solid fa-users-gear"></i> Manage Users <span style="font-size:11px;font-weight:400;color:#999;">(click row to view · edit via button)</span></span>
+            <div class="status-tabs" id="userStatusTabs" style="margin-left:auto;">
+              <button class="status-tab active" onclick="filterUsers('all',this)"><i class="fa-solid fa-list"></i> All <span class="tab-ct" id="ct_all">0</span></button>
+              <button class="status-tab tab-pending" onclick="filterUsers('pending',this)"><i class="fa-solid fa-clock"></i> Pending <span class="tab-ct" id="ct_pending">0</span></button>
+              <button class="status-tab tab-approved" onclick="filterUsers('active',this)"><i class="fa-solid fa-circle-check"></i> Approved <span class="tab-ct" id="ct_approved">0</span></button>
+              <button class="status-tab tab-rejected" onclick="filterUsers('rejected',this)"><i class="fa-solid fa-circle-xmark"></i> Rejected <span class="tab-ct" id="ct_rejected">0</span></button>
+            </div>
           </h3>
           <input class="search-bar" id="userSearchInput" placeholder="🔍 Search by Name or Mobile..."
             onkeyup="renderUsers()" />
@@ -1662,57 +1570,16 @@
 
       <!-- EVENTS -->
       <div id="eventsPage" class="page">
-
-        <!-- Create / Edit Event -->
-        <div class="card" style="margin-bottom:18px;">
-          <h3><i class="fa-solid fa-calendar-plus" style="color:#fb923c;"></i> Create Event</h3>
-          <div class="form-row">
-            <div>
-              <label>Event Name</label>
-              <input id="ev_name" placeholder="e.g. Navratri 2025" />
-            </div>
-            <div>
-              <label>Category</label>
-              <select id="ev_cat">
-                <option>Festival</option>
-                <option>Pooja</option>
-                <option>Maintenance</option>
-                <option>Community</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <div>
-              <label>Status</label>
-              <select id="ev_status">
-                <option value="Upcoming">Upcoming</option>
-                <option value="Active">Active</option>
-                <option value="Completed">Completed</option>
-              </select>
-            </div>
+        <!-- Action Bar -->
+        <div class="sp-action-bar">
+          <div class="sp-action-bar-title">
+            <i class="fa-solid fa-calendar-days"></i> Events
           </div>
-          <div class="form-row">
-            <div>
-              <label>Start Date</label>
-              <input type="date" id="ev_start" />
-            </div>
-            <div>
-              <label>End Date</label>
-              <input type="date" id="ev_end" />
-            </div>
-            <div>
-              <label>Budget (₹)</label>
-              <input type="number" id="ev_budget" min="0" placeholder="0 = no budget" />
-            </div>
+          <div class="sp-action-btns">
+            <button class="sp-action-btn sp-btn-orange" onclick="spOpen('event')">
+              <i class="fa-solid fa-calendar-plus"></i> Create Event
+            </button>
           </div>
-          <div class="form-row">
-            <div style="grid-column:1/-1;">
-              <label>Description <span style="color:#aaa;font-size:10px;font-weight:400;">(optional)</span></label>
-              <input id="ev_desc" placeholder="Brief description of the event" />
-            </div>
-          </div>
-          <button onclick="addEvent()">
-            <i class="fa-solid fa-plus"></i> Save Event
-          </button>
         </div>
 
         <!-- Event Cards List -->
@@ -3112,6 +2979,745 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script src="admin.js"></script>
+
+  <!-- ═══ SLIDE PANELS OVERLAY ═══ -->
+  <div class="sp-overlay" id="spOverlay" onclick="spClose()"></div>
+
+  <!-- ── Contribution Panel ── -->
+  <div class="sp-panel" id="sp-contrib">
+    <div class="sp-panel-header sp-header-green">
+      <div class="sp-panel-title">
+        <i class="fa-solid fa-hand-holding-dollar"></i> Add Contribution
+      </div>
+      <button class="sp-close-btn" onclick="spClose()" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="sp-panel-body" id="sp-contrib-body">
+      <!-- FORM STATE -->
+      <div id="sp-contrib-form">
+        <div class="sp-field-group">
+          <label class="sp-label">Member <span class="sp-required">*</span></label>
+          <select id="user" onchange="_suggestLastAmount(this.value)" class="sp-input"></select>
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Amount (₹) <span class="sp-required">*</span></label>
+            <input id="amount" placeholder="Enter amount" type="number" min="1" class="sp-input" />
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Payment Mode</label>
+            <select id="paymentMode" class="sp-input">
+              <option value="UPI">UPI</option>
+              <option value="Cash">Cash</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Online Transfer">Online Transfer</option>
+            </select>
+          </div>
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Month <span class="sp-required">*</span></label>
+            <select id="month" class="sp-input"></select>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Year <span class="sp-required">*</span></label>
+            <select id="contribYear" class="sp-input" onchange="(function(){var y=document.getElementById('contribYear').value;var h=document.getElementById('contribYearHint');if(h)h.textContent='Receipt: MNR-'+y+'-NNNNN';})()"></select>
+            <div id="contribYearHint" class="sp-hint">Receipt: MNR-...-NNNNN</div>
+          </div>
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Contribution Type</label>
+            <select id="type" class="sp-input"></select>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Occasion</label>
+            <select id="occasion" class="sp-input"></select>
+          </div>
+        </div>
+        <div class="sp-field-group">
+          <label class="sp-label">Note <span class="sp-optional">(optional)</span></label>
+          <input id="note" placeholder="Optional note" class="sp-input" />
+        </div>
+        <div class="sp-actions">
+          <button class="sp-save-btn sp-save-green" id="spContribSaveBtn" onclick="spSave('contrib')">
+            <span class="sp-btn-text"><i class="fa-solid fa-check"></i> Save Contribution</span>
+            <span class="sp-btn-spinner" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i> Saving…</span>
+          </button>
+          <button class="sp-cancel-btn" onclick="spClose()">Cancel</button>
+        </div>
+      </div>
+      <!-- PREVIEW STATE -->
+      <div id="sp-contrib-preview" style="display:none;">
+        <div class="sp-preview-card sp-preview-green">
+          <div class="sp-preview-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="sp-preview-title">Contribution Saved!</div>
+          <div class="sp-preview-details" id="sp-contrib-preview-details"></div>
+        </div>
+        <div class="sp-preview-actions">
+          <button class="sp-save-btn sp-save-green" onclick="spAddAnother('contrib')">
+            <i class="fa-solid fa-plus"></i> Add Another
+          </button>
+          <button class="sp-cancel-btn" onclick="spClose()">
+            <i class="fa-solid fa-xmark"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Expense Panel ── -->
+  <div class="sp-panel" id="sp-expense">
+    <div class="sp-panel-header sp-header-red">
+      <div class="sp-panel-title">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Add Expense
+      </div>
+      <button class="sp-close-btn" onclick="spClose()" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="sp-panel-body" id="sp-expense-body">
+      <div id="sp-expense-form">
+        <div class="sp-field-group">
+          <label class="sp-label">Title <span class="sp-required">*</span></label>
+          <input id="title" placeholder="e.g. Electricity Bill" class="sp-input" />
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Amount (₹) <span class="sp-required">*</span></label>
+            <input id="expAmount" placeholder="Enter amount" type="number" min="1" class="sp-input" />
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Expense Type</label>
+            <select id="expenseType" class="sp-input"></select>
+          </div>
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Month</label>
+            <select id="expMonth" class="sp-input">
+              <option value="">None</option>
+            </select>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Year</label>
+            <select id="expYear" class="sp-input"></select>
+          </div>
+        </div>
+        <div class="sp-actions">
+          <button class="sp-save-btn sp-save-red" id="spExpenseSaveBtn" onclick="spSave('expense')">
+            <span class="sp-btn-text"><i class="fa-solid fa-check"></i> Save Expense</span>
+            <span class="sp-btn-spinner" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i> Saving…</span>
+          </button>
+          <button class="sp-cancel-btn" onclick="spClose()">Cancel</button>
+        </div>
+      </div>
+      <div id="sp-expense-preview" style="display:none;">
+        <div class="sp-preview-card sp-preview-red">
+          <div class="sp-preview-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="sp-preview-title">Expense Saved!</div>
+          <div class="sp-preview-details" id="sp-expense-preview-details"></div>
+        </div>
+        <div class="sp-preview-actions">
+          <button class="sp-save-btn sp-save-red" onclick="spAddAnother('expense')">
+            <i class="fa-solid fa-plus"></i> Add Another
+          </button>
+          <button class="sp-cancel-btn" onclick="spClose()">
+            <i class="fa-solid fa-xmark"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Event Panel ── -->
+  <div class="sp-panel" id="sp-event">
+    <div class="sp-panel-header sp-header-orange">
+      <div class="sp-panel-title">
+        <i class="fa-solid fa-calendar-plus"></i> Create Event
+      </div>
+      <button class="sp-close-btn" onclick="spClose()" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="sp-panel-body" id="sp-event-body">
+      <div id="sp-event-form">
+        <div class="sp-field-group">
+          <label class="sp-label">Event Name <span class="sp-required">*</span></label>
+          <input id="ev_name" placeholder="e.g. Navratri 2025" class="sp-input" />
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Category</label>
+            <select id="ev_cat" class="sp-input">
+              <option>Festival</option>
+              <option>Pooja</option>
+              <option>Maintenance</option>
+              <option>Community</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Status</label>
+            <select id="ev_status" class="sp-input">
+              <option value="Upcoming">Upcoming</option>
+              <option value="Active">Active</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Start Date</label>
+            <input type="date" id="ev_start" class="sp-input" />
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">End Date</label>
+            <input type="date" id="ev_end" class="sp-input" />
+          </div>
+        </div>
+        <div class="sp-field-group">
+          <label class="sp-label">Budget (₹) <span class="sp-optional">(0 = no budget)</span></label>
+          <input type="number" id="ev_budget" min="0" placeholder="0" class="sp-input" />
+        </div>
+        <div class="sp-field-group">
+          <label class="sp-label">Description <span class="sp-optional">(optional)</span></label>
+          <input id="ev_desc" placeholder="Brief description of the event" class="sp-input" />
+        </div>
+        <div class="sp-actions">
+          <button class="sp-save-btn sp-save-orange" id="spEventSaveBtn" onclick="spSave('event')">
+            <span class="sp-btn-text"><i class="fa-solid fa-plus"></i> Save Event</span>
+            <span class="sp-btn-spinner" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i> Saving…</span>
+          </button>
+          <button class="sp-cancel-btn" onclick="spClose()">Cancel</button>
+        </div>
+      </div>
+      <div id="sp-event-preview" style="display:none;">
+        <div class="sp-preview-card sp-preview-orange">
+          <div class="sp-preview-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="sp-preview-title">Event Created!</div>
+          <div class="sp-preview-details" id="sp-event-preview-details"></div>
+        </div>
+        <div class="sp-preview-actions">
+          <button class="sp-save-btn sp-save-orange" onclick="spAddAnother('event')">
+            <i class="fa-solid fa-plus"></i> Add Another
+          </button>
+          <button class="sp-cancel-btn" onclick="spClose()">
+            <i class="fa-solid fa-xmark"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── User Panel ── -->
+  <div class="sp-panel" id="sp-user">
+    <div class="sp-panel-header sp-header-indigo">
+      <div class="sp-panel-title">
+        <i class="fa-solid fa-user-plus"></i> Add User
+      </div>
+      <button class="sp-close-btn" onclick="spClose()" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="sp-panel-body" id="sp-user-body">
+      <div id="sp-user-form">
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Full Name <span class="sp-required">*</span></label>
+            <input id="u_name" placeholder="Name" class="sp-input" />
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Mobile <span class="sp-required">*</span></label>
+            <input id="u_mobile" type="tel" maxlength="10" placeholder="10-digit number" class="sp-input" />
+          </div>
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Email</label>
+            <input id="u_email" placeholder="email@example.com" type="email" class="sp-input" />
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Default Password</label>
+            <div style="display:flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;">
+              <i class="fa-solid fa-lock" style="color:#16a34a;font-size:13px;"></i>
+              <span style="font-family:monospace;font-weight:700;color:#15803d;font-size:14px;letter-spacing:1px;">JaiShreeRam</span>
+              <span style="font-size:11px;color:#4ade80;margin-left:4px;">(auto-set)</span>
+            </div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;"><i class="fa-solid fa-circle-info" style="color:#f7a01a;"></i> User will be asked to change this on first login.</div>
+          </div>
+        </div>
+        <div class="sp-row2">
+          <div class="sp-field-group">
+            <label class="sp-label">Role</label>
+            <select id="u_role" class="sp-input">
+              <option>User</option>
+              <option>Admin</option>
+            </select>
+          </div>
+          <div class="sp-field-group">
+            <label class="sp-label">Date of Birth <span class="sp-optional">(birthday alerts)</span></label>
+            <input id="u_dob" type="date" class="sp-input" />
+          </div>
+        </div>
+        <div class="sp-actions">
+          <button class="sp-save-btn sp-save-indigo" id="spUserSaveBtn" onclick="spSave('user')">
+            <span class="sp-btn-text"><i class="fa-solid fa-user-check"></i> Add User</span>
+            <span class="sp-btn-spinner" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i> Saving…</span>
+          </button>
+          <button class="sp-cancel-btn" onclick="spClose()">Cancel</button>
+        </div>
+      </div>
+      <div id="sp-user-preview" style="display:none;">
+        <div class="sp-preview-card sp-preview-indigo">
+          <div class="sp-preview-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="sp-preview-title">User Added!</div>
+          <div class="sp-preview-details" id="sp-user-preview-details"></div>
+        </div>
+        <div class="sp-preview-actions">
+          <button class="sp-save-btn sp-save-indigo" onclick="spAddAnother('user')">
+            <i class="fa-solid fa-plus"></i> Add Another
+          </button>
+          <button class="sp-cancel-btn" onclick="spClose()">
+            <i class="fa-solid fa-xmark"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ── Bulk Insert Panel ── -->
+  <div class="sp-panel sp-panel-wide" id="sp-bulk">
+    <div class="sp-panel-header sp-header-dark">
+      <div class="sp-panel-title">
+        <i class="fa-solid fa-layer-group"></i> Bulk Insert Contributions
+      </div>
+      <button class="sp-close-btn" onclick="spClose()" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="sp-panel-body" id="sp-bulk-body">
+      <!-- Populated dynamically by openBulkInsert() -->
+    </div>
+  </div>
+
+  <!-- ── Walk-in Panel ── -->
+  <div class="sp-panel sp-panel-wide" id="sp-walkin">
+    <div class="sp-panel-header sp-header-brown">
+      <div class="sp-panel-title">
+        <i class="fa-solid fa-person-walking-arrow-right"></i> Walk-in / Manual Entry
+      </div>
+      <button class="sp-close-btn" onclick="spClose()" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="sp-panel-body" id="sp-walkin-body">
+      <!-- Populated dynamically by openWalkInContribution() -->
+    </div>
+  </div>
+
+  <!-- ═══ END SLIDE PANELS ═══ -->
+
+  <script>
+  // ══════════════════════════════════════════════════
+  //  SLIDE PANEL SYSTEM
+  // ══════════════════════════════════════════════════
+  (function() {
+    var _currentPanel = null;
+
+    var _btnMap = {
+      'contrib' : 'spContribSaveBtn',
+      'expense' : 'spExpenseSaveBtn',
+      'event'   : 'spEventSaveBtn',
+      'user'    : 'spUserSaveBtn'
+    };
+
+    var _saveFnMap = {
+      'contrib' : function() { addContribution(); },
+      'expense' : function() { addExpense(); },
+      'event'   : function() { addEvent(); },
+      'user'    : function() { addUser(); }
+    };
+
+    var _previewFnMap = {
+      'contrib': function() {
+        var name = (document.getElementById('user').options[document.getElementById('user').selectedIndex] || {}).text || '—';
+        var amt  = document.getElementById('amount').value || '—';
+        var mon  = (document.getElementById('month').options[document.getElementById('month').selectedIndex] || {}).text || '—';
+        var yr   = document.getElementById('contribYear').value || '—';
+        var type = (document.getElementById('type').options[document.getElementById('type').selectedIndex] || {}).text || '—';
+        var mode = document.getElementById('paymentMode').value || '—';
+        return '<div class="sp-prow"><span>Member</span><strong>' + name + '</strong></div>' +
+               '<div class="sp-prow"><span>Amount</span><strong>₹' + Number(amt).toLocaleString('en-IN') + '</strong></div>' +
+               '<div class="sp-prow"><span>Period</span><strong>' + mon + ' ' + yr + '</strong></div>' +
+               '<div class="sp-prow"><span>Type</span><strong>' + type + '</strong></div>' +
+               '<div class="sp-prow"><span>Mode</span><strong>' + mode + '</strong></div>';
+      },
+      'expense': function() {
+        var title = document.getElementById('title').value || '—';
+        var amt   = document.getElementById('expAmount').value || '—';
+        var mon   = (document.getElementById('expMonth').options[document.getElementById('expMonth').selectedIndex] || {}).text || '—';
+        var yr    = document.getElementById('expYear').value || '—';
+        var type  = (document.getElementById('expenseType').options[document.getElementById('expenseType').selectedIndex] || {}).text || '—';
+        return '<div class="sp-prow"><span>Title</span><strong>' + title + '</strong></div>' +
+               '<div class="sp-prow"><span>Amount</span><strong>₹' + Number(amt).toLocaleString('en-IN') + '</strong></div>' +
+               '<div class="sp-prow"><span>Period</span><strong>' + mon + ' ' + yr + '</strong></div>' +
+               '<div class="sp-prow"><span>Type</span><strong>' + type + '</strong></div>';
+      },
+      'event': function() {
+        var name   = document.getElementById('ev_name').value || '—';
+        var cat    = document.getElementById('ev_cat').value || '—';
+        var status = document.getElementById('ev_status').value || '—';
+        var start  = document.getElementById('ev_start').value || '—';
+        var end    = document.getElementById('ev_end').value || '—';
+        return '<div class="sp-prow"><span>Event</span><strong>' + name + '</strong></div>' +
+               '<div class="sp-prow"><span>Category</span><strong>' + cat + '</strong></div>' +
+               '<div class="sp-prow"><span>Status</span><strong>' + status + '</strong></div>' +
+               '<div class="sp-prow"><span>Dates</span><strong>' + start + ' → ' + end + '</strong></div>';
+      },
+      'user': function() {
+        var name   = document.getElementById('u_name').value || '—';
+        var mobile = document.getElementById('u_mobile').value || '—';
+        var email  = document.getElementById('u_email').value || '—';
+        var role   = document.getElementById('u_role').value || '—';
+        return '<div class="sp-prow"><span>Name</span><strong>' + name + '</strong></div>' +
+               '<div class="sp-prow"><span>Mobile</span><strong>' + mobile + '</strong></div>' +
+               '<div class="sp-prow"><span>Email</span><strong>' + (email||'—') + '</strong></div>' +
+               '<div class="sp-prow"><span>Role</span><strong>' + role + '</strong></div>';
+      }
+    };
+
+    window.spOpen = function(type) {
+      // Close any open panel first
+      spClose();
+      _currentPanel = type;
+      var panel = document.getElementById('sp-' + type);
+      var overlay = document.getElementById('spOverlay');
+      if (!panel) return;
+
+      // Reset to form view (for static panels with sp-X-form / sp-X-preview sub-divs)
+      // For contrib: show the form div, hide preview div, clear transient fields
+      var form = document.getElementById('sp-' + type + '-form');
+      var preview = document.getElementById('sp-' + type + '-preview');
+      if (form) form.style.display = '';
+      if (preview) preview.style.display = 'none';
+
+      // For contrib: if body was replaced by success/error state, restore the form
+      if (type === 'contrib') {
+        if (typeof window._contribReset === 'function') {
+          window._contribReset();
+          // _contribReset handles preselect and field clearing — skip below
+          overlay.classList.add('sp-overlay-active');
+          panel.classList.add('sp-panel-open');
+          document.body.style.overflow = 'hidden';
+          setTimeout(function() {
+            var first = panel.querySelector('input:not([type=hidden]), select');
+            if (first) first.focus();
+          }, 320);
+          return;
+        }
+      }
+
+      // Pre-select current month/year for contrib and expense
+      _spPreselectMonthYear(type);
+      // Show
+      overlay.classList.add('sp-overlay-active');
+      panel.classList.add('sp-panel-open');
+      document.body.style.overflow = 'hidden';
+      // Focus first input
+      setTimeout(function() {
+        var first = panel.querySelector('input:not([type=hidden]), select');
+        if (first) first.focus();
+      }, 320);
+    };
+
+    window.spClose = function() {
+      if (_currentPanel) {
+        var panel = document.getElementById('sp-' + _currentPanel);
+        if (panel) panel.classList.remove('sp-panel-open');
+      }
+      var overlay = document.getElementById('spOverlay');
+      if (overlay) overlay.classList.remove('sp-overlay-active');
+      document.body.style.overflow = '';
+      _currentPanel = null;
+    };
+
+    window.spSave = function(type) {
+      var btn = document.getElementById(_btnMap[type]);
+      if (!btn) return;
+
+      // Snapshot preview data BEFORE calling save fn (which clears fields)
+      var previewHtml = _previewFnMap[type] ? _previewFnMap[type]() : '';
+
+      // Show spinner + disable button
+      var textEl = btn.querySelector('.sp-btn-text');
+      var spinEl = btn.querySelector('.sp-btn-spinner');
+      btn.disabled = true;
+      if (textEl) textEl.style.display = 'none';
+      if (spinEl) spinEl.style.display = '';
+      btn.style.opacity = '0.8';
+
+      // contrib manages the panel itself (preview → success/error all in panel)
+      if (type === 'contrib') {
+        try { _saveFnMap[type](); } catch(e) { console.warn(e); }
+        // Reset button after a tick (addContribution will repopulate body)
+        setTimeout(function() {
+          if (btn) { btn.disabled=false; if(textEl) textEl.style.display=''; if(spinEl) spinEl.style.display='none'; btn.style.opacity=''; }
+        }, 200);
+        return;
+      }
+
+      // expense / event / user — only show toast, no modal.
+      // Call save, then show our preview card inside the panel.
+      try { _saveFnMap[type](); } catch(e) { console.warn(e); }
+
+      // After save fn fires (it's async — give it ~1.5s to complete + toast)
+      setTimeout(function() {
+        btn.disabled = false;
+        if (textEl) textEl.style.display = '';
+        if (spinEl) spinEl.style.display = 'none';
+        btn.style.opacity = '';
+        // Show preview card
+        var form     = document.getElementById('sp-' + type + '-form');
+        var preview  = document.getElementById('sp-' + type + '-preview');
+        var detailsEl = document.getElementById('sp-' + type + '-preview-details');
+        if (detailsEl) detailsEl.innerHTML = previewHtml;
+        if (form) form.style.display = 'none';
+        if (preview) {
+          preview.style.display = '';
+          preview.style.animation = 'spPreviewIn 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+        }
+      }, 1500);
+    };
+
+    window.spAddAnother = function(type) {
+      var form = document.getElementById('sp-' + type + '-form');
+      var preview = document.getElementById('sp-' + type + '-preview');
+      if (form) form.style.display = '';
+      if (preview) preview.style.display = 'none';
+      _spPreselectMonthYear(type);
+      var panel = document.getElementById('sp-' + type);
+      if (panel) {
+        var first = panel.querySelector('input:not([type=hidden]), select');
+        if (first) first.focus();
+      }
+    };
+
+    function _spPreselectMonthYear(type) {
+      var now = new Date();
+      var months = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+      var curMonth = months[now.getMonth()];
+      var curYear  = String(now.getFullYear());
+
+      if (type === 'contrib') {
+        var monthSel = document.getElementById('month');
+        var yearSel  = document.getElementById('contribYear');
+        if (monthSel) {
+          for (var i = 0; i < monthSel.options.length; i++) {
+            if (monthSel.options[i].text === curMonth || monthSel.options[i].value === curMonth) {
+              monthSel.selectedIndex = i; break;
+            }
+          }
+        }
+        if (yearSel) {
+          for (var j = 0; j < yearSel.options.length; j++) {
+            if (yearSel.options[j].value === curYear || yearSel.options[j].text === curYear) {
+              yearSel.selectedIndex = j; break;
+            }
+          }
+          // Trigger hint update
+          var hint = document.getElementById('contribYearHint');
+          if (hint) hint.textContent = 'Receipt: MNR-' + curYear + '-NNNNN';
+        }
+      } else if (type === 'expense') {
+        var expMonSel  = document.getElementById('expMonth');
+        var expYearSel = document.getElementById('expYear');
+        if (expMonSel) {
+          for (var k = 0; k < expMonSel.options.length; k++) {
+            if (expMonSel.options[k].text === curMonth || expMonSel.options[k].value === curMonth) {
+              expMonSel.selectedIndex = k; break;
+            }
+          }
+        }
+        if (expYearSel) {
+          for (var l = 0; l < expYearSel.options.length; l++) {
+            if (expYearSel.options[l].value === curYear || expYearSel.options[l].text === curYear) {
+              expYearSel.selectedIndex = l; break;
+            }
+          }
+        }
+      }
+    }
+
+    // Expose for use by _contribReset (defined in outer script block)
+    window._spPreselectMonthYear = _spPreselectMonthYear;
+
+    // ESC key closes panel
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') spClose();
+    });
+  })();
+  </script>
+
+  <!-- ═══ UI ENHANCEMENT PATCHES ═══ -->
+  <script>
+  (function() {
+
+    /* ═══════════════════════════════════════════════════════════
+       FIX 1 — Save button guaranteed reset on re-open
+       Root cause: spOpen() shows form but never resets button state.
+       Fix: wrap spOpen to always reset all save buttons on open.
+       ═══════════════════════════════════════════════════════════ */
+    var _origSpOpen = window.spOpen;
+    window.spOpen = function(type) {
+      // Reset ALL panel save buttons before opening any panel
+      var allBtns = ['spContribSaveBtn','spExpenseSaveBtn','spEventSaveBtn','spUserSaveBtn'];
+      allBtns.forEach(function(id) {
+        var btn = document.getElementById(id);
+        if (!btn) return;
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.animation = '';
+        var txt = btn.querySelector('.sp-btn-text');
+        var spn = btn.querySelector('.sp-btn-spinner');
+        if (txt) { txt.style.display = ''; }
+        if (spn) { spn.style.display = 'none'; }
+      });
+      if (_origSpOpen) _origSpOpen(type);
+    };
+
+    /* Also reset on spAddAnother */
+    var _origSpAddAnother = window.spAddAnother;
+    window.spAddAnother = function(type) {
+      var btnIds = { contrib:'spContribSaveBtn', expense:'spExpenseSaveBtn', event:'spEventSaveBtn', user:'spUserSaveBtn' };
+      var btn = document.getElementById(btnIds[type]);
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.animation = '';
+        var txt = btn.querySelector('.sp-btn-text');
+        var spn = btn.querySelector('.sp-btn-spinner');
+        if (txt) txt.style.display = '';
+        if (spn) spn.style.display = 'none';
+      }
+      if (_origSpAddAnother) _origSpAddAnother(type);
+    };
+
+    /* ── contrib panel reset: called by success/error Add Another & Retry buttons ──
+       The body was replaced by a success/error div. We restore the original
+       sp-contrib-form by re-inserting it (it was never destroyed from sp-contrib-body,
+       we just set innerHTML which wiped it). So we use a stored reference. */
+    window._spContribFormEl  = document.getElementById('sp-contrib-form');
+    window._spContribPrevEl  = document.getElementById('sp-contrib-preview');
+    window._spContribBodyEl  = document.getElementById('sp-contrib-body');
+
+    window._contribReset = function() {
+      var body = document.getElementById('sp-contrib-body');
+      if (!body) return;
+      // If form element is detached (body.innerHTML was replaced), re-attach it
+      if (!document.getElementById('sp-contrib-form') && window._spContribFormEl) {
+        body.innerHTML = '';
+        body.appendChild(window._spContribFormEl);
+        if (window._spContribPrevEl) body.appendChild(window._spContribPrevEl);
+      }
+      // Show form, hide preview
+      var form = document.getElementById('sp-contrib-form');
+      var prev = document.getElementById('sp-contrib-preview');
+      if (form) form.style.display = '';
+      if (prev)  prev.style.display = 'none';
+      // Clear transient values
+      var _g = function(id) { return document.getElementById(id); };
+      if (_g('amount'))  _g('amount').value = '';
+      if (_g('note'))    _g('note').value = '';
+      // Re-populate dropdowns (may have been wiped)
+      if (typeof _rebuildContribFormDropdowns === 'function') _rebuildContribFormDropdowns();
+      _spPreselectMonthYear('contrib');
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       FIX 3 — Logout rolling animation
+       Root cause: location.replace() can't be monkey-patched.
+       Fix: wrap the logout button's onclick directly so animation
+       plays BEFORE logout() is called. logout() still runs normally.
+       ═══════════════════════════════════════════════════════════ */
+    function _buildLogoutOverlay() {
+      var ov = document.getElementById('_logoutOverlay');
+      if (ov) return; // already shown
+      ov = document.createElement('div');
+      ov.id = '_logoutOverlay';
+      ov.innerHTML =
+        /* Top page-loading progress bar */
+        '<div class="lo-progress-bar"></div>' +
+        /* Centered card */
+        '<div class="lo-card">' +
+          '<div class="lo-icon"><i class="fa-solid fa-place-of-worship"></i></div>' +
+          '<div class="lo-text">Logging out' +
+            '<span class="lo-dot"></span>' +
+            '<span class="lo-dot"></span>' +
+            '<span class="lo-dot"></span>' +
+          '</div>' +
+          '<div class="lo-mini-bar"><div class="lo-mini-bar-fill"></div></div>' +
+          '<div class="lo-sub">See you soon 🙏</div>' +
+        '</div>';
+      document.body.appendChild(ov);
+      document.body.classList.add('logging-out');
+    }
+
+    // Exposed so the logout button onclick can call it
+    window._uiLogoutWithAnim = function() {
+      _buildLogoutOverlay();
+      // Let animation play for 1100ms so progress bar renders fully before redirect
+      setTimeout(function() {
+        if (typeof logout === 'function') logout();
+      }, 1100);
+    };
+
+    /* ═══════════════════════════════════════════════════════════
+       FIX 4 — Undo toast dismiss (×) button
+       MutationObserver injects close button whenever toast appears.
+       ═══════════════════════════════════════════════════════════ */
+    var _undoObserver = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        m.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1 && node.id === '_undoToast') {
+            // Already has close btn? skip
+            if (document.getElementById('_undoCloseBtn')) return;
+            var closeBtn = document.createElement('button');
+            closeBtn.id = '_undoCloseBtn';
+            closeBtn.title = 'Dismiss';
+            closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            closeBtn.onclick = function(e) {
+              e.stopPropagation();
+              if (window._undoQueue) {
+                if (window._undoQueue.timer)  clearTimeout(window._undoQueue.timer);
+                if (window._undoQueue.rafId)  cancelAnimationFrame(window._undoQueue.rafId);
+                window._undoQueue = null;
+              }
+              var t = document.getElementById('_undoToast');
+              if (t) {
+                t.style.animation = '_undoSlideOut 0.22s ease forwards';
+                setTimeout(function() { if (t.parentNode) t.remove(); }, 220);
+              }
+            };
+            node.appendChild(closeBtn);
+          }
+        });
+      });
+    });
+    _undoObserver.observe(document.body, { childList: true });
+
+    /* Inject keyframe animations for success/error states in slide panels */
+    var st = document.createElement('style');
+    st.textContent =
+      '@keyframes _csBounce{0%{transform:scale(0) rotate(-15deg);opacity:0}' +
+        '65%{transform:scale(1.15) rotate(5deg)}' +
+        '100%{transform:scale(1) rotate(0);opacity:1}}';
+    document.head.appendChild(st);
+
+  })();
+  </script>
+
 </body>
 
 </html>

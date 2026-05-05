@@ -137,6 +137,17 @@ const _LR={
 };
 
 function _loginGuard(){
+  // Check server-side rate lock (persists across tab close/reopen via sessionStorage)
+  try{
+    const _srl=parseInt(sessionStorage.getItem("_server_rl_lock")||"0",10);
+    if(_srl&&Date.now()<_srl){
+      const mins=Math.ceil((_srl-Date.now())/60000);
+      setMsg("loginMsg","🔒 Too many failed attempts. Wait "+mins+" min"+(mins>1?"s":"")+" before retrying.","error");
+      const btn=document.getElementById("loginBtn");if(btn)btn.disabled=true;
+      setTimeout(()=>{sessionStorage.removeItem("_server_rl_lock");const b=document.getElementById("loginBtn");if(b)b.disabled=false;setMsg("loginMsg","","");},_srl-Date.now()+500);
+      return false;
+    }else if(_srl){sessionStorage.removeItem("_server_rl_lock");}
+  }catch(e){}
   const mobile=(document.getElementById("mobile")?.value||"").trim();
   if(mobile&&!/^[6-9]\d{9}$/.test(mobile)){
     setMsg("loginMsg","❌ Please enter a valid 10-digit Indian mobile number.","error");return false;
@@ -186,15 +197,30 @@ async function doLogin(){
     });
     if(res.status==="success"){
       const user=res.user;delete user.Password;
-      const sessionToken=Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)+Date.now();
+      const sessionToken=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,"0")).join("");
       const sessionData={userId:user.UserId,name:user.Name,role:user.Role,email:user.Email||"",photoURL:user.PhotoURL||"",expiry:Date.now()+30*60*1000,sessionToken};
       localStorage.setItem("session",JSON.stringify(sessionData));
       if(document.getElementById("rememberMe").checked){
         saveRememberToken(user.UserId,user.Name,user.Role,user.Email||"",sessionToken);
       }
       try{const bc=new BroadcastChannel("mandir_session");bc.postMessage({type:"SESSION_REVOKED",userId:String(user.UserId)});setTimeout(()=>bc.close(),500);}catch(e){}
-      // Show last-login info if available
-      const lastLoginStr = res.lastLogin ? " · Last login: "+res.lastLogin : "";
+      // Show last-login info — convert ISO UTC string to IST dd-MM-yyyy HH:mm:ss
+      function _fmtLastLogin(raw) {
+        if (!raw) return "";
+        try {
+          if (/^\d{2}-\d{2}-\d{4}/.test(String(raw))) return String(raw); // already formatted
+          const d = new Date(raw);
+          if (isNaN(d.getTime())) return String(raw);
+          const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+          const dd  = String(ist.getUTCDate()).padStart(2,"0");
+          const mm  = String(ist.getUTCMonth()+1).padStart(2,"0");
+          const hh  = String(ist.getUTCHours()).padStart(2,"0");
+          const mi  = String(ist.getUTCMinutes()).padStart(2,"0");
+          const ss  = String(ist.getUTCSeconds()).padStart(2,"0");
+          return dd+"-"+mm+"-"+ist.getUTCFullYear()+" "+hh+":"+mi+":"+ss;
+        } catch(e) { return String(raw); }
+      }
+      const lastLoginStr = res.lastLogin ? " · Last login: "+_fmtLastLogin(res.lastLogin) : "";
       setMsg("loginMsg","✓ Login successful! Redirecting..."+lastLoginStr,"success");
       _loginSuccess();
       // FIX: Await token write BEFORE redirecting. This prevents SESSION_TOKEN_MISMATCH
@@ -217,8 +243,17 @@ async function doLogin(){
         document.getElementById("password").classList.add("field-err");
       }else if(code==="rate_limited"){
         setMsg("loginMsg","🔒 "+msg,"error");
+        // Lock the client button for the full 15-min server window so no further
+        // requests fire. This complements the server-side CacheService block.
+        const _serverLockMs=15*60*1000;
+        const _lockEnd=Date.now()+_serverLockMs;
+        try{sessionStorage.setItem("_server_rl_lock",String(_lockEnd));}catch(e){}
         const btn=document.getElementById("loginBtn");if(btn)btn.disabled=true;
-        setTimeout(()=>{const b=document.getElementById("loginBtn");if(b)b.disabled=false;setMsg("loginMsg","","");},15*60*1000);
+        setTimeout(()=>{
+          try{sessionStorage.removeItem("_server_rl_lock");}catch(e){}
+          const b=document.getElementById("loginBtn");if(b)b.disabled=false;
+          setMsg("loginMsg","","");
+        },_serverLockMs);
       }else{
         // account_rejected, account_inactive, account_invalid — no field highlight
         setMsg("loginMsg","❌ "+msg,"error");
@@ -504,11 +539,250 @@ window.addEventListener("load",function(){
 //  registerUser POST atomic (verify OTP + write row together),
 //  rate-limit: max 3 OTP sends / 15 min, 60s resend cooldown
 // ══════════════════════════════════════════════════════════════════
-let _reg = { otpKey: null, email: null, sendCount: 0, sendLockUntil: 0 };
+let _reg = { otpKey: null, email: null, sendCount: 0, sendLockUntil: 0, photob64: '' };
 const REG_MAX_SENDS = 3, REG_LOCK_MS = 15 * 60 * 1000, REG_RESEND_COOLDOWN = 60;
 
+// ══════════════════════════════════════════════════════════════════
+//  REGISTRATION — REAL-TIME FIELD VALIDATION
+//  Each required field is checked on oninput. The submit button is
+//  disabled until every field passes its rule. Server-side validation
+//  still runs as the final safety net — this never replaces it.
+// ══════════════════════════════════════════════════════════════════
+const _REG_RULES = {
+  reg_name:    v => v.trim().length >= 2    ? '' : 'Min 2 characters required.',
+  reg_mobile:  v => /^[6-9]\d{9}$/.test(v.trim()) ? '' : 'Enter valid 10-digit mobile (starts 6–9).',
+  reg_email:   v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Enter a valid email address.',
+  reg_password:v => v.length >= 8           ? '' : 'Password must be at least 8 characters.',
+  reg_confirm: v => {
+    const p = document.getElementById('reg_password')?.value || '';
+    if(!v) return 'Please confirm your password.';
+    return v === p ? '' : 'Passwords do not match.';
+  },
+  reg_village: v => v.trim().length > 0     ? '' : 'Village / town is required.',
+};
+
+// Show or clear inline error under a field. Returns true if field is valid.
+function _regShowFieldState(id, errMsg){
+  const el = document.getElementById(id); if(!el) return true;
+  // Remove existing inline error span
+  let next = el.parentElement.nextElementSibling;
+  if(next && next.classList.contains('field-err-msg')) next.remove();
+  if(errMsg){
+    el.classList.add('field-err');
+    const sp = document.createElement('span');
+    sp.className = 'field-err-msg'; sp.textContent = errMsg;
+    el.parentElement.insertAdjacentElement('afterend', sp);
+    return false;
+  } else {
+    el.classList.remove('field-err');
+    return true;
+  }
+}
+
+// Called oninput on each field — validates that field only, then updates button state
+function regValidateField(id){
+  const el = document.getElementById(id); if(!el) return;
+  const rule = _REG_RULES[id]; if(!rule) return;
+  const val = el.value;
+  // Only show error after user has typed something (not on first empty focus)
+  const err = val.length > 0 ? rule(val) : '';
+  _regShowFieldState(id, err);
+  _regUpdateSubmitBtn();
+}
+
+// Checks ALL required fields silently and enables/disables the submit button
+function _regUpdateSubmitBtn(){
+  const btn = document.getElementById('regSendOtpBtn'); if(!btn) return;
+  let allOk = true;
+  for(const id in _REG_RULES){
+    const el = document.getElementById(id); if(!el) continue;
+    if(el.value.length === 0 || _REG_RULES[id](el.value) !== ''){
+      allOk = false; break;
+    }
+  }
+  btn.disabled = !allOk;
+  btn.style.opacity = allOk ? '1' : '0.55';
+}
+
+// Full validate-all on submit click (returns false to block if anything fails)
+function _regValidateAll(){
+  let ok = true;
+  for(const id in _REG_RULES){
+    const el = document.getElementById(id); if(!el) continue;
+    const err = _REG_RULES[id](el.value);
+    if(!_regShowFieldState(id, err)) ok = false;
+  }
+  return ok;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  REGISTRATION — PHOTO PICK + SELF-CONTAINED CROP MODAL
+//  Mirrors app.js openCropModal / initCrop exactly:
+//    • baseScale = Math.min(wW/iW, wH/iH)  — fit image into wrap
+//    • zoom multiplier 1–4 (slider 100–400)
+//    • floating square _cropBox overlay; user drags image under it
+//    • export: naturalScale coords → 400×400 JPEG 0.80
+//    • touch passive:true (same as app.js) — no scroll conflict
+//      inside the fixed crop overlay
+//  login.html does NOT load app.js, so this is fully standalone.
+// ══════════════════════════════════════════════════════════════════
+function regPickPhoto(){ document.getElementById('regPhotoFile')?.click(); }
+
+function regHandlePhotoSelected(input){
+  const file = input.files[0]; if(!file) return;
+  if(file.size > 8 * 1024 * 1024){ toast('Photo must be under 8 MB.','error'); return; }
+  const reader = new FileReader();
+  reader.onload = function(ev){ _regOpenCrop(ev.target.result); };
+  reader.readAsDataURL(file);
+  input.value = ''; // allow re-select of same file
+}
+
+// ── Crop state (mirrors app.js window._doCrop closure via module-level vars)
+let _regCropState = null; // set inside _regInitCrop, read by regCropConfirm
+
+function _regOpenCrop(origSrc){
+  const overlay  = document.getElementById('regCropOverlay');
+  const wrap     = document.getElementById('regCropViewport');  // plays role of _cropWrap
+  const imgEl    = document.getElementById('regCropImg');
+  const zoomSlider = document.getElementById('regCropZoom');
+  const zoomLabel  = document.getElementById('regCropZoomLabel');
+  if(!overlay||!wrap||!imgEl) return;
+  overlay.style.display = 'flex';
+  zoomSlider.value = 100;
+  if(zoomLabel) zoomLabel.textContent = 'Zoom: 100%';
+  imgEl.src = origSrc;
+  imgEl.onload = function(){ _regInitCrop(imgEl, origSrc, wrap, zoomSlider, zoomLabel); };
+}
+
+function _regInitCrop(imgEl, origSrc, wrap, zoomSlider, zoomLabel){
+  // ── Exactly mirrors initCrop() in app.js ──
+  const cropBox   = document.getElementById('regCropBox');
+  const wW = wrap.clientWidth, wH = wrap.clientHeight;
+  const iW = imgEl.naturalWidth, iH = imgEl.naturalHeight;
+
+  const baseScale = Math.min(wW/iW, wH/iH);
+  let zoom = 1;
+  let imgX = 0, imgY = 0;
+
+  // Square crop box: 82% of min dimension, centred — same ratio as app.js (0.82)
+  const side = Math.min(wW, wH) * 0.82;
+  const boxL = (wW - side) / 2, boxT = (wH - side) / 2;
+  cropBox.style.left   = boxL + 'px'; cropBox.style.top    = boxT + 'px';
+  cropBox.style.width  = side + 'px'; cropBox.style.height = side + 'px';
+
+  function clampImg(){
+    const dW = iW*baseScale*zoom, dH = iH*baseScale*zoom;
+    const minX = boxL+side-dW, maxX = boxL;
+    const minY = boxT+side-dH, maxY = boxT;
+    imgX = Math.max(minX, Math.min(maxX, imgX));
+    imgY = Math.max(minY, Math.min(maxY, imgY));
+  }
+  function applyTransform(){
+    const dW = iW*baseScale*zoom, dH = iH*baseScale*zoom;
+    imgEl.style.width  = dW + 'px'; imgEl.style.height = dH + 'px';
+    imgEl.style.left   = imgX + 'px'; imgEl.style.top   = imgY + 'px';
+  }
+
+  // Init: centre image, clamp so crop box is inside
+  zoom = 1;
+  imgX = (wW - iW*baseScale) / 2;
+  imgY = (wH - iH*baseScale) / 2;
+  clampImg(); applyTransform();
+
+  // Zoom slider — mirrors app.js exactly
+  zoomSlider.addEventListener('input', function(){
+    zoom = Number(this.value) / 100;
+    if(zoomLabel) zoomLabel.textContent = 'Zoom: ' + this.value + '%';
+    clampImg(); applyTransform();
+  });
+
+  // Mouse drag — mirrors app.js
+  let dragging = false, lastX, lastY;
+  wrap.addEventListener('mousedown', function(e){
+    dragging = true; lastX = e.clientX; lastY = e.clientY; e.preventDefault();
+  });
+  window.addEventListener('mousemove', function(e){
+    if(!dragging) return;
+    imgX += e.clientX - lastX; imgY += e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    clampImg(); applyTransform();
+  });
+  window.addEventListener('mouseup', function(){ dragging = false; });
+
+  // Touch drag + pinch — mirrors app.js (passive:true same as app.js)
+  let lastDist = null, lastTX, lastTY;
+  wrap.addEventListener('touchstart', function(e){
+    if(e.touches.length===1){ lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY; }
+    if(e.touches.length===2){ lastDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); }
+  },{passive:true});
+  wrap.addEventListener('touchmove', function(e){
+    if(e.touches.length===1){
+      imgX+=e.touches[0].clientX-lastTX; imgY+=e.touches[0].clientY-lastTY;
+      lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY;
+      clampImg(); applyTransform();
+    } else if(e.touches.length===2 && lastDist){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      const ratio=d/lastDist;
+      zoom=Math.max(1, Math.min(4, zoom*ratio));
+      zoomSlider.value=Math.round(zoom*100);
+      if(zoomLabel) zoomLabel.textContent='Zoom: '+Math.round(zoom*100)+'%';
+      lastDist=d; clampImg(); applyTransform();
+    }
+  },{passive:true});
+  wrap.addEventListener('touchend', function(e){ if(e.touches.length<2) lastDist=null; },{passive:true});
+
+  // Store export closure — mirrors app.js window._doCrop pattern
+  _regCropState = function(){
+    // Convert screen cropBox coords → natural image coords (exact same as app.js)
+    const dW = iW * baseScale * zoom;
+    const naturalScale = iW / dW;
+    const cropNatX = (boxL - imgX) * naturalScale;
+    const cropNatY = (boxT - imgY) * naturalScale;
+    const cropNatS = side * naturalScale;
+    const out = 400;
+    const canvas = document.createElement('canvas');
+    canvas.width = out; canvas.height = out;
+    const ctx = canvas.getContext('2d');
+    const temp = new Image(); temp.src = origSrc;
+    temp.onload = function(){
+      ctx.drawImage(temp, cropNatX, cropNatY, cropNatS, cropNatS, 0, 0, out, out);
+      // Same quality as app.js: 0.80 — kept for preview display
+      const b64Full = canvas.toDataURL('image/jpeg', 0.80);
+      // Downsize to 80x80 for JSONP transfer — Apps Script GET URL limit.
+      // Avatar is displayed at 80px in app; full-res update via Edit Profile after approval.
+      // Drive stores thumbnail at w400 anyway so no quality difference in the URL.
+      const small = document.createElement('canvas');
+      small.width = 80; small.height = 80;
+      small.getContext('2d').drawImage(canvas, 0, 0, 80, 80);
+      _reg.photob64 = small.toDataURL('image/jpeg', 0.65);
+      // Use full-res for the in-form preview so it looks sharp
+      const b64 = b64Full;
+      // Show preview in form
+      const preview     = document.getElementById('regPhotoPreview');
+      const placeholder = document.getElementById('regPhotoPlaceholder');
+      const previewWrap = document.getElementById('regPhotoPreviewWrap');
+      if(preview){ preview.src = b64; preview.style.display = 'block'; }
+      if(placeholder) placeholder.style.display = 'none';
+      if(previewWrap){ previewWrap.style.border = '2.5px solid #f7a01a'; previewWrap.style.background = '#000'; }
+      document.getElementById('regCropOverlay').style.display = 'none';
+      _regCropState = null;
+      toast('Photo added! It will be saved with your registration.');
+    };
+  };
+}
+
+function regCropCancel(){
+  document.getElementById('regCropOverlay').style.display = 'none';
+  _regCropState = null;
+}
+
+function regCropConfirm(){
+  // Mirrors app.js confirmCrop() → window._doCrop()
+  if(_regCropState) _regCropState();
+}
+
 function openRegisterModal(){
-  _reg = { otpKey:null, email:null, sendCount:0, sendLockUntil:0 };
+  _reg = { otpKey:null, email:null, sendCount:0, sendLockUntil:0, photob64:'' };
   ['reg_name','reg_mobile','reg_email','reg_password','reg_confirm','reg_village','reg_address','reg_dob'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
@@ -518,6 +792,10 @@ function openRegisterModal(){
   setMsg('regMsg','',''); setMsg('regOtpMsg','','');
   const tcCb=document.getElementById('reg_tc'); if(tcCb){tcCb.checked=false;tcCb.disabled=true;}
   const tcErr=document.getElementById('tcErrMsg'); if(tcErr)tcErr.style.display='none';
+  // Reset photo picker
+  const preview=document.getElementById('regPhotoPreview'); if(preview){preview.src='';preview.style.display='none';}
+  const placeholder=document.getElementById('regPhotoPlaceholder'); if(placeholder)placeholder.style.display='flex';
+  const wrap=document.getElementById('regPhotoPreviewWrap'); if(wrap){wrap.style.border='2.5px dashed #f7a01a';wrap.style.background='#fffbf5';}
   // Show details form first, hide OTP step and success
   document.getElementById('regForm').style.display='block';
   document.getElementById('regOtpStep').style.display='none';
@@ -528,6 +806,9 @@ function openRegisterModal(){
   // Cap DOB picker at today — no future birthdates
   const dobEl=document.getElementById('reg_dob');
   if(dobEl) dobEl.max=new Date().toISOString().slice(0,10);
+  // Disable submit until all fields are valid
+  const btn=document.getElementById('regSendOtpBtn');
+  if(btn){btn.disabled=true;btn.style.opacity='0.55';}
   setTimeout(()=>{const n=document.getElementById('reg_name');if(n)n.focus();},100);
 }
 function closeRegisterModal(){ document.getElementById('registerModal').style.display='none'; }
@@ -551,6 +832,8 @@ async function regSendOtp(){
     _reg.sendLockUntil=Date.now()+REG_LOCK_MS; _reg.sendCount=0;
     setMsg('regMsg','🔒 Too many OTP requests. Please wait 15 minutes.','error'); return;
   }
+  // Full field validation (catches any field not yet touched by oninput)
+  if(!_regValidateAll()) return;
   // T&C check
   const tcCb=document.getElementById('reg_tc');
   if(!tcCb||!tcCb.checked){
@@ -560,22 +843,7 @@ async function regSendOtp(){
     return;
   }
   const tcErr=document.getElementById('tcErrMsg'); if(tcErr)tcErr.style.display='none';
-  // Field validation
-  const name=document.getElementById('reg_name').value.trim();
-  const mobile=document.getElementById('reg_mobile').value.trim();
   const email=document.getElementById('reg_email').value.trim();
-  const pwd=document.getElementById('reg_password').value;
-  const confirm=document.getElementById('reg_confirm').value;
-  const village=document.getElementById('reg_village').value.trim();
-  let hasErr=false;
-  if(!name||name.length<2){setFieldErr('reg_name','Full name is required (min 2 chars).');hasErr=true;}
-  if(!mobile||!/^[6-9]\d{9}$/.test(mobile)){setFieldErr('reg_mobile','Enter a valid 10-digit Indian mobile (starts 6–9).');hasErr=true;}
-  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setFieldErr('reg_email','Enter a valid email address.');hasErr=true;}
-  if(!pwd||pwd.length<8){setFieldErr('reg_password','Password must be at least 8 characters.');hasErr=true;}
-  else if(pwd!==confirm){setFieldErr('reg_confirm','Passwords do not match.');hasErr=true;}
-  if(!village){setFieldErr('reg_village','Village or town is required.');hasErr=true;}
-  if(hasErr) return;
-  // Send OTP
   const btn=document.getElementById('regSendOtpBtn');
   btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
   try {
@@ -672,11 +940,17 @@ async function regVerifyAndSubmit(){
     // Convert YYYY-MM-DD → DD-MM-YYYY for consistent sheet storage
     const dob=rawDob ? rawDob.split('-').reverse().join('-') : '';
     const hashedPwd=await sha256(pwd);
+
+    // ── Photo: send 80x80 base64 directly in the JSONP call.
+    // fetch POST is blocked by CORS on Apps Script. JSONP (script GET) is the only
+    // cross-origin pattern that works. 80x80 q=0.65 ≈ 3-5KB base64 → fits in GET URL.
     const res=await postData({
       action:'registerUser',
       otpKey:_reg.otpKey, otp,
       Name:name, Mobile:mobile, Email:email,
-      Password:hashedPwd, Village:village, Address:address, DOB:dob
+      Password:hashedPwd, Village:village, Address:address, DOB:dob,
+      PhotoB64: _reg.photob64 || '',
+      FileName: _reg.photob64 ? ('Reg_' + mobile + '_' + Date.now() + '.jpg') : ''
     });
     if(res&&res.status==='success'){
       clearInterval(_regResendInterval);

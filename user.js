@@ -31,10 +31,10 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
       if (nameEl && s.name) nameEl.innerText = s.name;
       if (dropNameEl && s.name) dropNameEl.innerText = s.name;
       if (s.name) {
-        const av40 = document.getElementById("hdr_photo");
+        // hdr_photo already has src="Image/logo.PNG" from HTML — leave it (logo shows).
+        // hdr_drop_photo starts as "data:," — set it to logo too so both are consistent.
         const av34 = document.getElementById("hdr_drop_photo");
-        if (av40 && !av40.src) av40.src = _initialsAvatar(s.name, 40);
-        if (av34 && !av34.src) av34.src = _initialsAvatar(s.name, 34);
+        if (av34) av34.src = "Image/logo.PNG";
       }
     } catch(e) {}
   })();
@@ -234,15 +234,17 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
     document.getElementById("hdr_drop_name").innerText = name;
     const roleEl = document.getElementById("hdr_drop_role");
     if (roleEl) roleEl.textContent = myProfile?.Role || s.role || "Member";
-    // Show initials instantly, then load real photo via backend proxy (fixes CORS block)
+    // Show logo instantly as placeholder, then fade in real photo if user has one.
+    // If no PhotoURL (or photo fails to load) → logo stays. Never show initials/alphabet here.
     const hdrPhoto = document.getElementById("hdr_photo");
     const dropPhoto = document.getElementById("hdr_drop_photo");
-    if (hdrPhoto) hdrPhoto.src = _initialsAvatar(name, 40);
-    if (dropPhoto) dropPhoto.src = _initialsAvatar(name, 34);
+    const LOGO_SRC = "Image/logo.PNG";
+    if (hdrPhoto) hdrPhoto.src = LOGO_SRC;
+    if (dropPhoto) dropPhoto.src = LOGO_SRC;
     const rawUrl = myProfile?.PhotoURL || s.photoURL || "";
     if (rawUrl) {
       _fetchPhotoBase64(rawUrl).then(function(b64) {
-        if (!b64) return; // keep initials on failure
+        if (!b64) return; // keep logo on failure
         if (hdrPhoto) {
           hdrPhoto.style.transition = "opacity 0.35s ease";
           hdrPhoto.style.opacity = "0";
@@ -1231,6 +1233,197 @@ existing updateUser action. No new Apps Script action needed.
     if (overlay) overlay.classList.remove("show");
   }
 
+  // ── [DEFAULT-PWD] Forced password change screen
+  //    Shown when user still has the default "JaiShreeRam" password set by admin.
+  //    Full-screen overlay — cannot be dismissed without changing the password.
+  //    On success: calls changePassword API → auto-logout → redirect to login.
+  function _showForceChangePassword(session) {
+    // Build the overlay
+    var ov = document.createElement("div");
+    ov.id = "forcePwdOverlay";
+    ov.style.cssText = [
+      "position:fixed;inset:0;z-index:99999",
+      "background:linear-gradient(135deg,#1a0800 0%,#2d1200 50%,#1a0800 100%)",
+      "display:flex;align-items:center;justify-content:center",
+      "padding:20px;box-sizing:border-box",
+      "animation:fadeIn .35s ease"
+    ].join(";");
+
+    ov.innerHTML = [
+      '<style>',
+      '@keyframes fadeIn{from{opacity:0}to{opacity:1}}',
+      '@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}',
+      '#forcePwdCard{background:linear-gradient(160deg,#2d1a00,#1e1000);border:1.5px solid rgba(247,160,26,0.35);border-radius:24px;padding:32px 28px 28px;max-width:400px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.6);animation:slideUp .4s cubic-bezier(.22,1,.36,1);}',
+      '#forcePwdCard input{width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1.5px solid rgba(247,160,26,0.25);border-radius:12px;color:#f1e8d8;font-size:15px;padding:12px 44px 12px 14px;outline:none;transition:border .2s;}',
+      '#forcePwdCard input:focus{border-color:rgba(247,160,26,0.7);}',
+      '#forcePwdCard input::placeholder{color:rgba(241,232,216,0.35);}',
+      '.fpwd-eye{position:absolute;right:13px;top:50%;transform:translateY(-50%);cursor:pointer;color:rgba(247,160,26,0.6);font-size:14px;}',
+      '.fpwd-eye:hover{color:#f7a01a;}',
+      '#fpwd_strength_bar{height:5px;border-radius:3px;transition:width .3s,background .3s;width:0%;}',
+      '#fpwd_save_btn{width:100%;padding:14px;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#f7a01a,#e8920a);color:#1a0800;box-shadow:0 4px 16px rgba(247,160,26,0.35);transition:opacity .2s;letter-spacing:.3px;}',
+      '#fpwd_save_btn:disabled{opacity:.5;cursor:not-allowed;}',
+      '#fpwd_save_btn:not(:disabled):hover{opacity:.88;}',
+      '</style>',
+      '<div id="forcePwdCard">',
+        // Header
+        '<div style="text-align:center;margin-bottom:24px;">',
+          '<div style="width:56px;height:56px;background:rgba(247,160,26,0.15);border:2px solid rgba(247,160,26,0.4);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">',
+            '<i class="fa-solid fa-shield-halved" style="color:#f7a01a;font-size:24px;"></i>',
+          '</div>',
+          '<div style="color:#f7a01a;font-size:20px;font-weight:700;margin-bottom:6px;">Set Your Password</div>',
+          '<div style="color:rgba(241,232,216,0.65);font-size:13px;line-height:1.6;">',
+            'Your account is using a temporary password.<br>',
+            'Please set a new secure password to continue.',
+          '</div>',
+        '</div>',
+        // New Password
+        '<div style="margin-bottom:6px;color:rgba(241,232,216,0.7);font-size:12px;font-weight:600;letter-spacing:.4px;">NEW PASSWORD</div>',
+        '<div style="position:relative;margin-bottom:6px;">',
+          '<input type="password" id="fpwd_new" placeholder="Enter new password" autocomplete="new-password" oninput="_fpwdStrength(this.value);_fpwdMatchCheck()" />',
+          '<span class="fpwd-eye" onclick="_fpwdToggle(\'fpwd_new\',this)"><i class="fa-solid fa-eye"></i></span>',
+        '</div>',
+        // Strength bar
+        '<div style="background:rgba(255,255,255,0.08);border-radius:3px;margin-bottom:4px;overflow:hidden;">',
+          '<div id="fpwd_strength_bar"></div>',
+        '</div>',
+        '<div id="fpwd_strength_label" style="font-size:11px;color:rgba(241,232,216,0.45);margin-bottom:16px;min-height:16px;"></div>',
+        // Confirm Password
+        '<div style="margin-bottom:6px;color:rgba(241,232,216,0.7);font-size:12px;font-weight:600;letter-spacing:.4px;">CONFIRM PASSWORD</div>',
+        '<div style="position:relative;margin-bottom:6px;">',
+          '<input type="password" id="fpwd_confirm" placeholder="Repeat new password" autocomplete="new-password" oninput="_fpwdMatchCheck()" />',
+          '<span class="fpwd-eye" onclick="_fpwdToggle(\'fpwd_confirm\',this)"><i class="fa-solid fa-eye"></i></span>',
+        '</div>',
+        '<div id="fpwd_match_label" style="font-size:12px;min-height:18px;margin-bottom:18px;"></div>',
+        // Error message
+        '<div id="fpwd_error" style="font-size:13px;color:#f87171;min-height:18px;margin-bottom:12px;text-align:center;"></div>',
+        // Submit button
+        '<button id="fpwd_save_btn" onclick="_fpwdSave()">',
+          '<i class="fa-solid fa-key"></i> Set New Password',
+        '</button>',
+        '<div style="text-align:center;margin-top:14px;color:rgba(241,232,216,0.3);font-size:11px;">',
+          '🔒 You will be logged out after changing your password.',
+        '</div>',
+      '</div>'
+    ].join("");
+
+    document.body.appendChild(ov);
+
+    // Store session for the save handler
+    window._fpwdSession = session;
+
+    // ── Password strength checker
+    window._fpwdStrength = function(val) {
+      var bar   = document.getElementById("fpwd_strength_bar");
+      var label = document.getElementById("fpwd_strength_label");
+      if (!bar || !label) return;
+      if (!val) { bar.style.width = "0%"; label.textContent = ""; return; }
+      var score = 0;
+      if (val.length >= 8)                        score++;
+      if (val.length >= 12)                       score++;
+      if (/[A-Z]/.test(val))                      score++;
+      if (/[0-9]/.test(val))                      score++;
+      if (/[^A-Za-z0-9]/.test(val))               score++;
+      var levels = [
+        { pct:"20%", color:"#ef4444", text:"Very Weak"  },
+        { pct:"40%", color:"#f97316", text:"Weak"       },
+        { pct:"60%", color:"#eab308", text:"Fair"       },
+        { pct:"80%", color:"#22c55e", text:"Strong"     },
+        { pct:"100%",color:"#16a34a", text:"Very Strong"}
+      ];
+      var lv = levels[Math.min(score, 4)];
+      bar.style.width       = lv.pct;
+      bar.style.background  = lv.color;
+      label.textContent     = lv.text;
+      label.style.color     = lv.color;
+    };
+
+    // ── Confirm match checker
+    window._fpwdMatchCheck = function() {
+      var newVal  = (document.getElementById("fpwd_new")     || {}).value || "";
+      var confVal = (document.getElementById("fpwd_confirm") || {}).value || "";
+      var ml      = document.getElementById("fpwd_match_label");
+      if (!ml || !confVal) { if(ml) ml.textContent = ""; return; }
+      if (newVal === confVal) {
+        ml.textContent = "✅ Passwords match";
+        ml.style.color = "#4ade80";
+      } else {
+        ml.textContent = "❌ Passwords do not match";
+        ml.style.color = "#f87171";
+      }
+    };
+
+    // ── Toggle eye icon
+    window._fpwdToggle = function(inputId, el) {
+      var inp = document.getElementById(inputId);
+      if (!inp) return;
+      inp.type = inp.type === "password" ? "text" : "password";
+      var ic = el.querySelector("i");
+      if (ic) { ic.className = inp.type === "password" ? "fa-solid fa-eye" : "fa-solid fa-eye-slash"; }
+    };
+
+    // ── Save handler
+    window._fpwdSave = async function() {
+      var newVal  = (document.getElementById("fpwd_new")     || {}).value || "";
+      var confVal = (document.getElementById("fpwd_confirm") || {}).value || "";
+      var errEl   = document.getElementById("fpwd_error");
+      var btn     = document.getElementById("fpwd_save_btn");
+      var setErr  = function(msg) { if (errEl) errEl.textContent = msg; };
+      setErr("");
+
+      if (!newVal || newVal.length < 6) { setErr("Password must be at least 6 characters."); return; }
+      if (newVal === "JaiShreeRam")     { setErr("You cannot use the default password. Please choose a new one."); return; }
+      if (newVal !== confVal)           { setErr("Passwords do not match."); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating…';
+
+      try {
+        var s        = window._fpwdSession;
+        var oldHash  = await sha256("JaiShreeRam");
+        var newHash  = await sha256(newVal);
+
+        var res = await postData({
+          action:       "changePassword",
+          UserId:       s.userId,
+          OldPassword:  oldHash,
+          NewPassword:  newHash,
+          sessionToken: s.sessionToken || ""
+        });
+
+        if (res && res.status === "success") {
+          btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Password Changed!';
+          btn.style.background = "linear-gradient(135deg,#22c55e,#16a34a)";
+          if (errEl) {
+            errEl.style.color = "#4ade80";
+            errEl.textContent = "✅ Password updated! Logging you out…";
+          }
+          // Logout after short delay so user sees success message
+          setTimeout(function() {
+            try {
+              var _s = window._fpwdSession || {};
+              postData({ action: "logout", userId: _s.userId || "", userName: _s.name || "User",
+                         sessionToken: _s.sessionToken || "" }).catch(function(){});
+            } catch(e) {}
+            ["session", _U_RMK].forEach(function(k) {
+              try { localStorage.removeItem(k); } catch(e) {}
+            });
+            sessionStorage.clear();
+            history.replaceState(null, "", "login.html");
+            location.replace("login.html");
+          }, 1800);
+        } else {
+          setErr(res && res.message ? res.message : "Failed to update password. Please try again.");
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-key"></i> Set New Password';
+        }
+      } catch (err) {
+        setErr("Error: " + err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-key"></i> Set New Password';
+      }
+    };
+  }
+
   /* Auto-retry countdown state */
   var _uloCountdownTimer = null;
   var _uloCountdownSec   = 0;
@@ -1397,8 +1590,27 @@ existing updateUser action. No new Apps Script action needed.
       if (!_myProfile) {
         throw new Error("Your profile could not be found. Please retry.");
       }
-      _uloStep(3); // Building your dashboard…
+
+      // ── Load header photo from sheet data on every dashboard entry.
+      // The page-load block sets only initials from session (no photoURL in session).
+      // updateHeader() was only called after edit-profile save — never on first load.
       updateHeader(_myProfile, s);
+
+      // ── [DEFAULT-PWD] Force password change if still using default "JaiShreeRam" password.
+      //    getAllData strips Password hashes for security, but returns IsDefaultPwd:true
+      //    for the requesting user when their stored hash matches the default "JaiShreeRam" hash.
+      //    This flag is set server-side — no hash is ever exposed to the frontend.
+      if (_myProfile.IsDefaultPwd === true) {
+        // Overlay complete → hide it, show the forced change password screen
+        _uloStepComplete();
+        setTimeout(function() {
+          _hideUserLoadingOverlay();
+          _showForceChangePassword(s);
+        }, 400);
+        return; // do NOT continue loading the dashboard
+      }
+
+      _uloStep(3); // Building your dashboard…
       calculateTotal();
 
       // ── Reveal hero FIRST — user sees their data immediately

@@ -85,7 +85,7 @@
        ✔ SYNC splashText, heroText, heroSub, committee with appscript CFG. */
     splashText: "॥ जय श्री राम ॥",
     heroText:   "|| श्री हनुमत आश्रम ||",
-    heroSub:    "राम यज्ञ विश्‍वकर्मा",
+    heroSub:    "राम जग विश्‍वकर्मा",
     committee:  "Ram Yagya Vishwakarma Committee",
   
   
