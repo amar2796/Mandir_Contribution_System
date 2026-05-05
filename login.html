@@ -228,33 +228,52 @@
           <span style="height:6px;width:60px;border-radius:3px;background:#f7a01a;"></span>
           <span style="height:6px;width:60px;border-radius:3px;background:#eee;"></span>
         </div>
+
+        <!-- ── Profile Photo Picker ── -->
+        <div style="text-align:center;margin-bottom:18px;">
+          <div style="position:relative;display:inline-block;" onclick="regPickPhoto()" title="Add profile photo">
+            <div id="regPhotoPreviewWrap" style="width:80px;height:80px;border-radius:50%;border:2.5px dashed #f7a01a;background:#fffbf5;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:border-color .2s;box-shadow:0 2px 10px rgba(120,53,14,0.10);">
+              <img id="regPhotoPreview" src="" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:none;"/>
+              <div id="regPhotoPlaceholder" style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                <i class="fa-solid fa-camera" style="color:#f7a01a;font-size:1.4rem;"></i>
+                <span style="font-size:9px;color:#a16207;font-weight:600;">ADD PHOTO</span>
+              </div>
+            </div>
+            <div style="position:absolute;bottom:2px;right:2px;width:22px;height:22px;background:#f7a01a;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;pointer-events:none;">
+              <i class="fa-solid fa-plus" style="color:#fff;font-size:9px;"></i>
+            </div>
+          </div>
+          <div style="font-size:10.5px;color:#a16207;margin-top:6px;font-weight:500;">Optional — profile photo (1:1 crop)</div>
+        </div>
+        <input type="file" id="regPhotoFile" accept="image/*" style="display:none;" onchange="regHandlePhotoSelected(this)"/>
+
         <div class="reg-row">
           <div>
             <span class="field-label">Full Name *</span>
             <div class="input-group" style="margin-bottom:4px;">
               <i class="icon fa-solid fa-user"></i>
-              <input type="text" id="reg_name" placeholder="Your full name" maxlength="100"/>
+              <input type="text" id="reg_name" placeholder="Your full name" maxlength="100" oninput="regValidateField('reg_name')"/>
             </div>
           </div>
           <div>
             <span class="field-label">Mobile Number *</span>
             <div class="input-group" style="margin-bottom:4px;">
               <i class="icon fa-solid fa-phone"></i>
-              <input type="text" id="reg_mobile" placeholder="10-digit mobile" maxlength="10" inputmode="numeric"/>
+              <input type="text" id="reg_mobile" placeholder="10-digit mobile" maxlength="10" inputmode="numeric" oninput="regValidateField('reg_mobile')"/>
             </div>
           </div>
         </div>
         <span class="field-label">Email Address *</span>
         <div class="input-group" style="margin-bottom:4px;">
           <i class="icon fa-solid fa-at"></i>
-          <input type="email" id="reg_email" placeholder="OTP will be sent here" maxlength="200"/>
+          <input type="email" id="reg_email" placeholder="OTP will be sent here" maxlength="200" oninput="regValidateField('reg_email')"/>
         </div>
         <div class="reg-row">
           <div>
             <span class="field-label">Password *</span>
             <div class="input-group" style="margin-bottom:4px;">
               <i class="icon fa-solid fa-lock"></i>
-              <input type="password" id="reg_password" placeholder="Min 8 chars" autocomplete="new-password" oninput="checkPwdStrength(this.value,'regStrengthFill','regStrengthLabel')"/>
+              <input type="password" id="reg_password" placeholder="Min 8 chars" autocomplete="new-password" oninput="checkPwdStrength(this.value,'regStrengthFill','regStrengthLabel');regValidateField('reg_password');regValidateField('reg_confirm');"/>
               <i class="fa-solid fa-eye pwd-eye" id="toggleRegPwd"></i>
             </div>
             <div class="strength-bar"><div class="strength-fill" id="regStrengthFill"></div></div>
@@ -264,7 +283,7 @@
             <span class="field-label">Confirm Password *</span>
             <div class="input-group" style="margin-bottom:14px;">
               <i class="icon fa-solid fa-lock"></i>
-              <input type="password" id="reg_confirm" placeholder="Re-enter password" autocomplete="new-password"/>
+              <input type="password" id="reg_confirm" placeholder="Re-enter password" autocomplete="new-password" oninput="regValidateField('reg_confirm')"/>
               <i class="fa-solid fa-eye pwd-eye" id="toggleRegConfirm"></i>
             </div>
           </div>
@@ -272,7 +291,7 @@
         <span class="field-label">Village / Town *</span>
         <div class="input-group" style="margin-bottom:4px;">
           <i class="icon fa-solid fa-house"></i>
-          <input type="text" id="reg_village" placeholder="Your village or town" maxlength="100"/>
+          <input type="text" id="reg_village" placeholder="Your village or town" maxlength="100" oninput="regValidateField('reg_village')"/>
         </div>
         <span class="field-label">Full Address <span style="color:#bbb;font-weight:400;">(optional)</span></span>
         <div class="input-group" style="margin-bottom:4px;">
@@ -412,6 +431,48 @@
           <i class="fa-solid fa-circle-check"></i> I Accept the Terms &amp; Conditions
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PHOTO CROP MODAL (registration) ══ -->
+<div id="regCropOverlay" style="display:none;position:fixed;inset:0;background:rgba(30,10,0,0.72);z-index:2000;justify-content:center;align-items:center;padding:16px;">
+  <div style="background:#fff;border-radius:20px;width:100%;max-width:340px;box-shadow:0 16px 48px rgba(120,53,14,0.25);overflow:hidden;animation:slideUp .3s ease-out;">
+    <div style="background:#fffbf5;border-bottom:1px solid #fde68a;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px solid #fde68a;display:flex;align-items:center;justify-content:center;">
+          <i class="fa-solid fa-crop" style="color:#f7a01a;font-size:13px;"></i>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#78350f;">Crop Photo</div>
+          <div style="font-size:10.5px;color:#a16207;">Drag to reposition · slider or pinch to zoom</div>
+        </div>
+      </div>
+      <button onclick="regCropCancel()" style="background:none;border:none;font-size:20px;color:#bbb;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;" title="Cancel">×</button>
+    </div>
+    <!-- Image viewport — same as app.js _cropWrap: position:relative, overflow:hidden -->
+    <div id="regCropViewport" style="position:relative;overflow:hidden;background:#111;width:100%;height:300px;cursor:grab;user-select:none;touch-action:none;">
+      <img id="regCropImg" src="" draggable="false" style="position:absolute;top:0;left:0;transform-origin:top left;"/>
+      <!-- Floating square crop box — same style as app.js _cropBox -->
+      <div id="regCropBox" style="position:absolute;border:2.5px solid #f7a01a;box-shadow:0 0 0 9999px rgba(0,0,0,0.55);pointer-events:none;border-radius:2px;"></div>
+    </div>
+    <!-- Zoom slider — same range 100–400 as app.js -->
+    <div style="padding:10px 20px 4px;">
+      <label id="regCropZoomLabel" style="font-size:11px;color:#888;text-align:center;display:block;margin:0 0 4px;">Zoom: 100%</label>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <i class="fa-solid fa-magnifying-glass-minus" style="color:#bbb;font-size:12px;"></i>
+        <input type="range" id="regCropZoom" min="100" max="400" value="100" step="5"
+          style="flex:1;accent-color:#f7a01a;height:4px;cursor:pointer;"/>
+        <i class="fa-solid fa-magnifying-glass-plus" style="color:#bbb;font-size:12px;"></i>
+      </div>
+      <p style="font-size:11px;color:#999;margin:6px 0 0;text-align:center;">Square crop · drag to reposition · use slider or pinch to zoom</p>
+    </div>
+    <!-- Actions -->
+    <div style="padding:10px 20px 18px;display:flex;gap:10px;">
+      <button onclick="regCropCancel()" style="flex:1;padding:11px;border:1.5px solid #e8e4dc;border-radius:10px;background:#fff;color:#666;font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;">Cancel</button>
+      <button onclick="regCropConfirm()" style="flex:2;padding:11px;border:none;border-radius:10px;background:#78350f;color:#fff;font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">
+        <i class="fa-solid fa-check"></i> Use Photo
+      </button>
     </div>
   </div>
 </div>

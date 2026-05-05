@@ -31,10 +31,10 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
       if (nameEl && s.name) nameEl.innerText = s.name;
       if (dropNameEl && s.name) dropNameEl.innerText = s.name;
       if (s.name) {
-        const av40 = document.getElementById("hdr_photo");
+        // hdr_photo already has src="Image/logo.PNG" from HTML — leave it (logo shows).
+        // hdr_drop_photo starts as "data:," — set it to logo too so both are consistent.
         const av34 = document.getElementById("hdr_drop_photo");
-        if (av40 && !av40.src) av40.src = _initialsAvatar(s.name, 40);
-        if (av34 && !av34.src) av34.src = _initialsAvatar(s.name, 34);
+        if (av34) av34.src = "Image/logo.PNG";
       }
     } catch(e) {}
   })();
@@ -234,15 +234,17 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
     document.getElementById("hdr_drop_name").innerText = name;
     const roleEl = document.getElementById("hdr_drop_role");
     if (roleEl) roleEl.textContent = myProfile?.Role || s.role || "Member";
-    // Show initials instantly, then load real photo via backend proxy (fixes CORS block)
+    // Show logo instantly as placeholder, then fade in real photo if user has one.
+    // If no PhotoURL (or photo fails to load) → logo stays. Never show initials/alphabet here.
     const hdrPhoto = document.getElementById("hdr_photo");
     const dropPhoto = document.getElementById("hdr_drop_photo");
-    if (hdrPhoto) hdrPhoto.src = _initialsAvatar(name, 40);
-    if (dropPhoto) dropPhoto.src = _initialsAvatar(name, 34);
+    const LOGO_SRC = "Image/logo.PNG";
+    if (hdrPhoto) hdrPhoto.src = LOGO_SRC;
+    if (dropPhoto) dropPhoto.src = LOGO_SRC;
     const rawUrl = myProfile?.PhotoURL || s.photoURL || "";
     if (rawUrl) {
       _fetchPhotoBase64(rawUrl).then(function(b64) {
-        if (!b64) return; // keep initials on failure
+        if (!b64) return; // keep logo on failure
         if (hdrPhoto) {
           hdrPhoto.style.transition = "opacity 0.35s ease";
           hdrPhoto.style.opacity = "0";
@@ -1588,6 +1590,11 @@ existing updateUser action. No new Apps Script action needed.
       if (!_myProfile) {
         throw new Error("Your profile could not be found. Please retry.");
       }
+
+      // ── Load header photo from sheet data on every dashboard entry.
+      // The page-load block sets only initials from session (no photoURL in session).
+      // updateHeader() was only called after edit-profile save — never on first load.
+      updateHeader(_myProfile, s);
 
       // ── [DEFAULT-PWD] Force password change if still using default "JaiShreeRam" password.
       //    getAllData strips Password hashes for security, but returns IsDefaultPwd:true

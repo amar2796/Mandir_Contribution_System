@@ -4503,6 +4503,23 @@ function registerUser(params) {
     // [ID] Always "User" role on self-registration → USER-NNNNN
     const newId = _genUserId("User");
     const dob = sanitize(params.DOB || "", 12);
+
+    // ── Optional profile photo — 80x80 JPEG base64 sent directly in JSONP call.
+    // Resized client-side before sending so base64 (~3-5KB) fits in GET URL.
+    // fetch POST is blocked by CORS on Apps Script — JSONP is the only option.
+    // Non-fatal: registration continues without photo if upload fails.
+    let regPhotoURL = "";
+    const photoB64  = params.PhotoB64 || "";
+    const photoName = sanitize(params.FileName || "", 120);
+    if (photoB64 && photoName) {
+      try {
+        regPhotoURL = _uploadToFolder(photoB64, photoName, CFG.folderProfile);
+        logAction("System", "REG_PHOTO_UPLOADED", "Mobile: " + mobile + " | File: " + photoName, "", "", { severity:"INFO", result:"SUCCESS" });
+      } catch(photoErr) {
+        logAction("System", "REG_PHOTO_ERROR", "Mobile: " + mobile, photoErr.message, "", { severity:"WARN", result:"FAILURE" });
+      }
+    }
+
     const row = headers.map(h => {
       if (h === "UserId")       return newId;
       if (h === "Name")         return name;
@@ -4516,6 +4533,7 @@ function registerUser(params) {
       if (h === "Address")      return address;
       if (h === "RegisteredAt") return formatDate();
       if (h === "DOB")          return dob;
+      if (h === "PhotoURL")     return regPhotoURL;
       return "";
     });
     sheet.appendRow(row);
