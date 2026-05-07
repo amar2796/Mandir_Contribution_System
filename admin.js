@@ -2159,14 +2159,11 @@
       let totalC = data.reduce((a, b) => a + Number(b.Amount || 0), 0);
       let totalE = expenses.reduce((a, b) => a + Number(b.Amount || 0), 0);
 
-      // Sum all opening balances from YEAR_CONFIG
-      let totalOpening = yearConfig.reduce((sum, row) => {
-        const val = Number(
-          row.OpeningBalance || row.Opening_Balance || row.opening_balance ||
-          row.Balance || row.balance || 0
-        );
-        return sum + (isNaN(val) ? 0 : val);
-      }, 0);
+      // totalOpening: kept in _res for cache-shape compatibility but not rendered anywhere.
+      // Summing ALL years' opening balances is meaningless — each year's opening already
+      // equals the previous year's closing. Per-year opening is looked up correctly in
+      // _hmRenderYearTracker via yearConfig.find(). So we set 0 here.
+      let totalOpening = 0;
 
       // Store computed result and source references for fast-path reuse
       var _res = {
@@ -2735,7 +2732,11 @@
       // Alert 3: month progress (up to selected month)
       var selMonthIdx = MONTHS.indexOf(curMonth);
       var doneMonths = MONTHS.slice(0, selMonthIdx + 1).filter(function(m) {
-        return data.some(function(c) { return String(c.Year) === String(curYear) && c.ForMonth === m; });
+        // Only count months that have at least one real MEMBER contribution (not walk-in-only)
+        return data.some(function(c) {
+          return String(c.Year) === String(curYear) && c.ForMonth === m &&
+                 !String(c.UserId).startsWith("WALKIN_");
+        });
       }).length;
       var totalMonths = selMonthIdx + 1;
       if (doneMonths < totalMonths) {
@@ -2838,14 +2839,13 @@
         return String(e.Year) === String(curYear);
       }).reduce(function(s,e) { return s + Number(e.Amount||0); }, 0);
 
-      // Opening balance from yearConfig for net calculation
-      var opening = 0;
-      if (Array.isArray(yearConfig)) {
-        var yRow = yearConfig.find(function(r) {
-          return String(r.Year || r.year || "") === String(curYear);
-        });
-        if (yRow) opening = Number(yRow.OpeningBalance || yRow.Opening_Balance || yRow.opening_balance || yRow.Balance || 0) || 0;
-      }
+      // Opening balance for selected year — use dash_getOpeningBalance() so that if no
+      // yearConfig row exists yet for this year (e.g. brand-new year), it correctly
+      // computes the carry-forward from the previous year's closing balance recursively,
+      // instead of silently falling back to 0.
+      var opening = (typeof dash_getOpeningBalance === "function" && Array.isArray(dash_yearConfig) && dash_yearConfig.length)
+        ? dash_getOpeningBalance(curYear, dash_yearConfig, data, expenses)
+        : 0;
       var net = opening + yearC - yearE;
       var netCol = net >= 0 ? "#16a34a" : "#dc2626";
 
@@ -3910,7 +3910,7 @@
         const amt = Number(e.Amount || 0);
         const textMatch  = !txt || (e.Title||"").toLowerCase().includes(txt) || tName.toLowerCase().includes(txt) || mn.toLowerCase().includes(txt) || String(e.Amount).includes(txt);
         const yearMatch  = !yr || String(e.Year) === yr;
-        const monthMatch = !mo || mn === mo;
+        const monthMatch = !mo || mn.toLowerCase() === mo.toLowerCase();
         const typeMatch  = !tp || String(e.ExpenseTypeId) === tp;
         const amtMatch   = amt >= amtMin && amt <= amtMax;
         return textMatch && yearMatch && monthMatch && typeMatch && amtMatch;
@@ -11128,10 +11128,23 @@
       const walkinRows = paidRows.filter(r => String(r._data.UserId).startsWith("WALKIN_"));
       const walkinAmt  = walkinRows.reduce((s,r) => s + Number(r._data.Amount||0), 0);
 
+      // memberPaidSet from filtered rows — used for avg calc
       const memberPaidSet = new Set(
         paidRows.filter(r => !String(r._data.UserId).startsWith("WALKIN_")).map(r => r._data.UserId)
       );
       const totalMembers = dash_users.filter(u => String(u.Status||"active").toLowerCase() !== "inactive").length;
+      // True paid count: unique members who paid in the selected year+month across ALL contributions
+      // (not just filtered rows) so name/type/amount filters don't distort the X/Y display
+      const truePaidSet = new Set(
+        dash_contributions
+          .filter(c => {
+            if (String(c.UserId).startsWith("WALKIN_")) return false;
+            if (fYear && Number(c.Year) !== Number(fYear)) return false;
+            if (fMonth && (c.ForMonth||"").toLowerCase() !== fMonth) return false;
+            return true;
+          })
+          .map(c => String(c.UserId))
+      );
 
       // highest month
       const monthMap = {};
@@ -11142,13 +11155,13 @@
       });
       const highEntry = Object.entries(monthMap).sort((a,b) => b[1]-a[1])[0];
 
-      const avgPerMember = memberPaidSet.size > 0 ? Math.round(
-        paidRows.filter(r => !String(r._data.UserId).startsWith("WALKIN_")).reduce((s,r) => s + Number(r._data.Amount||0), 0)
-        / memberPaidSet.size
-      ) : 0;
+      // Divide by payment row count so multiple payments in one month are each counted
+      const memberPaidRows = paidRows.filter(r => !String(r._data.UserId).startsWith("WALKIN_"));
+      const memberPaidTotal = memberPaidRows.reduce((s,r) => s + Number(r._data.Amount||0), 0);
+      const avgPerMember = memberPaidRows.length > 0 ? Math.round(memberPaidTotal / memberPaidRows.length) : 0;
 
       _setTxt("ct_totalCollected", "₹" + fmt(totalC));
-      _setTxt("ct_membersPaid", memberPaidSet.size + " / " + totalMembers);
+      _setTxt("ct_membersPaid", truePaidSet.size + " / " + totalMembers);
       _setTxt("ct_pending", pendingRows.length);
       _setTxt("ct_walkinTotal", "₹" + fmt(walkinAmt));
       _setTxt("ct_walkinCount", walkinRows.length + " entries");
@@ -11381,10 +11394,15 @@
       const rows = members.map(u => {
         let total = 0;
         let cells = _dash_months.map(m => {
-          const contrib = dash_contributions.find(c =>
+          // Use filter+reduce to sum ALL contributions for this member+month (handles multiple payments same month)
+          const contribs = dash_contributions.filter(c =>
             String(c.UserId) === String(u.UserId) && Number(c.Year) === yr && (c.ForMonth||"") === m
           );
-          if (contrib) { total += Number(contrib.Amount||0); return `<td style="text-align:center;"><span style="background:#dcfce7;color:#15803d;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:600;">₹${fmt(contrib.Amount)}</span></td>`; }
+          if (contribs.length > 0) {
+            const monthTotal = contribs.reduce((s, c) => s + Number(c.Amount||0), 0);
+            total += monthTotal;
+            return `<td style="text-align:center;"><span style="background:#dcfce7;color:#15803d;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:600;">₹${fmt(monthTotal)}</span></td>`;
+          }
           return `<td style="text-align:center;"><span style="color:#e2e8f0;font-size:12px;">—</span></td>`;
         }).join("");
         return `<tr><td style="font-weight:600;font-size:11px;">${escapeHtml(u.Name||"")}</td>${cells}<td style="font-weight:700;color:#15803d;font-size:11px;">₹${fmt(total)}</td></tr>`;
