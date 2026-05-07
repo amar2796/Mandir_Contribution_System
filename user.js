@@ -3774,7 +3774,7 @@ if (isDark) {
         show("✅ Request submitted! Admin will verify and record it soon.", true);
         // Reset form after 5 seconds
         setTimeout(() => {
-          ["pr_month", "pr_year", "pr_amount", "pr_utr", "pr_note"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+          ["pr_month", "pr_amount", "pr_utr", "pr_note"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; }); const prYearEl = document.getElementById("pr_year"); if (prYearEl) prYearEl.value = String(new Date().getFullYear());
           const slipInput = document.getElementById("pr_slip"); if (slipInput) slipInput.value = "";
           const slipName = document.getElementById("pr_slip_name"); if (slipName) slipName.textContent = "Tap to attach payment slip or screenshot";
           const slipPrev = document.getElementById("pr_slip_preview_wrap"); if (slipPrev) slipPrev.style.display = "none";
