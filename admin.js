@@ -6122,7 +6122,7 @@
       confirmModal(`Delete ${_uName}? This cannot be undone.`, async () => {
         try {
           const _s = JSON.parse(localStorage.getItem("session") || "{}");
-          let res = await postData({ action: "deleteUser", UserId: id, sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
+          let res = await postData({ action: "deleteUser", UserId: id, PhotoURL: _u?.PhotoURL || "", sessionToken: _s.sessionToken || "", userId: _s.userId || "" });
           if (res.status === "deleted") {
             // [UNDO-FIX] deleteUser now returns passwordHash so restoreUser can
             // write the exact original hash back. getAllData strips Password for

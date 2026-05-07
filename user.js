@@ -828,7 +828,7 @@ const _U_LANG    = _U_PREFIX + "_lang";              // language preference
     try {
       if (_saveBtn) _saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving…';
       let res = await postData({ action: "updateUser", UserId: s.userId, Name: name, Mobile: myProfile?.Mobile || "", Role: s.role, Status: myProfile?.Status || "Active", Email: email, Village: village, Address: address, DOB: dob, Password: "", PhotoURL: photoURL, AdminName: name, sessionToken: s.sessionToken || "" });
-      if (res.status === "updated") { s.name = name; s.email = email; s.expiry = Date.now() + 30 * 60 * 1000; localStorage.setItem("session", JSON.stringify(s)); _pendingCroppedB64 = ""; toast("✅ Profile updated!"); closeModal(); _refreshAfterProfileSave(); }
+      if (res.status === "updated") { s.name = name; s.email = email; s.photoURL = photoURL; s.expiry = Date.now() + 30 * 60 * 1000; localStorage.setItem("session", JSON.stringify(s)); _pendingCroppedB64 = ""; toast("✅ Profile updated!"); closeModal(); _refreshAfterProfileSave(); }
       else { toast("❌ Update failed.", "error"); if (_saveBtn) { _saveBtn.disabled = false; _saveBtn.innerHTML = _saveBtn.dataset.origHtml; } }
     } catch (err) { toast("❌ " + err.message, "error"); if (_saveBtn) { _saveBtn.disabled = false; _saveBtn.innerHTML = _saveBtn.dataset.origHtml; } }
   }

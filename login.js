@@ -539,7 +539,7 @@ window.addEventListener("load",function(){
 //  registerUser POST atomic (verify OTP + write row together),
 //  rate-limit: max 3 OTP sends / 15 min, 60s resend cooldown
 // ══════════════════════════════════════════════════════════════════
-let _reg = { otpKey: null, email: null, sendCount: 0, sendLockUntil: 0, photob64: '' };
+let _reg = { otpKey: null, email: null, sendCount: 0, sendLockUntil: 0 };
 const REG_MAX_SENDS = 3, REG_LOCK_MS = 15 * 60 * 1000, REG_RESEND_COOLDOWN = 60;
 
 // ══════════════════════════════════════════════════════════════════
@@ -616,173 +616,8 @@ function _regValidateAll(){
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  REGISTRATION — PHOTO PICK + SELF-CONTAINED CROP MODAL
-//  Mirrors app.js openCropModal / initCrop exactly:
-//    • baseScale = Math.min(wW/iW, wH/iH)  — fit image into wrap
-//    • zoom multiplier 1–4 (slider 100–400)
-//    • floating square _cropBox overlay; user drags image under it
-//    • export: naturalScale coords → 400×400 JPEG 0.80
-//    • touch passive:true (same as app.js) — no scroll conflict
-//      inside the fixed crop overlay
-//  login.html does NOT load app.js, so this is fully standalone.
-// ══════════════════════════════════════════════════════════════════
-function regPickPhoto(){ document.getElementById('regPhotoFile')?.click(); }
-
-function regHandlePhotoSelected(input){
-  const file = input.files[0]; if(!file) return;
-  if(file.size > 8 * 1024 * 1024){ toast('Photo must be under 8 MB.','error'); return; }
-  const reader = new FileReader();
-  reader.onload = function(ev){ _regOpenCrop(ev.target.result); };
-  reader.readAsDataURL(file);
-  input.value = ''; // allow re-select of same file
-}
-
-// ── Crop state (mirrors app.js window._doCrop closure via module-level vars)
-let _regCropState = null; // set inside _regInitCrop, read by regCropConfirm
-
-function _regOpenCrop(origSrc){
-  const overlay  = document.getElementById('regCropOverlay');
-  const wrap     = document.getElementById('regCropViewport');  // plays role of _cropWrap
-  const imgEl    = document.getElementById('regCropImg');
-  const zoomSlider = document.getElementById('regCropZoom');
-  const zoomLabel  = document.getElementById('regCropZoomLabel');
-  if(!overlay||!wrap||!imgEl) return;
-  overlay.style.display = 'flex';
-  zoomSlider.value = 100;
-  if(zoomLabel) zoomLabel.textContent = 'Zoom: 100%';
-  imgEl.src = origSrc;
-  imgEl.onload = function(){ _regInitCrop(imgEl, origSrc, wrap, zoomSlider, zoomLabel); };
-}
-
-function _regInitCrop(imgEl, origSrc, wrap, zoomSlider, zoomLabel){
-  // ── Exactly mirrors initCrop() in app.js ──
-  const cropBox   = document.getElementById('regCropBox');
-  const wW = wrap.clientWidth, wH = wrap.clientHeight;
-  const iW = imgEl.naturalWidth, iH = imgEl.naturalHeight;
-
-  const baseScale = Math.min(wW/iW, wH/iH);
-  let zoom = 1;
-  let imgX = 0, imgY = 0;
-
-  // Square crop box: 82% of min dimension, centred — same ratio as app.js (0.82)
-  const side = Math.min(wW, wH) * 0.82;
-  const boxL = (wW - side) / 2, boxT = (wH - side) / 2;
-  cropBox.style.left   = boxL + 'px'; cropBox.style.top    = boxT + 'px';
-  cropBox.style.width  = side + 'px'; cropBox.style.height = side + 'px';
-
-  function clampImg(){
-    const dW = iW*baseScale*zoom, dH = iH*baseScale*zoom;
-    const minX = boxL+side-dW, maxX = boxL;
-    const minY = boxT+side-dH, maxY = boxT;
-    imgX = Math.max(minX, Math.min(maxX, imgX));
-    imgY = Math.max(minY, Math.min(maxY, imgY));
-  }
-  function applyTransform(){
-    const dW = iW*baseScale*zoom, dH = iH*baseScale*zoom;
-    imgEl.style.width  = dW + 'px'; imgEl.style.height = dH + 'px';
-    imgEl.style.left   = imgX + 'px'; imgEl.style.top   = imgY + 'px';
-  }
-
-  // Init: centre image, clamp so crop box is inside
-  zoom = 1;
-  imgX = (wW - iW*baseScale) / 2;
-  imgY = (wH - iH*baseScale) / 2;
-  clampImg(); applyTransform();
-
-  // Zoom slider — mirrors app.js exactly
-  zoomSlider.addEventListener('input', function(){
-    zoom = Number(this.value) / 100;
-    if(zoomLabel) zoomLabel.textContent = 'Zoom: ' + this.value + '%';
-    clampImg(); applyTransform();
-  });
-
-  // Mouse drag — mirrors app.js
-  let dragging = false, lastX, lastY;
-  wrap.addEventListener('mousedown', function(e){
-    dragging = true; lastX = e.clientX; lastY = e.clientY; e.preventDefault();
-  });
-  window.addEventListener('mousemove', function(e){
-    if(!dragging) return;
-    imgX += e.clientX - lastX; imgY += e.clientY - lastY;
-    lastX = e.clientX; lastY = e.clientY;
-    clampImg(); applyTransform();
-  });
-  window.addEventListener('mouseup', function(){ dragging = false; });
-
-  // Touch drag + pinch — mirrors app.js (passive:true same as app.js)
-  let lastDist = null, lastTX, lastTY;
-  wrap.addEventListener('touchstart', function(e){
-    if(e.touches.length===1){ lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY; }
-    if(e.touches.length===2){ lastDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); }
-  },{passive:true});
-  wrap.addEventListener('touchmove', function(e){
-    if(e.touches.length===1){
-      imgX+=e.touches[0].clientX-lastTX; imgY+=e.touches[0].clientY-lastTY;
-      lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY;
-      clampImg(); applyTransform();
-    } else if(e.touches.length===2 && lastDist){
-      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-      const ratio=d/lastDist;
-      zoom=Math.max(1, Math.min(4, zoom*ratio));
-      zoomSlider.value=Math.round(zoom*100);
-      if(zoomLabel) zoomLabel.textContent='Zoom: '+Math.round(zoom*100)+'%';
-      lastDist=d; clampImg(); applyTransform();
-    }
-  },{passive:true});
-  wrap.addEventListener('touchend', function(e){ if(e.touches.length<2) lastDist=null; },{passive:true});
-
-  // Store export closure — mirrors app.js window._doCrop pattern
-  _regCropState = function(){
-    // Convert screen cropBox coords → natural image coords (exact same as app.js)
-    const dW = iW * baseScale * zoom;
-    const naturalScale = iW / dW;
-    const cropNatX = (boxL - imgX) * naturalScale;
-    const cropNatY = (boxT - imgY) * naturalScale;
-    const cropNatS = side * naturalScale;
-    const out = 400;
-    const canvas = document.createElement('canvas');
-    canvas.width = out; canvas.height = out;
-    const ctx = canvas.getContext('2d');
-    const temp = new Image(); temp.src = origSrc;
-    temp.onload = function(){
-      ctx.drawImage(temp, cropNatX, cropNatY, cropNatS, cropNatS, 0, 0, out, out);
-      // Same quality as app.js: 0.80 — kept for preview display
-      const b64Full = canvas.toDataURL('image/jpeg', 0.80);
-      // Downsize to 80x80 for JSONP transfer — Apps Script GET URL limit.
-      // Avatar is displayed at 80px in app; full-res update via Edit Profile after approval.
-      // Drive stores thumbnail at w400 anyway so no quality difference in the URL.
-      const small = document.createElement('canvas');
-      small.width = 80; small.height = 80;
-      small.getContext('2d').drawImage(canvas, 0, 0, 80, 80);
-      _reg.photob64 = small.toDataURL('image/jpeg', 0.65);
-      // Use full-res for the in-form preview so it looks sharp
-      const b64 = b64Full;
-      // Show preview in form
-      const preview     = document.getElementById('regPhotoPreview');
-      const placeholder = document.getElementById('regPhotoPlaceholder');
-      const previewWrap = document.getElementById('regPhotoPreviewWrap');
-      if(preview){ preview.src = b64; preview.style.display = 'block'; }
-      if(placeholder) placeholder.style.display = 'none';
-      if(previewWrap){ previewWrap.style.border = '2.5px solid #f7a01a'; previewWrap.style.background = '#000'; }
-      document.getElementById('regCropOverlay').style.display = 'none';
-      _regCropState = null;
-      toast('Photo added! It will be saved with your registration.');
-    };
-  };
-}
-
-function regCropCancel(){
-  document.getElementById('regCropOverlay').style.display = 'none';
-  _regCropState = null;
-}
-
-function regCropConfirm(){
-  // Mirrors app.js confirmCrop() → window._doCrop()
-  if(_regCropState) _regCropState();
-}
-
 function openRegisterModal(){
-  _reg = { otpKey:null, email:null, sendCount:0, sendLockUntil:0, photob64:'' };
+  _reg = { otpKey:null, email:null, sendCount:0, sendLockUntil:0 };
   ['reg_name','reg_mobile','reg_email','reg_password','reg_confirm','reg_village','reg_address','reg_dob'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
@@ -792,10 +627,6 @@ function openRegisterModal(){
   setMsg('regMsg','',''); setMsg('regOtpMsg','','');
   const tcCb=document.getElementById('reg_tc'); if(tcCb){tcCb.checked=false;tcCb.disabled=true;}
   const tcErr=document.getElementById('tcErrMsg'); if(tcErr)tcErr.style.display='none';
-  // Reset photo picker
-  const preview=document.getElementById('regPhotoPreview'); if(preview){preview.src='';preview.style.display='none';}
-  const placeholder=document.getElementById('regPhotoPlaceholder'); if(placeholder)placeholder.style.display='flex';
-  const wrap=document.getElementById('regPhotoPreviewWrap'); if(wrap){wrap.style.border='2.5px dashed #f7a01a';wrap.style.background='#fffbf5';}
   // Show details form first, hide OTP step and success
   document.getElementById('regForm').style.display='block';
   document.getElementById('regOtpStep').style.display='none';
@@ -941,16 +772,11 @@ async function regVerifyAndSubmit(){
     const dob=rawDob ? rawDob.split('-').reverse().join('-') : '';
     const hashedPwd=await sha256(pwd);
 
-    // ── Photo: send 80x80 base64 directly in the JSONP call.
-    // fetch POST is blocked by CORS on Apps Script. JSONP (script GET) is the only
-    // cross-origin pattern that works. 80x80 q=0.65 ≈ 3-5KB base64 → fits in GET URL.
     const res=await postData({
       action:'registerUser',
       otpKey:_reg.otpKey, otp,
       Name:name, Mobile:mobile, Email:email,
-      Password:hashedPwd, Village:village, Address:address, DOB:dob,
-      PhotoB64: _reg.photob64 || '',
-      FileName: _reg.photob64 ? ('Reg_' + mobile + '_' + Date.now() + '.jpg') : ''
+      Password:hashedPwd, Village:village, Address:address, DOB:dob
     });
     if(res&&res.status==='success'){
       clearInterval(_regResendInterval);

@@ -2270,6 +2270,19 @@ function doGet(e) {
     if (result.status === "deleted") {
       // Return password hash so undo can restore it exactly
       if (_delUser && _delUser.Password) result.passwordHash = _delUser.Password;
+      // Delete profile photo from Drive if one exists
+      try {
+        const _photoUrl = String(_delUser && _delUser.PhotoURL || e.parameter.PhotoURL || "").trim();
+        if (_photoUrl) {
+          let _photoFileId = "";
+          if (_photoUrl.includes("lh3.googleusercontent.com/d/")) _photoFileId = _photoUrl.split("/d/")[1].split("?")[0].trim();
+          else if (_photoUrl.includes("drive.google.com/thumbnail?id=")) _photoFileId = _photoUrl.split("id=")[1].split("&")[0].trim();
+          if (_photoFileId && _photoFileId.length > 10) {
+            DriveApp.getFileById(_photoFileId).setTrashed(true);
+            logAction(sanitize(e.parameter.AdminName||"Admin",100), "Profile Photo Deleted", "UserId: " + id + " | DriveFileId: " + _photoFileId, "Deleted with user account", "", { severity:"INFO", result:"SUCCESS" });
+          }
+        }
+      } catch(_photoErr) { /* photo deletion is best-effort — do not block user delete */ }
       logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete User",
         "UserId: " + id + (_delUser ? " | Name: " + (_delUser.Name||"") + " | Mobile: " + (_delUser.Mobile||"") + " | Role: " + (_delUser.Role||"") : ""),
         "", "", { severity:"WARN", result:"SUCCESS" });
