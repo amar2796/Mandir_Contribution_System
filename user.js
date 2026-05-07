@@ -1583,6 +1583,9 @@ existing updateUser action. No new Apps Script action needed.
       users = allData.users || []; types = allData.types || []; occasions = allData.occasions || [];
       allContributions = allData.contributions || []; allGoals = allData.goals || [];
       data = allContributions.filter(c => String(c.UserId) === String(s.userId));
+      // Reset lazy-load flags so panels rebuild with fresh data on every init()
+      // (covers retry after error, and the edge case of page staying open across midnight/new year)
+      _recordsLoaded = false; _statsLoaded = false; _eventsLoaded = false;
 
       // ── Guard: current user must exist in the users list
       //    If profile is missing, data is partial — show retry rather than a broken dashboard.
@@ -1744,7 +1747,7 @@ existing updateUser action. No new Apps Script action needed.
     let sorted = Array.from(yrs).sort((a, b) => b - a);
     let sel = document.getElementById("summaryYear");
     sel.innerHTML = sorted.map(y => `<option value="${y}">${y}</option>`).join("");
-    sel.value = curY;
+    sel.value = String(curY);
   }
 
   function renderSummaries() {
@@ -2484,7 +2487,7 @@ existing updateUser action. No new Apps Script action needed.
     let y = document.getElementById("filterYear").value, m = document.getElementById("filterMonth").value,
       t = document.getElementById("filterType").value, txt = document.getElementById("searchInput").value.toLowerCase();
     renderTable(data.filter(c => {
-      if (y && String(c.Year) !== y) return false; if (m && c.ForMonth !== m) return false; if (t && String(c.TypeId) !== String(t)) return false;
+      if (y && String(c.Year) !== y) return false; if (m && (c.ForMonth||"").toLowerCase() !== m.toLowerCase()) return false; if (t && String(c.TypeId) !== String(t)) return false;
       if (txt) {
         let tn = types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "", dR = (c.ReceiptID || "").replace(new RegExp("^" + APP.legacyReceiptPrefix + "-"), APP.receiptPrefix + "-");
         return tn.toLowerCase().includes(txt) || (c.ForMonth || "").toLowerCase().includes(txt) || String(c.Amount).includes(txt) || (c.PaymentDate || "").toLowerCase().includes(txt) || String(c.Year || "").includes(txt) || dR.toLowerCase().includes(txt) || (c.ReceiptID || "").toLowerCase().includes(txt);
