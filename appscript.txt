@@ -32,8 +32,8 @@ const CFG = {
   // ── PUBLIC DISPLAY FIELDS (shown on homepage — change for any temple/institution)
   splashText:    "॥ जय श्री राम ॥",          // Splash screen greeting
   heroText:      "|| श्री हनुमत आश्रम ||",    // Hero section heading
-  heroSub:       "राम यज्ञ विश्‍वकर्मा",      // Hero section sub-heading
-  committee:     "Ram Yagya Vishwakarma Committee", // Managing committee name (used in donate declaration)
+  heroSub:       "राम जग विश्‍वकर्मा",      // Hero section sub-heading
+  committee:     "Ram Jag Vishwakarma Committee", // Managing committee name (used in donate declaration)
   emailDailyLimit: 90,           // Gmail free = 100/day; keep 10 buffer for OTPs
   // ── EMAIL LOGO (used in ALL emails: receipt, monthly report, reminder, birthday, approval)
   // Drop any image file (logo.png / logo.jpg) into a dedicated Drive folder.
@@ -58,10 +58,10 @@ const CFG = {
   // ⚠️  SECURITY: These values are NEVER sent to the public. They are stored here on the
   //     server only and returned only when a valid sessionToken is verified.
   //     Do NOT copy these into constants.js — that file is public (served to the browser).
-  upiId:       "8765890641@upi",          // safe to display publicly (QR code / Donate modal)
-  accountName: "Ram Shank Vishwakarma",   // kept server-side only
-  accountNo:   "1234 5678 1234",          // kept server-side only
-  ifscCode:    "BKID0008XXX",             // kept server-side only
+  upiId:       "Not Available",          // safe to display publicly (QR code / Donate modal)
+  accountName: "Ram Shankar Vishvakarama S/O Baijnath Vishvakarama",   // kept server-side only
+  accountNo:   "4062 0301 197",          // kept server-side only
+  ifscCode:    "SBIN0017382",             // kept server-side only
   bankName:    "State Bank of India",     // kept server-side only
   bankBranch:  "Katka Khanpur Branch",    // kept server-side only
   accountType: "Savings",                 // kept server-side only
@@ -2270,6 +2270,19 @@ function doGet(e) {
     if (result.status === "deleted") {
       // Return password hash so undo can restore it exactly
       if (_delUser && _delUser.Password) result.passwordHash = _delUser.Password;
+      // Delete profile photo from Drive if one exists
+      try {
+        const _photoUrl = String(_delUser && _delUser.PhotoURL || e.parameter.PhotoURL || "").trim();
+        if (_photoUrl) {
+          let _photoFileId = "";
+          if (_photoUrl.includes("lh3.googleusercontent.com/d/")) _photoFileId = _photoUrl.split("/d/")[1].split("?")[0].trim();
+          else if (_photoUrl.includes("drive.google.com/thumbnail?id=")) _photoFileId = _photoUrl.split("id=")[1].split("&")[0].trim();
+          if (_photoFileId && _photoFileId.length > 10) {
+            DriveApp.getFileById(_photoFileId).setTrashed(true);
+            logAction(sanitize(e.parameter.AdminName||"Admin",100), "Profile Photo Deleted", "UserId: " + id + " | DriveFileId: " + _photoFileId, "Deleted with user account", "", { severity:"INFO", result:"SUCCESS" });
+          }
+        }
+      } catch(_photoErr) { /* photo deletion is best-effort — do not block user delete */ }
       logAction(sanitize(e.parameter.AdminName||"Admin",100), "Delete User",
         "UserId: " + id + (_delUser ? " | Name: " + (_delUser.Name||"") + " | Mobile: " + (_delUser.Mobile||"") + " | Role: " + (_delUser.Role||"") : ""),
         "", "", { severity:"WARN", result:"SUCCESS" });

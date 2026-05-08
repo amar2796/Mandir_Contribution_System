@@ -676,13 +676,17 @@ var _trLoaded = false;
           var el = document.getElementById(id);
           if (el) el.textContent = val || "—";
         };
-        set("payAccName", p.accountName);
-        set("payAccNo",   p.accountNo);
-        set("payIfsc",    p.ifscCode);
-        set("payBankName",p.bankName);
-        set("payBranch",  p.bankBranch);
-        set("payAccType", p.accountType);
-        set("payUpiId",   p.upiId);
+        // accountName from server = the account holder name
+        // fallback: APP.accountHolderName (from constants.js)
+        var holderName = p.accountName
+          || ((typeof APP !== 'undefined' && APP.accountHolderName) ? APP.accountHolderName : '');
+        set("payAccName",  holderName);
+        set("payAccNo",    p.accountNo);
+        set("payIfsc",     p.ifscCode);
+        set("payBankName", p.bankName);
+        set("payBranch",   p.bankBranch);
+        set("payAccType",  p.accountType);
+        set("payUpiId",    p.upiId);
       }
 
       /* Data is fetched lazily on first openPayModal() click — no need to pre-fetch
@@ -694,12 +698,29 @@ var _trLoaded = false;
       function _generatePayQR() {
         var upiId = (_payDetails && _payDetails.upiId)
           ? _payDetails.upiId
-          : ((typeof APP !== "undefined" && APP.upiId) ? APP.upiId : "mandir@upi");
+          : ((typeof APP !== "undefined" && APP.upiId) ? APP.upiId : "");
         var name  = (typeof APP !== "undefined" && APP.name) ? APP.name : 'Mandir';
-        var upiStr = "upi://pay?pa=" + encodeURIComponent(upiId) + "&pn=" + encodeURIComponent(name) + "&cu=INR";
-        var box = document.getElementById("payQrBox");
+        var box   = document.getElementById("payQrBox");
         if (!box) return;
         box.innerHTML = "";
+
+        // If UPI is blank or explicitly "Not Available", show a friendly message
+        var isUpiMissing = !upiId || upiId.trim() === "" || upiId.trim().toLowerCase() === "not available";
+        if (isUpiMissing) {
+          box.innerHTML =
+            "<div class=\"pay-qr-placeholder\" style=\"gap:10px;\">" +
+              "<i class=\"fa-solid fa-qrcode\" style=\"font-size:2rem;opacity:0.4;\"></i>" +
+              "<span style=\"font-size:0.78rem;color:#888;line-height:1.4;\">QR not available.<br>Please use bank transfer.</span>" +
+            "</div>";
+          // Also update the UPI ID display
+          var upiEl = document.getElementById("payUpiId");
+          if (upiEl) upiEl.textContent = "Not available";
+          var copyBtn = document.getElementById("copyUpiBtn");
+          if (copyBtn) copyBtn.style.display = "none";
+          return;
+        }
+
+        var upiStr = "upi://pay?pa=" + encodeURIComponent(upiId) + "&pn=" + encodeURIComponent(name) + "&cu=INR";
         if (window.QRCode) {
           try {
             new window.QRCode(box, {
@@ -769,12 +790,16 @@ var _trLoaded = false;
 
       /* ── Copy bank details ── */
       function copyBankDetails() {
-        var accNo  = document.getElementById('payAccNo').innerText;
-        var ifsc   = document.getElementById('payIfsc').innerText;
-        var bank   = document.getElementById('payBankName').innerText;
-        var branch = document.getElementById('payBranch').innerText;
-        var name   = (typeof APP !== 'undefined' && APP.name) ? APP.name : 'Mandir';
-        var text   = name + '\nAccount No: ' + accNo + '\nIFSC: ' + ifsc + '\nBank: ' + bank + ', ' + branch;
+        var accNo   = document.getElementById('payAccNo').innerText;
+        var ifsc    = document.getElementById('payIfsc').innerText;
+        var bank    = document.getElementById('payBankName').innerText;
+        var branch  = document.getElementById('payBranch').innerText;
+        var accName = document.getElementById('payAccName').innerText;
+        var name    = (typeof APP !== 'undefined' && APP.name) ? APP.name : 'Mandir';
+        // Account holder name: use fetched accountName, or APP.accountHolderName, or fall back to APP.name
+        var holderName = (accName && accName !== '—') ? accName
+                       : ((typeof APP !== 'undefined' && APP.accountHolderName) ? APP.accountHolderName : name);
+        var text    = name + '\nAccount Holder: ' + holderName + '\nAccount No: ' + accNo + '\nIFSC: ' + ifsc + '\nBank: ' + bank + ', ' + branch;
         navigator.clipboard.writeText(text).then(function() {
           var btn = document.getElementById('copyBankBtn');
           btn.classList.add('copied');
