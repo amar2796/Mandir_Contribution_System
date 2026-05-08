@@ -1888,8 +1888,8 @@ body.dark-mode table tbody td {
 }
 
 body.dark-mode tbody tr:hover {
-  background: #1a2540 !important;
-  box-shadow: inset 3px 0 0 #f7a01a !important;
+  background: #16213a !important;
+  box-shadow: none !important;
 }
 
 body.dark-mode tr.row-pending td { background: #1a1f0e !important; }
@@ -4978,8 +4978,8 @@ body.dark-mode tbody tr:nth-child(even) {
   background: #0d1525 !important;
 }
 body.dark-mode tbody tr:hover {
-  background: #1a2540 !important;
-  box-shadow: inset 3px 0 0 #f7a01a !important;
+  background: #16213a !important;
+  box-shadow: none !important;
 }
 body.dark-mode tbody td {
   border-bottom-color: #1e2d45 !important;
@@ -4990,8 +4990,8 @@ body.dark-mode .ct-tbl tbody tr:nth-child(even) td {
   background: #0a1220 !important;
 }
 body.dark-mode .ct-tbl tbody tr:hover td {
-  background: #1a2540 !important;
-  box-shadow: inset 3px 0 0 #f7a01a;
+  background: #16213a !important;
+  box-shadow: none !important;
 }
 body.dark-mode .ct-tbl td { border-bottom-color: #1a2540 !important; }
 body.dark-mode .ct-tbl tr.ct-pend td { background: #1a1a05 !important; }
@@ -5115,4 +5115,352 @@ body.dark-mode .action-btns .btn-sm {
     padding: 4px 7px !important;
     font-size: 11px !important;
   }
+}
+/* ════════════════════════════════════════════════════════════════
+   DARK MODE — Row Hover Polish + Receipt Button Enhancement
+   Visual only · zero logic changes
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── 1. TABLE ROW HOVER: richer, glowing left accent ── */
+body.dark-mode tbody tr {
+  transition: background 0.15s ease, box-shadow 0.15s ease !important;
+}
+body.dark-mode tbody tr:hover,
+body.dark-mode tbody tr:hover td {
+  background: #16213a !important;
+  box-shadow: none !important;
+  color: #f1f5f9 !important;
+}
+/* Amount cell brightens on hover */
+body.dark-mode tbody tr:hover td .amt-green,
+body.dark-mode tbody tr:hover td [style*="color:#27ae60"],
+body.dark-mode tbody tr:hover td [style*="color:#2ecc71"] {
+  color: #4ade80 !important;
+  text-shadow: 0 0 8px rgba(74,222,128,0.3) !important;
+}
+/* Name cell bold on hover */
+body.dark-mode tbody tr:hover td:nth-child(2),
+body.dark-mode tbody tr:hover td:nth-child(3) {
+  color: #ffffff !important;
+}
+/* Tracking ID stays muted but readable */
+body.dark-mode tbody tr:hover td [style*="font-size:11px"],
+body.dark-mode tbody tr:hover .ct-track-id {
+  color: #94a3b8 !important;
+}
+
+/* ── 2. CT TRACKER TABLE ROW HOVER ── */
+body.dark-mode .ct-tbl tbody tr {
+  transition: background 0.15s ease, box-shadow 0.15s ease !important;
+}
+body.dark-mode .ct-tbl tbody tr:hover td {
+  background: #16213a !important;
+  box-shadow: none !important;
+  color: #f1f5f9 !important;
+}
+
+/* ── 3. SELECTED / ACTIVE ROW (if JS adds .row-selected) ── */
+body.dark-mode tbody tr.row-selected td {
+  background: #1a2a1a !important;
+  box-shadow: none !important;
+}
+
+/* ── 4. RECEIPT BUTTON — matches screenshot blue icon pill ── */
+
+/* Generic btn-info (Receipt / View buttons in action columns) */
+body.dark-mode .btn-info,
+body.dark-mode .btn-sm.btn-info,
+body.dark-mode .action-btns .btn-info {
+  background: linear-gradient(135deg, #1a4a8a, #2563eb) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 10px rgba(37,99,235,0.45), 0 0 0 1px rgba(37,99,235,0.2) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
+}
+body.dark-mode .btn-info:hover,
+body.dark-mode .action-btns .btn-info:hover {
+  background: linear-gradient(135deg, #1e5bb5, #3b82f6) !important;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.55), 0 0 0 1px rgba(59,130,246,0.3) !important;
+  transform: translateY(-1px) scale(1.06) !important;
+}
+body.dark-mode .btn-info:active {
+  transform: scale(0.96) !important;
+  box-shadow: 0 1px 6px rgba(37,99,235,0.4) !important;
+}
+
+/* CT tracker view/receipt action button */
+body.dark-mode .ct-act-view {
+  background: linear-gradient(135deg, #1a3a6e, #2563eb) !important;
+  color: #bfdbfe !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 6px rgba(37,99,235,0.35) !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1px !important;
+}
+body.dark-mode .ct-act-view:hover {
+  background: linear-gradient(135deg, #1e4d9e, #3b82f6) !important;
+  color: #eff6ff !important;
+  box-shadow: 0 3px 12px rgba(59,130,246,0.5) !important;
+  transform: translateY(-1px) scale(1.05) !important;
+}
+
+/* ── 5. EDIT BUTTON (amber) ── */
+body.dark-mode .action-btns .btn-sm[style*="background:#f7a01a"],
+body.dark-mode .action-btns [title*="Edit"],
+body.dark-mode .ct-act-edit {
+  background: linear-gradient(135deg, #7c3d00, #f7a01a) !important;
+  color: #fff8e7 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(247,160,26,0.4) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  font-weight: 700 !important;
+}
+body.dark-mode .action-btns .btn-sm[style*="background:#f7a01a"]:hover,
+body.dark-mode .ct-act-edit:hover {
+  box-shadow: 0 4px 14px rgba(247,160,26,0.55) !important;
+  transform: translateY(-1px) scale(1.06) !important;
+  filter: brightness(1.1) !important;
+}
+
+/* ── 6. DELETE BUTTON (red) ── */
+body.dark-mode .action-btns .btn-danger,
+body.dark-mode .action-btns .btn-sm.btn-danger {
+  background: linear-gradient(135deg, #6b0f0f, #dc2626) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(220,38,38,0.4) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+body.dark-mode .action-btns .btn-danger:hover {
+  box-shadow: 0 4px 14px rgba(220,38,38,0.55) !important;
+  transform: translateY(-1px) scale(1.06) !important;
+  filter: brightness(1.1) !important;
+}
+
+/* ── 7. REMIND BUTTON (orange) ── */
+body.dark-mode .ct-act-remind {
+  background: linear-gradient(135deg, #431407, #ea580c) !important;
+  color: #fed7aa !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 6px rgba(234,88,12,0.35) !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+  font-weight: 700 !important;
+}
+body.dark-mode .ct-act-remind:hover {
+  box-shadow: 0 3px 12px rgba(234,88,12,0.5) !important;
+  transform: translateY(-1px) scale(1.05) !important;
+}
+
+/* ── 8. CONTRIBUTION TYPE BADGE — dark olive pill (matches screenshot) ── */
+body.dark-mode .ct-b-paid,
+body.dark-mode td .badge-paid,
+body.dark-mode [style*="Monthly Contribution"] {
+  background: linear-gradient(135deg, #1a3a1a, #166534) !important;
+  color: #86efac !important;
+  border: 1px solid rgba(34,197,94,0.2) !important;
+  box-shadow: 0 1px 4px rgba(34,197,94,0.12) !important;
+}
+
+/* The screenshot shows a dark warm pill for type text */
+body.dark-mode .ct-badge {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1px !important;
+}
+body.dark-mode .ct-b-mem {
+  background: linear-gradient(135deg, #1e0a40, #4c1d95) !important;
+  color: #ddd6fe !important;
+  border: 1px solid rgba(139,92,246,0.2) !important;
+}
+body.dark-mode .ct-b-pend {
+  background: linear-gradient(135deg, #1a1200, #78350f) !important;
+  color: #fde68a !important;
+  border: 1px solid rgba(247,160,26,0.2) !important;
+}
+body.dark-mode .ct-b-wk {
+  background: linear-gradient(135deg, #0a1a30, #1e40af) !important;
+  color: #93c5fd !important;
+  border: 1px solid rgba(59,130,246,0.2) !important;
+}
+
+/* ── 9. TRACKING ID pill (MNR-2026-00015 style from screenshot) ── */
+body.dark-mode .ct-tbl td [style*="MNR-"],
+body.dark-mode .ct-tbl td [style*="font-size:10"],
+body.dark-mode td .trk-id {
+  color: #60a5fa !important;
+  font-family: 'SFMono-Regular', Consolas, monospace !important;
+  font-size: 10px !important;
+  letter-spacing: 0.3px !important;
+  opacity: 0.85;
+}
+
+/* ── 10. ZEBRA ROWS: slightly visible separation ── */
+body.dark-mode .ct-tbl tbody tr:nth-child(odd) td  { background: #0d0d0d !important; }
+body.dark-mode .ct-tbl tbody tr:nth-child(even) td { background: #111318 !important; }
+
+/* Main table zebra */
+body.dark-mode tbody tr:nth-child(odd)  td { background: #0d0d0d !important; }
+body.dark-mode tbody tr:nth-child(even) td { background: #111318 !important; }
+
+/* ── 11. TABLE HEADER: stronger contrast like screenshot ── */
+body.dark-mode thead th,
+body.dark-mode table thead th {
+  background: #090909 !important;
+  color: #f7a01a !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.6px !important;
+  text-transform: uppercase !important;
+  border-bottom: 2px solid rgba(247,160,26,0.2) !important;
+  padding: 11px 14px !important;
+}
+body.dark-mode .ct-tbl th {
+  background: #090909 !important;
+  color: #f7a01a !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.6px !important;
+  border-bottom: 2px solid rgba(247,160,26,0.2) !important;
+}
+
+/* ── 12. STATUS BADGE "Paid" — green glow pill ── */
+body.dark-mode .status-badge.approved,
+body.dark-mode .status-badge.active,
+body.dark-mode .status-badge.paid {
+  background: linear-gradient(135deg, #052e16, #14532d) !important;
+  color: #4ade80 !important;
+  border: 1px solid rgba(74,222,128,0.25) !important;
+  box-shadow: 0 0 8px rgba(74,222,128,0.1) !important;
+  font-weight: 700 !important;
+}
+body.dark-mode .status-badge.pending {
+  background: linear-gradient(135deg, #1a1200, #78350f) !important;
+  color: #fde68a !important;
+  border: 1px solid rgba(253,230,138,0.2) !important;
+  box-shadow: 0 0 8px rgba(253,230,138,0.07) !important;
+  font-weight: 700 !important;
+}
+body.dark-mode .status-badge.rejected,
+body.dark-mode .status-badge.inactive {
+  background: linear-gradient(135deg, #1f0808, #7f1d1d) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(252,165,165,0.2) !important;
+  box-shadow: 0 0 8px rgba(252,165,165,0.07) !important;
+  font-weight: 700 !important;
+}
+/* ════════════════════════════════════════════════════════════════
+   DARK MODE — Screenshot-match polish (no pipe on hover)
+   ════════════════════════════════════════════════════════════════ */
+
+/* Base: deep near-black background like screenshot */
+body.dark-mode,
+body.dark-mode .main {
+  background: #0b0e15 !important;
+}
+
+body.dark-mode .page {
+  background: #0b0e15 !important;
+}
+
+/* Table wrapper: true black background */
+body.dark-mode table {
+  background: #0d0f14 !important;
+}
+
+/* Table header: almost pure black with amber uppercase labels */
+body.dark-mode thead,
+body.dark-mode thead th,
+body.dark-mode table thead th {
+  background: #090b10 !important;
+  color: #f7a01a !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.6px !important;
+  border-bottom: 2px solid rgba(247,160,26,0.18) !important;
+}
+
+/* Zebra rows: very subtle differentiation */
+body.dark-mode tbody tr:nth-child(odd)  td { background: #0d0f14 !important; }
+body.dark-mode tbody tr:nth-child(even) td { background: #10131a !important; }
+
+/* Row hover: subtle blue-navy highlight, NO pipe */
+body.dark-mode tbody tr:hover td,
+body.dark-mode tbody tr:hover {
+  background: #141c2e !important;
+  box-shadow: none !important;
+  color: #f1f5f9 !important;
+  transition: background 0.15s ease !important;
+}
+
+/* CT tracker same */
+body.dark-mode .ct-tbl tbody tr:nth-child(odd)  td { background: #0d0f14 !important; }
+body.dark-mode .ct-tbl tbody tr:nth-child(even) td { background: #10131a !important; }
+body.dark-mode .ct-tbl tbody tr:hover td {
+  background: #141c2e !important;
+  box-shadow: none !important;
+  color: #f1f5f9 !important;
+}
+
+/* Row cell text */
+body.dark-mode table tbody td {
+  border-color: #1a1f2e !important;
+  color: #c8d3e0 !important;
+}
+
+/* Amount: bright green like screenshot */
+body.dark-mode .amt-green,
+body.dark-mode td .amt-green,
+body.dark-mode tbody tr:hover td .amt-green {
+  color: #22c55e !important;
+  font-weight: 700 !important;
+}
+
+/* Card background: slightly lighter than page bg */
+body.dark-mode .card {
+  background: #10131a !important;
+  border-color: #1e2535 !important;
+  border-top-color: #f7a01a !important;
+}
+
+/* "Records 46" header count badge */
+body.dark-mode .nav-badge,
+body.dark-mode .records-count {
+  background: #f7a01a !important;
+  color: #000 !important;
+}
+
+/* Monthly Contribution badge: warm amber/teal pill like screenshot */
+body.dark-mode .ct-badge,
+body.dark-mode td .ct-badge {
+  font-weight: 700 !important;
+  letter-spacing: 0.1px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+}
+
+/* Tracking ID: monospace subtle blue */
+body.dark-mode .ct-track-id,
+body.dark-mode td [style*="font-size:10"],
+body.dark-mode td [style*="font-size: 10"] {
+  color: #6b9fd4 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* Receipt / view btn: blue pill like screenshot */
+body.dark-mode .btn-info,
+body.dark-mode .btn-sm.btn-info {
+  background: linear-gradient(135deg, #1a4a8a, #2563eb) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.4) !important;
+  border: none !important;
+}
+body.dark-mode .btn-info:hover,
+body.dark-mode .btn-sm.btn-info:hover {
+  background: linear-gradient(135deg, #1e5bb5, #3b82f6) !important;
+  box-shadow: 0 3px 12px rgba(59,130,246,0.5) !important;
+  transform: translateY(-1px) scale(1.04) !important;
 }
