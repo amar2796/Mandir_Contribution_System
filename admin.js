@@ -9127,7 +9127,8 @@
             if (el) el.value = (cfg[f] || "").replace(/\\n/g, "\n");
           });
           const tog = document.getElementById("cbot_enabled");
-          if (tog) tog.checked = String(cfg.enabled || "1") !== "0";
+          // FIX: use ?? not || — "0" is falsy so ("0" || "1") = "1" wrongly shows toggle as ON
+          if (tog) tog.checked = String(cfg.enabled ?? "1") !== "0";
           if (cbMsg) { cbMsg.textContent = ""; cbMsg.className = "msg-box"; }
         })
         .catch(err => {
@@ -9162,7 +9163,8 @@
           if (res && res.status === "success") {
             toast("✅ Chatbot settings saved successfully!", "success");
             if (cbMsg) { cbMsg.textContent = "✓ Settings saved."; cbMsg.className = "msg-box success"; setTimeout(() => { cbMsg.textContent = ""; cbMsg.className = "msg-box"; }, 3000); }
-            // FIX-5: Reload chatbot settings so the page reflects what was saved
+            // FIX-5: Bust cache first so loadChatbotSettings always reads fresh data from server
+            if (typeof mandirCacheBust === "function") mandirCacheBust("getChatbotConfig");
             if (typeof loadChatbotSettings === "function") setTimeout(loadChatbotSettings, 300);
           } else {
             toast("❌ " + (res && res.message ? res.message : "Save failed."), "error");

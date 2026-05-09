@@ -4358,8 +4358,12 @@ function getChatbotConfig() {
         // String(0) = "0" which is truthy — caused chatbot to show "Account: 0",
         // "IFSC: 0" etc. Treat value 0 (number) as empty string, same as null/undefined.
         const rawVal = r[1];
-        const strVal = (rawVal === undefined || rawVal === null || rawVal === 0) ? "" : String(rawVal).trim();
-        config[String(r[0]).trim()] = strVal;
+        const key    = String(r[0]).trim();
+        // Numeric 0 in Sheets = empty cell for most fields (fixes "Account: 0" etc.)
+        // EXCEPT "enabled": 0 intentionally means disabled — must survive as "0".
+        const strVal = (rawVal === undefined || rawVal === null || (rawVal === 0 && key !== "enabled"))
+                       ? "" : String(rawVal).trim();
+        config[key] = strVal;
       }
     });
     return config;

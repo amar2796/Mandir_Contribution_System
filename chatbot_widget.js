@@ -65,9 +65,11 @@
       var now = Date.now();
       if (_botConfig && (now - _botConfigTime) < 30000) { cb(_botConfig); return; }
       var apiUrl = (typeof API_URL !== "undefined" ? API_URL : "") || (window.API_URL || "");
-      if (!apiUrl) { _botConfig = {}; cb(_botConfig); return; }
+      if (!apiUrl) { _botConfig = { enabled: "0" }; cb(_botConfig); return; }
       _fetchJSON(apiUrl + "?action=getChatbotConfig", function (err, data) {
-        _botConfig = (!err && data && !data.error) ? data : {};
+        // FIX: On error/bad response, use { enabled:"0" } so chatbot does NOT render
+      // when config can't be fetched. Previously {} caused enabled || "1" = "1" → always shown.
+      _botConfig = (!err && data && !data.error) ? data : { enabled: "0" };
         _botConfigTime = Date.now();
 
         // ── Auto-fill bank/UPI from server when chatbot config fields are blank.
@@ -389,8 +391,8 @@
         _showTyping();
         _loadConfig(function (cfg) {
           _removeTyping();
-          if (String(cfg.enabled || "1") === "0") {
-            // Admin disabled after page load — close and hide button
+          if (String(cfg.enabled ?? "0") === "0") {
+            // Admin disabled after page load (or config load failed) — close and hide button
             window._mbotClose();
             var btn = document.getElementById("_mbotBtn");
             if (btn) btn.style.display = "none";
@@ -665,7 +667,7 @@
       _injectCSS();
       // Pre-load config first — only render button if chatbot is enabled
       _loadConfig(function (cfg) {
-        if (String(cfg.enabled || "1") === "0") return; // disabled — render nothing
+        if (String(cfg.enabled ?? "0") === "0") return; // disabled — render nothing
         _buildDOM();
       });
     }
