@@ -9,7 +9,7 @@ html {
 }
 body {
   margin: 0;
-  padding-top: 64px; /* offset for fixed header height */
+  padding-top: 64px; /* default = header height; JS updates this when banner is visible */
   font-family: "Poppins", sans-serif;
   background: linear-gradient(135deg, #fdfbf7 0%, #f4f6f9 100%);
   color: #333;
@@ -103,6 +103,17 @@ body {
   transform: translateY(0);
 }
 
+/* ══ SITE TOP WRAPPER — banner + header stacked, fully fixed ══ */
+#siteTop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ══ ANNOUNCEMENT BANNER ══ */
 #announcementBanner {
   display: none;
@@ -191,8 +202,8 @@ body {
 
 /* ══ HEADER — Enhanced with logo ══ */
 .header {
-  position: fixed;
-  top: 0;
+  position: relative;
+  top: auto;
   z-index: 1000;
   background: linear-gradient(135deg, rgba(60,30,8,0.98) 0%, rgba(100,55,15,0.98) 50%, rgba(60,30,8,0.98) 100%);
   backdrop-filter: blur(18px);
