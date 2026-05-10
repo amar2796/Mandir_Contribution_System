@@ -117,7 +117,8 @@
          ✔ SYNC receiptPrefix and legacyReceiptPrefix with appscript CFG. */
       receiptPrefix:       "MNR",
       legacyReceiptPrefix: "TRX",
-      currency:     "₹",
+      currency:     "₹",          // Symbol used in HTML/UI display
+      currencyText: "Rs.",         // Text form used in jsPDF (Helvetica can't render ₹). SYNC with CFG.currencyText in appscript.txt
       currencyCode: "INR",
     
     
@@ -153,6 +154,21 @@
          Reducing this value limits automated emails (receipts, reports).
          ✔ SYNC with CFG.emailDailyLimit in appscript.txt. */
       emailDailyLimit: 90,
+    
+    
+      /* ── LOCALE ────────────────────────────────────────────────────────
+         Used for number formatting (toLocaleString) across all JS files.
+         e.g. "en-IN" for India, "en-US" for USA, "hi-IN" for Hindi-India.
+         Change this when deploying for a different region. */
+      locale: "en-IN",
+    
+    
+      /* ── MAP ───────────────────────────────────────────────────────────
+         Google Maps embed URL for the location/feedback section on index.html.
+         How to get your embed URL:
+           Google Maps → search your temple → Share → Embed a map → copy src URL.
+         Leave blank ("") to hide the map iframe entirely. */
+      mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3273.497389457402!2d82.20519597492734!3d26.321060585267084!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399a790bd4e8dff3%3A0x93c61c2049ae55f2!2sHanuman%20Mandir!5e1!3m2!1sen!2sin!4v1775203315104!5m2!1sen!2sin",
     
     
       /* ── GOOGLE DRIVE FOLDER IDs ───────────────────────────────────────

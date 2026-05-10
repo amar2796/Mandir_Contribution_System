@@ -919,15 +919,15 @@ function _logoHtml() {
               style="width:60px;height:60px;border-radius:50%;border:3px solid rgba(247,160,26,0.7);
                      object-fit:cover;display:block;margin:0 auto 10px;">`;
   }
-  return `<div style="font-size:36px;margin-bottom:10px;">🕉️</div>`;
+  return `<div style="font-size:36px;margin-bottom:10px;">${CFG.symbol||"🕉️"}</div>`;
 }
 
 // ── Monthly receipt summary email (member contributed)
 function _buildMonthlyReceiptEmail(member, contribs, types, month, year, totalAmt) {
-  const amountFmt = "Rs. " + Number(totalAmt).toLocaleString("en-IN");
+  const amountFmt = CFG.currencyText + " " + Number(totalAmt).toLocaleString("en-IN");
   const rowsHtml  = contribs.map(c => {
     const typeName = (types.find(t => String(t.TypeId) === String(c.TypeId)) || {}).TypeName || "Contribution";
-    const displayRID = (c.ReceiptID||"—").replace(/^TRX-/,"MNR-");
+    const displayRID = (c.ReceiptID||"—").replace(new RegExp("^" + CFG.legacyReceiptPrefix + "-"), CFG.receiptPrefix + "-");
     // FIX: Google Sheets may return PaymentDate as a Date object (not a string) when
     // a user has multiple contribution entries. Coerce to String before calling .split()
     // to prevent "split is not a function" error.
@@ -937,7 +937,7 @@ function _buildMonthlyReceiptEmail(member, contribs, types, month, year, totalAm
           : String(c.PaymentDate).split(" ")[0])
       : "";
     return _emailRow(typeName + " (" + displayRID + ")",
-      "Rs. " + Number(c.Amount||0).toLocaleString("en-IN") + " · " + (c.PaymentMode||"") + " · " + payDateStr);
+      CFG.currencyText + " " + Number(c.Amount||0).toLocaleString("en-IN") + " · " + (c.PaymentMode||"") + " · " + payDateStr);
   }).join("");
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
@@ -1057,7 +1057,7 @@ function _buildReminderEmail(member, month, year) {
         Your association with <strong style="color:#1e293b;">${CFG.name}</strong>
         is a source of great joy and strength for our entire temple family.
         The divine service you provide through your generosity helps us
-        maintain this sacred space, perform daily prayers, and serve the community. 🕉️
+        maintain this sacred space, perform daily prayers, and serve the community. ${CFG.symbol||"🕉️"}
       </p>
       <p style="color:#475569;font-size:13px;line-height:1.9;margin:12px 0 0;font-family:Arial,sans-serif;">
         Every contribution — however big or small — is a precious offering
@@ -1078,7 +1078,7 @@ function _buildReminderEmail(member, month, year) {
                  padding:20px 28px;text-align:center;
                  border-top:2px solid #f7a01a;">
     <div style="color:#f7a01a;font-size:15px;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">
-      Jai Shree Ram 🕉️
+      ${CFG.tagline} ${CFG.symbol||"🕉️"}
     </div>
     <div style="color:#94a3b8;font-size:11px;font-style:italic;">
       ${CFG.tagline} 🙏 &nbsp;|&nbsp; ${CFG.name}
@@ -1116,7 +1116,7 @@ function sendReceiptEmail(toEmail, donorName, receiptId, amount, forMonth, year,
   }
 
   const modeLabel = paymentMode || "—";
-  const amountFmt = "Rs. " + Number(amount || 0).toLocaleString("en-IN");
+  const amountFmt = CFG.currencyText + " " + Number(amount || 0).toLocaleString("en-IN");
 
   const htmlBody = `
 <!DOCTYPE html>
@@ -4166,7 +4166,7 @@ function sendMonthlyReminders(overrideMonth, overrideYear, bypassToggle) {
           <p style="color:#475569;font-size:13px;">This is a gentle reminder that your contribution for <strong>${month} ${year}</strong> has not yet been recorded.</p>
           <p style="color:#475569;font-size:13px;">If you have already paid, please coordinate with the temple admin to get it recorded.</p>
           <p style="color:#475569;font-size:13px;">If you have any questions, please contact us at ${CFG.address}.</p>
-          <p style="color:#a16207;font-size:12px;margin-top:20px;text-align:center;">${CFG.tagline} 🕉️</p>
+          <p style="color:#a16207;font-size:12px;margin-top:20px;text-align:center;">${CFG.tagline} ${CFG.symbol||"🕉️"}</p>
         </div>`
       });
       sent++;
@@ -4214,8 +4214,8 @@ function _checkGoalCompletion(goalId) {
                String(u.Email || "").trim() !== "";
       });
       const goalName   = goal.GoalName || goal.Name || "Goal";
-      const amountFmt  = "Rs. " + Number(current).toLocaleString("en-IN");
-      const targetFmt  = "Rs. " + Number(target).toLocaleString("en-IN");
+      const amountFmt  = CFG.currencyText + " " + Number(current).toLocaleString("en-IN");
+      const targetFmt  = CFG.currencyText + " " + Number(target).toLocaleString("en-IN");
       admins.forEach(function(admin) {
         if (!tryConsumeEmailQuota()) return;
         try {
@@ -4373,11 +4373,11 @@ function getChatbotConfig() {
 function _defaultChatbotConfig() {
   return {
     enabled:         "1",
-    welcome_en:      "Jai Shree Ram! How can I help you today?",
-    welcome_hi:      "जय श्री राम! आज मैं आपकी कैसे मदद कर सकता हूँ?",
+    welcome_en:      "${CFG.tagline}! How can I help you today?",
+    welcome_hi:      "${CFG.tagline}! आज मैं आपकी कैसे मदद कर सकता हूँ?",
     timings_en:      "Temple is open daily:\nMorning: 5:00 AM – 12:00 PM\nEvening: 4:00 PM – 9:00 PM",
     timings_hi:      "मंदिर प्रतिदिन खुला रहता है:\nसुबह: 5:00 AM – 12:00 PM\nशाम: 4:00 PM – 9:00 PM",
-    location_en:     "Shree Hanuman Mandir, Paliya, Sultanpur, Uttar Pradesh.",
+    location_en:     "${CFG.name}, ${CFG.address}.",
     location_hi:     "श्री हनुमान मंदिर, पालिया, सुल्तानपुर, उत्तर प्रदेश।",
     donate_en:       "You can donate in person at the temple or via bank transfer / UPI. Please see Bank Details or UPI/QR option for more.",
     donate_hi:       "आप मंदिर में आकर या बैंक ट्रांसफर / UPI के माध्यम से दान कर सकते हैं।",
@@ -4575,7 +4575,7 @@ function registerUser(params) {
     <div style="margin-top:10px;"><span style="background:#f59e0b;color:#fff;padding:3px 14px;border-radius:20px;font-size:11px;font-weight:700;">REGISTRATION RECEIVED</span></div>
   </td></tr>
   <tr><td style="padding:24px 28px;">
-    <p style="color:#334155;font-size:15px;font-weight:700;margin:0 0 8px;">Jai Shree Ram, ${name}!</p>
+    <p style="color:#334155;font-size:15px;font-weight:700;margin:0 0 8px;">${CFG.tagline}, ${name}!</p>
     <p style="color:#475569;font-size:13px;line-height:1.7;margin:0 0 16px;">Thank you for registering with <strong>${CFG.name}</strong>. Your request has been received and is pending review by the temple admin.</p>
     <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:16px 20px;margin:0 0 16px;">
       <div style="color:#92400e;font-size:13px;font-weight:700;margin-bottom:10px;">Your Registration Details</div>
@@ -4761,7 +4761,7 @@ function _buildApprovalEmail(user) {
     <div style="margin-top:12px;"><span style="background:#22c55e;color:#fff;padding:5px 18px;border-radius:20px;font-size:11px;font-weight:700;">REGISTRATION APPROVED</span></div>
   </td></tr>
   <tr><td style="padding:28px 32px;">
-    <p style="color:#334155;font-size:16px;font-weight:700;margin:0 0 8px;">Jai Shree Ram, <span style="color:#f7a01a;">${user.Name}</span>!</p>
+    <p style="color:#334155;font-size:16px;font-weight:700;margin:0 0 8px;">${CFG.tagline}, <span style="color:#f7a01a;">${user.Name}</span>!</p>
     <p style="color:#475569;font-size:13px;line-height:1.8;margin:0 0 20px;">Your registration request for <strong>${CFG.name}</strong> has been <strong style="color:#16a34a;">approved</strong> by the admin. You can now login to access your account.</p>
     <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:18px 22px;margin:0 0 20px;">
       <div style="color:#15803d;font-size:13px;font-weight:700;margin-bottom:12px;border-bottom:1px solid #bbf7d0;padding-bottom:8px;">Your Login Details</div>
@@ -4771,7 +4771,7 @@ function _buildApprovalEmail(user) {
     <p style="color:#64748b;font-size:13px;line-height:1.7;margin:0;">You can now view your donation history, download receipts, and more. Welcome to the ${CFG.name} family!</p>
   </td></tr>
   <tr><td style="background:#fef9ee;padding:18px 32px;text-align:center;border-top:2px solid #fde68a;">
-    <div style="color:#92400e;font-size:14px;font-weight:700;">Jai Shree Ram</div>
+    <div style="color:#92400e;font-size:14px;font-weight:700;">${CFG.tagline}</div>
     <div style="color:#a16207;font-size:12px;margin-top:4px;">${CFG.tagline}</div>
   </td></tr>
   <tr><td style="background:#f8fafc;padding:12px 32px;text-align:center;border-top:1px solid #e2e8f0;">
@@ -4795,7 +4795,7 @@ function _buildAdminAddedEmail(user) {
     <div style="margin-top:12px;"><span style="background:#22c55e;color:#fff;padding:5px 18px;border-radius:20px;font-size:11px;font-weight:700;">ACCOUNT CREATED</span></div>
   </td></tr>
   <tr><td style="padding:28px 32px;">
-    <p style="color:#334155;font-size:16px;font-weight:700;margin:0 0 8px;">Jai Shree Ram, <span style="color:#f7a01a;">${user.Name}</span>!</p>
+    <p style="color:#334155;font-size:16px;font-weight:700;margin:0 0 8px;">${CFG.tagline}, <span style="color:#f7a01a;">${user.Name}</span>!</p>
     <p style="color:#475569;font-size:13px;line-height:1.8;margin:0 0 20px;">
       Welcome to <strong>${CFG.name}</strong>! Your account has been created by the admin
       and is <strong style="color:#16a34a;">active immediately</strong>.
@@ -4817,7 +4817,7 @@ function _buildAdminAddedEmail(user) {
     </p>
   </td></tr>
   <tr><td style="background:#fef9ee;padding:18px 32px;text-align:center;border-top:2px solid #fde68a;">
-    <div style="color:#92400e;font-size:14px;font-weight:700;">Jai Shree Ram</div>
+    <div style="color:#92400e;font-size:14px;font-weight:700;">${CFG.tagline}</div>
     <div style="color:#a16207;font-size:12px;margin-top:4px;">${CFG.tagline}</div>
   </td></tr>
   <tr><td style="background:#f8fafc;padding:12px 32px;text-align:center;border-top:1px solid #e2e8f0;">
@@ -4859,7 +4859,7 @@ function _buildRejectionEmail(user, reason) {
     </p>
   </td></tr>
   <tr><td style="background:#fef9ee;padding:18px 32px;text-align:center;border-top:2px solid #fde68a;">
-    <div style="color:#92400e;font-size:14px;font-weight:700;">Jai Shree Ram</div>
+    <div style="color:#92400e;font-size:14px;font-weight:700;">${CFG.tagline}</div>
     <div style="color:#a16207;font-size:12px;margin-top:4px;">${CFG.name}</div>
   </td></tr>
   <tr><td style="background:#f8fafc;padding:12px 32px;text-align:center;border-top:1px solid #e2e8f0;">
@@ -4872,7 +4872,7 @@ function _buildRejectionEmail(user, reason) {
 // ── Contribution request rejection notification email
 function _buildContribRejectionEmail(user, amount, forMonth, year, reason) {
   const name      = user ? (user.Name || "Member") : "Member";
-  const amtFmt    = "Rs. " + Number(amount).toLocaleString("en-IN");
+  const amtFmt    = CFG.currencyText + " " + Number(amount).toLocaleString("en-IN");
   const reasonHtml = reason
     ? `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:14px 16px;margin:14px 0;">
          <div style="color:#991b1b;font-size:12px;font-weight:700;margin-bottom:6px;">Reason from Admin:</div>
@@ -4904,7 +4904,7 @@ function _buildContribRejectionEmail(user, amount, forMonth, year, reason) {
     </p>
   </td></tr>
   <tr><td style="background:#fef9ee;padding:16px 32px;text-align:center;border-top:2px solid #fde68a;">
-    <div style="color:#92400e;font-size:13px;font-weight:700;">Jai Shree Ram 🙏</div>
+    <div style="color:#92400e;font-size:13px;font-weight:700;">${CFG.tagline} 🙏</div>
     <div style="color:#a16207;font-size:12px;margin-top:4px;">${CFG.tagline} | ${CFG.name}</div>
   </td></tr>
   <tr><td style="background:#f8fafc;padding:10px 32px;text-align:center;border-top:1px solid #e2e8f0;">
@@ -5326,7 +5326,7 @@ function _buildBirthdayEmail(member) {
                  padding:30px 28px 22px;text-align:center;
                  border-bottom:2px solid rgba(247,160,26,0.35);">
     ${_logoHtml()}
-    <div style="color:rgba(247,160,26,0.6);font-size:1.1rem;letter-spacing:8px;margin-bottom:6px;">🕉</div>
+    <div style="color:rgba(247,160,26,0.6);font-size:1.1rem;letter-spacing:8px;margin-bottom:6px;">${CFG.symbol||"🕉"}</div>
     <div style="color:#f7a01a;font-size:20px;font-weight:700;letter-spacing:1.5px;">${CFG.name.toUpperCase()}</div>
     <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:3px;letter-spacing:1px;">${CFG.location.toUpperCase()}</div>
     <div style="margin-top:16px;">

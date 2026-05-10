@@ -348,7 +348,7 @@
           </div>
           <div class="mbot-title">
             <div>Mandir Assistant</div>
-            <div>Online · Jai Shree Ram</div>
+            <div>Online · <span id="_mbotTagline">Jai Shree Ram</span></div>
           </div>
           <button class="mbot-hbtn" id="_mbotLangBtn" onclick="_mbotToggleLang()">EN</button>
           <button class="mbot-hbtn" onclick="_mbotClose()" style="padding:4px 9px;font-size:14px;">×</button>
@@ -360,6 +360,10 @@
         </div>
       `;
       document.body.appendChild(win);
+
+      // Set header tagline from APP constants
+      var _tglEl = document.getElementById("_mbotTagline");
+      if (_tglEl && window.APP && APP.tagline) _tglEl.textContent = APP.tagline;
   
       document.getElementById("_mbotInput").addEventListener("keydown", function (e) {
         if (e.key === "Enter") _mbotHandleInput();
@@ -398,7 +402,7 @@
             if (btn) btn.style.display = "none";
             return;
           }
-          _addBotMsg(_t("welcome") || "Jai Shree Ram! How can I help you?");
+          _addBotMsg(_t("welcome") || (window.APP && APP.tagline ? APP.tagline + "! How can I help you?" : "How can I help you?"));
           setTimeout(function () { _showMainMenu(); }, 200);
         });
       }
@@ -658,7 +662,7 @@
       document.getElementById("_mbotLangBtn").textContent = _bi("EN", "HI");
       // Clear and restart
       document.getElementById("_mbotMsgs").innerHTML = "";
-      _addBotMsg(_t("welcome") || "Jai Shree Ram!");
+      _addBotMsg(_t("welcome") || (window.APP && APP.tagline ? APP.tagline + "!" : "Welcome!"));
       setTimeout(_showMainMenu, 150);
     };
   
