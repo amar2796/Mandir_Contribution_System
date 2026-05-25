@@ -4258,14 +4258,35 @@ function sendMonthlyContributionReminders(overrideMonth, overrideYear) {
       return { status: "ok", sent: 0, skipped: 0, message: "Disabled" };
     }
 
+    // [FIX-1] Guard against Apps Script passing its trigger event object as the first
+    // argument when this function is fired by a Time-based trigger.
+    // The event object is a plain {triggerUid:...} — not a string — so we reject it.
+    // Only accept overrideMonth/overrideYear when they are actual strings or numbers.
+    var safeMonth = (typeof overrideMonth === "string" && overrideMonth.trim()) ? overrideMonth.trim() : null;
+    var safeYear  = (typeof overrideYear  === "string" && overrideYear.trim())  ? overrideYear.trim()
+                  : (typeof overrideYear  === "number")                         ? String(overrideYear)
+                  : null;
+
     const MONTHS = ["January","February","March","April","May","June",
                     "July","August","September","October","November","December"];
     const now   = new Date();
-    const month = overrideMonth || MONTHS[now.getMonth()];
-    const year  = String(overrideYear || now.getFullYear());
+    const month = safeMonth || MONTHS[now.getMonth()];
+    const year  = safeYear  || String(now.getFullYear());
 
     const users         = getSheetData(SHEETS.USERS);
     const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
+
+    // [FIX-2] Google Sheets sometimes stores ForMonth as a Date object instead of a text
+    // string (e.g. a date-formatted cell returns "Mon May 01 2026 00:00:00 GMT+0530").
+    // String(Date) never matches "May", so hasPaid was always false → every member
+    // received a reminder even if they had already contributed.
+    // Normalize: extract the month name from Date objects; leave strings as-is.
+    function _normalizeMonth(val) {
+      if (val instanceof Date) {
+        return Utilities.formatDate(val, "GMT+5:30", "MMMM"); // e.g. "May"
+      }
+      return String(val || "").trim();
+    }
 
     // Members who are active, not admin, have an email
     const activeMembers = users.filter(function(u) {
@@ -4279,9 +4300,9 @@ function sendMonthlyContributionReminders(overrideMonth, overrideYear) {
     activeMembers.forEach(function(member) {
       // Check if this member has any contribution for current month+year
       const hasPaid = contributions.some(function(c) {
-        return String(c.UserId)   === String(member.UserId) &&
-               String(c.ForMonth) === month &&
-               String(c.Year)     === year;
+        return String(c.UserId)        === String(member.UserId) &&
+               _normalizeMonth(c.ForMonth) === month &&
+               String(c.Year)         === year;
       });
       if (hasPaid) return; // already paid — no reminder needed
 
