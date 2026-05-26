@@ -2794,7 +2794,7 @@ function doGet(e) {
 
   // ── MONTHLY CONTRIBUTION REMINDER (trigger on 25th via Time-based trigger)
   else if (action === "sendMonthlyReminders") {
-    result = sendMonthlyContributionReminders(e.parameter.month, e.parameter.year);
+    result = sendMonthlyReminders(e.parameter.month || null, e.parameter.year || null, false);
   }
 
   // ── M16: Send OTP to verify NEW mobile number before changing
@@ -4123,59 +4123,97 @@ function verifyEmailSystem() {
 //  Also callable manually from admin via triggerMonthlyReminder action.
 //  Only runs if monthly_reminder toggle is ON in email settings.
 // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+//  MONTHLY CONTRIBUTION REMINDER — SINGLE FUNCTION (merged)
+//
+//  WHO gets the email:
+//    ✅ Active members only (Status = "Active")
+//    ✅ Non-admin only (Role ≠ "admin")
+//    ✅ Must have an email address on record
+//    ✅ Must NOT have any contribution recorded for the current month + year
+//    ❌ Already-paid members are SKIPPED — no reminder sent
+//    ❌ Inactive / suspended members are SKIPPED
+//    ❌ Walk-in entries (no UserId in USERS sheet) are SKIPPED
+//
+//  CALLED FROM:
+//    1. Apps Script Time-based trigger (fires automatically, e.g. 25th of month)
+//       → Apps Script passes its event object as first arg — safeMonth guard rejects it
+//       → month/year auto-resolved from current date
+//    2. Admin panel "Send Reminder" button (action = triggerMonthlyReminder)
+//       → passes month + year + bypassToggle=true (ignores ON/OFF toggle)
+//    3. Web API (action = sendMonthlyReminders)
+//       → passes month + year from request params
+// ════════════════════════════════════════════════════════════════
 function sendMonthlyReminders(overrideMonth, overrideYear, bypassToggle) {
-  const settings = getEmailSettings();
-  // Toggle bypassed when bypassToggle=true (manual admin trigger)
-  if (!bypassToggle && !settings.monthly_report) {
-    return { status: "ok", sent: 0, skipped: 0, message: "Monthly emails disabled in settings." };
-  }
+  try {
+    const settings = getEmailSettings();
+    // Toggle bypassed when bypassToggle=true (manual admin trigger from panel)
+    if (!bypassToggle && !settings.monthly_report) {
+      logAction("System", "monthlyReminder", "Skipped — monthly_report toggle is OFF");
+      return { status: "ok", sent: 0, skipped: 0, message: "Monthly emails disabled in settings." };
+    }
 
-  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  const now    = new Date();
-  const month  = overrideMonth || MONTHS[now.getMonth()];
-  const year   = String(overrideYear || now.getFullYear());
+    // Guard: Apps Script Time-based trigger passes its event object {triggerUid, year, month...}
+    // as overrideMonth. That object is truthy so without this guard it would be used as the month
+    // value → "[object Object]" in email subject AND hasPaid always false → everyone gets email.
+    // Only accept overrideMonth/overrideYear when they are actual strings or numbers.
+    var safeMonth = (typeof overrideMonth === "string" && overrideMonth.trim()) ? overrideMonth.trim() : null;
+    var safeYear  = (typeof overrideYear  === "string" && overrideYear.trim())  ? overrideYear.trim()
+                  : (typeof overrideYear  === "number")                         ? String(overrideYear)
+                  : null;
 
-  const users         = getSheetData(SHEETS.USERS);
-  const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
+    const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const now    = new Date();
+    const month  = safeMonth || MONTHS[now.getMonth()];
+    const year   = safeYear  || String(now.getFullYear());
 
-  // Find active members (non-admin, active, has email) with NO contribution this month
-  const unpaid = users.filter(function(u) {
-    if (String(u.Role   || "").toLowerCase() === "admin")    return false;
-    if (String(u.Status || "Active").toLowerCase() !== "active") return false;
-    if (!String(u.Email || "").trim()) return false;
-    // Check if they have any contribution for this month+year
-    const paid = contributions.some(function(c) {
-      return String(c.UserId) === String(u.UserId) &&
-             String(c.ForMonth) === month &&
-             String(c.Year) === year;
-    });
-    return !paid;
-  });
+    // Normalize ForMonth: Google Sheets can return a Date object when the cell is
+    // date-formatted. String(Date) → "Mon May 01 2026..." which never equals "May"
+    // → hasPaid always false → every member gets reminder even if they already paid.
+    function _normalizeForMonth(val) {
+      if (val instanceof Date) return Utilities.formatDate(val, "GMT+5:30", "MMMM");
+      return String(val || "").trim();
+    }
 
-  let sent = 0, skipped = 0;
-  unpaid.forEach(function(member) {
-    if (!tryConsumeEmailQuota()) { skipped++; return; }
-    try {
-      MailApp.sendEmail({
-        to:       String(member.Email).trim(),
-        subject:  CFG.name + " — Contribution Reminder for " + month + " " + year,
-        htmlBody: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border-radius:12px;border:1px solid #fde68a;padding:28px;">
-          <div style="text-align:center;margin-bottom:16px;">${_logoHtml()}</div>
-          <h2 style="color:#92400e;text-align:center;font-size:16px;">🙏 ${CFG.name}</h2>
-          <p style="color:#334155;font-size:14px;">Dear <strong>${member.Name}</strong>,</p>
-          <p style="color:#475569;font-size:13px;">This is a gentle reminder that your contribution for <strong>${month} ${year}</strong> has not yet been recorded.</p>
-          <p style="color:#475569;font-size:13px;">If you have already paid, please coordinate with the temple admin to get it recorded.</p>
-          <p style="color:#475569;font-size:13px;">If you have any questions, please contact us at ${CFG.address}.</p>
-          <p style="color:#a16207;font-size:12px;margin-top:20px;text-align:center;">${CFG.tagline} ${CFG.symbol||"🕉️"}</p>
-        </div>`
+    const users         = getSheetData(SHEETS.USERS);
+    const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
+
+    // Only members who are: active + non-admin + have email + have NOT paid this month
+    const unpaid = users.filter(function(u) {
+      if (String(u.Role   || "").toLowerCase() === "admin")        return false;
+      if (String(u.Status || "Active").toLowerCase() !== "active") return false;
+      if (!String(u.Email || "").trim())                           return false;
+      const paid = contributions.some(function(c) {
+        return String(c.UserId)             === String(u.UserId) &&
+               _normalizeForMonth(c.ForMonth) === month &&
+               String(c.Year)               === year;
       });
-      sent++;
-      Utilities.sleep(200);
-    } catch(mailErr) { skipped++; }
-  });
+      return !paid; // only include members who have NOT paid
+    });
 
-  logAction("System", "MonthlyReminder", month + " " + year + " — sent:" + sent + ", skipped:" + skipped + ", unpaid:" + unpaid.length);
-  return { status: "ok", sent: sent, skipped: skipped, unpaidCount: unpaid.length };
+    let sent = 0, skipped = 0;
+    unpaid.forEach(function(member) {
+      if (!tryConsumeEmailQuota()) { skipped++; return; }
+      try {
+        MailApp.sendEmail({
+          to:       String(member.Email).trim(),
+          subject:  CFG.name + " — Contribution Reminder for " + month + " " + year,
+          htmlBody: _buildMonthlyReminderEmail(member, month, year)
+        });
+        sent++;
+        Utilities.sleep(200);
+      } catch(mailErr) {
+        logAction("System", "REMINDER_EMAIL_SEND_ERROR", "To: " + member.Email + " | Name: " + (member.Name||""), mailErr.message, "", { severity:"WARN", result:"FAILURE", error:mailErr });
+        skipped++;
+      }
+    });
+
+    logAction("System", "MonthlyReminder", month + " " + year + " — sent:" + sent + ", skipped:" + skipped + ", unpaid:" + unpaid.length);
+    return { status: "ok", sent: sent, skipped: skipped, unpaidCount: unpaid.length };
+  } catch(err) {
+    logAction("System", "MONTHLY_REMINDER_FAILED", "Month: " + (month||"") + " Year: " + (year||""), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
+    return { status: "error", message: err.message };
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -4243,93 +4281,7 @@ function _checkGoalCompletion(goalId) {
   } catch(err) { /* non-fatal — never crash main operation */ }
 }
 
-// ════════════════════════════════════════════════════════════════
-//  MONTHLY CONTRIBUTION REMINDER (M1)
-//  Call via Time-based trigger on 25th of each month.
-//  Identifies members with no contribution recorded for current
-//  month and sends a polite reminder email.
-//  Admin can toggle on/off via Email Automation settings.
-// ════════════════════════════════════════════════════════════════
-function sendMonthlyContributionReminders(overrideMonth, overrideYear) {
-  try {
-    const settings = getEmailSettings();
-    if (!settings.monthly_report) {
-      logAction("System", "monthlyReminder", "Skipped — monthly_report toggle is OFF");
-      return { status: "ok", sent: 0, skipped: 0, message: "Disabled" };
-    }
-
-    // [FIX-1] Guard against Apps Script passing its trigger event object as the first
-    // argument when this function is fired by a Time-based trigger.
-    // The event object is a plain {triggerUid:...} — not a string — so we reject it.
-    // Only accept overrideMonth/overrideYear when they are actual strings or numbers.
-    var safeMonth = (typeof overrideMonth === "string" && overrideMonth.trim()) ? overrideMonth.trim() : null;
-    var safeYear  = (typeof overrideYear  === "string" && overrideYear.trim())  ? overrideYear.trim()
-                  : (typeof overrideYear  === "number")                         ? String(overrideYear)
-                  : null;
-
-    const MONTHS = ["January","February","March","April","May","June",
-                    "July","August","September","October","November","December"];
-    const now   = new Date();
-    const month = safeMonth || MONTHS[now.getMonth()];
-    const year  = safeYear  || String(now.getFullYear());
-
-    const users         = getSheetData(SHEETS.USERS);
-    const contributions = getSheetData(SHEETS.CONTRIBUTIONS);
-
-    // [FIX-2] Google Sheets sometimes stores ForMonth as a Date object instead of a text
-    // string (e.g. a date-formatted cell returns "Mon May 01 2026 00:00:00 GMT+0530").
-    // String(Date) never matches "May", so hasPaid was always false → every member
-    // received a reminder even if they had already contributed.
-    // Normalize: extract the month name from Date objects; leave strings as-is.
-    function _normalizeMonth(val) {
-      if (val instanceof Date) {
-        return Utilities.formatDate(val, "GMT+5:30", "MMMM"); // e.g. "May"
-      }
-      return String(val || "").trim();
-    }
-
-    // Members who are active, not admin, have an email
-    const activeMembers = users.filter(function(u) {
-      return String(u.Role   || "").toLowerCase() !== "admin" &&
-             String(u.Status || "Active").toLowerCase() === "active" &&
-             String(u.Email  || "").trim() !== "";
-    });
-
-    let sent = 0, skipped = 0;
-
-    activeMembers.forEach(function(member) {
-      // Check if this member has any contribution for current month+year
-      const hasPaid = contributions.some(function(c) {
-        return String(c.UserId)        === String(member.UserId) &&
-               _normalizeMonth(c.ForMonth) === month &&
-               String(c.Year)         === year;
-      });
-      if (hasPaid) return; // already paid — no reminder needed
-
-      if (!tryConsumeEmailQuota()) { skipped++; return; }
-      try {
-        MailApp.sendEmail({
-          to:       String(member.Email).trim(),
-          subject:  CFG.name + " — " + month + " " + year + " Contribution Reminder",
-          htmlBody: _buildMonthlyReminderEmail(member, month, year)
-        });
-        sent++;
-        Utilities.sleep(200);
-      } catch(mailErr) {
-        logAction("System", "REMINDER_EMAIL_SEND_ERROR", "To: " + member.Email + " | Name: " + (member.Name||""), mailErr.message, "", { severity:"WARN", result:"FAILURE", error:mailErr });
-        skipped++;
-      }
-    });
-
-    logAction("System", "monthlyReminder", month + " " + year + " — sent:" + sent + ", skipped:" + skipped);
-    return { status: "ok", sent: sent, skipped: skipped };
-  } catch(err) {
-    logAction("System", "MONTHLY_REMINDER_FAILED", "Month: " + (month||"") + " Year: " + (year||""), err.message, "", { severity:"ERROR", result:"FAILURE", error:err });
-    return { status: "error", message: err.message };
-  }
-}
-
-// ── Reminder email body
+// ── Reminder email body (used by sendMonthlyReminders)
 function _buildMonthlyReminderEmail(member, month, year) {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,sans-serif;">
