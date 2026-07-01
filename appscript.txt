@@ -65,6 +65,9 @@ const CFG = {
   bankName:    "State Bank of India",     // kept server-side only
   bankBranch:  "Katka Khanpur Branch",    // kept server-side only
   accountType: "Savings",                 // kept server-side only
+  currencyText: "Rs.",              // or "₹"
+  symbol: "🕉️",
+  legacyReceiptPrefix: "TRX",       // whatever the old prefix was, e.g. "TRX"
 };
 
 const SHEETS = {
