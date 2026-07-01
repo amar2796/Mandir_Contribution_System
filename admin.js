@@ -1719,7 +1719,7 @@
         if (typeof _cr_buildFilterDropdowns === "function") _cr_buildFilterDropdowns();
         // Refresh admin summary panels too
         loadSummary();
-        const now = new Date().toLocaleTimeString("en-IN");
+        const now = new Date().toLocaleTimeString(APP.locale||"en-IN");
         const lbl = document.getElementById("dash_lastLoaded");
         if (lbl) lbl.textContent = "Last refreshed: " + now;
         toast("✅ Dashboard data refreshed.");
@@ -2102,7 +2102,7 @@
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
         const current = Math.round(eased * target);
-        el.innerText = prefix + current.toLocaleString("en-IN");
+        el.innerText = prefix + current.toLocaleString(APP.locale||"en-IN");
         if (progress < 1) requestAnimationFrame(step);
         else el.innerText = targetText;
       }
@@ -2579,7 +2579,7 @@
         var typeName = (types.find(function(t) { return String(t.TypeId) === String(c.TypeId); }) || {}).TypeName || "Daan";
         var dateStr = c.PaymentDate
           ? (c.PaymentDate instanceof Date
-              ? c.PaymentDate.toLocaleDateString("en-IN")
+              ? c.PaymentDate.toLocaleDateString(APP.locale||"en-IN")
               : String(c.PaymentDate).split(" ")[0])
           : "—";
         return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#fffbeb;margin-bottom:5px;">' +
@@ -3013,13 +3013,13 @@
       let ye = expenses
         .filter((e) => String(e.Year) === String(selYear))
         .reduce((s, e) => s + Number(e.Amount || 0), 0);
-      prev.innerHTML = `<span style="color:#f7a01a;font-weight:700;">${selMonth} ${selYear}</span><br>📥 ₹${fmt(
+      prev.innerHTML = `<span style="color:#f7a01a;font-weight:700;">${selMonth} ${selYear}</span><br>📥 ${APP.currency||"₹"}${fmt(
         mc
-      )} in &nbsp;|&nbsp; 💸 ₹${fmt(
+      )} in &nbsp;|&nbsp; 💸 ${APP.currency||"₹"}${fmt(
         me
-      )} out<br><span style="color:#cbd5e1;">Year: ₹${fmt(
+      )} out<br><span style="color:#cbd5e1;">Year: ${APP.currency||"₹"}${fmt(
         yc
-      )} in &nbsp;|&nbsp; ₹${fmt(ye)} out</span>`;
+      )} in &nbsp;|&nbsp; ${APP.currency||"₹"}${fmt(ye)} out</span>`;
     }
 
     function sendWhatsAppReport(type) {
@@ -3030,7 +3030,7 @@
       const selYear = waYear
         ? Number(waYear.value)
         : new Date().getFullYear();
-      const genDate = new Date().toLocaleDateString("en-IN");
+      const genDate = new Date().toLocaleDateString(APP.locale||"en-IN");
       let msg = "";
       if (type === "month") {
         let monthContribs = data.filter(
@@ -3057,15 +3057,15 @@
               .filter((c) => String(c.UserId) === String(u.UserId))
               .reduce((s, c) => s + Number(c.Amount || 0), 0);
             return paid > 0
-              ? `  ✅ ${u.Name}: ₹${fmt(paid)}`
+              ? `  ✅ ${u.Name}: ${APP.currency||"₹"}${fmt(paid)}`
               : `  ⬜ ${u.Name}: ₹0`;
           })
           .join("\n");
         if (walkInTotal > 0)
-          memberLines += `\n  🚶 Walk-in Donors: ₹${fmt(walkInTotal)}`;
-        msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📅 *Monthly Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n━━━━━━━━━━━━━━━━━━━━\n💰 Total Collected: ₹${fmt(
+          memberLines += `\n  🚶 Walk-in Donors: ${APP.currency||"₹"}${fmt(walkInTotal)}`;
+        msg = `${APP.symbol||"🕉️"} *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📅 *Monthly Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n━━━━━━━━━━━━━━━━━━━━\n💰 Total Collected: ${APP.currency||"₹"}${fmt(
           monthTotal
-        )}\n💸 Total Expenses: ₹${fmt(
+        )}\n💸 Total Expenses: ${APP.currency||"₹"}${fmt(
           monthExp
         )}\n━━━━━━━━━━━━━━━━━━━━\n_System Generated — ${genDate}_`;
       } else {
@@ -3096,13 +3096,13 @@
               ),
             ].join(", ");
             return paid > 0
-              ? `  ✅ ${u.Name}: ₹${fmt(paid)} (${mos})`
+              ? `  ✅ ${u.Name}: ${APP.currency||"₹"}${fmt(paid)} (${mos})`
               : `  ⬜ ${u.Name}: ₹0`;
           })
           .join("\n");
         // FIX #12: Add walk-in total to yearly report
         if (walkInTotalYr > 0)
-          memberLines += `\n  🚶 Walk-in Donors: ₹${fmt(walkInTotalYr)}`;
+          memberLines += `\n  🚶 Walk-in Donors: ${APP.currency||"₹"}${fmt(walkInTotalYr)}`;
         let monthLines = MOS.map((m) => {
           let mc = yearContribs
             .filter((c) => c.ForMonth === m)
@@ -3113,14 +3113,14 @@
             )
             .reduce((s, e) => s + Number(e.Amount || 0), 0);
           if (mc === 0 && me === 0) return "";
-          return `  ${m}: Collected ₹${fmt(mc)}  |  Expense ₹${fmt(me)}`;
+          return `  ${m}: Collected ${APP.currency||"₹"}${fmt(mc)}  |  Expense ${APP.currency||"₹"}${fmt(me)}`;
         })
           .filter(Boolean)
           .join("\n");
-        msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📆 *Annual Report — ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n📅 *Month-wise Breakdown:*\n${monthLines || "  No data"
-          }\n\n━━━━━━━━━━━━━━━━━━━━\n💰 Total Collected: ₹${fmt(
+        msg = `${APP.symbol||"🕉️"} *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📆 *Annual Report — ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n👥 *Member Contributions:*\n${memberLines}\n\n📅 *Month-wise Breakdown:*\n${monthLines || "  No data"
+          }\n\n━━━━━━━━━━━━━━━━━━━━\n💰 Total Collected: ${APP.currency||"₹"}${fmt(
             yearTotal
-          )}\n💸 Total Expenses: ₹${fmt(
+          )}\n💸 Total Expenses: ${APP.currency||"₹"}${fmt(
             yearExp
           )}\n━━━━━━━━━━━━━━━━━━━━\n_System Generated — ${genDate}_`;
       }
@@ -3136,7 +3136,7 @@
       const selYear = waYear
         ? Number(waYear.value)
         : new Date().getFullYear();
-      const genDate = new Date().toLocaleDateString("en-IN");
+      const genDate = new Date().toLocaleDateString(APP.locale||"en-IN");
       if (typeof window.jspdf === "undefined") {
         toast("PDF library not loaded.", "error");
         return;
@@ -3188,10 +3188,10 @@
       const cardH = 22;
       const cardW = (w - 20) / 4;
       const cards = [
-        { label: "Month Collected", value: "Rs." + moTotal.toLocaleString("en-IN"), color: [240, 253, 244], border: [134, 239, 172], text: [21, 128, 61] },
-        { label: "Month Expenses", value: "Rs." + moExp.toLocaleString("en-IN"), color: [254, 242, 242], border: [252, 165, 165], text: [185, 28, 28] },
-        { label: "Year Collected", value: "Rs." + yrTotal.toLocaleString("en-IN"), color: [239, 246, 255], border: [147, 197, 253], text: [37, 99, 235] },
-        { label: "Net Balance", value: "Rs." + (yrTotal - yrExp).toLocaleString("en-IN"), color: [254, 249, 238], border: [253, 211, 77], text: [146, 64, 14] },
+        { label: "Month Collected", value: (APP.currency||"₹") + moTotal.toLocaleString(APP.locale||"en-IN"), color: [240, 253, 244], border: [134, 239, 172], text: [21, 128, 61] },
+        { label: "Month Expenses", value: (APP.currency||"₹") + moExp.toLocaleString(APP.locale||"en-IN"), color: [254, 242, 242], border: [252, 165, 165], text: [185, 28, 28] },
+        { label: "Year Collected", value: (APP.currency||"₹") + yrTotal.toLocaleString(APP.locale||"en-IN"), color: [239, 246, 255], border: [147, 197, 253], text: [37, 99, 235] },
+        { label: "Net Balance", value: (APP.currency||"₹") + (yrTotal - yrExp).toLocaleString(APP.locale||"en-IN"), color: [254, 249, 238], border: [253, 211, 77], text: [146, 64, 14] },
       ];
       cards.forEach((card, i) => {
         const cx = 10 + i * (cardW + 2);
@@ -3207,8 +3207,8 @@
       doc.autoTable({
         head: [["Period", "Contributions (Rs.)", "Expenses (Rs.)", "Net (Rs.)"]],
         body: [
-          [selMonth + " " + selYear, moTotal.toLocaleString("en-IN"), moExp.toLocaleString("en-IN"), (moTotal - moExp).toLocaleString("en-IN")],
-          ["Full Year " + selYear, yrTotal.toLocaleString("en-IN"), yrExp.toLocaleString("en-IN"), (yrTotal - yrExp).toLocaleString("en-IN")],
+          [selMonth + " " + selYear, moTotal.toLocaleString(APP.locale||"en-IN"), moExp.toLocaleString(APP.locale||"en-IN"), (moTotal - moExp).toLocaleString(APP.locale||"en-IN")],
+          ["Full Year " + selYear, yrTotal.toLocaleString(APP.locale||"en-IN"), yrExp.toLocaleString(APP.locale||"en-IN"), (yrTotal - yrExp).toLocaleString(APP.locale||"en-IN")],
         ],
         startY: cardY + cardH + 6,
         theme: "grid",
@@ -3227,8 +3227,8 @@
           return [
             String(i + 1),
             u.Name,
-            moPaid > 0 ? "Rs." + moPaid.toLocaleString("en-IN") : "—",
-            "Rs." + paid.toLocaleString("en-IN"),
+            moPaid > 0 ? (APP.currency||"₹") + moPaid.toLocaleString(APP.locale||"en-IN") : "—",
+            (APP.currency||"₹") + paid.toLocaleString(APP.locale||"en-IN"),
             moPaid > 0 ? "✓ Paid" : "Pending"
           ];
         });
@@ -3269,11 +3269,11 @@
 
       doc.save("Mandir_Report_" + selYear + "_" + selMonth + ".pdf");
       setTimeout(() => {
-        let msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📊 *Financial Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Month Collected: ₹${fmt(
+        let msg = `${APP.symbol||"🕉️"} *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📊 *Financial Report — ${selMonth} ${selYear}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Month Collected: ${APP.currency||"₹"}${fmt(
           moTotal
-        )}\n💸 Month Expenses: ₹${fmt(moExp)}\n📅 Year Collected: ₹${fmt(
+        )}\n💸 Month Expenses: ${APP.currency||"₹"}${fmt(moExp)}\n📅 Year Collected: ${APP.currency||"₹"}${fmt(
           yrTotal
-        )}\n📅 Year Expenses: ₹${fmt(
+        )}\n📅 Year Expenses: ${APP.currency||"₹"}${fmt(
           yrExp
         )}\n━━━━━━━━━━━━━━━━━━━━\nPlease find the attached PDF report.\n_${genDate}_`;
         toast("📥 PDF downloaded — attach it in WhatsApp", "");
@@ -3433,7 +3433,7 @@
 
       // Initialize receipt year hint display
       const hintEl = document.getElementById("contribYearHint");
-      if (hintEl) hintEl.textContent = "Receipt will be: MNR-" + cur + "-NNNNN";
+      if (hintEl) hintEl.textContent = "Receipt will be: " + (APP.receiptPrefix||"REC") + "-" + cur + "-NNNNN";
     }
     function loadUsers() {
       const _luEl = document.getElementById("user");
@@ -3564,7 +3564,7 @@
               (o) => String(o.OccasionId) === String(c.OccasionId)
             )?.OccasionName || "";
           const _rid = _storeReceipt(c, name, tName, oName);
-          let displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
+          let displayRID = (c.ReceiptID || "").replace(new RegExp("^" + (APP.legacyReceiptPrefix||"TRX") + "-"), (APP.receiptPrefix||"REC") + "-");
           let walkInBadge = String(c.UserId).startsWith("WALKIN_")
             ? `<span style="font-size:9px;background:#946c44;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">WALK-IN</span>`
             : "";
@@ -3734,7 +3734,7 @@
       var filtered = data.filter(function(c) {
         var user = users.find(function(u) { return String(u.UserId) === String(c.UserId); });
         var isWalkIn = String(c.UserId).startsWith("WALKIN_");
-        var displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
+        var displayRID = (c.ReceiptID || "").replace(new RegExp("^" + (APP.legacyReceiptPrefix||"TRX") + "-"), (APP.receiptPrefix||"REC") + "-");
         var walkInName = isWalkIn
           ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "").toLowerCase()
           : "";
@@ -4185,7 +4185,7 @@
         ["Email",              escapeHtml(u.Email || "—")],
         ["Role",               '<span class="badge ' + roleClass + '">' + escapeHtml(u.Role || "User") + '</span>'],
         ["Status",             '<span class="badge ' + statClass + '">' + escapeHtml(u.Status || "Active") + '</span>'],
-        ["Total Contributions",'<span style="color:#27ae60;font-weight:700;">&#8377; ' + fmt(contribTotal) + '</span>'],
+        ["Total Contributions",'<span style="color:#27ae60;font-weight:700;">' + (APP.currency||'₹') + ' ' + fmt(contribTotal) + '</span>'],
       ];
       const tableRows = rows.map(function(r) {
         return '<tr>'
@@ -4648,7 +4648,7 @@
         total += a;
       });
       let t = document.getElementById("bk_total");
-      if (t) t.textContent = "Total: ₹" + total.toLocaleString("en-IN");
+      if (t) t.textContent = "Total: ₹" + total.toLocaleString(APP.locale||"en-IN");
     }
 
     function bkAddRow(month, amount) {
@@ -4824,7 +4824,7 @@
               <tbody>${previewRows}</tbody>
               <tfoot><tr style="background:#fef9ee;">
                 <td colspan="2" style="padding:8px 10px;font-size:13px;font-weight:700;color:#78350f;" id="bkprev_countLabel">Total (${rows.length} entr${rows.length === 1 ? "y" : "ies"})</td>
-                <td style="padding:8px 10px;font-size:13px;font-weight:700;color:#15803d;" id="bkprev_total">&#8377;${totalAmt.toLocaleString("en-IN")}</td>
+                <td style="padding:8px 10px;font-size:13px;font-weight:700;color:#15803d;" id="bkprev_total">${APP.currency||'₹'}${totalAmt.toLocaleString(APP.locale||"en-IN")}</td>
               </tr></tfoot>
             </table>
             <p style="font-size:11.5px;color:#94a3b8;margin:10px 0 0;">Each entry generates a separate receipt. This cannot be undone.</p>
@@ -4863,7 +4863,7 @@
           <tbody>${previewRows}</tbody>
           <tfoot><tr style="background:#fef9ee;border-top:2px solid #fde68a;">
             <td colspan="2" style="padding:9px 10px;font-size:13px;font-weight:700;color:#78350f;" id="bkprev_countLabel2">Total (${rows.length} entr${rows.length === 1 ? "y" : "ies"})</td>
-            <td style="padding:9px 10px;font-size:14px;font-weight:700;color:#15803d;" id="bkprev_total">&#8377;${totalAmt.toLocaleString("en-IN")}</td>
+            <td style="padding:9px 10px;font-size:14px;font-weight:700;color:#15803d;" id="bkprev_total">${APP.currency||'₹'}${totalAmt.toLocaleString(APP.locale||"en-IN")}</td>
           </tr></tfoot>
         </table>
         <p style="font-size:11.5px;color:#94a3b8;margin:10px 0 0;"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;margin-right:4px;"></i> Each entry generates a separate receipt. This cannot be undone.</p>
@@ -4884,7 +4884,7 @@
       inputs.forEach(inp => { const v = Number(inp.value); if(v>0){total+=v;count++;} });
       const totEl = document.getElementById("bkprev_total");
       const lblEl = document.getElementById("bkprev_countLabel");
-      if (totEl) totEl.innerHTML = `&#8377;${total.toLocaleString("en-IN")}`;
+      if (totEl) totEl.innerHTML = `${APP.currency||'₹'}${total.toLocaleString(APP.locale||'en-IN')}`;
       if (lblEl) lblEl.textContent = `Total (${rows.length} entr${rows.length===1?"y":"ies"})`;
     }
 
@@ -4970,7 +4970,7 @@
             '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
               '<i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:#334155;margin-bottom:18px;"></i>' +
               '<div style="font-size:16px;font-weight:600;color:#1e293b;">Inserting entry ' + (_bi + 1) + ' of ' + finalRows.length + '…</div>' +
-              '<div style="font-size:13px;color:#64748b;margin-top:4px;">' + escapeHtml(_br.month) + ' — Rs.' + Number(_br.amount).toLocaleString("en-IN") + '</div>' +
+              '<div style="font-size:13px;color:#64748b;margin-top:4px;">' + escapeHtml(_br.month) + ' — Rs.' + Number(_br.amount).toLocaleString(APP.locale||"en-IN") + '</div>' +
               '<div style="width:200px;height:6px;background:#e2e8f0;border-radius:3px;margin-top:14px;overflow:hidden;">' +
                 '<div style="height:100%;width:' + _progPct + '%;background:#334155;border-radius:3px;transition:width 0.3s;"></div>' +
               '</div>' +
@@ -5024,7 +5024,7 @@
               '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Failed Entries</div>' +
               failedRows.map(function(r) {
                 return '<div style="font-size:12px;color:#7f1d1d;display:flex;justify-content:space-between;padding:2px 0;">' +
-                  '<span>' + escapeHtml(r.month) + '</span><span style="font-weight:600;">Rs.' + Number(r.amount).toLocaleString("en-IN") + '</span></div>';
+                  '<span>' + escapeHtml(r.month) + '</span><span style="font-weight:600;">Rs.' + Number(r.amount).toLocaleString(APP.locale||"en-IN") + '</span></div>';
               }).join("") +
             '</div>'
           : '';
@@ -5056,7 +5056,7 @@
             '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Failed Entries</div>' +
             finalRows.map(function(r) {
               return '<div style="font-size:12px;color:#7f1d1d;display:flex;justify-content:space-between;padding:2px 0;">' +
-                '<span>' + escapeHtml(r.month) + '</span><span style="font-weight:600;">Rs.' + Number(r.amount).toLocaleString("en-IN") + '</span></div>';
+                '<span>' + escapeHtml(r.month) + '</span><span style="font-weight:600;">Rs.' + Number(r.amount).toLocaleString(APP.locale||"en-IN") + '</span></div>';
             }).join("") +
           '</div>';
         bkBodyResult.innerHTML =
@@ -5140,7 +5140,7 @@
             '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:20px;">' +
               '<i class="fa-solid fa-spinner fa-spin" style="font-size:2.5rem;color:#334155;margin-bottom:18px;"></i>' +
               '<div style="font-size:16px;font-weight:600;color:#1e293b;">Retrying ' + (_ri + 1) + ' of ' + rowsToRetry.length + '…</div>' +
-              '<div style="font-size:13px;color:#64748b;margin-top:4px;">' + escapeHtml(_rr.month) + ' — Rs.' + Number(_rr.amount).toLocaleString("en-IN") + '</div>' +
+              '<div style="font-size:13px;color:#64748b;margin-top:4px;">' + escapeHtml(_rr.month) + ' — Rs.' + Number(_rr.amount).toLocaleString(APP.locale||"en-IN") + '</div>' +
               '<div style="width:200px;height:6px;background:#e2e8f0;border-radius:3px;margin-top:14px;overflow:hidden;">' +
                 '<div style="height:100%;width:' + Math.round((_ri / rowsToRetry.length) * 100) + '%;background:#e74c3c;border-radius:3px;"></div>' +
               '</div>' +
@@ -5180,7 +5180,7 @@
             '<div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Still Failed</div>' +
             stillFailed.map(function(r) {
               return '<div style="font-size:12px;color:#7f1d1d;display:flex;justify-content:space-between;padding:2px 0;">' +
-                '<span>' + escapeHtml(r.month) + '</span><span style="font-weight:600;">Rs.' + Number(r.amount).toLocaleString("en-IN") + '</span></div>';
+                '<span>' + escapeHtml(r.month) + '</span><span style="font-weight:600;">Rs.' + Number(r.amount).toLocaleString(APP.locale||"en-IN") + '</span></div>';
             }).join("") +
           '</div>'
         : '';
@@ -5311,7 +5311,7 @@
             <input class="_fi" id="prev_note" value="${escapeHtml(note)}" placeholder="Optional note" style="margin-bottom:0;" />
           </div>
           <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-top:14px;font-size:12px;color:#15803d;">
-            <i class="fa-solid fa-circle-check"></i> <b>Summary:</b> <span id="prev_summary">${memberName} · ₹${Number(amount).toLocaleString("en-IN")} · ${forMonth||"General"} ${year}</span>
+            <i class="fa-solid fa-circle-check"></i> <b>Summary:</b> <span id="prev_summary">${memberName} · ₹${Number(amount).toLocaleString(APP.locale||"en-IN")} · ${forMonth||"General"} ${year}</span>
           </div>
         </div>
         <div class="_mft">
@@ -5366,7 +5366,7 @@
           </div>
           <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;font-size:12px;color:#15803d;">
             <i class="fa-solid fa-circle-check"></i> <b>Summary:</b>
-            <span id="prev_summary">${memberName} · ₹${Number(amount).toLocaleString("en-IN")} · ${forMonth||"General"} ${year}</span>
+            <span id="prev_summary">${memberName} · ₹${Number(amount).toLocaleString(APP.locale||"en-IN")} · ${forMonth||"General"} ${year}</span>
           </div>
           <div class="sp-actions" style="margin-top:16px;">
             <button class="sp-save-btn sp-save-green" id="prev_submitBtn" onclick="_submitContributionFromPreview()">
@@ -5425,7 +5425,7 @@
         const mo = document.getElementById("prev_month")?.value || "General";
         const yr = document.getElementById("prev_year")?.value || "";
         const el = document.getElementById("prev_summary");
-        if (el) el.textContent = `${nm} · ₹${Number(amt).toLocaleString("en-IN")} · ${mo} ${yr}`;
+        if (el) el.textContent = `${nm} · ₹${Number(amt).toLocaleString(APP.locale||"en-IN")} · ${mo} ${yr}`;
       }
       ["prev_user","prev_amount","prev_month","prev_year","prev_type","prev_mode","prev_occasion"].forEach(id => {
         const el = document.getElementById(id);
@@ -5678,7 +5678,7 @@
       if (!checkSession()) return;
       // UNDO: capture contribution before confirm dialog
       const _undoC = (typeof data !== "undefined") ? data.find(c => String(c.Id) === String(id)) : null;
-      const _undoLabel = _undoC ? ("₹" + Number(_undoC.Amount||0).toLocaleString("en-IN") + " — " + (_undoC.ForMonth||"") + " " + (_undoC.Year||"")) : "Contribution";
+      const _undoLabel = _undoC ? ("₹" + Number(_undoC.Amount||0).toLocaleString(APP.locale||"en-IN") + " — " + (_undoC.ForMonth||"") + " " + (_undoC.Year||"")) : "Contribution";
       const _undoSaved = _undoC ? JSON.parse(JSON.stringify(_undoC)) : null;
       // Rich confirm: show exactly which contribution is being deleted
       const _cMemberName = _undoC ? (typeof users !== "undefined" ? (users.find(function(u){ return String(u.UserId) === String(_undoC.UserId); }) || {}) : {}) : {};
@@ -5686,7 +5686,7 @@
       const _cDetailHtml = _undoC
         ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin:0 0 4px;text-align:left;font-size:12.5px;color:#7f1d1d;">' +
           (_cName ? '<span style="font-weight:700;color:#dc2626;">' + _cName + '</span> &nbsp;·&nbsp; ' : '') +
-          '<span style="color:#b91c1c;">₹' + Number(_undoC.Amount||0).toLocaleString("en-IN") + '</span>' +
+          '<span style="color:#b91c1c;">₹' + Number(_undoC.Amount||0).toLocaleString(APP.locale||"en-IN") + '</span>' +
           (_undoC.ForMonth ? ' &nbsp;·&nbsp; <span style="color:#9b1b1b;">' + escapeHtml(_undoC.ForMonth) + ' ' + (_undoC.Year||"") + '</span>' : '') +
           '</div>'
         : '';
@@ -5861,7 +5861,7 @@
     <div class="_mbdy">
       <p style="font-size:12px;color:#64748b;margin:0 0 14px;line-height:1.6;">
         <b style="color:#334155;">${escapeHtml(e.Title || "Expense")}</b><br>
-        ₹${fmt(e.Amount)} · ${escapeHtml(e.ForMonth || "")} ${escapeHtml(String(e.Year || ""))}
+        ${APP.currency||"₹"}${fmt(e.Amount)} · ${escapeHtml(e.ForMonth || "")} ${escapeHtml(String(e.Year || ""))}
       </p>
       ${photosHTML}
       <div style="border-top:1px dashed #e2e8f0;padding-top:14px;margin-top:4px;">
@@ -6028,7 +6028,7 @@
       // Capture expense record before confirm so undo can restore it
       const _undoE = (typeof expenses !== "undefined") ? expenses.find(function(e){ return String(e.Id) === String(id); }) : null;
       const _expTitle  = _undoE ? escapeHtml(_undoE.Title || "Expense") : "Expense";
-      const _expAmt    = _undoE ? "₹" + Number(_undoE.Amount||0).toLocaleString("en-IN") : "";
+      const _expAmt    = _undoE ? "₹" + Number(_undoE.Amount||0).toLocaleString(APP.locale||"en-IN") : "";
       const _expMonth  = _undoE ? ((_undoE.ForMonth ? _undoE.ForMonth + " " : "") + (_undoE.Year || "")) : "";
       const _undoLabel = _expAmt ? (_expAmt + " — " + _expTitle) : _expTitle;
       const _undoSaved = _undoE ? JSON.parse(JSON.stringify(_undoE)) : null;
@@ -6356,9 +6356,9 @@
               }, 0);
               let syncWarning =
                 autoCalc > 0 && Math.abs(autoCalc - collected) > 1
-                  ? `<span title="Auto-calculated from contributions: ₹${fmt(
+                  ? `<span title="Auto-calculated from contributions: ${APP.currency||"₹"}${fmt(
                     autoCalc
-                  )}" style="cursor:help;font-size:10px;color:#e67e22;margin-left:4px;">⚠️ Auto: ₹${fmt(
+                  )}" style="cursor:help;font-size:10px;color:#e67e22;margin-left:4px;">⚠️ Auto: ${APP.currency||"₹"}${fmt(
                     autoCalc
                   )}</span>`
                   : "";
@@ -6476,7 +6476,7 @@
       <div style="margin-top:14px;">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px;">
           <span>Budget used: ${pct}%</span>
-          <span>₹${fmt(spent)} / ₹${fmt(budget)}</span>
+          <span>${APP.currency||"₹"}${fmt(spent)} / ${APP.currency||"₹"}${fmt(budget)}</span>
         </div>
         <div class="ev-budget-bar-bg">
           <div class="ev-budget-bar-fill" style="width:${pct}%;background:${barColor};"></div>
@@ -6505,16 +6505,16 @@
  
       <div class="ev-card-body">
         <div class="ev-stat">
-          <div class="ev-stat-val" style="color:#f59e0b;">₹${fmt(budget || 0)}</div>
+          <div class="ev-stat-val" style="color:#f59e0b;">${APP.currency||"₹"}${fmt(budget || 0)}</div>
           <div class="ev-stat-lbl">Budget</div>
         </div>
         <div class="ev-stat">
-          <div class="ev-stat-val" style="color:#e74c3c;">₹${fmt(spent)}</div>
+          <div class="ev-stat-val" style="color:#e74c3c;">${APP.currency||"₹"}${fmt(spent)}</div>
           <div class="ev-stat-lbl">Spent (${evExps.length} items)</div>
         </div>
         <div class="ev-stat">
           <div class="ev-stat-val" style="color:${remaining >= 0 ? '#27ae60' : '#ef4444'};">
-            ${remaining < 0 ? "−" : ""}₹${fmt(Math.abs(remaining))}
+            ${remaining < 0 ? "−" : ""}${APP.currency||"₹"}${fmt(Math.abs(remaining))}
           </div>
           <div class="ev-stat-lbl">${remaining < 0 ? "Over Budget" : "Remaining"}</div>
         </div>
@@ -6755,7 +6755,7 @@
           <td><b>${escapeHtml(x.Title || "—")}</b>${x.Note ? `<br><span style="font-size:10px;color:#94a3b8;">${escapeHtml(x.Note)}</span>` : ""}</td>
           <td>${escapeHtml(tName)}</td>
           <td>${escapeHtml(x.ForMonth || "—")}</td>
-          <td class="amt-red">₹${fmt(x.Amount)}</td>
+          <td class="amt-red">${APP.currency||"₹"}${fmt(x.Amount)}</td>
         </tr>`;
         }).join("");
 
@@ -6768,7 +6768,7 @@
       <div style="background:#fff7ed;padding:12px 20px;font-size:13px;font-weight:600;color:#92400e;
         border-bottom:1px solid #fed7aa;">
         <i class="fa-solid fa-calendar-star"></i> ${escapeHtml(eventName)}
-        &nbsp;·&nbsp; Total: <span style="color:#e74c3c;">₹${fmt(total)}</span>
+        &nbsp;·&nbsp; Total: <span style="color:#e74c3c;">${APP.currency||"₹"}${fmt(total)}</span>
       </div>
       <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
@@ -6801,19 +6801,19 @@
       const evExps = _eventExpenses.filter(function (x) { return String(x.EventId) === String(eventId); });
       const spent = evExps.reduce(function (s, x) { return s + Number(x.Amount || 0); }, 0);
       const budget = Number(ev.Budget || 0);
-      const lines = evExps.map(function (x) { return `  • ${x.Title}: ₹${fmt(x.Amount)}`; }).join("\n") || "  No expenses yet";
+      const lines = evExps.map(function (x) { return `  • ${x.Title}: ${APP.currency||"₹"}${fmt(x.Amount)}`; }).join("\n") || "  No expenses yet";
 
-      const msg = `🕉️ *${ev.EventName}*\n` +
+      const msg = `${APP.symbol||"🕉️"} *${ev.EventName}*\n` +
         `📅 ${[ev.StartDate, ev.EndDate].filter(Boolean).join(" → ") || "Date TBD"}\n` +
         `🏷️ ${ev.Category} · ${ev.Status}\n` +
         `━━━━━━━━━━━━━━\n` +
-        (budget > 0 ? `💰 Budget: ₹${fmt(budget)}\n` : "") +
-        `💸 Spent: ₹${fmt(spent)}\n` +
-        (budget > 0 ? `📊 Remaining: ₹${fmt(budget - spent)}\n` : "") +
+        (budget > 0 ? `💰 Budget: ${APP.currency||"₹"}${fmt(budget)}\n` : "") +
+        `💸 Spent: ${APP.currency||"₹"}${fmt(spent)}\n` +
+        (budget > 0 ? `📊 Remaining: ${APP.currency||"₹"}${fmt(budget - spent)}\n` : "") +
         `━━━━━━━━━━━━━━\n` +
         `*Expense Breakdown:*\n${lines}\n` +
         `━━━━━━━━━━━━━━\n` +
-        `_${new Date().toLocaleDateString("en-IN")} · ${APP.name}_`;
+        `_${new Date().toLocaleDateString(APP.locale||"en-IN")} · ${APP.name}_`;
 
       window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
     }
@@ -6947,7 +6947,7 @@
       const d = window._rcptStore ? window._rcptStore[rid] : null;
       if (!d) { showReceiptById(rid); return; }
       const { c, userName, typeName, occasionName } = d;
-      const displayRID = (c.ReceiptID || "—").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
+      const displayRID = (c.ReceiptID || "—").replace(new RegExp("^" + (APP.legacyReceiptPrefix||"TRX") + "-"), (APP.receiptPrefix||"REC") + "-");
       const html = `
         <div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Contribution Details</h3><button class="_mcls" onclick="closeModal()">×</button></div>
         <div class="_mbdy">
@@ -7088,10 +7088,10 @@
         important: "⚠️ IMPORTANT — ",
         urgent: "🚨 URGENT — ",
       };
-      const preview = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n━━━━━━━━━━━━━━━━━━━━\n${prioLabels[priority]
+      const preview = `${APP.symbol||"🕉️"} *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n━━━━━━━━━━━━━━━━━━━━\n${prioLabels[priority]
         }${typeLabels[type] || type
         }\n\n*${title}*\n\n${message}\n━━━━━━━━━━━━━━━━━━━━\n_${new Date().toLocaleDateString(
-          "en-IN"
+          APP.locale||"en-IN"
         )}_`;
       openModal(
         `<div class="_mhdr"><h3><i class="fa-solid fa-eye"></i> Broadcast Preview</h3><button class="_mcls" onclick="closeModal()">×</button></div>
@@ -7143,10 +7143,10 @@
         type === "poll"
           ? "\n\nRespond with:\n✅ Yes  |  ❌ No  |  💬 Suggestion"
           : "";
-      const msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n━━━━━━━━━━━━━━━━━━━━\n${prioLabels[priority]
+      const msg = `${APP.symbol||"🕉️"} *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n━━━━━━━━━━━━━━━━━━━━\n${prioLabels[priority]
         }${typeLabels[type] || type
         }\n\n*${title}*\n\n${message}${pollBlock}\n━━━━━━━━━━━━━━━━━━━━\n_${new Date().toLocaleDateString(
-          "en-IN"
+          APP.locale||"en-IN"
         )}_`;
       window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
       // Add to session history
@@ -7155,7 +7155,7 @@
         priority,
         title,
         message,
-        time: new Date().toLocaleString("en-IN"),
+        time: new Date().toLocaleString(APP.locale||"en-IN"),
       });
       renderBroadcastHistory();
       // Store broadcast in backend sheet so all users can read it
@@ -7166,7 +7166,7 @@
           priority,
           title,
           message,
-          time: new Date().toLocaleString("en-IN"),
+          time: new Date().toLocaleString(APP.locale||"en-IN"),
         });
       } catch (e) {
       }
@@ -7460,7 +7460,7 @@
 
       const list = data.filter(function (c) {
         const user = users.find(u => String(u.UserId) === String(c.UserId));
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
+        const displayRID = (c.ReceiptID || "").replace(new RegExp("^" + (APP.legacyReceiptPrefix||"TRX") + "-"), (APP.receiptPrefix||"REC") + "-");
         const walkInName = String(c.UserId).startsWith("WALKIN_")
           ? (String(c.Note || "").match(/Walk-in:\s*([^|]+)/)?.[1]?.trim() || "").toLowerCase()
           : "";
@@ -7504,7 +7504,7 @@
         const mobile = user?.Mobile || (isWalkIn ? (String(c.Note || "").match(/\|\s*(\d+)/)?.[1] || "") : "");
         const typeName = types.find(t => String(t.TypeId) === String(c.TypeId))?.TypeName || "";
         const occName = occasions.find(o => String(o.OccasionId) === String(c.OccasionId))?.OccasionName || "";
-        const rid = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
+        const rid = (c.ReceiptID || "").replace(new RegExp("^" + (APP.legacyReceiptPrefix||"TRX") + "-"), (APP.receiptPrefix||"REC") + "-");
         const pDate = formatPaymentDate(c.PaymentDate);
 
         return [
@@ -7530,7 +7530,7 @@
       const total = list.reduce(function (s, c) { return s + Number(c.Amount || 0); }, 0);
       rows.push(""); // blank line before summary
       rows.push('"Total Records","' + list.length + '"');
-      rows.push('"Total Amount (₹)","' + total.toLocaleString("en-IN") + '"');
+      rows.push('"Total Amount (₹)","' + total.toLocaleString(APP.locale||"en-IN") + '"');
 
       // Filter context in filename
       const dateTag = new Date().toISOString().slice(0, 10);
@@ -7596,7 +7596,7 @@
       const total = list.reduce(function (s, e) { return s + Number(e.Amount || 0); }, 0);
       rows.push("");
       rows.push('"Total Records","' + list.length + '"');
-      rows.push('"Total Amount (₹)","' + total.toLocaleString("en-IN") + '"');
+      rows.push('"Total Amount (₹)","' + total.toLocaleString(APP.locale||"en-IN") + '"');
 
       // Filename with filter context
       const dateTag = new Date().toISOString().slice(0, 10);
@@ -8075,7 +8075,7 @@
           </div>
           <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-top:14px;font-size:12px;color:#15803d;">
             <i class="fa-solid fa-circle-check"></i> <b>Summary:</b>
-            <span id="wprev_summary">${escapeHtml(name)} · ₹${Number(amount).toLocaleString("en-IN")} · ${month||"General"} ${year} · ${typeNameWI}</span>
+            <span id="wprev_summary">${escapeHtml(name)} · ₹${Number(amount).toLocaleString(APP.locale||"en-IN")} · ${month||"General"} ${year} · ${typeNameWI}</span>
           </div>
         </div>
         <div class="_mft">
@@ -8129,7 +8129,7 @@
         </div>
         <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-top:4px;font-size:12px;color:#15803d;">
           <i class="fa-solid fa-circle-check"></i> <b>Summary:</b>
-          <span id="wprev_summary">${escapeHtml(name)} · ₹${Number(amount).toLocaleString("en-IN")} · ${month||"General"} ${year} · ${typeNameWI}</span>
+          <span id="wprev_summary">${escapeHtml(name)} · ₹${Number(amount).toLocaleString(APP.locale||"en-IN")} · ${month||"General"} ${year} · ${typeNameWI}</span>
         </div>
         <div class="sp-actions" style="margin-top:16px;">
           <button class="sp-save-btn" style="background:#b45309;color:#fff;" id="wprev_submitBtn" onclick="_submitWalkInFromPreview()">
@@ -8150,7 +8150,7 @@
         const tid = document.getElementById("wprev_type")?.value;
         const tn = types.find(t=>String(t.TypeId)===tid)?.TypeName||"";
         const el = document.getElementById("wprev_summary");
-        if (el) el.textContent = `${nm} · ₹${Number(amt).toLocaleString("en-IN")} · ${mo} ${yr} · ${tn}`;
+        if (el) el.textContent = `${nm} · ₹${Number(amt).toLocaleString(APP.locale||"en-IN")} · ${mo} ${yr} · ${tn}`;
       }
       ["wprev_name","wprev_amount","wprev_month","wprev_year","wprev_type","wprev_occasion"].forEach(id=>{
         const el=document.getElementById(id);
@@ -8231,7 +8231,7 @@
                   '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Donor</span>' +
                   '<strong style="color:#1e293b;">' + escapeHtml(name) + '</strong>' +
                   '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Amount</span>' +
-                  '<strong style="color:#1e293b;">Rs.' + Number(amount).toLocaleString("en-IN") + '</strong>' +
+                  '<strong style="color:#1e293b;">Rs.' + Number(amount).toLocaleString(APP.locale||"en-IN") + '</strong>' +
                   '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Period</span>' +
                   '<strong style="color:#1e293b;">' + escapeHtml(monthLbl) + ' ' + escapeHtml(year || "") + '</strong>' +
                   '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Type</span>' +
@@ -8351,7 +8351,7 @@
                   '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Donor</span>' +
                   '<strong style="color:#1e293b;">' + escapeHtml(stored.name) + '</strong>' +
                   '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Amount</span>' +
-                  '<strong style="color:#1e293b;">Rs.' + Number(stored.amount).toLocaleString("en-IN") + '</strong>' +
+                  '<strong style="color:#1e293b;">Rs.' + Number(stored.amount).toLocaleString(APP.locale||"en-IN") + '</strong>' +
                   '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Period</span>' +
                   '<strong style="color:#1e293b;">' + escapeHtml(monthLbl) + ' ' + escapeHtml(stored.year || "") + '</strong>' +
                   '<span style="color:#94a3b8;font-size:11px;font-weight:600;text-transform:uppercase;">Type</span>' +
@@ -8531,13 +8531,13 @@
         tgtBadgeWrap.style.display = "flex";
         tgtBadgeWrap.innerHTML =
           `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
-        <div style="font-size:1.4rem;font-weight:700;color:#2563eb;">₹${fmt(totalExpected)}</div>
+        <div style="font-size:1.4rem;font-weight:700;color:#2563eb;">${APP.currency||"₹"}${fmt(totalExpected)}</div>
         <div style="font-size:11px;color:#1d4ed8;font-weight:600;">🎯 Expected Total</div>
         <div style="font-size:11px;color:#3b82f6;">${members.filter(u => Number(u.MonthlyTarget || 0) > 0).length} members with target</div>
       </div>` +
           (totalShortfall > 0
             ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 20px;text-align:center;min-width:120px;">
-            <div style="font-size:1.4rem;font-weight:700;color:#ea580c;">₹${fmt(totalShortfall)}</div>
+            <div style="font-size:1.4rem;font-weight:700;color:#ea580c;">${APP.currency||"₹"}${fmt(totalShortfall)}</div>
             <div style="font-size:11px;color:#c2410c;font-weight:600;">⚠ Total Shortfall</div>
             <div style="font-size:11px;color:#ea580c;">vs expected this month</div>
           </div>`
@@ -8567,8 +8567,8 @@
 
           // Badge: show "₹paid / ₹target" if under target, else just "₹paid"
           const badgeText = underTarget
-            ? `₹${fmt(paid)} / ₹${fmt(target)}`
-            : `₹${fmt(paid)}`;
+            ? `${APP.currency||"₹"}${fmt(paid)} / ${APP.currency||"₹"}${fmt(target)}`
+            : `${APP.currency||"₹"}${fmt(paid)}`;
           const badgeBg = underTarget
             ? "linear-gradient(135deg,#fff7ed,#fed7aa)"
             : "linear-gradient(135deg,#dcfce7,#bbf7d0)";
@@ -8601,7 +8601,7 @@
           const target = Number(u.MonthlyTarget || 0);
           const shortfall = target > 0 ? target : 0;
 
-          const badgeText = shortfall > 0 ? `₹${fmt(shortfall)} due` : "Pending";
+          const badgeText = shortfall > 0 ? `${APP.currency||"₹"}${fmt(shortfall)} due` : "Pending";
           const badgeBg = shortfall > 0
             ? "linear-gradient(135deg,#fff7ed,#fed7aa)"
             : "linear-gradient(135deg,#fee2e2,#fecaca)";
@@ -8653,7 +8653,7 @@
           `✅ *PAID MEMBERS REPORT*\n` +
           `📅 ${state.selMonth} ${state.selYear} | 🏷️ ${typeName}\n\n` +
           state.paidMembers.map((u, i) => `${i + 1}. ${u.Name}`).join("\n") +
-          `\n\n💰 Total Collected: ₹${fmt(state.paidAmt)}\n` +
+          `\n\n💰 Total Collected: ${APP.currency||"₹"}${fmt(state.paidAmt)}\n` +
           `━━━━━━━━━━━━━━━━━━━━\n_${APP.tagline}_`;
       } else {
         msg =
@@ -9127,7 +9127,8 @@
             if (el) el.value = (cfg[f] || "").replace(/\\n/g, "\n");
           });
           const tog = document.getElementById("cbot_enabled");
-          if (tog) tog.checked = String(cfg.enabled || "1") !== "0";
+          // FIX: use ?? not || — "0" is falsy so ("0" || "1") = "1" wrongly shows toggle as ON
+          if (tog) tog.checked = String(cfg.enabled ?? "1") !== "0";
           if (cbMsg) { cbMsg.textContent = ""; cbMsg.className = "msg-box"; }
         })
         .catch(err => {
@@ -9162,7 +9163,8 @@
           if (res && res.status === "success") {
             toast("✅ Chatbot settings saved successfully!", "success");
             if (cbMsg) { cbMsg.textContent = "✓ Settings saved."; cbMsg.className = "msg-box success"; setTimeout(() => { cbMsg.textContent = ""; cbMsg.className = "msg-box"; }, 3000); }
-            // FIX-5: Reload chatbot settings so the page reflects what was saved
+            // FIX-5: Bust cache first so loadChatbotSettings always reads fresh data from server
+            if (typeof mandirCacheBust === "function") mandirCacheBust("getChatbotConfig");
             if (typeof loadChatbotSettings === "function") setTimeout(loadChatbotSettings, 300);
           } else {
             toast("❌ " + (res && res.message ? res.message : "Save failed."), "error");
@@ -9366,7 +9368,7 @@
         return '<tr>'
           + '<td>' + (i + 1) + '</td>'
           + '<td><strong>' + name + '</strong><br><span style="font-size:11px;color:#94a3b8;">' + mobile + '</span></td>'
-          + '<td><strong style="color:#15803d;">&#8377;' + fmt(r.Amount) + '</strong></td>'
+          + '<td><strong style="color:#15803d;">' + (APP.currency||'₹') + fmt(r.Amount) + '</strong></td>'
           + '<td>' + escapeHtml(r.ForMonth || "") + ' ' + escapeHtml(String(r.Year || "")) + '</td>'
           + '<td>' + escapeHtml(r.PaymentMode || "UPI") + '</td>'
           + '<td style="font-size:12px;font-family:monospace;">' + escapeHtml(r.UtrRef || "—") + '</td>'
@@ -9400,7 +9402,7 @@
         + '<p style="margin:0 0 14px;font-size:14px;color:#334155;">Approve contribution request from <strong>' + escapeHtml(name) + '</strong>?</p>'
         + '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:13px;">'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;">'
-        + '<span style="color:#64748b;">Amount</span><strong>&#8377;' + fmt(r.Amount) + '</strong>'
+        + '<span style="color:#64748b;">Amount</span><strong>' + (APP.currency||'₹') + fmt(r.Amount) + '</strong>'
         + '<span style="color:#64748b;">Month</span><strong>' + escapeHtml(r.ForMonth || "") + ' ' + (r.Year || "") + '</strong>'
         + '<span style="color:#64748b;">Mode</span><strong>' + escapeHtml(r.PaymentMode || "UPI") + '</strong>'
         + '<span style="color:#64748b;">UTR / Ref</span><strong>' + escapeHtml(r.UtrRef || "—") + '</strong>'
@@ -9519,7 +9521,7 @@
       const name = u ? u.Name : "this member";
       const html = '<div class="_mhdr"><h3><i class="fa-solid fa-circle-xmark" style="color:#ef4444;"></i> Reject Request</h3><button class="_mcls" onclick="closeModal()">×</button></div>'
         + '<div class="_mbdy" style="padding:18px 20px;">'
-        + '<p style="margin:0 0 12px;font-size:14px;color:#334155;">Reject contribution request from <strong>' + escapeHtml(name) + '</strong> (&#8377;' + fmt(r.Amount) + ', ' + escapeHtml(r.ForMonth || "") + ' ' + (r.Year || "") + ')?</p>'
+        + '<p style="margin:0 0 12px;font-size:14px;color:#334155;">Reject contribution request from <strong>' + escapeHtml(name) + '</strong> (' + (APP.currency||'₹') + fmt(r.Amount) + ', ' + escapeHtml(r.ForMonth || "") + ' ' + (r.Year || "") + ')?</p>'
         + '<label style="font-size:13px;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Rejection Reason <span style="font-weight:400;color:#aaa;">(optional — visible to member)</span></label>'
         + '<textarea id="_rejectReasonInput" rows="3" placeholder="e.g. Payment proof unclear, please resubmit..." style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;resize:vertical;box-sizing:border-box;"></textarea>'
         + '</div>'
@@ -9674,7 +9676,7 @@
       } else {
         doc.setFontSize(9); doc.text("(Install jspdf-autotable for formatted table)", margin, Y);
       }
-      const genDate = new Date().toLocaleDateString("en-IN");
+      const genDate = new Date().toLocaleDateString(APP.locale||"en-IN");
       doc.setFontSize(8); doc.setTextColor(148, 163, 184);
       doc.text("Generated: " + genDate + " | " + (typeof APP !== "undefined" ? APP.name : ""), margin, 285);
       doc.save("AnnualReport_" + genDate.replace(/\//g, "-") + ".pdf");
@@ -9700,7 +9702,7 @@
 
         // ── Last checked timestamp ──
         var lcEl = document.getElementById("hc_last_checked");
-        if (lcEl) lcEl.textContent = "Last checked: " + new Date().toLocaleTimeString("en-IN", {hour:"2-digit", minute:"2-digit"});
+        if (lcEl) lcEl.textContent = "Last checked: " + new Date().toLocaleTimeString(APP.locale||"en-IN", {hour:"2-digit", minute:"2-digit"});
 
         // ── Sheet Status (with optional row counts if backend returns sheet_rows_<name>) ──
         var sheetsEl = document.getElementById("hc_sheets");
@@ -9946,11 +9948,11 @@
         var doGetLbl = document.getElementById("tc_limit_label");
         var doGetSts = document.getElementById("tc_limit_status");
         if (doGetBar) { doGetBar.style.width = doGetPct + "%"; doGetBar.style.background = doGetColor; }
-        if (doGetLbl) doGetLbl.textContent = (d.today || 0).toLocaleString("en-IN") + " / " + (d.dailyLimit || 20000).toLocaleString("en-IN");
+        if (doGetLbl) doGetLbl.textContent = (d.today || 0).toLocaleString(APP.locale||"en-IN") + " / " + (d.dailyLimit || 20000).toLocaleString(APP.locale||"en-IN");
         if (doGetSts) {
-          var doGetMsg = doGetPct >= 90 ? "⚠️ Critical — " + doGetRemaining.toLocaleString("en-IN") + " requests left today"
-                       : doGetPct >= 70 ? "🟡 Moderate — " + doGetRemaining.toLocaleString("en-IN") + " requests left today"
-                       : "🟢 Healthy — " + doGetRemaining.toLocaleString("en-IN") + " requests left today";
+          var doGetMsg = doGetPct >= 90 ? "⚠️ Critical — " + doGetRemaining.toLocaleString(APP.locale||"en-IN") + " requests left today"
+                       : doGetPct >= 70 ? "🟡 Moderate — " + doGetRemaining.toLocaleString(APP.locale||"en-IN") + " requests left today"
+                       : "🟢 Healthy — " + doGetRemaining.toLocaleString(APP.locale||"en-IN") + " requests left today";
           doGetSts.textContent = doGetMsg;
           doGetSts.style.color = doGetPct >= 90 ? "#dc2626" : doGetPct >= 70 ? "#b45309" : "#15803d";
         }
@@ -9985,7 +9987,7 @@
           summaryEl.innerHTML = pills.map(function(p) {
             return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;text-align:center;min-width:90px;flex:1;">' +
               '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;"><i class="fa-solid ' + p.icon + '"></i></div>' +
-              '<div style="font-size:1.35rem;font-weight:700;color:' + p.color + ';">' + (p.val || 0).toLocaleString("en-IN") + '</div>' +
+              '<div style="font-size:1.35rem;font-weight:700;color:' + p.color + ';">' + (p.val || 0).toLocaleString(APP.locale||"en-IN") + '</div>' +
               '<div style="font-size:10px;color:#94a3b8;margin-top:3px;">' + p.label + '</div>' +
             '</div>';
           }).join("");
@@ -10025,7 +10027,7 @@
                 return '<tr style="border-bottom:1px solid #f1f5f9;">' +
                   '<td style="padding:6px 4px 6px 0;color:#94a3b8;font-size:11px;width:20px;">' + (medal || (i+1)) + '</td>' +
                   '<td style="padding:6px 0;color:#334155;font-size:12px;font-weight:600;">' + a.action + '</td>' +
-                  '<td style="padding:6px 0;text-align:right;font-size:12px;font-weight:700;color:#334155;white-space:nowrap;padding-right:10px;">' + a.count.toLocaleString("en-IN") + '</td>' +
+                  '<td style="padding:6px 0;text-align:right;font-size:12px;font-weight:700;color:#334155;white-space:nowrap;padding-right:10px;">' + a.count.toLocaleString(APP.locale||"en-IN") + '</td>' +
                   '<td style="padding:6px 0;width:90px;">' +
                     '<div style="height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;">' +
                       '<div style="height:6px;width:' + pct + '%;background:linear-gradient(90deg,#f7a01a,#f59e0b);border-radius:3px;transition:width .4s;"></div>' +
@@ -10365,7 +10367,7 @@
       dash_loadYearDropdown();
       dash_applyFilter();
 
-      const now = new Date().toLocaleTimeString("en-IN");
+      const now = new Date().toLocaleTimeString(APP.locale||"en-IN");
       const lbl = document.getElementById("dash_lastLoaded");
       if (lbl) lbl.textContent = "Showing data as of " + now + " (use Refresh to get latest).";
     }
@@ -10412,7 +10414,7 @@
         const uMatch = !txt ||
           (user?.Name.toLowerCase() || "").includes(txt) ||
           String(user?.Mobile || "").includes(txt);
-        const displayRID = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
+        const displayRID = (c.ReceiptID || "").replace(new RegExp("^" + (APP.legacyReceiptPrefix||"TRX") + "-"), (APP.receiptPrefix||"REC") + "-");
         const trkMatch = !trackTxt ||
           (c.ReceiptID || "").toLowerCase().includes(trackTxt) ||
           displayRID.toLowerCase().includes(trackTxt);
@@ -10656,8 +10658,8 @@
         const eH = Math.round(((mapE[m]||0)/maxVal)*120);
         return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:28px;flex:1;">
           <div style="display:flex;align-items:flex-end;gap:2px;height:120px;">
-            <div title="Income: ₹${(mapC[m]||0).toLocaleString("en-IN")}" style="width:10px;height:${cH}px;background:#22c55e;border-radius:3px 3px 0 0;min-height:2px;cursor:pointer;"></div>
-            <div title="Expense: ₹${(mapE[m]||0).toLocaleString("en-IN")}" style="width:10px;height:${eH}px;background:#f97316;border-radius:3px 3px 0 0;min-height:2px;cursor:pointer;"></div>
+            <div title="Income: ₹${(mapC[m]||0).toLocaleString(APP.locale||"en-IN")}" style="width:10px;height:${cH}px;background:#22c55e;border-radius:3px 3px 0 0;min-height:2px;cursor:pointer;"></div>
+            <div title="Expense: ₹${(mapE[m]||0).toLocaleString(APP.locale||"en-IN")}" style="width:10px;height:${eH}px;background:#f97316;border-radius:3px 3px 0 0;min-height:2px;cursor:pointer;"></div>
           </div>
           <div style="font-size:9px;color:#64748b;font-weight:600;">${m.slice(0,3)}</div>
         </div>`;
@@ -10683,7 +10685,7 @@
 
     // ── WhatsApp — active tab data
     function dash_whatsApp() {
-      const genDate = new Date().toLocaleDateString("en-IN");
+      const genDate = new Date().toLocaleDateString(APP.locale||"en-IN");
       const fYear   = _dash_activeTab === "contrib"
         ? (document.getElementById("ct_filterYear")?.value  || dash_selectedYear)
         : (document.getElementById("et_filterYear")?.value  || dash_selectedYear);
@@ -10706,25 +10708,25 @@
         const lines = Object.keys(map).map(uid => {
           const name  = dash_getDisplayName(uid, noteMap[uid]);
           const label = String(uid).startsWith("WALKIN_") ? `${name} (Walk-In)` : name;
-          return `  ✅ ${label}: ₹${Number(map[uid]).toLocaleString("en-IN")}`;
+          return `  ✅ ${label}: ${APP.currency||"₹"}${Number(map[uid]).toLocaleString(APP.locale||"en-IN")}`;
         }).join("\n") || "  No contributions found";
-        const msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📊 *Contribution Report — ${period}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Total: ₹${Number(totalC).toLocaleString("en-IN")}\n🚶 Walk-in: ₹${Number(walkinC).toLocaleString("en-IN")}\n━━━━━━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━━━━━━\n_Generated — ${genDate}_`;
+        const msg = `${APP.symbol||"🕉️"} *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📊 *Contribution Report — ${period}*\n━━━━━━━━━━━━━━━━━━━━\n💰 Total: ${APP.currency||"₹"}${Number(totalC).toLocaleString(APP.locale||"en-IN")}\n🚶 Walk-in: ${APP.currency||"₹"}${Number(walkinC).toLocaleString(APP.locale||"en-IN")}\n━━━━━━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━━━━━━\n_Generated — ${genDate}_`;
         window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
       } else {
         const rows  = _et_filtered;
         const totalE = rows.reduce((s,e) => s + Number(e.Amount||0), 0);
         const lines  = rows.map(e => {
           const tName = dash_expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
-          return `  💸 ${escapeHtml(e.Title||"—")} (${tName}): ₹${Number(e.Amount||0).toLocaleString("en-IN")}`;
+          return `  💸 ${escapeHtml(e.Title||"—")} (${tName}): ${APP.currency||"₹"}${Number(e.Amount||0).toLocaleString(APP.locale||"en-IN")}`;
         }).join("\n") || "  No expenses found";
-        const msg = `🕉️ *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📋 *Expense Report — ${period}*\n━━━━━━━━━━━━━━━━━━━━\n💸 Total: ₹${Number(totalE).toLocaleString("en-IN")}\n━━━━━━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━━━━━━\n_Generated — ${genDate}_`;
+        const msg = `${APP.symbol||"🕉️"} *${APP.name.toUpperCase()}*\n📍 ${APP.location}\n\n📋 *Expense Report — ${period}*\n━━━━━━━━━━━━━━━━━━━━\n💸 Total: ${APP.currency||"₹"}${Number(totalE).toLocaleString(APP.locale||"en-IN")}\n━━━━━━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━━━━━━\n_Generated — ${genDate}_`;
         window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
       }
     }
 
     // ── Email — active tab data
     function dash_email() {
-      const genDate = new Date().toLocaleDateString("en-IN");
+      const genDate = new Date().toLocaleDateString(APP.locale||"en-IN");
       const fYear   = _dash_activeTab === "contrib"
         ? (document.getElementById("ct_filterYear")?.value  || dash_selectedYear)
         : (document.getElementById("et_filterYear")?.value  || dash_selectedYear);
@@ -10743,20 +10745,20 @@
         });
         const lines = Object.keys(map).map(uid => {
           const name = dash_getDisplayName(uid, noteMap[uid]);
-          return `  ${String(uid).startsWith("WALKIN_") ? name+" (Walk-In)" : name}: Rs.${Number(map[uid]).toLocaleString("en-IN")}`;
+          return `  ${String(uid).startsWith("WALKIN_") ? name+" (Walk-In)" : name}: Rs.${Number(map[uid]).toLocaleString(APP.locale||"en-IN")}`;
         }).join("\n") || "  No contributions found";
         const subject = encodeURIComponent(`Contribution Report ${period} — ${APP.name}`);
-        const body    = encodeURIComponent(`${APP.name.toUpperCase()} — CONTRIBUTION REPORT ${period}\n${APP.location}\n\nTotal: Rs.${Number(totalC).toLocaleString("en-IN")}\n\nDETAILS:\n${lines}\n\nGenerated — ${genDate}`);
+        const body    = encodeURIComponent(`${APP.name.toUpperCase()} — CONTRIBUTION REPORT ${period}\n${APP.location}\n\nTotal: Rs.${Number(totalC).toLocaleString(APP.locale||"en-IN")}\n\nDETAILS:\n${lines}\n\nGenerated — ${genDate}`);
         window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
       } else {
         const rows   = _et_filtered;
         const totalE = rows.reduce((s,e) => s + Number(e.Amount||0), 0);
         const lines  = rows.map(e => {
           const tName = dash_expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
-          return `  ${e.Title||"—"} (${tName}): Rs.${Number(e.Amount||0).toLocaleString("en-IN")}`;
+          return `  ${e.Title||"—"} (${tName}): Rs.${Number(e.Amount||0).toLocaleString(APP.locale||"en-IN")}`;
         }).join("\n") || "  No expenses found";
         const subject = encodeURIComponent(`Expense Report ${period} — ${APP.name}`);
-        const body    = encodeURIComponent(`${APP.name.toUpperCase()} — EXPENSE REPORT ${period}\n${APP.location}\n\nTotal: Rs.${Number(totalE).toLocaleString("en-IN")}\n\nDETAILS:\n${lines}\n\nGenerated — ${genDate}`);
+        const body    = encodeURIComponent(`${APP.name.toUpperCase()} — EXPENSE REPORT ${period}\n${APP.location}\n\nTotal: Rs.${Number(totalE).toLocaleString(APP.locale||"en-IN")}\n\nDETAILS:\n${lines}\n\nGenerated — ${genDate}`);
         window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
       }
     }
@@ -10785,23 +10787,23 @@
         const paidRows = _ct_filtered.filter(r => r._type === "paid");
         const totalC   = paidRows.reduce((s,r) => s + Number(r._data.Amount||0), 0);
         doc.setFontSize(8); doc.setTextColor(50,50,50); doc.setFont(undefined,"normal");
-        doc.text(`Total: Rs.${Number(totalC).toLocaleString("en-IN")}  |  Records: ${paidRows.length}  |  Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 30);
+        doc.text(`Total: ${APP.currency||"₹"}${Number(totalC).toLocaleString(APP.locale||"en-IN")}  |  Records: ${paidRows.length}  |  Generated: ${new Date().toLocaleDateString(APP.locale||"en-IN")}`, 14, 30);
         rows = paidRows.map(r => {
           const c = r._data;
           const name  = dash_getDisplayName(c.UserId, c.Note);
           const wk    = String(c.UserId).startsWith("WALKIN_");
           const tName = dash_types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
           const oName = dash_occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
-          return [_ct_fmtDate(c.PaymentDate), wk ? name+" (Walk-In)" : name, tName, c.ForMonth||"—", oName, `+Rs.${Number(c.Amount||0).toLocaleString("en-IN")}`];
+          return [_ct_fmtDate(c.PaymentDate), wk ? name+" (Walk-In)" : name, tName, c.ForMonth||"—", oName, `+${APP.currency||"₹"}${Number(c.Amount||0).toLocaleString(APP.locale||"en-IN")}`];
         });
         doc.autoTable({ head:[["Date","Name","Type","Month","Occasion","Amount"]], body:rows, startY:35, theme:"grid", headStyles:{fillColor:[51,65,85],fontStyle:"bold"}, styles:{fontSize:8}, alternateRowStyles:{fillColor:[253,251,247]} });
       } else {
         const totalE = _et_filtered.reduce((s,e) => s + Number(e.Amount||0), 0);
         doc.setFontSize(8); doc.setTextColor(50,50,50); doc.setFont(undefined,"normal");
-        doc.text(`Total: Rs.${Number(totalE).toLocaleString("en-IN")}  |  Records: ${_et_filtered.length}  |  Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 30);
+        doc.text(`Total: ${APP.currency||"₹"}${Number(totalE).toLocaleString(APP.locale||"en-IN")}  |  Records: ${_et_filtered.length}  |  Generated: ${new Date().toLocaleDateString(APP.locale||"en-IN")}`, 14, 30);
         rows = _et_filtered.map(e => {
           const tName = dash_expenseTypes.find(x => String(x.ExpenseTypeId) === String(e.ExpenseTypeId))?.Name || "Expense";
-          return [_ct_fmtDate(e.PaymentDate), e.Title||"—", tName, e.ForMonth||"—", `-Rs.${Number(e.Amount||0).toLocaleString("en-IN")}`];
+          return [_ct_fmtDate(e.PaymentDate), e.Title||"—", tName, e.ForMonth||"—", `-${APP.currency||"₹"}${Number(e.Amount||0).toLocaleString(APP.locale||"en-IN")}`];
         });
         doc.autoTable({ head:[["Date","Title","Type","Month","Amount"]], body:rows, startY:35, theme:"grid", headStyles:{fillColor:[231,76,60],fontStyle:"bold"}, styles:{fontSize:8}, alternateRowStyles:{fillColor:[255,250,250]} });
       }
@@ -10935,7 +10937,7 @@
             <td><span class="ct-badge" style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;">${escapeHtml(tName)}</span></td>
             <td>${escapeHtml(e.ForMonth||"—")}</td>
             <td>${escapeHtml(String(e.Year||"—"))}</td>
-            <td style="font-weight:600;color:#dc2626;">−₹${fmt(e.Amount)}</td>
+            <td style="font-weight:600;color:#dc2626;">−${APP.currency||"₹"}${fmt(e.Amount)}</td>
             <td><span class="ct-badge ct-b-paid" style="background:#fff1f2;color:#dc2626;">Expense</span></td>
           </tr>`;
         }).join("");
@@ -11066,7 +11068,7 @@
         const mobile = user?.Mobile || "";
         if (fName && !name.toLowerCase().includes(fName) && !String(mobile).includes(fName)) return false;
         const rid = (c.ReceiptID || "");
-        const dispRid = rid.replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
+        const dispRid = rid.replace(new RegExp("^" + (APP.legacyReceiptPrefix||"TRX") + "-"), (APP.receiptPrefix||"REC") + "-");
         if (fTrack && !rid.toLowerCase().includes(fTrack) && !dispRid.toLowerCase().includes(fTrack)) return false;
         if (fType && String(c.TypeId) !== String(fType)) return false;
         if (fOcc && String(c.OccasionId) !== String(fOcc)) return false;
@@ -11288,7 +11290,7 @@
             const name  = dash_getDisplayName(c.UserId, c.Note);
             const tName = dash_types.find(x => String(x.TypeId) === String(c.TypeId))?.TypeName || "Contribution";
             const oName = dash_occasions.find(x => String(x.OccasionId) === String(c.OccasionId))?.OccasionName || "—";
-            const rid   = (c.ReceiptID || "").replace(/^TRX-/, (APP.receiptPrefix || "REC") + "-");
+            const rid   = (c.ReceiptID || "").replace(new RegExp("^" + (APP.legacyReceiptPrefix||"TRX") + "-"), (APP.receiptPrefix||"REC") + "-");
             const _drid = _storeReceipt(c, name, tName, oName);
             const streak = isWalkIn
               ? `<div class="ct-streak" style="opacity:.25;">${"<div class='ct-sd ct-sd-off'></div>".repeat(12)}</div>`
@@ -11301,7 +11303,7 @@
               <td>${escapeHtml(oName)}</td>
               <td>${escapeHtml(c.ForMonth||"—")}</td>
               <td><span class="ct-badge ${isWalkIn?"ct-b-wk":"ct-b-mem"}">${isWalkIn?"Walk-in":"Member"}</span></td>
-              <td style="font-weight:600;color:#15803d;">+₹${fmt(c.Amount)}</td>
+              <td style="font-weight:600;color:#15803d;">+${APP.currency||"₹"}${fmt(c.Amount)}</td>
               <td>${streak}</td>
               <td><span class="ct-badge ct-b-paid">Paid</span></td>
               <td class="ct-act">
@@ -11371,7 +11373,7 @@
         return `<div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:13px 14px;">
           <div style="width:36px;height:36px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#92400e;margin-bottom:7px;">${initials}</div>
           <div style="font-size:12px;font-weight:600;color:#1e293b;margin-bottom:2px;">${escapeHtml(name)}</div>
-          <div style="font-size:16px;font-weight:700;color:#15803d;">₹${fmt(map[uid])}</div>
+          <div style="font-size:16px;font-weight:700;color:#15803d;">${APP.currency||"₹"}${fmt(map[uid])}</div>
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">12-month streak</div>
           <div class="ct-streak" style="margin-top:5px;">${streak}</div>
         </div>`;
@@ -11401,11 +11403,11 @@
           if (contribs.length > 0) {
             const monthTotal = contribs.reduce((s, c) => s + Number(c.Amount||0), 0);
             total += monthTotal;
-            return `<td style="text-align:center;"><span style="background:#dcfce7;color:#15803d;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:600;">₹${fmt(monthTotal)}</span></td>`;
+            return `<td style="text-align:center;"><span style="background:#dcfce7;color:#15803d;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:600;">${APP.currency||"₹"}${fmt(monthTotal)}</span></td>`;
           }
           return `<td style="text-align:center;"><span style="color:#e2e8f0;font-size:12px;">—</span></td>`;
         }).join("");
-        return `<tr><td style="font-weight:600;font-size:11px;">${escapeHtml(u.Name||"")}</td>${cells}<td style="font-weight:700;color:#15803d;font-size:11px;">₹${fmt(total)}</td></tr>`;
+        return `<tr><td style="font-weight:600;font-size:11px;">${escapeHtml(u.Name||"")}</td>${cells}<td style="font-weight:700;color:#15803d;font-size:11px;">${APP.currency||"₹"}${fmt(total)}</td></tr>`;
       }).join("");
 
       tbl.innerHTML = hdr + `<tbody>${rows}</tbody>`;
@@ -11707,7 +11709,7 @@
           + '<div style="padding:16px 16px 8px;">'
             + '<div style="display:flex;gap:8px;align-items:center;">'
               + '<input id="grsInput" type="text"'
-              + ' placeholder="Enter Tracking ID e.g. MNR-001"'
+              + ' placeholder="Enter Tracking ID e.g. ' + (APP.receiptPrefix||'REC') + '-001"'
               + ' autocomplete="off" autocorrect="off"'
               + ' autocapitalize="characters" spellcheck="false"'
               + ' style="flex:1;min-width:0;padding:11px 13px;'
@@ -11858,8 +11860,8 @@
       /* found */
       _found = hit;
       var c2   = hit.c;
-      var dRID = (c2.ReceiptID || hit.rid).replace(/^TRX-/i, PREFIX + '-').toUpperCase();
-      var amt  = c2.Amount ? '&#8377;' + Number(c2.Amount).toLocaleString('en-IN') : '--';
+      var dRID = (c2.ReceiptID || hit.rid).replace(new RegExp("^" + (APP.legacyReceiptPrefix||"TRX") + "-", "i"), PREFIX + '-').toUpperCase();
+      var amt  = c2.Amount ? (APP.currency||'₹') + Number(c2.Amount).toLocaleString(APP.locale||'en-IN') : '--';
       var mon  = (c2.ForMonth || '') + (c2.Year ? ' ' + c2.Year : '');
 
       res.innerHTML =

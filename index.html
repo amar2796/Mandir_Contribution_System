@@ -23,7 +23,7 @@
   </head>
   <body>
     <div id="splash-screen">
-      <h1 class="splash-text" id="splashText">॥ जय श्री राम ॥</h1>
+      <h1 class="splash-text" id="splashText">…</h1>
     </div>
 
     <audio id="bgMusic" src="jai-shree-ram.mp3"></audio>
@@ -34,6 +34,9 @@
     >
       <i class="fa-solid fa-volume-high"></i>
     </button>
+
+    <!-- ══ SITE TOP: banner + header stacked in one fixed wrapper ══ -->
+    <div id="siteTop">
 
     <!-- ══ ANNOUNCEMENT BANNER (loaded from API) ══ -->
     <div id="announcementBanner">
@@ -54,8 +57,8 @@
           <i id="hdrIcon" class="fa-solid fa-place-of-worship"
             style="display:none;color:#f7a01a;font-size:1.4rem;filter:drop-shadow(0 0 6px rgba(247,160,26,0.6));"></i>
           <div class="header-brand-text">
-            <span class="brand-main" id="hdrBrandName">Shree Hanuman Mandir</span>
-            <span class="brand-sub" id="hdrBrandSub">Paliya Sultanpur Uttar Pradesh</span>
+            <span class="brand-main" id="hdrBrandName">…</span>
+            <span class="brand-sub" id="hdrBrandSub">…</span>
           </div>
         </a>
       </div>
@@ -84,6 +87,8 @@
         <i class="fa-solid fa-bars" id="hamburgerIcon"></i>
       </button>
     </div>
+
+    </div><!-- /#siteTop -->
 
     <!-- Mobile slide-down nav menu -->
     <div class="nav-menu" id="navMenu">
@@ -182,7 +187,7 @@
           <div class="about-stat-label">Years of Service</div>
         </div>
         <div class="about-stat">
-          <div class="about-stat-num">🕉️</div>
+          <div class="about-stat-num" id="aboutStatSymbol">🕉️</div>
           <div class="about-stat-label">Daily Pooja</div>
         </div>
         <div class="about-stat">
@@ -203,7 +208,7 @@
       <div class="sd-center">
         <div class="sd-petal"></div>
         <div class="sd-dot"></div>
-        <div class="sd-symbol">🕉️</div>
+        <div class="sd-symbol" id="sdSymbol">🕉️</div>
         <div class="sd-dot"></div>
         <div class="sd-petal"></div>
       </div>
@@ -221,7 +226,7 @@
             </div>
             <h2 class="members-title">Our <span>Mandir Members</span></h2>
             <p class="members-subtitle" id="membersSubtitle">
-              The devoted souls who uphold the spirit of Shree Hanuman Mandir — serving the community with faith, love, and dedication.
+              The devoted souls who uphold the spirit of <span id="aboutMandirName">…</span> — serving the community with faith, love, and dedication.
             </p>
           </div>
           <div class="members-nav">
@@ -452,7 +457,7 @@
           <span class="cs-big-plus">+</span>
         </div>
         <div class="cs-label">Registered Members</div>
-        <div class="cs-sublabel">Shree Hanuman Mandir family</div>
+        <div class="cs-sublabel" id="csSublabel">… family</div>
         <div class="cs-divider"></div>
         <div class="cs-cta">Be a part of this family — <a href="login.html">join us today</a></div>
       </div>
@@ -545,14 +550,15 @@
         <div class="feedback-map-side">
           <div class="feedback-map-header">
             <i class="fa-solid fa-location-dot"></i>
-            <span id="mapHeaderText">Shree Hanuman Mandir, Paliya — Find Us Here</span>
+            <span id="mapHeaderText">…</span>
           </div>
           <iframe
+            id="mapEmbedFrame"
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3273.497389457402!2d82.20519597492734!3d26.321060585267084!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x399a790bd4e8dff3%3A0x93c61c2049ae55f2!2sHanuman%20Mandir!5e1!3m2!1sen!2sin!4v1775203315104!5m2!1sen!2sin"
             allowfullscreen=""
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
-            title="Shree Hanuman Mandir, Paliya — Google Maps">
+            title="…">
           </iframe>
         </div>
 
@@ -587,7 +593,7 @@
             <h3>Thank You for Your Valuable Feedback!</h3>
             <p>
               Your message has been received. We deeply appreciate your time and<br />suggestions
-              — they help us serve the Mandir community better.<br /><br /><em id="feedbackTagline">जय श्री राम 🕉️</em>
+              — they help us serve the Mandir community better.<br /><br /><em id="feedbackTagline">…</em>
             </p>
             <div class="fb-pending-badge">
               <i class="fa-solid fa-clock"></i> Status: Pending Review
@@ -600,7 +606,7 @@
 
     <div class="footer" id="pageFooter">
       © 2026 Mandir System | Built with <span>❤️</span>
-      <span class="footer-tagline">॥ जय श्री राम ॥ — Serving the community with faith &amp; devotion</span>
+      <span class="footer-tagline" id="footerTagline">…</span>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js"></script>
@@ -665,13 +671,42 @@
         var mh = document.getElementById('mapHeaderText');
         if (mh) mh.textContent = name + (loc ? ', ' + loc : '') + ' — Find Us Here';
 
+        // Map embed iframe src and title from APP constants
+        var mf = document.getElementById('mapEmbedFrame');
+        if (mf) {
+          if (APP.mapEmbedUrl) mf.src = APP.mapEmbedUrl;
+          mf.title = name + (loc ? ', ' + loc : '') + ' — Google Maps';
+        }
+
         // Feedback thanks tagline
         var ft = document.getElementById('feedbackTagline');
         if (ft) ft.textContent = tagline + ' ' + symbol;
 
-        // Footer
+        // About section mandir name
+        var amn = document.getElementById('aboutMandirName');
+        if (amn) amn.textContent = name;
+
+        // Decorative symbol elements
+        var ass = document.getElementById('aboutStatSymbol');
+        if (ass) ass.textContent = symbol;
+        var sds = document.getElementById('sdSymbol');
+        if (sds) sds.textContent = symbol;
+
+        // Community stats sublabel
+        var csl = document.getElementById('csSublabel');
+        if (csl) csl.textContent = name + ' family';
+
+        // Donate modal support name
+        var dsn = document.getElementById('donateSupportName');
+        if (dsn) dsn.textContent = name;
+
+        // Footer tagline span
+        var ftl = document.getElementById('footerTagline');
+        if (ftl) ftl.textContent = '॥ ' + tagline + ' ॥ — Serving the community with faith & devotion';
+
+        // Footer full line
         var pf = document.getElementById('pageFooter');
-        if (pf) pf.innerHTML = '&copy; ' + new Date().getFullYear() + ' ' + shortName + ' | Built with <span>&#10084;&#65039;</span><span class="footer-tagline">॥ ' + (tagline || 'जय श्री राम') + ' ॥ — Serving the community with faith &amp; devotion</span>';
+        if (pf) pf.innerHTML = '&copy; ' + new Date().getFullYear() + ' ' + shortName + ' | Built with <span>&#10084;&#65039;</span><span class="footer-tagline" id="footerTagline">॥ ' + tagline + ' ॥ — Serving the community with faith &amp; devotion</span>';
       })();
     </script>
     <script src="config.js"></script>
@@ -704,7 +739,7 @@
         <div class="pay-diya-icon">🪔</div>
         <h2 class="pay-section-title">Payment <span>Details</span></h2>
         <p class="pay-section-sub">
-          Support Shree Hanuman Mandir — your donation helps maintain the temple,
+          Support <span id="donateSupportName">…</span> — your donation helps maintain the temple,
           conduct yagyas, and serve the community.
         </p>
         <div class="pay-gold-divider"></div>
@@ -772,9 +807,9 @@
         <!-- Declaration -->
         <div class="pay-declaration">
           <p>
-            <strong>Declaration:</strong> All donations made to <strong id="payDeclName">Shree Hanuman Mandir, Paliya</strong>
+            <strong>Declaration:</strong> All donations made to <strong id="payDeclName">…</strong>
             are used exclusively for temple maintenance, religious ceremonies, and community welfare activities.
-            This institution is managed by the <strong id="payCommittee">Ram Jag Vishwakarma Committee</strong>.
+            This institution is managed by the <strong id="payCommittee">…</strong>.
             Please retain your payment receipt for records. For any queries, contact the temple office.
             <strong>दान का सदुपयोग मंदिर संचालन एवं धार्मिक कार्यों में किया जाता है।</strong>
           </p>

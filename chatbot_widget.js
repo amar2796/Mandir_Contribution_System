@@ -65,9 +65,11 @@
       var now = Date.now();
       if (_botConfig && (now - _botConfigTime) < 30000) { cb(_botConfig); return; }
       var apiUrl = (typeof API_URL !== "undefined" ? API_URL : "") || (window.API_URL || "");
-      if (!apiUrl) { _botConfig = {}; cb(_botConfig); return; }
+      if (!apiUrl) { _botConfig = { enabled: "0" }; cb(_botConfig); return; }
       _fetchJSON(apiUrl + "?action=getChatbotConfig", function (err, data) {
-        _botConfig = (!err && data && !data.error) ? data : {};
+        // FIX: On error/bad response, use { enabled:"0" } so chatbot does NOT render
+      // when config can't be fetched. Previously {} caused enabled || "1" = "1" → always shown.
+      _botConfig = (!err && data && !data.error) ? data : { enabled: "0" };
         _botConfigTime = Date.now();
 
         // ── Auto-fill bank/UPI from server when chatbot config fields are blank.
@@ -346,7 +348,7 @@
           </div>
           <div class="mbot-title">
             <div>Mandir Assistant</div>
-            <div>Online · Jai Shree Ram</div>
+            <div>Online · <span id="_mbotTagline">Jai Shree Ram</span></div>
           </div>
           <button class="mbot-hbtn" id="_mbotLangBtn" onclick="_mbotToggleLang()">EN</button>
           <button class="mbot-hbtn" onclick="_mbotClose()" style="padding:4px 9px;font-size:14px;">×</button>
@@ -358,6 +360,10 @@
         </div>
       `;
       document.body.appendChild(win);
+
+      // Set header tagline from APP constants
+      var _tglEl = document.getElementById("_mbotTagline");
+      if (_tglEl && window.APP && APP.tagline) _tglEl.textContent = APP.tagline;
   
       document.getElementById("_mbotInput").addEventListener("keydown", function (e) {
         if (e.key === "Enter") _mbotHandleInput();
@@ -389,14 +395,14 @@
         _showTyping();
         _loadConfig(function (cfg) {
           _removeTyping();
-          if (String(cfg.enabled || "1") === "0") {
-            // Admin disabled after page load — close and hide button
+          if (String(cfg.enabled ?? "0") === "0") {
+            // Admin disabled after page load (or config load failed) — close and hide button
             window._mbotClose();
             var btn = document.getElementById("_mbotBtn");
             if (btn) btn.style.display = "none";
             return;
           }
-          _addBotMsg(_t("welcome") || "Jai Shree Ram! How can I help you?");
+          _addBotMsg(_t("welcome") || (window.APP && APP.tagline ? APP.tagline + "! How can I help you?" : "How can I help you?"));
           setTimeout(function () { _showMainMenu(); }, 200);
         });
       }
@@ -656,7 +662,7 @@
       document.getElementById("_mbotLangBtn").textContent = _bi("EN", "HI");
       // Clear and restart
       document.getElementById("_mbotMsgs").innerHTML = "";
-      _addBotMsg(_t("welcome") || "Jai Shree Ram!");
+      _addBotMsg(_t("welcome") || (window.APP && APP.tagline ? APP.tagline + "!" : "Welcome!"));
       setTimeout(_showMainMenu, 150);
     };
   
@@ -665,7 +671,7 @@
       _injectCSS();
       // Pre-load config first — only render button if chatbot is enabled
       _loadConfig(function (cfg) {
-        if (String(cfg.enabled || "1") === "0") return; // disabled — render nothing
+        if (String(cfg.enabled ?? "0") === "0") return; // disabled — render nothing
         _buildDOM();
       });
     }

@@ -98,7 +98,7 @@
         </div>
         <div class="sidebar-brand-text">
           <div class="sidebar-brand-title">Admin Panel</div>
-          <div id="sidebarBrandSub" class="sidebar-brand-sub">Shree Hanuman Mandir</div>
+          <div id="sidebarBrandSub" class="sidebar-brand-sub">…</div>
         </div>
       </div>
 
@@ -827,7 +827,7 @@
             </div>
             <div>
               <span class="ct-pf-lbl">Tracking ID</span>
-              <input class="ct-pf-inp" id="ct_filterTrackID" placeholder="MNR-… or TRX-…" oninput="ct_debounceFilter()" />
+              <input class="ct-pf-inp" id="ct_filterTrackID" placeholder="Tracking ID…" oninput="ct_debounceFilter()" />
             </div>
             <div>
               <span class="ct-pf-lbl">Contribution Type</span>
@@ -1177,7 +1177,7 @@
               </div>
               <div>
                 <span class="ct-pf-lbl">Tracking ID</span>
-                <input class="ct-pf-inp" id="cr_filterTrackID" placeholder="MNR-… or TRX-…" oninput="_debouncedFilterContrib()" />
+                <input class="ct-pf-inp" id="cr_filterTrackID" placeholder="Tracking ID…" oninput="_debouncedFilterContrib()" />
               </div>
               <div>
                 <span class="ct-pf-lbl">Contribution Type</span>
@@ -3022,8 +3022,8 @@
           </div>
           <div class="sp-field-group">
             <label class="sp-label">Year <span class="sp-required">*</span></label>
-            <select id="contribYear" class="sp-input" onchange="(function(){var y=document.getElementById('contribYear').value;var h=document.getElementById('contribYearHint');if(h)h.textContent='Receipt: MNR-'+y+'-NNNNN';})()"></select>
-            <div id="contribYearHint" class="sp-hint">Receipt: MNR-...-NNNNN</div>
+            <select id="contribYear" class="sp-input" onchange="(function(){var y=document.getElementById('contribYear').value;var h=document.getElementById('contribYearHint');if(h)h.textContent='Receipt: '+(window.APP&&APP.receiptPrefix||'REC')+'-'+y+'-NNNNN';})()"></select>
+            <div id="contribYearHint" class="sp-hint">Receipt: …-NNNNN</div>
           </div>
         </div>
         <div class="sp-row2">
@@ -3528,7 +3528,7 @@
           }
           // Trigger hint update
           var hint = document.getElementById('contribYearHint');
-          if (hint) hint.textContent = 'Receipt: MNR-' + curYear + '-NNNNN';
+          if (hint) hint.textContent = 'Receipt: ' + (window.APP && APP.receiptPrefix || 'REC') + '-' + curYear + '-NNNNN';
         }
       } else if (type === 'expense') {
         var expMonSel  = document.getElementById('expMonth');
